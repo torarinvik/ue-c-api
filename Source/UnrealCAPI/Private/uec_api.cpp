@@ -1,6 +1,7 @@
 #include "uec_api.h"
 
 #include "CoreMinimal.h"
+#include "Async/Async.h"
 #include "Engine/AssetManager.h"
 #include "Engine/Engine.h"
 #include "Engine/StreamableManager.h"
@@ -62,6 +63,13 @@ namespace
         void* UserData = nullptr;
         bool Cancelled = false;
     };
+    struct FUECGameThreadRequest final
+    {
+        uint64 Id = 0;
+        uec_game_thread_callback Callback = nullptr;
+        void* UserData = nullptr;
+        bool Cancelled = false;
+    };
 
     FCriticalSection GHandleMutex;
     TSet<const FUECContext*> GContexts;
@@ -72,7 +80,9 @@ namespace
     TSet<const FUECClass*> GClasses;
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
+    TMap<uint64, TSharedPtr<FUECGameThreadRequest>> GGameThreadRequests;
     uint64 GNextObjectLoadRequestId = 1;
+    uint64 GNextGameThreadRequestId = 1;
     uint64 GNextTimerId = 1;
 
     static bool IsValidContext(uec_context* rawContext)
@@ -257,7 +267,7 @@ namespace
         *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW |
             UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_COLLISION_QUERIES |
             UEC_CAPABILITY_AUDIO | UEC_CAPABILITY_UI | UEC_CAPABILITY_CAMERA |
-            UEC_CAPABILITY_SAVE_DATA;
+            UEC_CAPABILITY_SAVE_DATA | UEC_CAPABILITY_THREADING;
         return UEC_RESULT_OK;
     }
 
@@ -1810,6 +1820,53 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL RunOnGameThread(uec_context* rawContext,
+                                        uec_game_thread_callback callback,
+                                        void* userData,
+                                        uint64_t* outRequestId)
+    {
+        if (callback == nullptr || outRequestId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        auto request = MakeShared<FUECGameThreadRequest>();
+        request->Callback = callback;
+        request->UserData = userData;
+        {
+            FScopeLock lock(&GHandleMutex);
+            request->Id = GNextGameThreadRequestId++;
+            GGameThreadRequests.Add(request->Id, request);
+        }
+        *outRequestId = request->Id;
+        AsyncTask(ENamedThreads::GameThread, [request]()
+        {
+            uec_game_thread_callback callbackToRun = nullptr;
+            void* userDataToRun = nullptr;
+            {
+                FScopeLock lock(&GHandleMutex);
+                if (request->Cancelled)
+                {
+                    GGameThreadRequests.Remove(request->Id);
+                    return;
+                }
+                callbackToRun = request->Callback;
+                userDataToRun = request->UserData;
+                GGameThreadRequests.Remove(request->Id);
+            }
+            callbackToRun(userDataToRun);
+        });
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL CancelGameThreadRequest(uec_context* rawContext, uint64_t requestId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        FScopeLock lock(&GHandleMutex);
+        TSharedPtr<FUECGameThreadRequest>* requestPtr = GGameThreadRequests.Find(requestId);
+        if (requestPtr == nullptr || !requestPtr->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
+        (*requestPtr)->Cancelled = true;
+        GGameThreadRequests.Remove(requestId);
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -1821,6 +1878,16 @@ namespace
             }
         }
         GObjectLoadRequests.Empty();
+    }
+
+    static void CancelAllGameThreadRequests()
+    {
+        FScopeLock lock(&GHandleMutex);
+        for (const TPair<uint64, TSharedPtr<FUECGameThreadRequest>>& pair : GGameThreadRequests)
+        {
+            if (pair.Value.IsValid()) pair.Value->Cancelled = true;
+        }
+        GGameThreadRequests.Empty();
     }
 
     const uec_api GApi = {
@@ -1847,7 +1914,8 @@ namespace
         &GetCameraFieldOfView, &SetCameraFieldOfView,
         &GetObjectPropertyValue, &GetObjectPropertyString,
         &SetObjectPropertyValue, &SetObjectPropertyString,
-        &CreateSaveGame, &SaveGameToSlot, &LoadGameFromSlot, &DeleteGameSlot
+        &CreateSaveGame, &SaveGameToSlot, &LoadGameFromSlot, &DeleteGameSlot,
+        &RunOnGameThread, &CancelGameThreadRequest
     };
 }
 
@@ -1864,6 +1932,7 @@ public:
     {
         ClearAllTimers();
         CancelAllObjectLoads();
+        CancelAllGameThreadRequests();
         ClearAllHandles();
         UE_LOG(LogTemp, Log, TEXT("%s runtime module stopped"), UTF8_TO_TCHAR(kModuleName));
     }

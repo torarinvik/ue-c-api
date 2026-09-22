@@ -24,6 +24,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Basic UMG widgets | Runtime implemented / Unreal integration pending | Create a `UUserWidget` class and add or remove it from the viewport |
 | Camera field of view | Runtime implemented / Unreal integration pending | Read and write perspective FOV on camera scene components |
 | Save-game slots and object properties | Runtime implemented / Unreal integration pending | Create, load, save, delete, and edit supported reflected save-object fields |
+| Game-thread dispatch | Runtime implemented / Unreal integration pending | Queue and cancel borrowed callbacks from worker threads |
 | Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, and game-thread callbacks |
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries and game-thread `OpenLevel` requests |
@@ -31,7 +32,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |
 | Basic physics | Runtime implemented / Unreal integration pending | Velocity, impulses, and forces on simulating primitive roots |
 | Reflection and Blueprint calls | Partial | Property writes and zero-argument calls are available; typed calls remain |
-| Input, movement | Planned | No public functions yet beyond the input, movement, audio, UI, camera, and save-data slices above |
+| Input, movement | Planned | No public functions yet beyond the input, movement, audio, UI, camera, save-data, and dispatch slices above |
 | Async loading, travel, streaming | Planned | No public functions yet |
 | Multiplayer and replication | Planned | No public functions yet |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |

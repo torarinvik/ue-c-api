@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 23u
+#define UEC_ABI_MINOR 24u
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,7 +73,8 @@ enum {
     UEC_CAPABILITY_AUDIO = UINT64_C(1) << 16,
     UEC_CAPABILITY_UI = UINT64_C(1) << 17,
     UEC_CAPABILITY_CAMERA = UINT64_C(1) << 18,
-    UEC_CAPABILITY_SAVE_DATA = UINT64_C(1) << 19
+    UEC_CAPABILITY_SAVE_DATA = UINT64_C(1) << 19,
+    UEC_CAPABILITY_THREADING = UINT64_C(1) << 20
 };
 
 typedef struct uec_context uec_context;
@@ -177,6 +178,7 @@ typedef void (UEC_CALL *uec_object_load_callback)(uint64_t request_id,
                                                   uec_result result,
                                                   uec_object* object,
                                                   void* user_data);
+typedef void (UEC_CALL *uec_game_thread_callback)(void* user_data);
 
 typedef struct uec_api {
     uint32_t struct_size;
@@ -392,6 +394,12 @@ typedef struct uec_api {
                                             uec_string_view slot_name,
                                             int32_t user_index,
                                             uec_bool* out_deleted);
+    uec_result (UEC_CALL *run_on_game_thread)(uec_context* context,
+                                              uec_game_thread_callback callback,
+                                              void* user_data,
+                                              uint64_t* out_request_id);
+    uec_result (UEC_CALL *cancel_game_thread_request)(uec_context* context,
+                                                      uint64_t request_id);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

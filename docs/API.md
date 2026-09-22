@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.23`.
+The current runtime slice is intentionally small and versioned as ABI `1.24`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -8,7 +8,7 @@ Unreal headers and C++ types stay inside the plugin.
 `get_capabilities` reports the feature bits present in the loaded bridge. The
 current implementation reports bootstrap, logging, world, actor, component,
 timer, reflection, collision, asset loading, player flow, input, physics,
-collision-query, audio, UI, camera, and save-data adapters.
+collision-query, audio, UI, camera, save-data, and game-thread dispatch adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed active
 handle registries. A world or actor handle is a bridge-owned reference to an
@@ -132,6 +132,13 @@ Save-game helpers create a `USaveGame` subclass by class path, save or delete a
 named slot synchronously, and load a slot only when its object is compatible
 with the requested class. Save failures are returned through the `out_saved` or
 `out_deleted` boolean; a missing load slot returns `UEC_RESULT_NOT_INITIALIZED`.
+
+`run_on_game_thread` queues a borrowed callback and user pointer for execution
+on Unreal's game thread and returns a request id. `cancel_game_thread_request`
+can cancel a queued callback from any thread; cancellation wins if it races
+with dispatch. The callback owns any handles it receives and must not retain
+the borrowed user pointer after it returns. Module shutdown cancels queued
+callbacks without invoking them.
 
 ## Verification
 
