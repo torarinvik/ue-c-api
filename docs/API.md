@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.131`.
+The current runtime slice is intentionally small and versioned as ABI `1.132`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -291,6 +291,20 @@ called; an undersized text buffer is reported after execution, so callers must
 check for side effects before retrying. Release every non-null returned object
 or class handle with its matching release function. The call is game-thread
 only and rejects latent, network, and client-world authority-only functions.
+
+ABI minor 132 adds a local `UECEventBridgeComponent` to an actor through
+`get_or_create_actor_event_bridge`. Bind a C callback with
+`bind_actor_event_bridge`, then emit the same event payload through C or the
+component's Blueprint-callable `EmitEvent`; Blueprint graphs can also bind the
+component's assignable `OnEvent` delegate. The payload is an event id, signed
+integer, finite double, and UTF-8 text. C callbacks run synchronously on the
+game thread; their text view and `user_data` are borrowed only for the callback.
+Unbinding from inside a callback is supported, and actor/component destruction,
+world cleanup, travel, and module shutdown cancel subscriptions. The component
+is local and non-replicated. Creating or explicitly destroying it requires
+world authority, while an existing component can be retrieved on a client.
+Destroying it invalidates its object handles. At most 1024 C subscriptions can
+be active.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
@@ -670,6 +684,7 @@ views and vector values use the API's world-independent double-precision type.
 The standalone consumer in `tests/c_smoke/c_smoke.c` compiles without Unreal
 headers and validates bootstrap, logging, diagnostics, ABI fields, and context
 release at the source level, including the documented POD layout assertions.
-Running the actor operations requires building the
-plugin against a selected Unreal Engine version and executing it in a test
-project, which is the next environment-dependent gate.
+The host project also runs a C event-bridge smoke probe once a Game or PIE world
+exists. Running that probe requires building the plugin against a selected
+Unreal Engine version; Blueprint graph behavior and packaged runtime behavior
+still need engine-backed verification.

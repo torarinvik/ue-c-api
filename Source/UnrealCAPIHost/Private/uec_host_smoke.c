@@ -1,5 +1,35 @@
 #include "uec_api.h"
 
+#include <stddef.h>
+
+typedef struct uec_event_bridge_smoke_state {
+    uint64_t subscription_id;
+    uint32_t callback_count;
+    uec_bool payload_valid;
+} uec_event_bridge_smoke_state;
+
+static void UEC_CALL VerifyEventBridgeCallback(uint64_t subscriptionId,
+                                               int64_t eventId,
+                                               int64_t integerValue,
+                                               double realValue,
+                                               uec_string_view textValue,
+                                               void* userData)
+{
+    uec_event_bridge_smoke_state* state = (uec_event_bridge_smoke_state*)userData;
+    const char expectedText[] = "bridge-smoke";
+    if (state == NULL) return;
+    ++state->callback_count;
+    state->payload_valid = UEC_FALSE;
+    if (subscriptionId != state->subscription_id || eventId != 731 || integerValue != -42 ||
+        realValue != 3.25 || textValue.data == NULL || textValue.size != sizeof(expectedText) - 1) {
+        return;
+    }
+    for (size_t index = 0; index < textValue.size; ++index) {
+        if (textValue.data[index] != expectedText[index]) return;
+    }
+    state->payload_valid = UEC_TRUE;
+}
+
 uec_result UEC_CALL uec_host_smoke_bootstrap(void)
 {
     const uec_api* api = NULL;
@@ -30,4 +60,82 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
 
     const uec_result release_result = api->release_context(context);
     return result == UEC_RESULT_OK ? release_result : result;
+}
+
+uec_result UEC_CALL uec_host_event_bridge_smoke(void)
+{
+    static const char actorClassPath[] = "/Script/Engine.Actor";
+    static const char eventText[] = "bridge-smoke";
+    const uec_string_view classPath = {actorClassPath, sizeof(actorClassPath) - 1};
+    const uec_string_view text = {eventText, sizeof(eventText) - 1};
+    const uec_transform initialTransform = {
+        {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
+    const uec_api* api = NULL;
+    uec_context* context = NULL;
+    uec_world* world = NULL;
+    uec_actor* actor = NULL;
+    uec_object* bridge = NULL;
+    uint64_t subscriptionId = 0;
+    uec_event_bridge_smoke_state state = {0, 0, UEC_FALSE};
+    uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
+    if (result != UEC_RESULT_OK) return result;
+    if (api == NULL || context == NULL || api->get_or_create_actor_event_bridge == NULL ||
+        api->destroy_actor_event_bridge == NULL || api->bind_actor_event_bridge == NULL ||
+        api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_default_world(context, &world);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->spawn_actor(world, classPath, &initialTransform, &actor);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_or_create_actor_event_bridge(actor, &bridge);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->bind_actor_event_bridge(bridge, &VerifyEventBridgeCallback,
+                                          &state, &subscriptionId);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    state.subscription_id = subscriptionId;
+    result = api->emit_actor_event_bridge(bridge, 731, -42, 3.25, text);
+    if (result != UEC_RESULT_OK || state.callback_count != 1 ||
+        state.payload_valid != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->unbind_actor_event_bridge(context, subscriptionId);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    subscriptionId = 0;
+    result = api->emit_actor_event_bridge(bridge, 732, 0, 0.0, text);
+    if (result != UEC_RESULT_OK || state.callback_count != 1) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->destroy_actor_event_bridge(bridge);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    bridge = NULL;
+    result = UEC_RESULT_OK;
+
+cleanup:
+    if (api != NULL && subscriptionId != 0 && context != NULL) {
+        const uec_result cleanupResult = api->unbind_actor_event_bridge(context, subscriptionId);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    if (api != NULL && bridge != NULL) {
+        const uec_result cleanupResult = api->destroy_actor_event_bridge(bridge);
+        if (cleanupResult != UEC_RESULT_OK) (void)api->release_object(bridge);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    if (api != NULL && actor != NULL) {
+        const uec_result cleanupResult = api->destroy_actor(actor);
+        if (cleanupResult != UEC_RESULT_OK) (void)api->release_actor(actor);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    if (api != NULL && world != NULL) {
+        const uec_result cleanupResult = api->release_world(world);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    if (api != NULL && context != NULL) {
+        const uec_result cleanupResult = api->release_context(context);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    return result;
 }

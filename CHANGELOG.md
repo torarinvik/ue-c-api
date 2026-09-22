@@ -306,6 +306,9 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 130 adds typed scalar-key reads for actor and UObject reflected maps.
 - ABI minor 131 adds mixed typed actor-function arguments and typed, handle, or
   text-backed return/out values.
+- ABI minor 132 adds a Blueprint-assignable actor event component, bounded C
+  callback subscriptions, event emission from C, and teardown cleanup. The host
+  runtime smoke path now exercises callback payloads and unbinding in Game/PIE.
 - Adds `UEC_CAPABILITY_REFLECTION_CONTAINERS` so consumers can gate container metadata and set mutation explicitly.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.

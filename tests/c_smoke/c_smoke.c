@@ -63,6 +63,9 @@ int main(void)
         api->set_actor_property_soft_value == NULL || api->set_object_property_soft_value == NULL ||
         api->get_actor_property_map_key == NULL || api->get_object_property_map_key == NULL ||
         api->invoke_actor_function_arguments == NULL ||
+        api->get_or_create_actor_event_bridge == NULL || api->destroy_actor_event_bridge == NULL ||
+        api->bind_actor_event_bridge == NULL || api->unbind_actor_event_bridge == NULL ||
+        api->emit_actor_event_bridge == NULL ||
         api->set_component_physics_velocity == NULL || api->apply_component_impulse == NULL ||
         api->apply_component_force == NULL || api->get_component_physics_angular_velocity == NULL ||
         api->set_component_physics_angular_velocity == NULL || api->apply_component_torque == NULL ||
@@ -204,6 +207,19 @@ int main(void)
     {
         api->release_context(context);
         return 55;
+    }
+
+    uec_object* event_bridge = (uec_object*)1;
+    uint64_t event_subscription_id = 42u;
+    if (api->get_or_create_actor_event_bridge(NULL, &event_bridge) != UEC_RESULT_UNSUPPORTED ||
+        event_bridge != NULL || api->destroy_actor_event_bridge(NULL) != UEC_RESULT_INVALID_HANDLE ||
+        api->bind_actor_event_bridge(NULL, NULL, NULL, &event_subscription_id) != UEC_RESULT_INVALID_ARGUMENT ||
+        event_subscription_id != 0u ||
+        api->unbind_actor_event_bridge(context, 1u) != UEC_RESULT_UNSUPPORTED ||
+        api->emit_actor_event_bridge(NULL, 1, 0, 0.0, empty_function_name) != UEC_RESULT_INVALID_HANDLE)
+    {
+        api->release_context(context);
+        return 56;
     }
 
     uec_object* found_object = (uec_object*)1;

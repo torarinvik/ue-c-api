@@ -188,6 +188,14 @@ handles are caller-owned and must be released with `release_object` or
 `release_class`. A short output array is rejected before invocation, while a
 short per-value text buffer is reported after the function has run; do not
 retry a side-effecting call solely to grow those text buffers.
+ABI minor 132 adds a local actor event component. Retrieve or create it with
+`get_or_create_actor_event_bridge`, bind a synchronous game-thread C callback,
+and emit through C or its Blueprint-callable `EmitEvent`; Blueprint graphs may
+bind `OnEvent`. Callback text and `user_data` are borrowed for the callback
+only. Self-unbind is supported, subscriptions are bounded at 1024, and actor,
+component, world, travel, and module teardown cancel them. Component creation
+and explicit destruction require authority. The component does not replicate;
+an already-present component can be retrieved without authority.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

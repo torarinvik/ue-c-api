@@ -388,6 +388,7 @@
             static_cast<uint64>(GWidgetSubscriptions.Num()) +
             static_cast<uint64>(GAnimationSubscriptions.Num()) +
             static_cast<uint64>(GCollisionSubscriptions.Num()) +
+            static_cast<uint64>(GEventBridgeSubscriptions.Num()) +
             static_cast<uint64>(GInputBindings.Num()) +
             static_cast<uint64>(GActorDestroyedSubscriptions.Num());
         const uint64 requests = static_cast<uint64>(GObjectLoadRequests.Num()) +

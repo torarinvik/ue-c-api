@@ -23,6 +23,8 @@ headers and are not compiled as independent translation units.
   metadata, and actor/UObject property-reference adapters.
 - `uec_api_reflection_invoke_typed.inl` owns typed scalar invocation plus mixed
   scalar, hard reference, and text-backed argument/output marshaling.
+- `uec_api_event_bridge.inl` owns the Blueprint event component's C callback
+  registry, actor-destruction cleanup, and world/shutdown subscription cleanup.
 - `uec_api_presentation.inl` owns UMG, camera, audio (including completion
   subscriptions), mesh assignment, and transient animation playback.
 - `uec_api_collision.inl` owns hit-result conversion, line/sweep/overlap queries,

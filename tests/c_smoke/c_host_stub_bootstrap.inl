@@ -225,6 +225,51 @@ static uec_result UEC_CALL StubInvokeActorFunctionArguments(
     return outCount == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetOrCreateActorEventBridge(uec_actor* actor,
+                                                            uec_object** outBridge)
+{
+    (void)actor;
+    if (outBridge != NULL) *outBridge = NULL;
+    return outBridge == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubDestroyActorEventBridge(uec_object* bridge)
+{
+    return bridge == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubBindActorEventBridge(uec_object* bridge,
+                                                    uec_event_bridge_callback callback,
+                                                    void* userData,
+                                                    uint64_t* outSubscriptionId)
+{
+    (void)bridge;
+    (void)userData;
+    if (outSubscriptionId != NULL) *outSubscriptionId = 0u;
+    if (callback == NULL || outSubscriptionId == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubUnbindActorEventBridge(uec_context* context,
+                                                      uint64_t subscriptionId)
+{
+    (void)subscriptionId;
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+}
+
+static uec_result UEC_CALL StubEmitActorEventBridge(uec_object* bridge,
+                                                    int64_t eventId,
+                                                    int64_t integerValue,
+                                                    double realValue,
+                                                    uec_string_view textValue)
+{
+    (void)eventId;
+    (void)integerValue;
+    (void)realValue;
+    (void)textValue;
+    return bridge == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubInvokeActorFunctionValue(
     uec_actor* actor,
     uec_string_view functionName,

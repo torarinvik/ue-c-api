@@ -37,6 +37,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
+#include "UECEventBridgeComponent.h"
 #include "HAL/CriticalSection.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/ScopeLock.h"
@@ -148,6 +149,22 @@ namespace
         bool Cancelled = false;
         bool InCallback = false;
     };
+    static TMap<UWorld*, FDelegateHandle> GActorDestroyedHandlers;
+    struct FUECActorDestroyedSubscription final { uint64 Id = 0; TWeakObjectPtr<AActor> Actor; uec_actor_destroyed_callback Callback = nullptr; void* UserData = nullptr; bool Cancelled = false; bool InCallback = false; };
+    static TMap<uint64, TSharedPtr<FUECActorDestroyedSubscription>> GActorDestroyedSubscriptions;
+    static uint64 GNextActorDestroyedSubscriptionId = 1;
+
+    struct FUECEventBridgeSubscription final
+    {
+        uint64 Id = 0;
+        TWeakObjectPtr<UECEventBridgeComponent> Component;
+        FDelegateHandle Handle;
+        FDelegateHandle DestroyedHandle;
+        uec_event_bridge_callback Callback = nullptr;
+        void* UserData = nullptr;
+        bool Cancelled = false;
+        bool InCallback = false;
+    };
     struct FUECClass final
     {
         FUECHandleHeader Header;
@@ -214,6 +231,7 @@ namespace
     TMap<uint64, TSharedPtr<FUECWidgetSubscription>> GWidgetSubscriptions;
     TMap<uint64, TSharedPtr<FUECAnimationSubscription>> GAnimationSubscriptions;
     TMap<uint64, TSharedPtr<FUECCollisionSubscription>> GCollisionSubscriptions;
+    TMap<uint64, TSharedPtr<FUECEventBridgeSubscription>> GEventBridgeSubscriptions;
     TSet<const FUECClass*> GClasses;
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
@@ -231,11 +249,16 @@ namespace
     uint64 GNextWidgetSubscriptionId = 1;
     uint64 GNextAnimationSubscriptionId = 1;
     uint64 GNextCollisionSubscriptionId = 1;
+    uint64 GNextEventBridgeSubscriptionId = 1;
     uint64 GNextSaveGameRequestId = 1;
     uint64 GNextInputBindingId = 1;
     #include "API/uec_api_runtime.inl"
     #include "API/uec_api_world_actor.inl"
+    static void CancelEventBridgeSubscriptions(AActor* actor);
+    static void CancelEventBridgeSubscriptionsForWorld(UWorld* world);
+    static void ClearAllEventBridgeSubscriptions();
     #include "API/uec_api_actor_component.inl"
+    #include "API/uec_api_event_bridge.inl"
     #include "API/uec_api_collision.inl"
     #include "API/uec_api_reflection.inl"
     #include "API/uec_api_reflection_containers.inl"
@@ -334,7 +357,9 @@ namespace
         &ApplyActorTorque, &ApplyActorAngularImpulse,
         &GetActorPropertySoftValue, &GetObjectPropertySoftValue,
         &SetActorPropertySoftValue, &SetObjectPropertySoftValue,
-        &GetActorPropertyMapKey, &GetObjectPropertyMapKey, &InvokeActorFunctionArguments
+        &GetActorPropertyMapKey, &GetObjectPropertyMapKey, &InvokeActorFunctionArguments,
+        &GetOrCreateActorEventBridge, &DestroyActorEventBridge, &BindActorEventBridge,
+        &UnbindActorEventBridge, &EmitActorEventBridge
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
@@ -366,6 +391,7 @@ public:
         ClearAllWidgetSubscriptions();
         ClearAllAnimationSubscriptions();
         ClearAllCollisionSubscriptions();
+        ClearAllEventBridgeSubscriptions();
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
         CancelAllTravelRequests(); CancelAllStreamingRequests();
