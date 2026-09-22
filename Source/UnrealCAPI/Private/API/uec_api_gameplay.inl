@@ -5,6 +5,7 @@
                                   uec_bool traceComplex,
                                   uec_hit_result* outHit)
     {
+        if (outHit != nullptr) *outHit = {};
         if (outHit == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsFiniteVector(start) || !IsFiniteVector(end) || !IsValidBool(traceComplex)) {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -17,7 +18,6 @@
         ECollisionChannel collisionChannel;
         if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
 
-        *outHit = {};
         FHitResult hit;
         FCollisionQueryParams queryParams;
         queryParams.bTraceComplex = traceComplex != UEC_FALSE;
@@ -49,6 +49,7 @@
                                    uec_bool traceComplex,
                                    uec_hit_result* outHit)
     {
+        if (outHit != nullptr) *outHit = {};
         if (outHit == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsFiniteVector(start) || !IsFiniteVector(end) || !IsValidBool(traceComplex)) {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -64,7 +65,6 @@
         ECollisionChannel collisionChannel;
         if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
 
-        *outHit = {};
         FHitResult hit;
         FCollisionQueryParams queryParams;
         queryParams.bTraceComplex = traceComplex != UEC_FALSE;
@@ -99,10 +99,12 @@
                                      uec_actor** outActors,
                                      uint32_t* outCount)
     {
+        if (outCount != nullptr) *outCount = 0;
         if (outCount == nullptr || (maxHits != 0 && outActors == nullptr))
         {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
+        for (uint32_t index = 0; index < maxHits; ++index) outActors[index] = nullptr;
         if (!IsFiniteVector(center)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -115,8 +117,6 @@
         ECollisionChannel collisionChannel;
         if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
 
-        *outCount = 0;
-        for (uint32_t index = 0; index < maxHits; ++index) outActors[index] = nullptr;
         TArray<FOverlapResult> overlaps;
         FCollisionQueryParams queryParams;
         const bool hasOverlap = world->OverlapMultiByChannel(
@@ -179,6 +179,7 @@
     uec_result UEC_CALL GetComponentVelocity(uec_scene_component* rawComponent,
                                              uec_vector3* outVelocity)
     {
+        if (outVelocity != nullptr) *outVelocity = {};
         if (outVelocity == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -221,11 +222,11 @@
 
     uec_result UEC_CALL RetainObject(uec_object* rawObject, uec_object** outRetainedObject)
     {
+        if (outRetainedObject != nullptr) *outRetainedObject = nullptr;
         if (outRetainedObject == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
         if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outRetainedObject = nullptr;
         UObject* object = objectHandle->Value.Get();
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
         FUECObject* retained = MakeRetainedObjectHandle(object);
@@ -239,6 +240,7 @@
                                               size_t bufferSize,
                                               size_t* requiredSize)
     {
+        if (requiredSize != nullptr) *requiredSize = 0;
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -251,6 +253,7 @@
                                      uec_string_view classPath,
                                      uec_bool* outIsA)
     {
+        if (outIsA != nullptr) *outIsA = UEC_FALSE;
         if (outIsA == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -307,6 +310,7 @@
                                           size_t bufferSize,
                                           size_t* requiredSize)
     {
+        if (requiredSize != nullptr) *requiredSize = 0;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -319,6 +323,7 @@
                                  uec_string_view classPath,
                                  uec_bool* outIsA)
     {
+        if (outIsA != nullptr) *outIsA = UEC_FALSE;
         if (outIsA == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -379,6 +384,7 @@
                                           uint32_t ignoredActorCount,
                                           uec_hit_result* outHit)
     {
+        if (outHit != nullptr) *outHit = {};
         if (outHit == nullptr || (ignoredActorCount != 0 && ignoredActors == nullptr) ||
             !IsFiniteVector(start) || !IsFiniteVector(end) || !IsValidBool(traceComplex)) {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -402,7 +408,6 @@
             queryParams.AddIgnoredActor(actor);
         }
 
-        *outHit = {};
         FHitResult hit;
         const bool didHit = world->LineTraceSingleByChannel(
             hit,
@@ -434,6 +439,7 @@
                                            uint32_t ignoredActorCount,
                                            uec_hit_result* outHit)
     {
+        if (outHit != nullptr) *outHit = {};
         if (outHit == nullptr || (ignoredActorCount != 0 && ignoredActors == nullptr) ||
             !IsFiniteVector(start) || !IsFiniteVector(end) || !IsValidBool(traceComplex)) {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -458,7 +464,6 @@
             if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
             queryParams.AddIgnoredActor(actor);
         }
-        *outHit = {};
         FHitResult hit;
         const bool didHit = world->SweepSingleByChannel(
             hit,
@@ -493,10 +498,12 @@
                                              uec_actor** outActors,
                                              uint32_t* outCount)
     {
+        if (outCount != nullptr) *outCount = 0;
         if (outCount == nullptr || (maxHits != 0 && outActors == nullptr) ||
             (ignoredActorCount != 0 && ignoredActors == nullptr) || !IsFiniteVector(center)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
+        for (uint32_t index = 0; index < maxHits; ++index) outActors[index] = nullptr;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -516,8 +523,6 @@
             if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
             queryParams.AddIgnoredActor(actor);
         }
-        *outCount = 0;
-        for (uint32_t index = 0; index < maxHits; ++index) outActors[index] = nullptr;
         TArray<FOverlapResult> overlaps;
         const bool hasOverlap = world->OverlapMultiByChannel(
             overlaps,
@@ -552,6 +557,7 @@
                                         size_t bufferSize,
                                         size_t* requiredSize)
     {
+        if (requiredSize != nullptr) *requiredSize = 0;
         if (requiredSize == nullptr || !IsValidStringView(section) || section.size == 0 ||
             !IsValidStringView(key) || key.size == 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -588,6 +594,7 @@
                                          void* userData,
                                          uint64_t* outSubscriptionId)
     {
+        if (outSubscriptionId != nullptr) *outSubscriptionId = 0;
         if (callback == nullptr || outSubscriptionId == nullptr) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }

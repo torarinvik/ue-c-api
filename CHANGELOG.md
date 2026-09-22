@@ -176,6 +176,9 @@ development; they do not imply a published or runtime-verified release.
   transforms, bounds, and bounded-name sizes before validation.
 - Widget, audio, camera, and animation adapters now clear handles, scalar
   values, and subscription ids before validation.
+- Collision, retained-object, identity, configuration, and hit-callback
+  adapters now clear their handles, records, counts, booleans, sizes, and ids
+  before validation.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,
