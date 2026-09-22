@@ -178,9 +178,26 @@ namespace
 
     static FString ToFString(uec_string_view value)
     {
-        if (value.data == nullptr || value.size == 0) return FString();
+        if (value.data == nullptr || value.size == 0 || value.size > static_cast<size_t>(INT32_MAX)) return FString();
         FUTF8ToTCHAR converter(value.data, static_cast<int32>(value.size));
         return FString(converter.Length(), converter.Get());
+    }
+
+    static bool IsValidStringView(uec_string_view value)
+    {
+        return (value.data != nullptr || value.size == 0) && value.size <= static_cast<size_t>(INT32_MAX);
+    }
+
+    static bool IsFiniteVector(const uec_vector3& value)
+    {
+        return FMath::IsFinite(value.x) && FMath::IsFinite(value.y) && FMath::IsFinite(value.z);
+    }
+
+    static bool IsFiniteTransform(const uec_transform& value)
+    {
+        return IsFiniteVector(value.translation) && IsFiniteVector(value.scale) &&
+            FMath::IsFinite(value.rotation.x) && FMath::IsFinite(value.rotation.y) &&
+            FMath::IsFinite(value.rotation.z) && FMath::IsFinite(value.rotation.w);
     }
 
     static FTransform ToFTransform(const uec_transform& value)
@@ -305,7 +322,7 @@ namespace
         {
             return UEC_RESULT_INVALID_HANDLE;
         }
-        if (message.data == nullptr && message.size != 0)
+        if (!IsValidStringView(message))
         {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -642,6 +659,7 @@ namespace
                                    const uec_transform* transform, uec_actor** outActor)
     {
         if (outActor == nullptr || transform == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(classPath) || !IsFiniteTransform(*transform)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -704,7 +722,7 @@ namespace
 
     uec_result UEC_CALL SetActorTransform(uec_actor* rawActor, const uec_transform* transform, uec_bool sweep)
     {
-        if (transform == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (transform == nullptr || !IsFiniteTransform(*transform)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -837,7 +855,7 @@ namespace
                                                const uec_transform* transform,
                                                uec_bool sweep)
     {
-        if (transform == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (transform == nullptr || !IsFiniteTransform(*transform)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;

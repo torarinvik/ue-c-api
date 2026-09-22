@@ -27,7 +27,9 @@ phase of the implementation plan.
 Strings are UTF-8 views with an explicit byte length. The caller owns the bytes
 for the duration of a call; the bridge does not retain them. Transforms use
 double-precision values in Unreal's world units and the Unreal quaternion
-component order `(x, y, z, w)`.
+component order `(x, y, z, w)`. Null pointers paired with nonzero lengths,
+lengths that cannot fit Unreal's `int32` string conversion, and non-finite
+transform values are rejected as invalid arguments.
 
 World enumeration reports active Game and PIE worlds by index and labels each
 handle with its world kind. `get_default_world` remains a convenience operation
