@@ -174,6 +174,8 @@ development; they do not imply a published or runtime-verified release.
   removing duplicate registry insertion behavior.
 - Actor and scene-component queries now clear handles, counts, booleans,
   transforms, bounds, and bounded-name sizes before validation.
+- Widget, audio, camera, and animation adapters now clear handles, scalar
+  values, and subscription ids before validation.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

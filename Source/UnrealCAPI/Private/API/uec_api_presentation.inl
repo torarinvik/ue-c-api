@@ -3,11 +3,11 @@
                                      uec_string_view widgetClassPath,
                                      uec_object** outWidget)
     {
+        if (outWidget != nullptr) *outWidget = nullptr;
         if (outWidget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outWidget = nullptr;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         if (!IsValidStringView(widgetClassPath) || widgetClassPath.size == 0) {
@@ -84,6 +84,7 @@
                                           void* userData,
                                           uint64_t* outSubscriptionId)
     {
+        if (outSubscriptionId != nullptr) *outSubscriptionId = 0;
         if (callback == nullptr || outSubscriptionId == nullptr)
         {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -151,6 +152,7 @@
     uec_result UEC_CALL GetCameraFieldOfView(uec_scene_component* rawComponent,
                                              double* outDegrees)
     {
+        if (outDegrees != nullptr) *outDegrees = 0.0;
         if (outDegrees == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -184,6 +186,7 @@
                                            double pitchMultiplier,
                                            uec_object** outAudioComponent)
     {
+        if (outAudioComponent != nullptr) *outAudioComponent = nullptr;
         if (outAudioComponent == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawAttachTo);
         auto* soundHandle = reinterpret_cast<FUECObject*>(rawSound);
@@ -194,7 +197,6 @@
             volumeMultiplier < 0.0 || pitchMultiplier <= 0.0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
-        *outAudioComponent = nullptr;
         USceneComponent* attachTo = componentHandle->Value.Get();
         USoundBase* sound = Cast<USoundBase>(soundHandle->Value.Get());
         if (attachTo == nullptr || sound == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
@@ -238,6 +240,7 @@
                                           void* userData,
                                           uint64_t* outSubscriptionId)
     {
+        if (outSubscriptionId != nullptr) *outSubscriptionId = 0;
         if (callback == nullptr || outSubscriptionId == nullptr)
         {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -428,6 +431,7 @@
                                               void* userData,
                                               uint64_t* outSubscriptionId)
     {
+        if (outSubscriptionId != nullptr) *outSubscriptionId = 0;
         if (callback == nullptr || outSubscriptionId == nullptr) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
