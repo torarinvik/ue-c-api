@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.53`.
+The current runtime slice is intentionally small and versioned as ABI `1.54`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -119,6 +119,13 @@ by Unreal before the call and do not consume an argument. It rejects latent and
 network functions; text syntax is engine-version-specific and the call remains
 game-thread-only. Multiple out parameters beyond the first are executed but
 are not returned by this convenience surface.
+
+`subscribe_world_tick` registers a per-frame callback on the core Unreal
+ticker and associates it with a world handle. The callback runs on the game
+thread with the frame delta in seconds; it is suppressed automatically when
+the world is destroyed or the module begins shutdown. `unsubscribe_world_tick`
+is game-thread-only and accepts the returned subscription token. Callback
+`user_data` is borrowed until the subscription is removed.
 
 `load_object` synchronously loads an object from a runtime object path and
 returns a weak opaque handle. The handle does not keep the UObject alive; calls

@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 53u
+#define UEC_ABI_MINOR 54u
 
 #ifdef __cplusplus
 extern "C" {
@@ -212,6 +212,9 @@ typedef struct uec_hit_result {
 } uec_hit_result;
 
 typedef void (UEC_CALL *uec_timer_callback)(uint64_t timer_id, void* user_data);
+typedef void (UEC_CALL *uec_tick_callback)(uint64_t subscription_id,
+                                           double delta_seconds,
+                                           void* user_data);
 typedef void (UEC_CALL *uec_object_load_callback)(uint64_t request_id,
                                                   uec_result result,
                                                   uec_object* object,
@@ -586,6 +589,12 @@ typedef struct uec_api {
         size_t return_buffer_size,
         size_t* return_required_size,
         uec_property_kind* out_return_kind);
+    uec_result (UEC_CALL *subscribe_world_tick)(uec_world* world,
+                                                uec_tick_callback callback,
+                                                void* user_data,
+                                                uint64_t* out_subscription_id);
+    uec_result (UEC_CALL *unsubscribe_world_tick)(uec_context* context,
+                                                  uint64_t subscription_id);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

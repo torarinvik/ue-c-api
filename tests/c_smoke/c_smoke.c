@@ -37,6 +37,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_player_controller) >
 UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_text) >
                    offsetof(uec_api, get_world_game_instance),
                "text-marshaled invocation must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, subscribe_world_tick) >
+                   offsetof(uec_api, invoke_actor_function_text),
+               "tick subscriptions must append to uec_api");
 
 int main(void)
 {

@@ -568,6 +568,77 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL SubscribeWorldTick(uec_world* rawWorld,
+                                           uec_tick_callback callback,
+                                           void* userData,
+                                           uint64_t* outSubscriptionId)
+    {
+        if (callback == nullptr || outSubscriptionId == nullptr)
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+
+        const uint64 subscriptionId = GNextTickSubscriptionId++;
+        auto subscription = MakeShared<FUECTickSubscription>();
+        subscription->Id = subscriptionId;
+        subscription->World = world;
+        subscription->Callback = callback;
+        subscription->UserData = userData;
+        TWeakPtr<FUECTickSubscription> weakSubscription = subscription;
+        subscription->Handle = FTSTicker::GetCoreTicker().AddTicker(
+            FTickerDelegate::CreateLambda([weakSubscription](float deltaSeconds)
+            {
+                TSharedPtr<FUECTickSubscription> current = weakSubscription.Pin();
+                if (!current.IsValid() || current->Cancelled || IsShuttingDown())
+                {
+                    return false;
+                }
+                if (current->World.Get() == nullptr)
+                {
+                    GTickSubscriptions.Remove(current->Id);
+                    return false;
+                }
+                current->InCallback = true;
+                current->Callback(current->Id, static_cast<double>(deltaSeconds), current->UserData);
+                current->InCallback = false;
+                if (current->Cancelled || IsShuttingDown())
+                {
+                    GTickSubscriptions.Remove(current->Id);
+                    return false;
+                }
+                return true;
+            }),
+            0.0f);
+        GTickSubscriptions.Add(subscriptionId, subscription);
+        *outSubscriptionId = subscriptionId;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL UnsubscribeWorldTick(uec_context* rawContext,
+                                             uint64_t subscriptionId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        TSharedPtr<FUECTickSubscription>* subscriptionPtr = GTickSubscriptions.Find(subscriptionId);
+        if (subscriptionPtr == nullptr || !subscriptionPtr->IsValid())
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        TSharedPtr<FUECTickSubscription> subscription = *subscriptionPtr;
+        subscription->Cancelled = true;
+        if (!subscription->InCallback)
+        {
+            FTSTicker::RemoveTicker(subscription->Handle);
+        }
+        GTickSubscriptions.Remove(subscriptionId);
+        return UEC_RESULT_OK;
+    }
+
     static void ClearAllTimers()
     {
         for (const TPair<uint64, TSharedPtr<FUECTimerState>>& pair : GTimers)
@@ -582,6 +653,19 @@
             }
         }
         GTimers.Empty();
+    }
+
+    static void ClearAllTickSubscriptions()
+    {
+        for (const TPair<uint64, TSharedPtr<FUECTickSubscription>>& pair : GTickSubscriptions)
+        {
+            if (pair.Value.IsValid())
+            {
+                pair.Value->Cancelled = true;
+                FTSTicker::RemoveTicker(pair.Value->Handle);
+            }
+        }
+        GTickSubscriptions.Empty();
     }
 
     static void ClearAllHandles()
@@ -654,5 +738,3 @@
         }
         return UEC_RESULT_INVALID_ARGUMENT;
     }
-
-

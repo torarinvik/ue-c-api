@@ -62,6 +62,8 @@ development; they do not imply a published or runtime-verified release.
   bounded return or first-out value, excluding latent and network functions.
 - A module-shutdown gate that rejects new contexts, invalidates handle checks,
   and suppresses late work while teardown cancels pending operations.
+- World tick subscriptions with per-frame game-thread callbacks, unsubscribe
+  tokens, world-destruction invalidation, and shutdown cleanup.
 - C consumer source and public math-type layout assertions.
 - GitHub Actions checks for C11/C++17 headers and descriptor JSON on Linux
   (GCC and Clang) and macOS (Clang), on pushes and pull requests.

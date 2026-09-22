@@ -16,6 +16,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Actor transforms | Runtime implemented / Unreal integration pending | Double-precision C POD transform; game thread only |
 | Scene components | Runtime implemented / Unreal integration pending | Root-component handle, world transforms, visibility, activation |
 | Timers | Runtime implemented / Unreal integration pending | One-shot and looping game-thread callbacks with cancellation |
+| World tick subscriptions | Runtime implemented / Unreal integration pending | Per-frame game-thread callbacks scoped to a world with unsubscribe tokens and teardown cleanup |
 | Class/property metadata | Runtime implemented / Unreal integration pending | Class lookup, inheritance, names, and broad reflected property kinds |
 | Reflected scalar/string reads and writes | Runtime implemented / Unreal integration pending | Typed bool, integer, enum, and floating-point values plus string, name, text, hard object references, and Unreal text serialization for supported structs and containers |
 | Collision line traces | Runtime implemented / Unreal integration pending | Game-thread single traces with stable channel mapping and ignored-actor filtering |

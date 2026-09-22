@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Async/Async.h"
+#include "Containers/Ticker.h"
 #include "Engine/AssetManager.h"
 #include "Engine/Engine.h"
 #include "EngineUtils.h"
@@ -67,6 +68,16 @@ namespace
         bool Looping = false;
         bool Cancelled = false;
     };
+    struct FUECTickSubscription final
+    {
+        uint64 Id = 0;
+        TWeakObjectPtr<UWorld> World;
+        uec_tick_callback Callback = nullptr;
+        void* UserData = nullptr;
+        FTSTicker::FDelegateHandle Handle;
+        bool Cancelled = false;
+        bool InCallback = false;
+    };
     struct FUECClass final { TWeakObjectPtr<UClass> Value; };
     struct FUECObject final
     {
@@ -113,6 +124,7 @@ namespace
     TSet<const FUECActor*> GActors;
     TSet<const FUECSceneComponent*> GComponents;
     TMap<uint64, TSharedPtr<FUECTimerState>> GTimers;
+    TMap<uint64, TSharedPtr<FUECTickSubscription>> GTickSubscriptions;
     TSet<const FUECClass*> GClasses;
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
@@ -122,10 +134,17 @@ namespace
     uint64 GNextObjectLoadRequestId = 1;
     uint64 GNextGameThreadRequestId = 1;
     uint64 GNextTimerId = 1;
+    uint64 GNextTickSubscriptionId = 1;
     uint64 GNextSaveGameRequestId = 1;
     uint64 GNextInputBindingId = 1;
     constexpr int32 MaxQueuedObjectLoads = 1024;
     constexpr int32 MaxQueuedGameThreadRequests = 1024;
+
+    static bool IsShuttingDown()
+    {
+        FScopeLock lock(&GHandleMutex);
+        return GShuttingDown;
+    }
 
     static bool IsValidContext(uec_context* rawContext)
     {
@@ -407,7 +426,8 @@ namespace
         &GetActorCountByClass, &GetActorAtByClass, &DestroyAudioComponent,
         &BindInputAction, &UnbindInputAction,
         &GetPlayerController, &GetWorldGameInstance,
-        &InvokeActorFunctionText
+        &InvokeActorFunctionText,
+        &SubscribeWorldTick, &UnsubscribeWorldTick
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
@@ -430,6 +450,7 @@ public:
             GShuttingDown = true;
         }
         ClearAllTimers();
+        ClearAllTickSubscriptions();
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
         CancelAllSaveGameRequests();
