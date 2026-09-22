@@ -99,8 +99,8 @@ travel request through `UGameplayStatics::OpenLevel`; the call returning `OK`
 means the request was submitted, not that loading has completed. The bridge
 cancels timers, world-tick subscriptions, and actor-scoped collision/input
 subscriptions owned by that world and immediately invalidates its world, actor,
-and component handles; reacquire a world after travel and treat object handles
-from the old world as potentially invalid.
+component, and world-bound object handles; global asset handles remain valid.
+Reacquire a world after travel and reacquire objects from the new world.
 
 Player-flow helpers use actor handles for controllers, pawns, and view targets;
 the controller and target handles must belong to the same world, including the

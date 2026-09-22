@@ -196,7 +196,8 @@ development; they do not imply a published or runtime-verified release.
   subscriptions, pending requests, and callbacks before consumer unload.
 - Level travel now cancels world-owned timers and tick subscriptions and
   actor-scoped collision/input subscriptions, then invalidates world, actor,
-  and component bridge handles immediately before submitting the request.
+  component, and world-bound object bridge handles immediately before
+  submitting the request while leaving global asset handles valid.
 - One-shot widget, audio, and component-hit callbacks now avoid touching a raw
   Unreal delegate after cancellation or destruction from inside the callback.
 - Asynchronous object-load completions now use the shared gated object-handle

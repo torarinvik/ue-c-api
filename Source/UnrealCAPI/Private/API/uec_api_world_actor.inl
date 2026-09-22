@@ -396,6 +396,17 @@
             TombstoneHandle(mutableCandidate->Header);
             mutableCandidate->Value.Reset();
         }
+        if (GEngine == nullptr) return;
+        for (const FUECObject* candidate : GObjects)
+        {
+            UObject* object = candidate == nullptr ? nullptr : candidate->Value.Get();
+            if (object == nullptr || GEngine->GetWorldFromContextObject(
+                object, EGetWorldErrorMode::ReturnNull) != world) continue;
+            auto* mutableCandidate = const_cast<FUECObject*>(candidate);
+            TombstoneHandle(mutableCandidate->Header);
+            mutableCandidate->Value.Reset();
+            mutableCandidate->StrongValue.Reset();
+        }
     }
 
     uec_result UEC_CALL TravelWorld(uec_world* rawWorld, uec_string_view levelPath)
