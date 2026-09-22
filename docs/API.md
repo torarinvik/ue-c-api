@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.116`.
+The current runtime slice is intentionally small and versioned as ABI `1.117`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -208,6 +208,10 @@ use the same traversal and access checks as the nested text writer.
 ABI minor 116 adds `get_class_property_default_text`, which exports the class
 default object's value for a reflected property in the same order as
 `get_class_property_at`.
+
+ABI minor 117 adds `get_class_property_reference_class_path` for object, class,
+and soft-reference properties. It returns the referenced Unreal class path in
+the same reflected property order and reports the property's broad kind.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

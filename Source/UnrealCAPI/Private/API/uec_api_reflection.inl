@@ -289,6 +289,46 @@
         return UEC_RESULT_INVALID_ARGUMENT;
     }
 
+    uec_result UEC_CALL GetClassPropertyReferenceClassPath(uec_class* rawClass,
+                                                           uint32_t index,
+                                                           char* buffer,
+                                                           size_t bufferSize,
+                                                           size_t* requiredSize,
+                                                           uec_property_kind* outKind)
+    {
+        if (requiredSize == nullptr || outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *requiredSize = 0;
+        *outKind = UEC_PROPERTY_UNKNOWN;
+        auto* handle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = handle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        uint32_t current = 0;
+        for (TFieldIterator<FProperty> iterator(klass, EFieldIteratorFlags::IncludeSuper);
+             iterator; ++iterator)
+        {
+            if (current++ != index) continue;
+            FProperty* property = *iterator;
+            UClass* referencedClass = nullptr;
+            if (const FClassProperty* classProperty = CastField<FClassProperty>(property)) {
+                referencedClass = classProperty->MetaClass;
+            } else if (const FSoftClassProperty* softClassProperty = CastField<FSoftClassProperty>(property)) {
+                referencedClass = softClassProperty->MetaClass;
+            } else if (const FSoftObjectProperty* softObjectProperty = CastField<FSoftObjectProperty>(property)) {
+                referencedClass = softObjectProperty->PropertyClass;
+            } else if (const FObjectPropertyBase* objectProperty = CastField<FObjectPropertyBase>(property)) {
+                referencedClass = objectProperty->PropertyClass;
+            } else {
+                return UEC_RESULT_UNSUPPORTED;
+            }
+            if (referencedClass == nullptr) return UEC_RESULT_UNSUPPORTED;
+            *outKind = GetPropertyKind(property);
+            return CopyFStringToUtf8(referencedClass->GetPathName(), buffer, bufferSize, requiredSize);
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+
     uec_result UEC_CALL GetClassFunctionFlags(uec_class* rawClass,
                                               uint32_t index,
                                               uint32_t* outFlags)

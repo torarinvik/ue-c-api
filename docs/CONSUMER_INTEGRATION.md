@@ -131,6 +131,8 @@ ABI 115 adds typed scalar writes for nested struct fields, including dotted
 paths such as `Transform.Location.X`.
 ABI 116 adds class-default property text readback using the reflected property
 order, so consumers can inspect defaults without constructing an instance.
+ABI 117 adds referenced-class paths for object, class, and soft-reference
+properties, allowing consumers to validate target classes before writes.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

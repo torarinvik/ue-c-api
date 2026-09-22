@@ -264,6 +264,8 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 115 adds typed scalar writes for nested reflected-struct fields,
   including dotted paths.
 - ABI minor 116 adds class-default reflected property text readback.
+- ABI minor 117 adds referenced-class path metadata for reflected object, class,
+  and soft-reference properties.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

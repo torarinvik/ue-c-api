@@ -844,6 +844,19 @@ static uec_result UEC_CALL StubGetClassPropertyDefaultText(
     return requiredSize == NULL || outKind == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetClassPropertyReferenceClassPath(
+    uec_class* klass, uint32_t index, char* buffer, size_t bufferSize,
+    size_t* requiredSize, uec_property_kind* outKind)
+{
+    (void)klass;
+    (void)index;
+    (void)buffer;
+    (void)bufferSize;
+    if (requiredSize != NULL) *requiredSize = 0u;
+    if (outKind != NULL) *outKind = UEC_PROPERTY_UNKNOWN;
+    return requiredSize == NULL || outKind == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetClassPropertyFlags(uec_class* klass,
                                                      uint32_t index,
                                                      uint32_t* outFlags)
@@ -940,6 +953,7 @@ static const uec_api g_api = {
     .set_actor_property_struct_field_value = &StubSetActorPropertyStructFieldValue,
     .set_object_property_struct_field_value = &StubSetObjectPropertyStructFieldValue,
     .get_class_property_default_text = &StubGetClassPropertyDefaultText,
+    .get_class_property_reference_class_path = &StubGetClassPropertyReferenceClassPath,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
