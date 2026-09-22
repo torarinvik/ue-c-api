@@ -467,6 +467,146 @@
         return CopyFStringToUtf8(value, buffer, bufferSize, requiredSize);
     }
 
+    static uec_result PrepareTextOutput(uec_text_output* output)
+    {
+        if (output == nullptr || output->struct_size < sizeof(uec_text_output)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        output->kind = UEC_PROPERTY_UNKNOWN;
+        output->required_size = 0;
+        return UEC_RESULT_OK;
+    }
+
+    static uec_result ExportPropertyText(FProperty* property,
+                                         void* value,
+                                         UObject* owner,
+                                         uec_text_output* output)
+    {
+        if (property == nullptr || value == nullptr || output == nullptr) return UEC_RESULT_UNSUPPORTED;
+        output->kind = GetPropertyKind(property);
+        FString text;
+        property->ExportTextItem_Direct(text, value, nullptr, owner, PPF_None, owner);
+        return CopyFStringToUtf8(text, output->buffer, output->buffer_size, &output->required_size);
+    }
+
+    uec_result UEC_CALL GetObjectPropertyMapCount(uec_object* rawObject,
+                                                   uec_string_view propertyName,
+                                                   uint32_t* outCount)
+    {
+        if (outCount != nullptr) *outCount = 0;
+        if (outCount == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FMapProperty* mapProperty = CastField<FMapProperty>(
+            object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (mapProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
+        FScriptMapHelper helper(mapProperty, mapProperty->ContainerPtrToValuePtr<void>(object));
+        if (helper.Num() < 0 || static_cast<uint64>(helper.Num()) > UINT32_MAX) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        *outCount = static_cast<uint32_t>(helper.Num());
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetObjectPropertyMapEntryText(uec_object* rawObject,
+                                                      uec_string_view propertyName,
+                                                      uint32_t index,
+                                                      uec_text_output* outKey,
+                                                      uec_text_output* outValue)
+    {
+        const uec_result keyStatus = PrepareTextOutput(outKey);
+        const uec_result valueStatus = PrepareTextOutput(outValue);
+        if (keyStatus != UEC_RESULT_OK || valueStatus != UEC_RESULT_OK) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FMapProperty* mapProperty = CastField<FMapProperty>(
+            object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (mapProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
+        FScriptMapHelper helper(mapProperty, mapProperty->ContainerPtrToValuePtr<void>(object));
+        if (index >= static_cast<uint32_t>(helper.Num())) return UEC_RESULT_INVALID_ARGUMENT;
+        int32 slot = INDEX_NONE;
+        uint32_t current = 0;
+        for (int32 candidate = 0; candidate < helper.GetMaxIndex(); ++candidate)
+        {
+            if (!helper.IsValidIndex(candidate)) continue;
+            if (current++ == index) { slot = candidate; break; }
+        }
+        if (slot == INDEX_NONE) return UEC_RESULT_INTERNAL_ERROR;
+        const uec_result keyResult = ExportPropertyText(
+            mapProperty->KeyProp, helper.GetKeyPtr(slot), object, outKey);
+        const uec_result valueResult = ExportPropertyText(
+            mapProperty->ValueProp, helper.GetValuePtr(slot), object, outValue);
+        if (keyResult != UEC_RESULT_OK) return keyResult;
+        return valueResult;
+    }
+
+    uec_result UEC_CALL GetObjectPropertySetCount(uec_object* rawObject,
+                                                   uec_string_view propertyName,
+                                                   uint32_t* outCount)
+    {
+        if (outCount != nullptr) *outCount = 0;
+        if (outCount == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FSetProperty* setProperty = CastField<FSetProperty>(
+            object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (setProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
+        FScriptSetHelper helper(setProperty, setProperty->ContainerPtrToValuePtr<void>(object));
+        if (helper.Num() < 0 || static_cast<uint64>(helper.Num()) > UINT32_MAX) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        *outCount = static_cast<uint32_t>(helper.Num());
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetObjectPropertySetElementText(uec_object* rawObject,
+                                                        uec_string_view propertyName,
+                                                        uint32_t index,
+                                                        uec_text_output* outElement)
+    {
+        if (PrepareTextOutput(outElement) != UEC_RESULT_OK) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FSetProperty* setProperty = CastField<FSetProperty>(
+            object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (setProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
+        FScriptSetHelper helper(setProperty, setProperty->ContainerPtrToValuePtr<void>(object));
+        if (index >= static_cast<uint32_t>(helper.Num())) return UEC_RESULT_INVALID_ARGUMENT;
+        int32 slot = INDEX_NONE;
+        uint32_t current = 0;
+        for (int32 candidate = 0; candidate < helper.GetMaxIndex(); ++candidate)
+        {
+            if (!helper.IsValidIndex(candidate)) continue;
+            if (current++ == index) { slot = candidate; break; }
+        }
+        if (slot == INDEX_NONE) return UEC_RESULT_INTERNAL_ERROR;
+        return ExportPropertyText(setProperty->ElementProp, helper.GetElementPtr(slot), object, outElement);
+    }
+
     uec_result UEC_CALL GetObjectPropertyValue(uec_object* rawObject,
                                                uec_string_view propertyName,
                                                uec_property_value* outValue)

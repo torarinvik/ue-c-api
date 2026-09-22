@@ -719,7 +719,7 @@ namespace
         &InvokeActorFunctionValue,
         &InvokeActorFunctionValues, &GetClassFunctionParameterAt,
         &InvokeActorFunctionTextValues, &FindObjectHandle,
-        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText, &GetComponentCollisionEnabled, &GetAudioComponentPlaying, &SetStreamingLevelStateAsync, &CancelStreamingLevelRequest, &GetComponentCollisionResponse, &GetConfigInteger, &SetConfigInteger, &BindActorDestroyed, &UnbindActorDestroyed, &GetConfigBool, &GetActorPropertyArrayCount, &GetActorPropertyArrayElementText, &GetObjectPropertyArrayCount, &GetObjectPropertyArrayElementText
+        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText, &GetComponentCollisionEnabled, &GetAudioComponentPlaying, &SetStreamingLevelStateAsync, &CancelStreamingLevelRequest, &GetComponentCollisionResponse, &GetConfigInteger, &SetConfigInteger, &BindActorDestroyed, &UnbindActorDestroyed, &GetConfigBool, &GetActorPropertyArrayCount, &GetActorPropertyArrayElementText, &GetObjectPropertyArrayCount, &GetObjectPropertyArrayElementText, &GetObjectPropertyMapCount, &GetObjectPropertyMapEntryText, &GetObjectPropertySetCount, &GetObjectPropertySetElementText
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

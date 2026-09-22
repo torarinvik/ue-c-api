@@ -235,6 +235,8 @@ development; they do not imply a published or runtime-verified release.
   readback.
 - ABI minor 101 adds reflected UObject-array count and caller-sized text-element
   readback for retained and other loaded object handles.
+- ABI minor 102 adds reflected UObject-map counts and key/value text entries plus
+  UObject-set counts and element text readback using `uec_text_output` records.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

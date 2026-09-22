@@ -93,6 +93,9 @@ later indices.
 ABI 101 adds the same count and text-element readback for reflected arrays on
 loaded or retained UObject handles. Re-query after mutation and keep returned
 text only in the caller-owned buffer.
+ABI 102 adds UObject map and set counts with text export through initialized
+`uec_text_output` records. Map key/value and set element text is caller-owned;
+iteration order is Unreal-defined and indices must be re-queried after mutation.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.
