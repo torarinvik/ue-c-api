@@ -4,9 +4,11 @@ This project is an Unreal Engine C API: an in-process runtime plugin that expose
 
 The project currently targets the latest Unreal Engine 5.8 release. It will be updated as newer Unreal Engine versions are released so the API remains compatible with the state of the art.
 
-The first runtime slice establishes ABI negotiation, an opaque context, bounded diagnostics, logging, and explicit context release. The standalone C smoke consumer checks that the public header remains valid C11 without requiring Unreal headers.
-
-The initial runtime API also provides game-thread world lookup plus opaque actor handles for spawning, destroying, reading, and setting transforms. It includes bounded class/property metadata and scalar/string property reads. See [docs/API.md](docs/API.md) for ownership and threading rules.
+The runtime API provides ABI negotiation, bounded diagnostics and logging,
+explicit opaque handles, world and actor operations, reflection, collision and
+physics queries, input and movement, camera and mesh presentation, audio, UMG,
+save-game slots, and cancellable game-thread dispatch. See [docs/API.md](docs/API.md)
+for ownership, threading, and unsupported-operation rules.
 
 Run `sh tests/run_checks.sh` to validate the public C/C++ ABI headers and Unreal descriptors without an engine installation. The current feature boundary is tracked in [docs/FEATURES.md](docs/FEATURES.md).
 
@@ -16,7 +18,10 @@ compilation and runtime tests still need an engine installation. See
 [CONTRIBUTING.md](CONTRIBUTING.md) to participate and [CHANGELOG.md](CHANGELOG.md)
 for changes in development.
 
-The plugin must be built against a specific Unreal Engine 5.x version and toolchain. The host project is set to UE 5.8; record the exact engine patch and toolchain used for each build.
+The plugin must be built against a specific Unreal Engine 5.x version and
+toolchain. The host project targets the current UE 5.8 release; record the
+exact engine patch and toolchain used for each build. The project will track
+newer Unreal releases when they become the state-of-the-art supported target.
 
 `UnrealCAPIHost.uproject` is the minimal host project for opening the plugin in Unreal Editor and running integration tests.
 
