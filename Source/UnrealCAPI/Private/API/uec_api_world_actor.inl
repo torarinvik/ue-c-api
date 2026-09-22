@@ -187,6 +187,8 @@
         return UEC_RESULT_OK;
     }
 
+    static FUECObject* MakeObjectHandle(UObject* object);
+
     uec_result UEC_CALL GetWorldGameMode(uec_world* rawWorld, uec_object** outGameMode)
     {
         if (outGameMode == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
