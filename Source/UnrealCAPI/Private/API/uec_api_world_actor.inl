@@ -175,6 +175,18 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetWorldHasAuthority(uec_world* rawWorld, uec_bool* outHasAuthority)
+    {
+        if (outHasAuthority == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        *outHasAuthority = world->GetNetMode() == NM_Client ? UEC_FALSE : UEC_TRUE;
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetWorldName(uec_world* rawWorld,
                                      char* buffer,
                                      size_t bufferSize,

@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 70u
+#define UEC_ABI_MINOR 71u
 
 #ifdef __cplusplus
 extern "C" {
@@ -690,6 +690,8 @@ typedef struct uec_api {
                                                    uint64_t* out_subscription_id);
     uec_result (UEC_CALL *unbind_animation_finished)(uec_context* context,
                                                      uint64_t subscription_id);
+    uec_result (UEC_CALL *get_world_has_authority)(uec_world* world,
+                                                   uec_bool* out_has_authority);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

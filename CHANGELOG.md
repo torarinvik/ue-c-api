@@ -76,6 +76,8 @@ development; they do not imply a published or runtime-verified release.
 - Actor tag enumeration, world-space actor bounds, and indexed player-start lookup.
 - Tokenized one-shot skeletal-animation completion callbacks with cancellation
   and shutdown cleanup.
+- Read-only world-authority queries for standalone, client, listen-server, and
+  dedicated-server workflows.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Explicit overflow checks on world, component, class-property, and reflected-function enumeration counts.
 - Strict 0/1 validation for boolean inputs across transforms, collision,
