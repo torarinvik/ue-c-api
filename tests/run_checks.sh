@@ -57,4 +57,13 @@ for source_file in "$public_dir/uec_api.h" "$private_dir/uec_api.cpp" "$private_
     fi
 done
 
+for source_file in "$repo_dir"/tests/c_smoke/c_host_stub_*.inl; do
+    line_count=$(wc -l < "$source_file" | tr -d ' ')
+    if [ "$line_count" -lt 400 ] || [ "$line_count" -gt 800 ]; then
+        printf 'Smoke stub unit is outside the 400-800 line budget: %s (%s lines)\n' \
+            "$source_file" "$line_count" >&2
+        exit 1
+    fi
+done
+
 printf '%s\n' 'C/C++ public-header, linked C consumer, Unreal descriptor, and private-layout checks passed.'
