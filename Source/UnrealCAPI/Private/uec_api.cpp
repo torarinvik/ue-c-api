@@ -253,16 +253,69 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    static bool IsValidStringView(uec_string_view value);
+
     static FString ToFString(uec_string_view value)
     {
-        if (value.data == nullptr || value.size == 0 || value.size > static_cast<size_t>(INT32_MAX)) return FString();
+        if (!IsValidStringView(value) || value.size == 0) return FString();
         FUTF8ToTCHAR converter(value.data, static_cast<int32>(value.size));
         return FString(converter.Length(), converter.Get());
     }
 
+    static bool IsValidUtf8(uec_string_view value)
+    {
+        const uint8_t* bytes = reinterpret_cast<const uint8_t*>(value.data);
+        size_t index = 0;
+        while (index < value.size)
+        {
+            const uint8_t first = bytes[index++];
+            if (first <= 0x7Fu) continue;
+            uint32 codePoint = 0;
+            size_t continuationCount = 0;
+            uint32 minimum = 0;
+            if (first >= 0xC2u && first <= 0xDFu)
+            {
+                codePoint = first & 0x1Fu;
+                continuationCount = 1;
+                minimum = 0x80u;
+            }
+            else if (first >= 0xE0u && first <= 0xEFu)
+            {
+                codePoint = first & 0x0Fu;
+                continuationCount = 2;
+                minimum = 0x800u;
+            }
+            else if (first >= 0xF0u && first <= 0xF4u)
+            {
+                codePoint = first & 0x07u;
+                continuationCount = 3;
+                minimum = 0x10000u;
+            }
+            else
+            {
+                return false;
+            }
+            if (index + continuationCount > value.size) return false;
+            for (size_t continuation = 0; continuation < continuationCount; ++continuation)
+            {
+                const uint8_t next = bytes[index++];
+                if ((next & 0xC0u) != 0x80u) return false;
+                codePoint = (codePoint << 6u) | (next & 0x3Fu);
+            }
+            if (codePoint < minimum || codePoint > 0x10FFFFu ||
+                (codePoint >= 0xD800u && codePoint <= 0xDFFFu))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     static bool IsValidStringView(uec_string_view value)
     {
-        return (value.data != nullptr || value.size == 0) && value.size <= static_cast<size_t>(INT32_MAX);
+        return (value.data != nullptr || value.size == 0) &&
+            value.size <= static_cast<size_t>(INT32_MAX) &&
+            (value.size == 0 || IsValidUtf8(value));
     }
 
     static bool IsFiniteVector(const uec_vector3& value)

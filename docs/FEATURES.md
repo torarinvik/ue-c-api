@@ -8,7 +8,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | --- | --- | --- |
 | ABI bootstrap and version negotiation | Runtime implemented / header verified | `uec_get_api`, versioned function table, capability bits |
 | C and C++ public-header compatibility | Verified | C11 and C++17 syntax checks pass |
-| Diagnostics and logging | Runtime implemented | Bounded `get_last_error`; game log output |
+| Diagnostics and logging | Runtime implemented | Bounded `get_last_error`; game log output; strict UTF-8 input validation |
 | Context/world/actor handles | Runtime implemented / Unreal integration pending | Typed active registries and weak UObject references |
 | World selection | Runtime implemented / Unreal integration pending | Indexed active Game/PIE enumeration, world kind, PIE instance identifiers, network mode, and first-world convenience |
 | Actor spawn and destruction | Runtime implemented / Unreal integration pending | Loadable actor class paths; game thread only |
