@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.100`.
+The current runtime slice is intentionally small and versioned as ABI `1.101`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -134,6 +134,12 @@ ABI minor 100 adds `get_actor_property_array_count` and
 `get_actor_property_array_element_text`. They expose reflected dynamic arrays
 through a count and caller-owned text values; the returned element text follows
 Unreal's reflection serialization and remains valid only in the caller buffer.
+
+ABI minor 101 adds `get_object_property_array_count` and
+`get_object_property_array_element_text`. They apply the same count and
+caller-owned text contract to reflected arrays on loaded or retained UObject
+handles. Re-query the count after any mutation; element text is serialized by
+Unreal and remains valid only in the caller buffer.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

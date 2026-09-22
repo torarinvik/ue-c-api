@@ -412,6 +412,61 @@
         }
         return UEC_RESULT_OK;
     }
+    uec_result UEC_CALL GetObjectPropertyArrayCount(uec_object* rawObject,
+                                                    uec_string_view propertyName,
+                                                    uint32_t* outCount)
+    {
+        if (outCount != nullptr) *outCount = 0;
+        if (outCount == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FArrayProperty* arrayProperty = CastField<FArrayProperty>(
+            object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (arrayProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
+        FScriptArrayHelper helper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(object));
+        if (helper.Num() < 0 || static_cast<uint64>(helper.Num()) > UINT32_MAX) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        *outCount = static_cast<uint32_t>(helper.Num());
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetObjectPropertyArrayElementText(uec_object* rawObject,
+                                                          uec_string_view propertyName,
+                                                          uint32_t index,
+                                                          char* buffer,
+                                                          size_t bufferSize,
+                                                          size_t* requiredSize,
+                                                          uec_property_kind* outKind)
+    {
+        if (requiredSize != nullptr) *requiredSize = 0;
+        if (outKind != nullptr) *outKind = UEC_PROPERTY_UNKNOWN;
+        if (requiredSize == nullptr || outKind == nullptr || !IsValidStringView(propertyName) ||
+            propertyName.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FArrayProperty* arrayProperty = CastField<FArrayProperty>(
+            object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (arrayProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
+        FScriptArrayHelper helper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(object));
+        if (index >= static_cast<uint32_t>(helper.Num())) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* innerProperty = arrayProperty->Inner;
+        if (innerProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
+        *outKind = GetPropertyKind(innerProperty);
+        FString value;
+        innerProperty->ExportTextItem_Direct(value, helper.GetRawPtr(static_cast<int32>(index)),
+                                              nullptr, object, PPF_None, object);
+        return CopyFStringToUtf8(value, buffer, bufferSize, requiredSize);
+    }
+
     uec_result UEC_CALL GetObjectPropertyValue(uec_object* rawObject,
                                                uec_string_view propertyName,
                                                uec_property_value* outValue)

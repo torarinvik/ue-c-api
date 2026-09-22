@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 100u
+#define UEC_ABI_MINOR 101u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -785,6 +785,7 @@ typedef struct uec_api {
     uec_result (UEC_CALL *bind_actor_destroyed)(uec_actor* actor, uec_actor_destroyed_callback callback, void* user_data, uint64_t* out_subscription_id); uec_result (UEC_CALL *unbind_actor_destroyed)(uec_context* context, uint64_t subscription_id);
     uec_result (UEC_CALL *get_config_bool)(uec_context* context, uec_string_view section, uec_string_view key, uec_bool* out_value);
     uec_result (UEC_CALL *get_actor_property_array_count)(uec_actor* actor, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_actor_property_array_element_text)(uec_actor* actor, uec_string_view property_name, uint32_t index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind);
+    uec_result (UEC_CALL *get_object_property_array_count)(uec_object* object, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_object_property_array_element_text)(uec_object* object, uec_string_view property_name, uint32_t index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

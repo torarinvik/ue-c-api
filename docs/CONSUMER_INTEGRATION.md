@@ -90,6 +90,9 @@ integer configuration helpers.
 ABI 100 adds reflected actor-array count and text-element readback. Treat the
 array as invalidated after any mutation and query the count again before using
 later indices.
+ABI 101 adds the same count and text-element readback for reflected arrays on
+loaded or retained UObject handles. Re-query after mutation and keep returned
+text only in the caller-owned buffer.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

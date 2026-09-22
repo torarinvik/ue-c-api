@@ -233,6 +233,8 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 99 adds validated game-INI boolean readback.
 - ABI minor 100 adds actor reflected-array count and caller-sized text-element
   readback.
+- ABI minor 101 adds reflected UObject-array count and caller-sized text-element
+  readback for retained and other loaded object handles.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and
