@@ -75,6 +75,8 @@ development; they do not imply a published or runtime-verified release.
 - Read-only world network-mode queries for standalone, client, listen-server, and dedicated-server contexts.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Explicit overflow checks on world, component, class-property, and reflected-function enumeration counts.
+- Strict 0/1 validation for boolean inputs across transforms, collision,
+  attachment, timer, physics, movement, animation, input, and property writes.
 - C consumer source and public math-type layout assertions.
 - GitHub Actions checks for C11/C++17 headers and descriptor JSON on Linux
   (GCC and Clang) and macOS (Clang), on pushes and pull requests.

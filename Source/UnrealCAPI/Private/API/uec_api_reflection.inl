@@ -214,7 +214,9 @@
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
         {
-            if (value->kind != UEC_PROPERTY_BOOL) return UEC_RESULT_INVALID_ARGUMENT;
+            if (value->kind != UEC_PROPERTY_BOOL || !IsValidBool(value->bool_value)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
             boolProperty->SetPropertyValue_InContainer(actor, value->bool_value != UEC_FALSE);
             return UEC_RESULT_OK;
         }
@@ -398,7 +400,9 @@
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
         {
-            if (value->kind != UEC_PROPERTY_BOOL) return UEC_RESULT_INVALID_ARGUMENT;
+            if (value->kind != UEC_PROPERTY_BOOL || !IsValidBool(value->bool_value)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
             boolProperty->SetPropertyValue_InContainer(object, value->bool_value != UEC_FALSE);
             return UEC_RESULT_OK;
         }

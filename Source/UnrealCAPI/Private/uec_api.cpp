@@ -323,6 +323,11 @@ namespace
         return FMath::IsFinite(value.x) && FMath::IsFinite(value.y) && FMath::IsFinite(value.z);
     }
 
+    static bool IsValidBool(uec_bool value)
+    {
+        return value == UEC_FALSE || value == UEC_TRUE;
+    }
+
     static bool IsFiniteTransform(const uec_transform& value)
     {
         return IsFiniteVector(value.translation) && IsFiniteVector(value.scale) &&

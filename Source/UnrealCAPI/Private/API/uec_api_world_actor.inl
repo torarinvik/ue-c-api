@@ -365,7 +365,9 @@
 
     uec_result UEC_CALL SetActorTransform(uec_actor* rawActor, const uec_transform* transform, uec_bool sweep)
     {
-        if (transform == nullptr || !IsFiniteTransform(*transform)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (transform == nullptr || !IsFiniteTransform(*transform) || !IsValidBool(sweep)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         auto* handle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -499,7 +501,9 @@
                                                const uec_transform* transform,
                                                uec_bool sweep)
     {
-        if (transform == nullptr || !IsFiniteTransform(*transform)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (transform == nullptr || !IsFiniteTransform(*transform) || !IsValidBool(sweep)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -513,6 +517,9 @@
                                              uec_bool visible,
                                              uec_bool propagateToChildren)
     {
+        if (!IsValidBool(visible) || !IsValidBool(propagateToChildren)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -526,6 +533,7 @@
                                             uec_bool active,
                                             uec_bool reset)
     {
+        if (!IsValidBool(active) || !IsValidBool(reset)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -549,7 +557,9 @@
                                  void* userData,
                                  uint64_t* outTimerId)
     {
-        if (outTimerId == nullptr || callback == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (outTimerId == nullptr || callback == nullptr || !IsValidBool(looping)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         if (!FMath::IsFinite(intervalSeconds) || intervalSeconds <= 0.0) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;

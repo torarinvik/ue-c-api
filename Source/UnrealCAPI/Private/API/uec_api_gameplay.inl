@@ -6,7 +6,9 @@
                                   uec_hit_result* outHit)
     {
         if (outHit == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (!IsFiniteVector(start) || !IsFiniteVector(end)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsFiniteVector(start) || !IsFiniteVector(end) || !IsValidBool(traceComplex)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -52,7 +54,9 @@
                                    uec_hit_result* outHit)
     {
         if (outHit == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (!IsFiniteVector(start) || !IsFiniteVector(end)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsFiniteVector(start) || !IsFiniteVector(end) || !IsValidBool(traceComplex)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -429,6 +433,7 @@
                                              uec_bool keepWorldTransform,
                                              uec_string_view socketName)
     {
+        if (!IsValidBool(keepWorldTransform)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* childHandle = reinterpret_cast<FUECSceneComponent*>(rawChild);
         auto* parentHandle = reinterpret_cast<FUECSceneComponent*>(rawParent);
         if (!IsValidComponent(childHandle) || !IsValidComponent(parentHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -448,6 +453,7 @@
     uec_result UEC_CALL DetachSceneComponent(uec_scene_component* rawComponent,
                                              uec_bool keepWorldTransform)
     {
+        if (!IsValidBool(keepWorldTransform)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -515,6 +521,7 @@
                                                       uec_trace_channel channel,
                                                       uec_bool block)
     {
+        if (!IsValidBool(block)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -711,7 +718,7 @@
                                           uec_hit_result* outHit)
     {
         if (outHit == nullptr || (ignoredActorCount != 0 && ignoredActors == nullptr) ||
-            !IsFiniteVector(start) || !IsFiniteVector(end)) {
+            !IsFiniteVector(start) || !IsFiniteVector(end) || !IsValidBool(traceComplex)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);

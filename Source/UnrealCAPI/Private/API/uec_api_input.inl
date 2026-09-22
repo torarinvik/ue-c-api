@@ -125,7 +125,9 @@
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if (!IsFiniteVector(velocity)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsFiniteVector(velocity) || !IsValidBool(addToCurrent)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
         if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
         const FVector value(velocity.x, velocity.y, velocity.z);
@@ -147,7 +149,9 @@
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if (!IsFiniteVector(impulse)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsFiniteVector(impulse) || !IsValidBool(velocityChange)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
         if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
         component->AddImpulse(FVector(impulse.x, impulse.y, impulse.z), NAME_None, velocityChange != UEC_FALSE);
@@ -175,7 +179,7 @@
         if (!IsValidActor(pawnHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         if (!FMath::IsFinite(worldDirection.x) || !FMath::IsFinite(worldDirection.y) ||
-            !FMath::IsFinite(worldDirection.z) || !FMath::IsFinite(scale)) {
+            !FMath::IsFinite(worldDirection.z) || !FMath::IsFinite(scale) || !IsValidBool(force)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         APawn* pawn = Cast<APawn>(pawnHandle->Value.Get());
@@ -231,7 +235,9 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(componentHandle->Value.Get());
         USkeletalMesh* mesh = Cast<USkeletalMesh>(meshHandle->Value.Get());
-        if (component == nullptr || mesh == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (component == nullptr || mesh == nullptr || !IsValidBool(reinitializePose)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         component->SetSkeletalMesh(mesh, reinitializePose != UEC_FALSE);
         return UEC_RESULT_OK;
     }
@@ -246,7 +252,9 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(componentHandle->Value.Get());
         UAnimationAsset* animation = Cast<UAnimationAsset>(animationHandle->Value.Get());
-        if (component == nullptr || animation == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (component == nullptr || animation == nullptr || !IsValidBool(looping)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         component->PlayAnimation(animation, looping != UEC_FALSE);
         return UEC_RESULT_OK;
     }
@@ -359,7 +367,7 @@
         UEnhancedPlayerInput* playerInput = Cast<UEnhancedPlayerInput>(controller->PlayerInput);
         if (playerInput == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         if (!FMath::IsFinite(value->axis.x) || !FMath::IsFinite(value->axis.y) ||
-            !FMath::IsFinite(value->axis.z)) {
+            !FMath::IsFinite(value->axis.z) || !IsValidBool(value->bool_value)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
 
@@ -462,5 +470,3 @@
         GInputBindings.Remove(bindingId);
         return UEC_RESULT_OK;
     }
-
-
