@@ -2,7 +2,9 @@
 
 This project is an Unreal Engine C API: an in-process runtime plugin that exposes selected Unreal Engine functionality through a versioned C ABI. It is intended for C programs and other languages that can call C functions through an FFI. The public API is under `Source/UnrealCAPI/Public`; engine-dependent code remains private to the module.
 
-The project currently targets the latest Unreal Engine 5.8 release. It will be updated as newer Unreal Engine versions are released so the API remains compatible with the state of the art.
+The project currently targets the latest Unreal Engine 5.8 release (5.8.2 at
+the time of writing). It will be updated as newer Unreal Engine versions are
+released so the API remains compatible with the state of the art.
 
 The runtime API provides ABI negotiation, bounded diagnostics and logging,
 explicit opaque handles, world and actor operations, reflection, collision and
@@ -24,9 +26,10 @@ lifetime, and shutdown rules are collected in
 [docs/CONSUMER_INTEGRATION.md](docs/CONSUMER_INTEGRATION.md).
 
 The plugin must be built against a specific Unreal Engine 5.x version and
-toolchain. The host project targets the current UE 5.8 release; record the
-exact engine patch and toolchain used for each build. The project will track
-newer Unreal releases when they become the state-of-the-art supported target.
+toolchain. The host project targets the current UE 5.8 release; use the latest
+5.8.x hotfix available for a build and record the exact engine patch and
+toolchain used. The project will track newer Unreal releases when they become
+the state-of-the-art supported target.
 
 `UnrealCAPIHost.uproject` is the minimal host project for opening the plugin in Unreal Editor and running integration tests.
 

@@ -6,9 +6,9 @@ build, launch, and exercise the C smoke path.
 
 | Engine | Host platform | Compiler/toolchain | C consumer | Plugin/host status |
 | --- | --- | --- | --- | --- |
-| UE 5.8 (host descriptor target) | Not recorded | Not recorded | C11 syntax verified | Unreal build pending |
-| UE 5.8 (host descriptor target) | Linux CI | GCC and Clang | C11/C++17 header syntax verified | Engine build unavailable |
-| UE 5.8 (host descriptor target) | macOS CI | Clang | C11/C++17 header syntax verified | Engine build unavailable |
+| UE 5.8.2 (latest 5.8.x hotfix; descriptor target 5.8) | Not recorded | Not recorded | C11 syntax verified | Unreal build pending |
+| UE 5.8.2 (latest 5.8.x hotfix; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 header syntax verified | Engine build unavailable |
+| UE 5.8.2 (latest 5.8.x hotfix; descriptor target 5.8) | macOS CI | Clang | C11/C++17 header syntax verified | Engine build unavailable |
 
 The portable gate is `sh tests/run_checks.sh`. It validates the public header
 as C11 and C++17, the C gameplay example, Unreal descriptor JSON, and the

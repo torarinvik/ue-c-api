@@ -67,6 +67,7 @@ sh tests/run_checks.sh
 
 This checks the C11 and C++17 public header, the C gameplay example, descriptor
 JSON, and private source-unit line budgets. A real integration is complete only
-after the host project is built against a recorded Unreal 5.8 patch and the C
-smoke path is exercised in PIE and a packaged Development build. Record that
+after the host project is built against the latest available Unreal 5.8.x
+patch and the C smoke path is exercised in PIE and a packaged Development
+build. Record that
 run in [`docs/BUILD_MATRIX.md`](BUILD_MATRIX.md).

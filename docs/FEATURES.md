@@ -2,7 +2,7 @@
 
 This matrix describes the current implementation against the roadmap. “Runtime
 implemented” means code exists in the plugin; “verified” is limited to checks
-that can run without the Unreal Engine 5.8 toolchain in this repository.
+that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 
 | Area | Status | Current boundary |
 | --- | --- | --- |
@@ -52,5 +52,5 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Multiplayer and replication | Planned | No public functions yet |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
 
-The Unreal-dependent statuses require an actual UE 5.8 build, PIE run, and
+The Unreal-dependent statuses require an actual UE 5.8.2 build, PIE run, and
 packaged Development run before they can become verified release features.

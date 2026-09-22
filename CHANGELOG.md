@@ -7,7 +7,8 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
-- Initial Unreal Engine C API runtime plugin scaffold targeting UE 5.8.
+- Initial Unreal Engine C API runtime plugin scaffold targeting the latest UE
+  5.8 release.
 - Public C function table with version negotiation and capability discovery.
 - Initial world, actor, scene-component, timer, collision line-trace, and class
   metadata adapters.
@@ -90,5 +91,5 @@ development; they do not imply a published or runtime-verified release.
 
 - CI checks syntax and selected type layouts; it does not link or execute the
   consumer, compile the Unreal module, or test engine behavior.
-- UE 5.8 editor and packaged-build verification remain pending. The API is
+- UE 5.8.2 editor and packaged-build verification remain pending. The API is
   experimental and may change incompatibly before a supported release.
