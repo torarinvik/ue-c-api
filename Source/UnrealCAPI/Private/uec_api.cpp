@@ -2191,6 +2191,64 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetClassFunctionCount(uec_class* rawClass, uint32_t* outCount)
+    {
+        if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* classHandle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(classHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = classHandle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        *outCount = 0;
+        for (TFieldIterator<UFunction> iterator(klass, EFieldIteratorFlags::IncludeSuper); iterator; ++iterator)
+        {
+            ++(*outCount);
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetClassFunctionAt(uec_class* rawClass,
+                                           uint32_t index,
+                                           char* nameBuffer,
+                                           size_t nameBufferSize,
+                                           size_t* nameRequiredSize,
+                                           uint32_t* outParameterCount,
+                                           uec_bool* outHasReturnValue,
+                                           uec_bool* outIsLatent)
+    {
+        if (nameRequiredSize == nullptr || outParameterCount == nullptr ||
+            outHasReturnValue == nullptr || outIsLatent == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* classHandle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(classHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = classHandle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        uint32_t current = 0;
+        for (TFieldIterator<UFunction> iterator(klass, EFieldIteratorFlags::IncludeSuper); iterator; ++iterator)
+        {
+            if (current++ != index) continue;
+            UFunction* function = *iterator;
+            *outParameterCount = 0;
+            *outHasReturnValue = UEC_FALSE;
+            *outIsLatent = function->HasAnyFunctionFlags(FUNC_Latent) ? UEC_TRUE : UEC_FALSE;
+            for (TFieldIterator<FProperty> propertyIterator(function); propertyIterator; ++propertyIterator)
+            {
+                FProperty* property = *propertyIterator;
+                if (!property->HasAnyPropertyFlags(CPF_Parm)) continue;
+                if (property->HasAnyPropertyFlags(CPF_ReturnParm)) {
+                    *outHasReturnValue = UEC_TRUE;
+                }
+                else {
+                    ++(*outParameterCount);
+                }
+            }
+            return CopyFStringToUtf8(function->GetName(), nameBuffer, nameBufferSize, nameRequiredSize);
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2247,7 +2305,8 @@ namespace
         &RetainObject, &GetComponentClassName, &ComponentIsA,
         &AttachSceneComponent, &DetachSceneComponent,
         &GetActorClassName, &ActorIsA,
-        &AddInputMappingContext, &RemoveInputMappingContext
+        &AddInputMappingContext, &RemoveInputMappingContext,
+        &GetClassFunctionCount, &GetClassFunctionAt
     };
 }
 

@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 32u
+#define UEC_ABI_MINOR 33u
 
 #ifdef __cplusplus
 extern "C" {
@@ -451,6 +451,16 @@ typedef struct uec_api {
                                                      int32_t priority);
     uec_result (UEC_CALL *remove_input_mapping_context)(uec_actor* controller,
                                                         uec_object* mapping_context);
+    uec_result (UEC_CALL *get_class_function_count)(uec_class* klass,
+                                                    uint32_t* out_count);
+    uec_result (UEC_CALL *get_class_function_at)(uec_class* klass,
+                                                 uint32_t index,
+                                                 char* name_buffer,
+                                                 size_t name_buffer_size,
+                                                 size_t* name_required_size,
+                                                 uint32_t* out_parameter_count,
+                                                 uec_bool* out_has_return_value,
+                                                 uec_bool* out_is_latent);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

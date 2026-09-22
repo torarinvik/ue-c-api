@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.32`.
+The current runtime slice is intentionally small and versioned as ABI `1.33`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -179,6 +179,12 @@ run on the game thread and return invalid-argument for non-actor class paths.
 subsystem. Adding accepts an integer priority; removing is idempotent at the
 engine level. Action value polling, event callbacks, and binding tokens remain
 outside this slice.
+
+`get_class_function_count` and `get_class_function_at` enumerate reflected
+functions, report non-return parameter counts, and identify return values and
+latent functions. Function ordering follows Unreal's reflection iterator and
+may change after hot reload or reinstancing; callers should re-enumerate before
+invocation.
 
 `play_skeletal_animation` and `stop_skeletal_animation` control the transient
 animation state of skeletal mesh components using a loaded animation asset.

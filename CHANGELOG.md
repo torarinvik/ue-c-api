@@ -36,6 +36,7 @@ development; they do not imply a published or runtime-verified release.
 - Same-world scene-component attachment and detachment with transform rules.
 - Actor class-path output and inheritance checks.
 - Enhanced Input mapping-context add/remove adapters for local controllers.
+- Reflected function enumeration with parameter, return, and latent metadata.
 - C-only gameplay example covering spawn, transforms, timer callbacks, and cleanup.
 - Input validation for oversized UTF-8 views and non-finite transform values.
 - Reflected actor property writes and reads for supported scalar, string, name,
