@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.83`.
+The current runtime slice is intentionally small and versioned as ABI `1.84`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -46,6 +46,12 @@ would exceed its category returns `UEC_RESULT_QUEUE_FULL`.
 ABI minor 83 adds `get_world_count_by_kind` and `get_world_at_by_kind`. These
 explicit context queries enumerate editor, PIE, game-preview, inactive, and
 game world contexts without changing the active Game/PIE convenience lookup.
+
+ABI minor 84 adds `invoke_actor_function_value`. It marshals scalar boolean,
+integer, enum, float, and double arguments into reflected native or Blueprint
+functions and returns the function return value or first out parameter in a
+`uec_property_value`. Strings, objects, structs, containers, latent functions,
+and network functions remain on the text or unsupported paths.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

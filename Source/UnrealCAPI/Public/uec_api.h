@@ -22,12 +22,10 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 83u
-
+#define UEC_ABI_MINOR 84u
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 typedef uint8_t uec_bool;
 enum { UEC_FALSE = 0u, UEC_TRUE = 1u };
 
@@ -90,7 +88,6 @@ enum {
     UEC_CAPABILITY_CONFIGURATION = UINT64_C(1) << 24,
     UEC_CAPABILITY_STREAMING = UINT64_C(1) << 25
 };
-
 typedef struct uec_context uec_context;
 typedef struct uec_world uec_world;
 typedef struct uec_actor uec_actor;
@@ -102,7 +99,6 @@ typedef struct uec_api_version {
     uint32_t minor;
     uint32_t struct_size;
 } uec_api_version;
-
 typedef struct uec_string_view {
     const char* data;
     size_t size;
@@ -782,6 +778,11 @@ typedef struct uec_api {
                                                 uec_world_kind kind,
                                                 uint32_t index,
                                                 uec_world** out_world);
+    uec_result (UEC_CALL *invoke_actor_function_value)(uec_actor* actor,
+                                                       uec_string_view function_name,
+                                                       const uec_property_value* argument_values,
+                                                       uint32_t argument_count,
+                                                       uec_property_value* out_return_value);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

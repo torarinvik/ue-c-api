@@ -18,7 +18,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 83u, "ABI minor must include world-kind enumeration");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 84u, "ABI minor must include typed invocation");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -139,6 +139,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_world_count_by_kind) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_world_at_by_kind) >
                    offsetof(uec_api, get_world_count_by_kind),
                "world-kind lookup must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_value) >
+                   offsetof(uec_api, get_world_at_by_kind),
+               "typed invocation must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -210,6 +213,17 @@ int main(void)
     {
         api->release_context(context);
         return 11;
+    }
+
+    uec_property_value invocation_result = {sizeof(invocation_result), UEC_PROPERTY_UNKNOWN,
+                                            UEC_FALSE, {0u, 0u, 0u}, 0, 0.0};
+    const uec_string_view empty_function_name = {NULL, 0u};
+    result = api->invoke_actor_function_value(NULL, empty_function_name, NULL, 0,
+                                              &invocation_result);
+    if (result != UEC_RESULT_UNSUPPORTED || invocation_result.kind != UEC_PROPERTY_UNKNOWN)
+    {
+        api->release_context(context);
+        return 12;
     }
 
     const char message[] = "C ABI smoke test";

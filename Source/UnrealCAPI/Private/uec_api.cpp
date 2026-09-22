@@ -478,7 +478,6 @@ namespace
     {
         return value == UEC_FALSE || value == UEC_TRUE;
     }
-
     static uec_result RequireWorldAuthority(const UWorld* world)
     {
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
@@ -495,7 +494,6 @@ namespace
             IsRepresentableFloat(value.rotation.z) && IsRepresentableFloat(value.rotation.w) &&
             rotationLengthSquared > 0.0;
     }
-
     static bool WriteInputActionValue(const FInputActionValue& value,
                                       uec_input_action_value& outValue)
     {
@@ -636,6 +634,7 @@ namespace
     #include "API/uec_api_world_actor.inl"
     #include "API/uec_api_actor_component.inl"
     #include "API/uec_api_reflection.inl"
+    #include "API/uec_api_reflection_invoke.inl"
     #include "API/uec_api_presentation.inl"
     #include "API/uec_api_gameplay.inl"
     #include "API/uec_api_input.inl"
@@ -718,7 +717,8 @@ namespace
         &SetActorTag,
         &GetRuntimeStats,
         &GetWorldCountByKind,
-        &GetWorldAtByKind
+        &GetWorldAtByKind,
+        &InvokeActorFunctionValue
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

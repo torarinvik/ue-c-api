@@ -80,6 +80,26 @@ static uec_result UEC_CALL StubGetWorldAtByKind(uec_context* context,
     return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubInvokeActorFunctionValue(
+    uec_actor* actor,
+    uec_string_view functionName,
+    const uec_property_value* argumentValues,
+    uint32_t argumentCount,
+    uec_property_value* outReturnValue)
+{
+    (void)actor;
+    (void)functionName;
+    (void)argumentValues;
+    (void)argumentCount;
+    if (outReturnValue != NULL && outReturnValue->struct_size >= sizeof(*outReturnValue)) {
+        outReturnValue->kind = UEC_PROPERTY_UNKNOWN;
+        outReturnValue->bool_value = UEC_FALSE;
+        outReturnValue->integer_value = 0;
+        outReturnValue->real_value = 0.0;
+    }
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -104,6 +124,7 @@ static const uec_api g_api = {
     .get_runtime_stats = &StubGetRuntimeStats,
     .get_world_count_by_kind = &StubGetWorldCountByKind,
     .get_world_at_by_kind = &StubGetWorldAtByKind,
+    .invoke_actor_function_value = &StubInvokeActorFunctionValue,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
