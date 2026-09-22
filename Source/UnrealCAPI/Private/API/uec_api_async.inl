@@ -22,6 +22,121 @@
         return UEC_RESULT_OK;
     }
 
+    static bool TravelPathMatches(const FString& requestedPath, UWorld* world)
+    {
+        if (world == nullptr) return false;
+        const FString mapName = world->GetMapName();
+        const UPackage* package = world->GetOutermost();
+        const FString packageName = package == nullptr ? FString() : package->GetName();
+        return requestedPath == mapName || requestedPath == packageName ||
+            (!packageName.IsEmpty() && requestedPath.StartsWith(packageName + TEXT(".")));
+    }
+
+    static int32 GetPIEInstanceForWorld(UWorld* world)
+    {
+        if (GEngine == nullptr || world == nullptr) return -1;
+        for (const FWorldContext& worldContext : GEngine->GetWorldContexts())
+        {
+            if (worldContext.World() == world) return worldContext.PIEInstance;
+        }
+        return -1;
+    }
+
+    static void HandlePostLoadMap(UWorld* world)
+    {
+        if (world == nullptr || IsShuttingDown()) return;
+        TArray<TSharedPtr<FUECTravelRequest>> completed;
+        {
+            FScopeLock lock(&GHandleMutex);
+            TArray<uint64> completedIds;
+            for (const TPair<uint64, TSharedPtr<FUECTravelRequest>>& pair : GTravelRequests)
+            {
+                const TSharedPtr<FUECTravelRequest>& request = pair.Value;
+                if (!request.IsValid() || request->Cancelled ||
+                    request->PreviousWorld.Get() == world ||
+                    !TravelPathMatches(request->LevelPath, world)) {
+                    continue;
+                }
+                completedIds.Add(pair.Key);
+                completed.Add(request);
+            }
+            for (uint64 requestId : completedIds) GTravelRequests.Remove(requestId);
+        }
+        for (const TSharedPtr<FUECTravelRequest>& request : completed)
+        {
+            if (!request.IsValid() || request->Cancelled || request->Callback == nullptr) continue;
+            uec_world* rawWorld = nullptr;
+            FUECWorld* worldHandle = MakeWorldHandle(
+                world, world->WorldType, GetPIEInstanceForWorld(world));
+            uec_result result = UEC_RESULT_OK;
+            if (worldHandle == nullptr) {
+                result = IsShuttingDown() ? UEC_RESULT_SHUTTING_DOWN : UEC_RESULT_INTERNAL_ERROR;
+            } else {
+                rawWorld = reinterpret_cast<uec_world*>(worldHandle);
+            }
+            FUECCallbackScope callbackScope;
+            request->Callback(request->Id, result, rawWorld, request->UserData);
+        }
+    }
+
+    uec_result UEC_CALL TravelWorldAsync(uec_world* rawWorld,
+                                         uec_string_view levelPath,
+                                         uec_travel_callback callback,
+                                         void* userData,
+                                         uint64_t* outRequestId)
+    {
+        if (outRequestId != nullptr) *outRequestId = 0;
+        if (callback == nullptr || outRequestId == nullptr || !IsValidStringView(levelPath) ||
+            levelPath.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        auto request = MakeShared<FUECTravelRequest>();
+        request->PreviousWorld = world;
+        request->LevelPath = ToFString(levelPath);
+        request->Callback = callback;
+        request->UserData = userData;
+        {
+            FScopeLock lock(&GHandleMutex);
+            if (GShuttingDown) return UEC_RESULT_SHUTTING_DOWN;
+            if (GTravelRequests.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
+            if (!AllocateMonotonicId(GNextTravelRequestId, request->Id)) {
+                return UEC_RESULT_INTERNAL_ERROR;
+            }
+            GTravelRequests.Add(request->Id, request);
+        }
+        *outRequestId = request->Id;
+        CancelTimersFor(world);
+        CancelTickSubscriptionsFor(world);
+        InvalidateWorldHandles(world);
+        UGameplayStatics::OpenLevel(world, FName(*request->LevelPath));
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL CancelTravelRequest(uec_context* rawContext, uint64_t requestId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        FScopeLock lock(&GHandleMutex);
+        TSharedPtr<FUECTravelRequest>* request = GTravelRequests.Find(requestId);
+        if (request == nullptr || !request->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
+        (*request)->Cancelled = true;
+        GTravelRequests.Remove(requestId);
+        return UEC_RESULT_OK;
+    }
+
+    static void CancelAllTravelRequests()
+    {
+        FScopeLock lock(&GHandleMutex);
+        for (TPair<uint64, TSharedPtr<FUECTravelRequest>>& pair : GTravelRequests)
+        {
+            if (pair.Value.IsValid()) pair.Value->Cancelled = true;
+        }
+        GTravelRequests.Empty();
+    }
+
     uec_result UEC_CALL LoadObjectHandle(uec_context* rawContext,
                                          uec_string_view objectPath,
                                          uec_object** outObject)
@@ -391,6 +506,7 @@
             static_cast<uint64>(GInputBindings.Num());
         const uint64 requests = static_cast<uint64>(GObjectLoadRequests.Num()) +
             static_cast<uint64>(GGameThreadRequests.Num()) +
+            static_cast<uint64>(GTravelRequests.Num()) +
             static_cast<uint64>(GSaveGameRequests.Num());
         if (subscriptions > UINT32_MAX || requests > UINT32_MAX || GActiveCallbacks < 0) {
             return UEC_RESULT_INTERNAL_ERROR;

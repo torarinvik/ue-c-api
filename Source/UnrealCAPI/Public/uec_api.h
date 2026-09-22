@@ -20,7 +20,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 89u
+#define UEC_ABI_MINOR 90u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -246,6 +246,8 @@ typedef void (UEC_CALL *uec_save_game_callback)(uint64_t request_id,
                                                 uec_bool success,
                                                 void* user_data);
 typedef void (UEC_CALL *uec_game_thread_callback)(void* user_data);
+typedef void (UEC_CALL *uec_travel_callback)(uint64_t request_id, uec_result result,
+                                              uec_world* world, void* user_data);
 typedef struct uec_api {
     uint32_t struct_size;
     uint32_t abi_major;
@@ -574,7 +576,6 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_object_property_object)(uec_object* object,
                                                       uec_string_view property_name,
                                                       uec_object* value);
-
     /* Asynchronous save operations and indexed actor queries. */
     uec_result (UEC_CALL *async_save_game_to_slot)(uec_object* save_game,
                                                    uec_string_view slot_name,
@@ -613,7 +614,6 @@ typedef struct uec_api {
                                                  uec_actor** out_controller);
     uec_result (UEC_CALL *get_world_game_instance)(uec_world* world,
                                                    uec_object** out_game_instance);
-
     /* Append-only ABI extensions: reflected calls, subscriptions, identity,
      * UMG, component velocity, and network context. */
     uec_result (UEC_CALL *invoke_actor_function_text)(
@@ -772,20 +772,20 @@ typedef struct uec_api {
                                                         uint32_t out_capacity,
                                                         uint32_t* out_count);
     uec_result (UEC_CALL *get_class_function_parameter_at)(uec_class* klass,
-                                                           uint32_t function_index,
-                                                           uint32_t parameter_index,
-                                                           char* name_buffer,
-                                                           size_t name_buffer_size,
-                                                           size_t* name_required_size,
-                                                           uec_property_kind* out_kind,
-                                                           uint32_t* out_flags);
-    uec_result (UEC_CALL *invoke_actor_function_text_values)(
-        uec_actor* actor, uec_string_view function_name,
-        const uec_string_view* argument_values, uint32_t argument_count,
-        uec_text_output* out_values, uint32_t out_capacity, uint32_t* out_count);
+        uint32_t function_index, uint32_t parameter_index, char* name_buffer,
+        size_t name_buffer_size, size_t* name_required_size, uec_property_kind* out_kind,
+        uint32_t* out_flags);
+    uec_result (UEC_CALL *invoke_actor_function_text_values)(uec_actor* actor,
+        uec_string_view function_name, const uec_string_view* argument_values,
+        uint32_t argument_count, uec_text_output* out_values, uint32_t out_capacity,
+        uint32_t* out_count);
     uec_result (UEC_CALL *find_object)(uec_context* context,
                                        uec_string_view object_path,
                                        uec_object** out_object);
+    uec_result (UEC_CALL *travel_world_async)(uec_world* world, uec_string_view level_path,
+                                              uec_travel_callback callback, void* user_data,
+                                              uint64_t* out_request_id);
+    uec_result (UEC_CALL *cancel_travel_request)(uec_context* context, uint64_t request_id);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.89`.
+The current runtime slice is intentionally small and versioned as ABI `1.90`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -84,6 +84,12 @@ ABI minor 89 adds `find_object`. It resolves a full Unreal object path without
 loading or retaining the object and returns `UEC_RESULT_NOT_INITIALIZED` when
 the path is not currently loaded. A successful lookup returns a normal weak
 object handle that the caller must release.
+
+ABI minor 90 adds `travel_world_async` and `cancel_travel_request`. Travel
+invalidates handles and world-owned subscriptions before submitting
+`OpenLevel`; a one-shot callback receives the loaded world handle after
+Unreal's post-load delegate fires. Travel callbacks run on the game thread,
+borrow `user_data`, and are removed on cancellation or module shutdown.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

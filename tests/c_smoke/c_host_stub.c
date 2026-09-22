@@ -177,6 +177,26 @@ static uec_result UEC_CALL StubFindObject(uec_context* context,
     return context == &g_context ? UEC_RESULT_NOT_INITIALIZED : UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubTravelWorldAsync(uec_world* world,
+                                                uec_string_view levelPath,
+                                                uec_travel_callback callback,
+                                                void* userData,
+                                                uint64_t* outRequestId)
+{
+    (void)world;
+    (void)levelPath;
+    (void)callback;
+    (void)userData;
+    if (outRequestId != NULL) *outRequestId = 0u;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubCancelTravelRequest(uec_context* context, uint64_t requestId)
+{
+    (void)requestId;
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -206,6 +226,8 @@ static const uec_api g_api = {
     .invoke_actor_function_values = &StubInvokeActorFunctionValues,
     .invoke_actor_function_text_values = &StubInvokeActorFunctionTextValues,
     .find_object = &StubFindObject,
+    .travel_world_async = &StubTravelWorldAsync,
+    .cancel_travel_request = &StubCancelTravelRequest,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

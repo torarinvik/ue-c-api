@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 89u, "ABI minor must include loaded-object lookup");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 90u, "ABI minor must include travel completion");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -155,6 +155,11 @@ UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_text_values) >
 UEC_TEST_ASSERT(offsetof(uec_api, find_object) >
                    offsetof(uec_api, invoke_actor_function_text_values),
                "loaded-object lookup must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, travel_world_async) > offsetof(uec_api, find_object),
+               "travel completion must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, cancel_travel_request) >
+                   offsetof(uec_api, travel_world_async),
+               "travel cancellation must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -278,6 +283,15 @@ int main(void)
     {
         api->release_context(context);
         return 16;
+    }
+
+    uint64_t travel_request_id = 42u;
+    result = api->travel_world_async(NULL, empty_function_name, NULL, NULL, &travel_request_id);
+    if (result != UEC_RESULT_UNSUPPORTED || travel_request_id != 0u ||
+        api->cancel_travel_request(context, 1u) != UEC_RESULT_UNSUPPORTED)
+    {
+        api->release_context(context);
+        return 17;
     }
 
     const char message[] = "C ABI smoke test";

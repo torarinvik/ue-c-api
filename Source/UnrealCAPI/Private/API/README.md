@@ -17,7 +17,8 @@ headers and are not compiled as independent translation units.
 - `uec_api_gameplay.inl` owns collision, spatial sound, attachment, component
   configuration, and physics queries.
 - `uec_api_input.inl` owns controller input, movement, Enhanced Input mappings, and action bindings.
-- `uec_api_async.inl` owns object loading, save-game operations, game-thread dispatch, and shutdown cancellation.
+- `uec_api_async.inl` owns object loading, callback-based travel completion,
+  save-game operations, game-thread dispatch, and shutdown cancellation.
 
 The shared handle types, registries, conversion helpers, and ABI function table
 remain in `uec_api.cpp` so moving a subsystem cannot change the public function

@@ -1,5 +1,4 @@
 #include "uec_api.h"
-
 #include "CoreMinimal.h"
 #include "Math/NumericLimits.h"
 #include "Async/Async.h"
@@ -50,7 +49,6 @@
 namespace
 {
     constexpr char kModuleName[] = "UnrealCAPI";
-
     enum class EUECHandleKind : uint8
     {
         Context,
@@ -60,14 +58,12 @@ namespace
         Class,
         Object
     };
-
     struct FUECHandleHeader final
     {
         EUECHandleKind Kind = EUECHandleKind::Context;
         uint64 Generation = 0;
         bool bReleased = false;
     };
-
     static uint64 AllocateHandleGeneration();
     static bool InitializeHandle(FUECHandleHeader& header, EUECHandleKind kind);
     static void CancelActorSubscriptions(AActor* actor);
@@ -75,19 +71,17 @@ namespace
     static void RemoveActorDestroyedHandler(UWorld* world);
     static void RemoveAllActorDestroyedHandlers();
     static void HandleWorldCleanup(UWorld* world, bool sessionEnded, bool cleanupResources);
-
+    static void HandlePostLoadMap(UWorld* world); static void CancelAllTravelRequests();
     static bool AllocateMonotonicId(uint64& nextId, uint64& outId)
     {
         if (nextId == 0) return false;
         outId = nextId++;
         return true;
     }
-
     struct FUECContext final
     {
         FUECHandleHeader Header;
     };
-
     struct FUECWorld final
     {
         FUECHandleHeader Header;
@@ -193,6 +187,15 @@ namespace
         void* UserData = nullptr;
         bool Cancelled = false;
     };
+    struct FUECTravelRequest final
+    {
+        uint64 Id = 0;
+        TWeakObjectPtr<UWorld> PreviousWorld;
+        FString LevelPath;
+        uec_travel_callback Callback = nullptr;
+        void* UserData = nullptr;
+        bool Cancelled = false;
+    };
     struct FUECSaveGameRequest final
     {
         uint64 Id = 0;
@@ -227,6 +230,7 @@ namespace
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
     TMap<uint64, TSharedPtr<FUECGameThreadRequest>> GGameThreadRequests;
+    TMap<uint64, TSharedPtr<FUECTravelRequest>> GTravelRequests;
     TMap<uint64, TSharedPtr<FUECSaveGameRequest>> GSaveGameRequests;
     TMap<uint64, TSharedPtr<FUECInputBinding>> GInputBindings;
     int32 GActiveCallbacks = 0;
@@ -237,6 +241,7 @@ namespace
     };
     uint64 GNextObjectLoadRequestId = 1;
     uint64 GNextGameThreadRequestId = 1;
+    uint64 GNextTravelRequestId = 1;
     uint64 GNextTimerId = 1;
     uint64 GNextTickSubscriptionId = 1;
     uint64 GNextAudioSubscriptionId = 1;
@@ -540,7 +545,6 @@ namespace
             FVector(value.translation.x, value.translation.y, value.translation.z),
             FVector(value.scale.x, value.scale.y, value.scale.z));
     }
-
     static uec_transform FromFTransform(const FTransform& value)
     {
         const FVector translation = value.GetTranslation();
@@ -550,7 +554,6 @@ namespace
                 {rotation.X, rotation.Y, rotation.Z, rotation.W},
                 {scale.X, scale.Y, scale.Z}};
     }
-
     static uec_world_kind ToWorldKind(EWorldType::Type type)
     {
         switch (type)
@@ -563,7 +566,6 @@ namespace
         default: return UEC_WORLD_KIND_UNKNOWN;
         }
     }
-
     static bool ToCollisionChannel(uec_trace_channel channel, ECollisionChannel& outChannel)
     {
         switch (channel)
@@ -577,7 +579,6 @@ namespace
         default: return false;
         }
     }
-
     static uec_result MakeCollisionShape(const uec_collision_shape* descriptor,
                                          FCollisionShape& outShape)
     {
@@ -617,17 +618,17 @@ namespace
             return UEC_RESULT_INVALID_ARGUMENT;
         }
     }
-
     static void LogOutstandingResources()
     {
         FScopeLock lock(&GHandleMutex);
         UE_LOG(LogTemp, Verbose,
-            TEXT("%s shutdown resources: handles context=%d world=%d actor=%d component=%d class=%d object=%d; timers=%d tick=%d audio=%d widget=%d animation=%d collision=%d input=%d loads=%d game_thread=%d saves=%d"),
+            TEXT("%s shutdown resources: handles context=%d world=%d actor=%d component=%d class=%d object=%d; timers=%d tick=%d audio=%d widget=%d animation=%d collision=%d input=%d loads=%d game_thread=%d travel=%d saves=%d"),
             UTF8_TO_TCHAR(kModuleName), GContexts.Num(), GWorlds.Num(), GActors.Num(),
             GComponents.Num(), GClasses.Num(), GObjects.Num(), GTimers.Num(),
             GTickSubscriptions.Num(), GAudioSubscriptions.Num(), GWidgetSubscriptions.Num(),
             GAnimationSubscriptions.Num(), GCollisionSubscriptions.Num(), GInputBindings.Num(),
-            GObjectLoadRequests.Num(), GGameThreadRequests.Num(), GSaveGameRequests.Num());
+            GObjectLoadRequests.Num(), GGameThreadRequests.Num(), GTravelRequests.Num(),
+            GSaveGameRequests.Num());
     }
     #include "API/uec_api_world_actor.inl"
     #include "API/uec_api_actor_component.inl"
@@ -637,7 +638,6 @@ namespace
     #include "API/uec_api_gameplay.inl"
     #include "API/uec_api_input.inl"
     #include "API/uec_api_async.inl"
-
     const uec_api GApi = {
         sizeof(uec_api), UEC_ABI_MAJOR, UEC_ABI_MINOR,
         &GetCapabilities, &GetLastError, &Log, &ReleaseContext,
@@ -718,12 +718,14 @@ namespace
         &GetWorldAtByKind,
         &InvokeActorFunctionValue,
         &InvokeActorFunctionValues, &GetClassFunctionParameterAt,
-        &InvokeActorFunctionTextValues, &FindObjectHandle
+        &InvokeActorFunctionTextValues, &FindObjectHandle,
+        &TravelWorldAsync, &CancelTravelRequest
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
 {
     FDelegateHandle WorldCleanupHandle;
+    FDelegateHandle PostLoadMapHandle;
 public:
     void StartupModule() override
     {
@@ -732,13 +734,14 @@ public:
             GShuttingDown = false;
         }
         WorldCleanupHandle = FWorldDelegates::OnWorldCleanup.AddStatic(&HandleWorldCleanup);
+        PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddStatic(&HandlePostLoadMap);
         UE_LOG(LogTemp, Log, TEXT("%s runtime module started (ABI %u.%u)"),
             UTF8_TO_TCHAR(kModuleName), UEC_ABI_MAJOR, UEC_ABI_MINOR);
     }
-
     void ShutdownModule() override
     {
         FWorldDelegates::OnWorldCleanup.Remove(WorldCleanupHandle);
+        FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
         {
             FScopeLock lock(&GHandleMutex);
             GShuttingDown = true;
@@ -752,6 +755,7 @@ public:
         ClearAllCollisionSubscriptions();
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
+        CancelAllTravelRequests();
         CancelAllSaveGameRequests();
         CancelAllInputBindings();
         RemoveAllActorDestroyedHandlers();
@@ -759,9 +763,7 @@ public:
         UE_LOG(LogTemp, Log, TEXT("%s runtime module stopped"), UTF8_TO_TCHAR(kModuleName));
     }
 };
-
 IMPLEMENT_MODULE(FUnrealCAPIModule, UnrealCAPI)
-
 UEC_API uec_result UEC_CALL uec_get_api(uint32_t requestedMajor,
                                         uint32_t requestedMinor,
                                         const uec_api** outApi,
@@ -773,12 +775,10 @@ UEC_API uec_result UEC_CALL uec_get_api(uint32_t requestedMajor,
     }
     *outApi = nullptr;
     *outContext = nullptr;
-
     if (requestedMajor != UEC_ABI_MAJOR || requestedMinor > UEC_ABI_MINOR)
     {
         return UEC_RESULT_UNSUPPORTED;
     }
-
     auto* context = new FUECContext();
     if (!InitializeHandle(context->Header, EUECHandleKind::Context))
     {

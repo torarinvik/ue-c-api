@@ -61,6 +61,10 @@ ABI 89 adds `find_object`; it performs a game-thread-only lookup against loaded
 full object paths and never loads or retains an object. Treat
 `UEC_RESULT_NOT_INITIALIZED` as a cache miss, then choose `load_object` or an
 async request explicitly when loading is intended.
+ABI 90 adds `travel_world_async`; the callback runs on the game thread after
+the post-load map delegate, receives a newly created world handle, and borrows
+`user_data`. Cancel the request through `cancel_travel_request` before the
+callback fires; module shutdown cancels all remaining travel requests.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.
