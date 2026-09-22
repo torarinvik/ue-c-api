@@ -103,6 +103,10 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     uec_actor* actor = NULL;
     uec_object* bridge = NULL;
     uint64_t subscriptionId = 0;
+    uec_runtime_stats baselineStats = {sizeof(uec_runtime_stats), 0u, 0u, 0u, 0u,
+                                       0u, 0u, 0u, 0u, 0u};
+    uec_runtime_stats observedStats = {sizeof(uec_runtime_stats), 0u, 0u, 0u, 0u,
+                                       0u, 0u, 0u, 0u, 0u};
     uec_event_bridge_smoke_state state = {0, 0, UEC_FALSE, NULL, NULL,
                                           UEC_RESULT_INTERNAL_ERROR};
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
@@ -111,10 +115,13 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     state.context = context;
     if (api == NULL || context == NULL || api->get_or_create_actor_event_bridge == NULL ||
         api->destroy_actor_event_bridge == NULL || api->bind_actor_event_bridge == NULL ||
-        api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL) {
+        api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL ||
+        api->get_runtime_stats == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    result = api->get_runtime_stats(context, &baselineStats);
+    if (result != UEC_RESULT_OK) goto cleanup;
     result = api->get_default_world(context, &world);
     if (result != UEC_RESULT_OK) goto cleanup;
     result = api->spawn_actor(world, classPath, &initialTransform, &actor);
@@ -155,9 +162,32 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    result = api->bind_actor_event_bridge(bridge, &VerifyEventBridgeCallback,
+                                          &state, &subscriptionId);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    state.subscription_id = subscriptionId;
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK ||
+        observedStats.active_subscriptions != baselineStats.active_subscriptions + 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    uec_object* destroyedBridge = bridge;
     result = api->destroy_actor_event_bridge(bridge);
     if (result != UEC_RESULT_OK) goto cleanup;
     bridge = NULL;
+    if (api->emit_actor_event_bridge(destroyedBridge, 734, 0, 0.0, text) !=
+        UEC_RESULT_INVALID_HANDLE) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK ||
+        observedStats.active_subscriptions != baselineStats.active_subscriptions ||
+        state.callback_count != 2) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
     result = UEC_RESULT_OK;
 
 cleanup:

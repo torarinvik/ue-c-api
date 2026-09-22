@@ -308,8 +308,8 @@ development; they do not imply a published or runtime-verified release.
   text-backed return/out values.
 - ABI minor 132 adds a Blueprint-assignable actor event component, bounded C
   callback subscriptions, event emission from C, and teardown cleanup. The host
-  runtime smoke path exercises payload validation plus explicit and in-callback
-  unbinding in Game/PIE.
+  runtime smoke path exercises payload validation, explicit and in-callback
+  unbinding, component teardown cleanup, and stale-handle rejection in Game/PIE.
 - Adds `UEC_CAPABILITY_REFLECTION_CONTAINERS` so consumers can gate container metadata and set mutation explicitly.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
