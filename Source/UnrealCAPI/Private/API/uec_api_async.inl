@@ -127,10 +127,9 @@
             uec_result result = loadedObject == nullptr ? UEC_RESULT_INTERNAL_ERROR : UEC_RESULT_OK;
             if (loadedObject != nullptr)
             {
-                auto* handle = new FUECObject();
-                if (!InitializeHandle(handle->Header, EUECHandleKind::Object))
+                FUECObject* handle = MakeObjectHandle(loadedObject);
+                if (handle == nullptr)
                 {
-                    delete handle;
                     GObjectLoadRequests.Remove(current->Id);
                     if (!IsShuttingDown())
                     {
@@ -138,11 +137,6 @@
                                           current->UserData);
                     }
                     return;
-                }
-                handle->Value = loadedObject;
-                {
-                    FScopeLock lock(&GHandleMutex);
-                    GObjects.Add(handle);
                 }
                 objectHandle = reinterpret_cast<uec_object*>(handle);
             }

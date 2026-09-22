@@ -168,6 +168,8 @@ development; they do not imply a published or runtime-verified release.
   including required sizes for bounded world names and streaming package names.
 - Actor, component, and object handle constructors now recheck the shutdown gate
   while registering, preventing new live handles from appearing during teardown.
+- Asynchronous object-load completions now use the shared gated object-handle
+  constructor instead of maintaining a separate registry insertion path.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,
