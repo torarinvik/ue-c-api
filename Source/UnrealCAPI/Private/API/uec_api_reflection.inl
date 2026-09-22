@@ -2,12 +2,12 @@
                                   uec_string_view classPath,
                                   uec_class** outClass)
     {
+        if (outClass != nullptr) *outClass = nullptr;
         if (outClass == nullptr || !IsValidStringView(classPath) || classPath.size == 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outClass = nullptr;
         UClass* klass = LoadClass<UObject>(nullptr, *ToFString(classPath));
         if (klass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = new FUECClass();
@@ -19,6 +19,7 @@
         handle->Value = klass;
         {
             FScopeLock lock(&GHandleMutex);
+            if (GShuttingDown) { delete handle; return UEC_RESULT_SHUTTING_DOWN; }
             GClasses.Add(handle);
         }
         *outClass = reinterpret_cast<uec_class*>(handle);
@@ -33,6 +34,7 @@
                                           uec_string_view classPath,
                                           uec_bool* outLoaded)
     {
+        if (outLoaded != nullptr) *outLoaded = UEC_FALSE;
         if (outLoaded == nullptr || !IsValidStringView(classPath) || classPath.size == 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -42,7 +44,6 @@
             ? UEC_TRUE : UEC_FALSE;
         return UEC_RESULT_OK;
     }
-
     uec_result UEC_CALL ReleaseClass(uec_class* rawClass)
     {
         auto* handle = reinterpret_cast<FUECClass*>(rawClass);
@@ -51,12 +52,12 @@
         handle->Value.Reset();
         return UEC_RESULT_OK;
     }
-
     uec_result UEC_CALL GetClassName(uec_class* rawClass,
                                      char* buffer,
                                      size_t bufferSize,
                                      size_t* requiredSize)
     {
+        if (requiredSize != nullptr) *requiredSize = 0;
         auto* handle = reinterpret_cast<FUECClass*>(rawClass);
         if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -64,11 +65,11 @@
         if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return CopyFStringToUtf8(klass->GetName(), buffer, bufferSize, requiredSize);
     }
-
     uec_result UEC_CALL ClassIsA(uec_class* rawClass,
                                  uec_string_view parentClassPath,
                                  uec_bool* outIsA)
     {
+        if (outIsA != nullptr) *outIsA = UEC_FALSE;
         if (outIsA == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidStringView(parentClassPath) || parentClassPath.size == 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -83,9 +84,9 @@
         *outIsA = klass->IsChildOf(parent) ? UEC_TRUE : UEC_FALSE;
         return UEC_RESULT_OK;
     }
-
     uec_result UEC_CALL GetClassPropertyCount(uec_class* rawClass, uint32_t* outCount)
     {
+        if (outCount != nullptr) *outCount = 0;
         if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECClass*>(rawClass);
         if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
@@ -100,7 +101,6 @@
         }
         return UEC_RESULT_OK;
     }
-
     uec_result UEC_CALL GetClassPropertyAt(uec_class* rawClass,
                                             uint32_t index,
                                             char* nameBuffer,
@@ -109,6 +109,7 @@
                                             uec_property_kind* outKind)
     {
         if (nameRequiredSize == nullptr || outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *nameRequiredSize = 0; *outKind = UEC_PROPERTY_UNKNOWN;
         auto* handle = reinterpret_cast<FUECClass*>(rawClass);
         if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -124,7 +125,6 @@
         }
         return UEC_RESULT_INVALID_ARGUMENT;
     }
-
     uec_result UEC_CALL GetActorPropertyValue(uec_actor* rawActor,
                                               uec_string_view propertyName,
                                               uec_property_value* outValue)
@@ -133,6 +133,10 @@
         {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
+        outValue->kind = UEC_PROPERTY_UNKNOWN;
+        outValue->bool_value = UEC_FALSE;
+        outValue->integer_value = 0;
+        outValue->real_value = 0.0;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -141,11 +145,7 @@
         if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-
         outValue->kind = GetPropertyKind(property);
-        outValue->bool_value = UEC_FALSE;
-        outValue->integer_value = 0;
-        outValue->real_value = 0.0;
         if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
         {
             outValue->bool_value = boolProperty->GetPropertyValue_InContainer(actor) ? UEC_TRUE : UEC_FALSE;
@@ -176,7 +176,6 @@
         }
         return UEC_RESULT_UNSUPPORTED;
     }
-
     uec_result UEC_CALL GetActorPropertyString(uec_actor* rawActor,
                                                uec_string_view propertyName,
                                                char* buffer,
@@ -185,6 +184,7 @@
                                                uec_property_kind* outKind)
     {
         if (requiredSize == nullptr || outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *requiredSize = 0; *outKind = UEC_PROPERTY_UNKNOWN;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -224,7 +224,6 @@
         }
         return CopyFStringToUtf8(value, buffer, bufferSize, requiredSize);
     }
-
     uec_result UEC_CALL SetActorPropertyValue(uec_actor* rawActor,
                                               uec_string_view propertyName,
                                               const uec_property_value* value)
@@ -288,7 +287,6 @@
         }
         return UEC_RESULT_UNSUPPORTED;
     }
-
     uec_result UEC_CALL SetActorPropertyString(uec_actor* rawActor,
                                                uec_string_view propertyName,
                                                uec_string_view value)
@@ -326,7 +324,6 @@
         }
         return UEC_RESULT_OK;
     }
-
     uec_result UEC_CALL GetObjectPropertyValue(uec_object* rawObject,
                                                uec_string_view propertyName,
                                                uec_property_value* outValue)
@@ -334,6 +331,10 @@
         if (outValue == nullptr || outValue->struct_size < sizeof(uec_property_value)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
+        outValue->kind = UEC_PROPERTY_UNKNOWN;
+        outValue->bool_value = UEC_FALSE;
+        outValue->integer_value = 0;
+        outValue->real_value = 0.0;
         auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
         if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -342,11 +343,7 @@
         if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-
         outValue->kind = GetPropertyKind(property);
-        outValue->bool_value = UEC_FALSE;
-        outValue->integer_value = 0;
-        outValue->real_value = 0.0;
         if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
         {
             outValue->bool_value = boolProperty->GetPropertyValue_InContainer(object) ? UEC_TRUE : UEC_FALSE;
@@ -386,6 +383,7 @@
                                                 uec_property_kind* outKind)
     {
         if (requiredSize == nullptr || outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *requiredSize = 0; *outKind = UEC_PROPERTY_UNKNOWN;
         auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
         if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -634,9 +632,9 @@
         *outReturnKind = GetPropertyKind(outputProperty);
         return CopyFStringToUtf8(outputText, returnBuffer, returnBufferSize, returnRequiredSize);
     }
-
     uec_result UEC_CALL GetClassFunctionCount(uec_class* rawClass, uint32_t* outCount)
     {
+        if (outCount != nullptr) *outCount = 0;
         if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* classHandle = reinterpret_cast<FUECClass*>(rawClass);
         if (!IsValidClass(classHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -665,6 +663,8 @@
             outHasReturnValue == nullptr || outIsLatent == nullptr) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
+        *nameRequiredSize = 0; *outParameterCount = 0;
+        *outHasReturnValue = UEC_FALSE; *outIsLatent = UEC_FALSE;
         auto* classHandle = reinterpret_cast<FUECClass*>(rawClass);
         if (!IsValidClass(classHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;

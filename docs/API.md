@@ -29,9 +29,9 @@ it returns the bounded diagnostic string using the same terminating-NUL buffer
 contract as other text APIs.
 
 Output pointers are cleared as soon as they are available on entry for
-diagnostics, world, player, timer, streaming, actor, component, collision,
-retained-object, identity, configuration, widget, audio, camera, animation,
-object, save-game, path-query, and queued-request adapters.
+diagnostics, world, player, timer, streaming, actor, component, reflection,
+collision, retained-object, identity, configuration, widget, audio, camera,
+animation, object, save-game, path-query, and queued-request adapters.
 A failed call with a non-null output pointer therefore leaves a null handle,
 `UEC_FALSE`, zero, or an empty value instead of preserving stale caller data.
 

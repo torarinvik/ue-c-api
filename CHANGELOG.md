@@ -168,6 +168,9 @@ development; they do not imply a published or runtime-verified release.
   including required sizes for bounded world names and streaming package names.
 - Actor, component, and object handle constructors now recheck the shutdown gate
   while registering, preventing new live handles from appearing during teardown.
+- Class lookup now applies the same shutdown gate while registering class handles,
+  and reflected class, property, and function outputs are initialized before
+  validation so failed calls cannot preserve stale caller data.
 - Asynchronous object-load completions now use the shared gated object-handle
   constructor instead of maintaining a separate registry insertion path.
 - Default and indexed world lookup now share one gated world-handle constructor,
