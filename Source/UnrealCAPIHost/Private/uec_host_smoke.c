@@ -63,6 +63,12 @@ static void FinishLatentSmoke(uec_latent_smoke_state* state,
     state->complete = UEC_TRUE;
 }
 
+static uec_result FailLatentSmoke(uec_latent_smoke_state* state)
+{
+    FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+    return UEC_RESULT_INTERNAL_ERROR;
+}
+
 static void UEC_CALL CompleteLatentSmoke(uint64_t requestId,
                                          uec_result result,
                                          void* userData)
@@ -192,7 +198,8 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     if (api == NULL || context == NULL || api->get_or_create_actor_event_bridge == NULL ||
         api->destroy_actor_event_bridge == NULL || api->bind_actor_event_bridge == NULL ||
         api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL ||
-        api->get_runtime_stats == NULL || api->get_capabilities == NULL) {
+        api->get_runtime_stats == NULL || api->get_capabilities == NULL ||
+        api->line_trace == NULL || api->sweep_trace == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -206,6 +213,27 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     if (result != UEC_RESULT_OK) goto cleanup;
     result = api->get_default_world(context, &world);
     if (result != UEC_RESULT_OK) goto cleanup;
+    uec_hit_result invalidHit = {0};
+    invalidHit.blocking_hit = UEC_TRUE;
+    invalidHit.distance = 1.0;
+    if (api->line_trace(world, (uec_vector3){0}, (uec_vector3){0},
+            (uec_trace_channel)99, UEC_FALSE, &invalidHit) != UEC_RESULT_INVALID_ARGUMENT ||
+        invalidHit.blocking_hit != UEC_FALSE || invalidHit.distance != 0.0 ||
+        invalidHit.actor != NULL) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    const uec_collision_shape invalidShape = {
+        sizeof(uec_collision_shape), (uec_collision_shape_kind)99, 0u, 0.0, {0}, 0.0};
+    invalidHit.blocking_hit = UEC_TRUE;
+    invalidHit.distance = 1.0;
+    if (api->sweep_trace(world, (uec_vector3){0}, (uec_vector3){0}, &invalidShape,
+            UEC_TRACE_VISIBILITY, UEC_FALSE, &invalidHit) != UEC_RESULT_INVALID_ARGUMENT ||
+        invalidHit.blocking_hit != UEC_FALSE || invalidHit.distance != 0.0 ||
+        invalidHit.actor != NULL) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
     result = api->spawn_actor(world, classPath, &initialTransform, &actor);
     if (result != UEC_RESULT_OK) goto cleanup;
     result = api->get_or_create_actor_event_bridge(actor, &bridge);
@@ -353,8 +381,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->api->get_world_count_by_kind == NULL ||
         state->api->get_world_at_by_kind == NULL ||
         state->api->release_context == NULL) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
 
     uec_capabilities capabilities = 0;
@@ -397,8 +424,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, nonLatentName, NULL, 0u, &CompleteLatentSmoke,
         state, &rejectedRequestId);
     if (result != UEC_RESULT_UNSUPPORTED || rejectedRequestId != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uec_string_view worldContextName = {
         worldContextFunctionName, sizeof(worldContextFunctionName) - 1};
@@ -407,8 +433,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, worldContextName, &latentArguments[0], 1u,
         NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_OK || noOutputs != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uec_function_argument malformedScalarArgument = duration;
     malformedScalarArgument.world_value = state->world;
@@ -419,8 +444,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, scalarName, &malformedScalarArgument, 1u,
         NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uec_function_argument scalarWithText = duration;
     scalarWithText.text_value.data = scalarFunctionName;
@@ -430,32 +454,28 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, scalarName, &scalarWithText, 1u,
         NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     noOutputs = UINT32_MAX;
     result = state->api->invoke_actor_function_arguments(
         state->actor, scalarName, NULL, 0u, NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uec_function_argument wrongScalarKind = duration;
-    wrongScalarKind.kind = UEC_PROPERTY_INTEGER;
+    wrongScalarKind.kind = (uec_property_kind)99;
     noOutputs = UINT32_MAX;
     result = state->api->invoke_actor_function_arguments(
         state->actor, scalarName, &wrongScalarKind, 1u,
         NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     noOutputs = UINT32_MAX;
     result = state->api->invoke_actor_function_arguments(
         state->actor, scalarName, &duration, 1u, NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_OK || noOutputs != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uec_function_argument structArgument = {0};
     structArgument.struct_size = sizeof(structArgument);
@@ -477,8 +497,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         structOutput.struct_value.value.vector3.x != 1.25 ||
         structOutput.struct_value.value.vector3.y != -2.5 ||
         structOutput.struct_value.value.vector3.z != 9.0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     structArgument.struct_value.value.vector3.x = NAN;
     noOutputs = UINT32_MAX;
@@ -486,8 +505,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, vectorFunction, &structArgument, 1u,
         &structOutput, 1u, &noOutputs);
     if (result != UEC_RESULT_INVALID_ARGUMENT) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_QUATERNION;
     structArgument.struct_value.value.quaternion = (uec_quaternion){
@@ -504,8 +522,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         structOutput.struct_value.kind != UEC_FUNCTION_STRUCT_QUATERNION ||
         structOutput.struct_value.value.quaternion.z != 0.7071067811865476 ||
         structOutput.struct_value.value.quaternion.w != 0.7071067811865476) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_TRANSFORM;
     structArgument.struct_value.value.transform = (uec_transform){
@@ -526,8 +543,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         structOutput.struct_value.value.transform.scale.x != 2.0 ||
         structOutput.struct_value.value.transform.scale.y != 3.0 ||
         structOutput.struct_value.value.transform.scale.z != 4.0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR3;
     structArgument.struct_value.value.vector3 = (uec_vector3){0.0, 0.0, 0.0};
@@ -536,8 +552,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, transformFunction, &structArgument, 1u,
         &structOutput, 1u, &noOutputs);
     if (result != UEC_RESULT_INVALID_ARGUMENT) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_QUATERNION;
     structArgument.struct_value.value.quaternion = (uec_quaternion){0.0, 0.0, 0.0, 0.0};
@@ -547,8 +562,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, quaternionFunction, &structArgument, 1u,
         &structOutput, 1u, &noOutputs);
     if (result != UEC_RESULT_INVALID_ARGUMENT) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     static const char quotedSmokeText[] = "\"mixed-smoke\"";
     uec_function_argument textArgument = {0};
@@ -565,8 +579,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, textFunction, &textArgument, 1u,
         NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_BUFFER_TOO_SMALL || noOutputs != 1u) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     noOutputs = UINT32_MAX;
     result = state->api->invoke_actor_function_arguments(
@@ -574,8 +587,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         &textOutput, 1u, &noOutputs);
     if (result != UEC_RESULT_OK || noOutputs != 1u ||
         textOutput.kind != UEC_PROPERTY_BOOL || textOutput.bool_value != UEC_TRUE) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     char echoedText[64] = {0};
     uec_function_output echoOutput = {0};
@@ -591,8 +603,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     if (result != UEC_RESULT_BUFFER_TOO_SMALL || noOutputs != 1u ||
         echoOutput.kind != UEC_PROPERTY_STRING ||
         echoOutput.text_required_size <= echoOutput.text_buffer_size) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     echoOutput.text_buffer_size = sizeof(echoedText);
     noOutputs = UINT32_MAX;
@@ -605,8 +616,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         echoOutput.text_required_size > sizeof(echoedText) ||
         echoedText[echoOutput.text_required_size - 1] != '\0' ||
         strstr(echoedText, "mixed-smoke") == NULL) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uec_string_view outputFunction = {
         outputFunctionName, sizeof(outputFunctionName) - 1};
@@ -614,8 +624,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     result = state->api->invoke_actor_function_arguments(
         state->actor, outputFunction, NULL, 0u, NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_BUFFER_TOO_SMALL || noOutputs != 3u) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     char outputText[64] = {0};
     uec_function_output mixedOutputs[3] = {0};
@@ -637,15 +646,13 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         mixedOutputs[2].text_required_size > sizeof(outputText) ||
         outputText[mixedOutputs[2].text_required_size - 1] != '\0' ||
         strstr(outputText, "output-smoke") == NULL) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uint32_t invalidWorldCount = UINT32_MAX;
     result = state->api->get_world_count_by_kind(
         state->context, (uec_world_kind)99, &invalidWorldCount);
     if (result != UEC_RESULT_INVALID_ARGUMENT || invalidWorldCount != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uint32_t editorWorldCount = 0;
     result = state->api->get_world_count_by_kind(
@@ -688,8 +695,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     result = state->api->invoke_actor_function_value(
         state->actor, latentName, NULL, 0u, &scalarOutput);
     if (result != UEC_RESULT_UNSUPPORTED) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     size_t requiredSize = 99u;
     uec_property_kind returnKind = UEC_PROPERTY_INTEGER;
@@ -698,8 +704,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         &requiredSize, &returnKind);
     if (result != UEC_RESULT_UNSUPPORTED || requiredSize != 0u ||
         returnKind != UEC_PROPERTY_UNKNOWN) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uec_string_view missingName = {
         missingFunctionName, sizeof(missingFunctionName) - 1};
@@ -708,16 +713,14 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, missingName, NULL, 0u, &CompleteLatentSmoke,
         state, &rejectedRequestId);
     if (result != UEC_RESULT_INVALID_ARGUMENT || rejectedRequestId != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     rejectedRequestId = UINT64_MAX;
     result = state->api->invoke_actor_function_latent(
         state->actor, latentName, NULL, 0u, &CompleteLatentSmoke,
         state, &rejectedRequestId);
     if (result != UEC_RESULT_UNSUPPORTED || rejectedRequestId != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uec_function_argument missingWorldContext[2] = {
         latentArguments[0], latentArguments[1]};
@@ -727,8 +730,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, latentName, missingWorldContext, 2u,
         &CompleteLatentSmoke, state, &rejectedRequestId);
     if (result != UEC_RESULT_UNSUPPORTED || rejectedRequestId != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
     uec_function_argument wrongDurationKind = duration;
     wrongDurationKind.kind = UEC_PROPERTY_INTEGER;
@@ -739,10 +741,8 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, latentName, wrongLatentArguments, 2u,
         &CompleteLatentSmoke, state, &rejectedRequestId);
     if (result != UEC_RESULT_INVALID_ARGUMENT || rejectedRequestId != 0) {
-        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
-        return UEC_RESULT_INTERNAL_ERROR;
+        return FailLatentSmoke(state);
     }
-
     result = state->api->invoke_actor_function_latent(
         state->actor, latentName, latentArguments, 2u, &CompleteLatentSmoke,
         state, &state->request_id);
