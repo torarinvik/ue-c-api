@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 130u
+#define UEC_ABI_MINOR 131u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -146,6 +146,8 @@ typedef struct uec_text_output {
     size_t buffer_size;
     size_t required_size;
 } uec_text_output;
+typedef struct uec_function_argument { uint32_t struct_size; uec_property_kind kind; uec_bool bool_value; uint8_t reserved[3]; int64_t integer_value; double real_value; uec_object* object_value; uec_class* class_value; uec_world* world_value; uec_string_view text_value; } uec_function_argument;
+typedef struct uec_function_output { uint32_t struct_size; uec_property_kind kind; uec_bool bool_value; uint8_t reserved[3]; int64_t integer_value; double real_value; uec_object* object_value; uec_class* class_value; char* text_buffer; size_t text_buffer_size; size_t text_required_size; } uec_function_output;
 typedef enum uec_trace_channel {
     UEC_TRACE_VISIBILITY = 0,
     UEC_TRACE_CAMERA = 1,
@@ -787,13 +789,10 @@ typedef struct uec_api {
                                           uec_trace_channel channel, uec_bool trace_complex,
                                           uec_hit_result_details* out_hit);
     uec_result (UEC_CALL *trace_detailed_filtered)(uec_world* world, uec_vector3 start, uec_vector3 end, const uec_collision_shape* shape, uec_trace_channel channel, uec_bool trace_complex, const uec_actor* const* ignored_actors, uint32_t ignored_actor_count, uec_hit_result_details* out_hit);
-    uec_result (UEC_CALL *set_component_physics_velocity)(uec_scene_component* component, uec_vector3 velocity, uec_bool add_to_current); uec_result (UEC_CALL *apply_component_impulse)(uec_scene_component* component, uec_vector3 impulse, uec_bool velocity_change); uec_result (UEC_CALL *apply_component_force)(uec_scene_component* component, uec_vector3 force); uec_result (UEC_CALL *get_component_physics_angular_velocity)(uec_scene_component* component, uec_vector3* out_velocity); uec_result (UEC_CALL *set_component_physics_angular_velocity)(uec_scene_component* component, uec_vector3 velocity, uec_bool add_to_current); uec_result (UEC_CALL *apply_component_torque)(uec_scene_component* component, uec_vector3 torque, uec_bool acceleration_change); uec_result (UEC_CALL *apply_component_angular_impulse)(uec_scene_component* component, uec_vector3 impulse, uec_bool velocity_change); uec_result (UEC_CALL *get_actor_physics_angular_velocity)(uec_actor* actor, uec_vector3* out_velocity); uec_result (UEC_CALL *set_actor_physics_angular_velocity)(uec_actor* actor, uec_vector3 velocity, uec_bool add_to_current); uec_result (UEC_CALL *apply_actor_torque)(uec_actor* actor, uec_vector3 torque, uec_bool acceleration_change); uec_result (UEC_CALL *apply_actor_angular_impulse)(uec_actor* actor, uec_vector3 impulse, uec_bool velocity_change); uec_result (UEC_CALL *get_actor_property_soft_value)(uec_actor* actor, uec_string_view property_name, uec_text_output* out_value); uec_result (UEC_CALL *get_object_property_soft_value)(uec_object* object, uec_string_view property_name, uec_text_output* out_value); uec_result (UEC_CALL *set_actor_property_soft_value)(uec_actor* actor, uec_string_view property_name, uec_property_kind kind, uec_string_view path); uec_result (UEC_CALL *set_object_property_soft_value)(uec_object* object, uec_string_view property_name, uec_property_kind kind, uec_string_view path); uec_result (UEC_CALL *get_actor_property_map_key)(uec_actor* actor, uec_string_view property_name, uint32_t index, uec_property_value* out_key); uec_result (UEC_CALL *get_object_property_map_key)(uec_object* object, uec_string_view property_name, uint32_t index, uec_property_value* out_key);
+    uec_result (UEC_CALL *set_component_physics_velocity)(uec_scene_component* component, uec_vector3 velocity, uec_bool add_to_current); uec_result (UEC_CALL *apply_component_impulse)(uec_scene_component* component, uec_vector3 impulse, uec_bool velocity_change); uec_result (UEC_CALL *apply_component_force)(uec_scene_component* component, uec_vector3 force); uec_result (UEC_CALL *get_component_physics_angular_velocity)(uec_scene_component* component, uec_vector3* out_velocity); uec_result (UEC_CALL *set_component_physics_angular_velocity)(uec_scene_component* component, uec_vector3 velocity, uec_bool add_to_current); uec_result (UEC_CALL *apply_component_torque)(uec_scene_component* component, uec_vector3 torque, uec_bool acceleration_change); uec_result (UEC_CALL *apply_component_angular_impulse)(uec_scene_component* component, uec_vector3 impulse, uec_bool velocity_change); uec_result (UEC_CALL *get_actor_physics_angular_velocity)(uec_actor* actor, uec_vector3* out_velocity); uec_result (UEC_CALL *set_actor_physics_angular_velocity)(uec_actor* actor, uec_vector3 velocity, uec_bool add_to_current); uec_result (UEC_CALL *apply_actor_torque)(uec_actor* actor, uec_vector3 torque, uec_bool acceleration_change); uec_result (UEC_CALL *apply_actor_angular_impulse)(uec_actor* actor, uec_vector3 impulse, uec_bool velocity_change); uec_result (UEC_CALL *get_actor_property_soft_value)(uec_actor* actor, uec_string_view property_name, uec_text_output* out_value); uec_result (UEC_CALL *get_object_property_soft_value)(uec_object* object, uec_string_view property_name, uec_text_output* out_value); uec_result (UEC_CALL *set_actor_property_soft_value)(uec_actor* actor, uec_string_view property_name, uec_property_kind kind, uec_string_view path); uec_result (UEC_CALL *set_object_property_soft_value)(uec_object* object, uec_string_view property_name, uec_property_kind kind, uec_string_view path); uec_result (UEC_CALL *get_actor_property_map_key)(uec_actor* actor, uec_string_view property_name, uint32_t index, uec_property_value* out_key); uec_result (UEC_CALL *get_object_property_map_key)(uec_object* object, uec_string_view property_name, uint32_t index, uec_property_value* out_key); uec_result (UEC_CALL *invoke_actor_function_arguments)(uec_actor* actor, uec_string_view function_name, const uec_function_argument* arguments, uint32_t argument_count, uec_function_output* outputs, uint32_t output_capacity, uint32_t* out_count);
 } uec_api;
 /* Bootstrap entry point; release the opaque context through the returned table. */
-UEC_API uec_result UEC_CALL uec_get_api(uint32_t requested_major,
-                                        uint32_t requested_minor,
-                                        const uec_api** out_api,
-                                        uec_context** out_context);
+UEC_API uec_result UEC_CALL uec_get_api(uint32_t requested_major, uint32_t requested_minor, const uec_api** out_api, uec_context** out_context);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

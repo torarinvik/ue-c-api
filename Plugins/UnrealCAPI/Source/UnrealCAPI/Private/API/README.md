@@ -19,8 +19,10 @@ headers and are not compiled as independent translation units.
 - `uec_api_reflection_map_set.inl` owns reflected map/set enumeration, map
   value writes, and rehashed set element replacement, keeping hashed-container
   iteration and mutation together, plus typed scalar map-key reads.
-- `uec_api_reflection_invoke.inl` owns reflected invocation and scalar parameter
-  marshaling.
+- `uec_api_reflection_invoke.inl` owns text-marshaled invocation, class function
+  metadata, and actor/UObject property-reference adapters.
+- `uec_api_reflection_invoke_typed.inl` owns typed scalar invocation plus mixed
+  scalar, hard reference, and text-backed argument/output marshaling.
 - `uec_api_presentation.inl` owns UMG, camera, audio (including completion
   subscriptions), mesh assignment, and transient animation playback.
 - `uec_api_collision.inl` owns hit-result conversion, line/sweep/overlap queries,

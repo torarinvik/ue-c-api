@@ -684,7 +684,7 @@ static const uec_api g_api = {
     .get_class_function_parameter_at = &StubGetClassFunctionParameterAt,
     .invoke_actor_function_value = &StubInvokeActorFunctionValue,
     .invoke_actor_function_values = &StubInvokeActorFunctionValues,
-    .invoke_actor_function_text_values = &StubInvokeActorFunctionTextValues,
+    .invoke_actor_function_text_values = &StubInvokeActorFunctionTextValues, .invoke_actor_function_arguments = &StubInvokeActorFunctionArguments,
     .find_object = &StubFindObject,
     .travel_world_async = &StubTravelWorldAsync,
     .cancel_travel_request = &StubCancelTravelRequest,

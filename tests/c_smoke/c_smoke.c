@@ -62,6 +62,7 @@ int main(void)
         api->get_actor_property_soft_value == NULL || api->get_object_property_soft_value == NULL ||
         api->set_actor_property_soft_value == NULL || api->set_object_property_soft_value == NULL ||
         api->get_actor_property_map_key == NULL || api->get_object_property_map_key == NULL ||
+        api->invoke_actor_function_arguments == NULL ||
         api->set_component_physics_velocity == NULL || api->apply_component_impulse == NULL ||
         api->apply_component_force == NULL || api->get_component_physics_angular_velocity == NULL ||
         api->set_component_physics_angular_velocity == NULL || api->apply_component_torque == NULL ||
@@ -192,6 +193,17 @@ int main(void)
     {
         api->release_context(context);
         return 15;
+    }
+
+    uint32_t mixed_output_count = 42u;
+    result = api->invoke_actor_function_arguments(NULL, empty_function_name, NULL, 0u,
+                                                  NULL, 0u, &mixed_output_count);
+    if (result != UEC_RESULT_UNSUPPORTED || mixed_output_count != 0u ||
+        api->invoke_actor_function_arguments(NULL, empty_function_name, NULL, 0u,
+                                             NULL, 0u, NULL) != UEC_RESULT_INVALID_ARGUMENT)
+    {
+        api->release_context(context);
+        return 55;
     }
 
     uec_object* found_object = (uec_object*)1;

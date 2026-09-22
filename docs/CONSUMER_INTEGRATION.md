@@ -179,6 +179,15 @@ or soft-class properties.
 ABI 130 adds typed scalar map-key reads for actor and UObject properties. Use
 the existing text-entry calls for map keys whose kinds do not fit
 `uec_property_value`, and re-query map indices after mutations.
+ABI 131 adds `invoke_actor_function_arguments` for mixed signatures. Initialize
+each argument and output record with `struct_size`; use scalar fields, a hard
+object/world handle, a class handle, or Unreal property text according to the
+reflected kind. A null object, world, or class handle passes a null reference.
+Text input follows Unreal's property syntax, including quoted strings. Output
+handles are caller-owned and must be released with `release_object` or
+`release_class`. A short output array is rejected before invocation, while a
+short per-value text buffer is reported after the function has run; do not
+retry a side-effecting call solely to grow those text buffers.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

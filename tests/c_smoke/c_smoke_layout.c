@@ -13,13 +13,17 @@ UEC_TEST_ASSERT(sizeof(uec_quaternion) == 32, "uec_quaternion ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_transform) == 80, "uec_transform ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_property_value) == 32, "uec_property_value ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_text_output) == 32, "uec_text_output ABI changed");
+UEC_TEST_ASSERT(offsetof(uec_function_argument, integer_value) > offsetof(uec_function_argument, bool_value), "mixed invocation argument scalar layout changed");
+UEC_TEST_ASSERT(offsetof(uec_function_argument, text_value) > offsetof(uec_function_argument, world_value), "mixed invocation argument handle layout changed");
+UEC_TEST_ASSERT(offsetof(uec_function_output, text_buffer) > offsetof(uec_function_output, class_value), "mixed invocation output handle layout changed");
+UEC_TEST_ASSERT(offsetof(uec_function_output, text_required_size) > offsetof(uec_function_output, text_buffer_size), "mixed invocation output buffer layout changed");
 UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 130u, "ABI minor must include typed reflected map keys");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 131u, "ABI minor must include mixed reflected function arguments");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
@@ -455,4 +459,4 @@ UEC_TEST_ASSERT(offsetof(uec_api, set_actor_property_soft_value) >
 UEC_TEST_ASSERT(offsetof(uec_api, set_object_property_soft_value) >
                    offsetof(uec_api, set_actor_property_soft_value),
                "object soft reference value input must append to uec_api");
-UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_map_key) > offsetof(uec_api, set_object_property_soft_value), "actor typed map key must append to uec_api"); UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_map_key) > offsetof(uec_api, get_actor_property_map_key), "object typed map key must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_map_key) > offsetof(uec_api, set_object_property_soft_value), "actor typed map key must append to uec_api"); UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_map_key) > offsetof(uec_api, get_actor_property_map_key), "object typed map key must append to uec_api"); UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_arguments) > offsetof(uec_api, get_object_property_map_key), "mixed invocation must append to uec_api");

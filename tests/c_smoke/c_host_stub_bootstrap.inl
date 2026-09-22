@@ -206,6 +206,25 @@ static uec_result UEC_CALL StubGetWorldAtByKind(uec_context* context,
     return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubInvokeActorFunctionArguments(
+    uec_actor* actor,
+    uec_string_view functionName,
+    const uec_function_argument* arguments,
+    uint32_t argumentCount,
+    uec_function_output* outputs,
+    uint32_t outputCapacity,
+    uint32_t* outCount)
+{
+    (void)actor;
+    (void)functionName;
+    (void)arguments;
+    (void)argumentCount;
+    (void)outputs;
+    (void)outputCapacity;
+    if (outCount != NULL) *outCount = 0u;
+    return outCount == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubInvokeActorFunctionValue(
     uec_actor* actor,
     uec_string_view functionName,

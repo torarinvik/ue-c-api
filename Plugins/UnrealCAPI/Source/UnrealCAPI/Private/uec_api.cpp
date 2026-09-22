@@ -241,6 +241,7 @@ namespace
     #include "API/uec_api_reflection_containers.inl"
     #include "API/uec_api_reflection_map_set.inl"
     #include "API/uec_api_reflection_invoke.inl"
+    #include "API/uec_api_reflection_invoke_typed.inl"
     #include "API/uec_api_presentation.inl"
     #include "API/uec_api_gameplay.inl"
     #include "API/uec_api_input.inl"
@@ -333,7 +334,7 @@ namespace
         &ApplyActorTorque, &ApplyActorAngularImpulse,
         &GetActorPropertySoftValue, &GetObjectPropertySoftValue,
         &SetActorPropertySoftValue, &SetObjectPropertySoftValue,
-        &GetActorPropertyMapKey, &GetObjectPropertyMapKey
+        &GetActorPropertyMapKey, &GetObjectPropertyMapKey, &InvokeActorFunctionArguments
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

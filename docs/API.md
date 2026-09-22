@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.130`.
+The current runtime slice is intentionally small and versioned as ABI `1.131`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -274,6 +274,23 @@ ABI minor 130 adds `get_actor_property_map_key` and
 `uec_property_value`; text map-entry reads remain available for string, name,
 text, and other keys without scalar representations. Map iteration indices are
 invalid after mutation and should be queried again.
+
+ABI minor 131 adds `invoke_actor_function_arguments` for positional mixed-type
+calls. Initialize every `uec_function_argument` and `uec_function_output` with
+its full `struct_size`. Set each argument's `kind`, then use the matching
+scalar fields, an object/world handle, a class handle, or `text_value`. Object
+and world handles are mutually exclusive; either may be null to pass a null
+object reference. Class references use `class_value`, which may also be null.
+Text-backed arguments use Unreal property text syntax, including quoted string
+values. Outputs are ordered with the return property first, followed by all
+out parameters. Scalar and enum results use the typed fields, hard object and
+class references return releasable handles, and other supported properties
+use `text_buffer` and `text_required_size`. Pure out parameters do not consume
+an input argument. A too-small output array is detected before the function is
+called; an undersized text buffer is reported after execution, so callers must
+check for side effects before retrying. Release every non-null returned object
+or class handle with its matching release function. The call is game-thread
+only and rejects latent, network, and client-world authority-only functions.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
