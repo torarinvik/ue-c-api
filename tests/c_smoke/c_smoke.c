@@ -53,10 +53,29 @@ int main(void)
         (capabilities & UEC_CAPABILITY_CLASS_METADATA) == 0 ||
         (capabilities & UEC_CAPABILITY_CONFIGURATION) == 0 ||
         (capabilities & UEC_CAPABILITY_STREAMING) == 0 ||
-        (capabilities & UEC_CAPABILITY_REFLECTION_CONTAINERS) == 0)
+        (capabilities & UEC_CAPABILITY_REFLECTION_CONTAINERS) == 0 ||
+        (capabilities & UEC_CAPABILITY_COLLISION_DETAILS) == 0 ||
+        api->trace_detailed == NULL)
     {
         api->release_context(context);
         return 5;
+    }
+
+    uec_hit_result_details details;
+    memset(&details, 0, sizeof(details));
+    details.struct_size = sizeof(details);
+    details.hit.blocking_hit = UEC_TRUE;
+    details.item = 42;
+    details.face_index = 42;
+    const uec_vector3 trace_start = {0.0, 0.0, 0.0};
+    const uec_vector3 trace_end = {1.0, 1.0, 1.0};
+    if (api->trace_detailed(NULL, trace_start, trace_end, NULL,
+                            UEC_TRACE_VISIBILITY, UEC_FALSE, &details) !=
+            UEC_RESULT_UNSUPPORTED || details.hit.blocking_hit != UEC_FALSE ||
+        details.item != -1 || details.face_index != -1 || details.component != NULL)
+    {
+        api->release_context(context);
+        return 54;
     }
 
     uec_runtime_stats stats = {sizeof(stats), 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};

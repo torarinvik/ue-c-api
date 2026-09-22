@@ -25,7 +25,7 @@ static uec_result UEC_CALL StubGetCapabilities(uec_context* context,
     *outCapabilities = UEC_CAPABILITY_BOOTSTRAP | UEC_CAPABILITY_ACTORS |
         UEC_CAPABILITY_REFLECTION | UEC_CAPABILITY_CLASS_METADATA |
         UEC_CAPABILITY_CONFIGURATION | UEC_CAPABILITY_STREAMING |
-        UEC_CAPABILITY_REFLECTION_CONTAINERS;
+        UEC_CAPABILITY_REFLECTION_CONTAINERS | UEC_CAPABILITY_COLLISION_DETAILS;
     return UEC_RESULT_OK;
 }
 
@@ -434,4 +434,36 @@ static uec_result UEC_CALL StubPrepareTextOutput(uec_text_output* output)
     output->kind = UEC_PROPERTY_UNKNOWN;
     output->required_size = 0u;
     return UEC_RESULT_OK;
+}
+
+static uec_result UEC_CALL StubTraceDetailed(
+    uec_world* world,
+    uec_vector3 start,
+    uec_vector3 end,
+    const uec_collision_shape* shape,
+    uec_trace_channel channel,
+    uec_bool traceComplex,
+    uec_hit_result_details* outHit)
+{
+    (void)world;
+    (void)start;
+    (void)end;
+    (void)shape;
+    (void)channel;
+    (void)traceComplex;
+    if (outHit == NULL || outHit->struct_size < sizeof(*outHit)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    outHit->struct_size = sizeof(*outHit);
+    outHit->reserved = 0u;
+    outHit->hit = (uec_hit_result){0};
+    outHit->impact_point = (uec_vector3){0};
+    outHit->impact_normal = (uec_vector3){0};
+    outHit->trace_start = (uec_vector3){0};
+    outHit->trace_end = (uec_vector3){0};
+    outHit->penetration_depth = 0.0;
+    outHit->item = -1;
+    outHit->face_index = -1;
+    outHit->component = NULL;
+    return UEC_RESULT_UNSUPPORTED;
 }

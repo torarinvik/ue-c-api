@@ -15,16 +15,19 @@ UEC_TEST_ASSERT(sizeof(uec_property_value) == 32, "uec_property_value ABI change
 UEC_TEST_ASSERT(sizeof(uec_text_output) == 32, "uec_text_output ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
+UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 123u, "ABI minor must include set mutation");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 124u, "ABI minor must include collision details");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
                "soft property kind values changed");
 UEC_TEST_ASSERT(UEC_CAPABILITY_REFLECTION_CONTAINERS == (UINT64_C(1) << 26),
                "reflection container capability changed");
+UEC_TEST_ASSERT(UEC_CAPABILITY_COLLISION_DETAILS == (UINT64_C(1) << 27),
+               "collision details capability changed");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, get_last_error) >
@@ -400,3 +403,7 @@ UEC_TEST_ASSERT(offsetof(uec_api, set_object_property_map_value_text) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_class_property_flags) >
                    offsetof(uec_api, set_object_property_map_value_text),
                "property flags must append to uec_api");
+
+UEC_TEST_ASSERT(offsetof(uec_api, trace_detailed) >
+                   offsetof(uec_api, set_object_property_set_element_value),
+               "detailed collision tracing must append to uec_api");

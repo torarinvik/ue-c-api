@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 123u
+#define UEC_ABI_MINOR 124u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -79,7 +79,7 @@ enum {
     UEC_CAPABILITY_PRESENTATION = UINT64_C(1) << 22,
     UEC_CAPABILITY_RETAINED_OBJECTS = UINT64_C(1) << 23,
     UEC_CAPABILITY_CONFIGURATION = UINT64_C(1) << 24,
-    UEC_CAPABILITY_STREAMING = UINT64_C(1) << 25, UEC_CAPABILITY_REFLECTION_CONTAINERS = UINT64_C(1) << 26
+    UEC_CAPABILITY_STREAMING = UINT64_C(1) << 25, UEC_CAPABILITY_REFLECTION_CONTAINERS = UINT64_C(1) << 26, UEC_CAPABILITY_COLLISION_DETAILS = UINT64_C(1) << 27
 };
 typedef struct uec_context uec_context;
 typedef struct uec_world uec_world;
@@ -222,6 +222,15 @@ typedef struct uec_hit_result {
     double distance;
     uec_actor* actor;
 } uec_hit_result;
+typedef struct uec_hit_result_details {
+    uint32_t struct_size, reserved;
+    uec_hit_result hit;
+    uec_vector3 impact_point, impact_normal;
+    uec_vector3 trace_start, trace_end;
+    double penetration_depth;
+    int32_t item, face_index;
+    uec_scene_component* component;
+} uec_hit_result_details;
 typedef void (UEC_CALL *uec_timer_callback)(uint64_t timer_id, void* user_data);
 typedef void (UEC_CALL *uec_tick_callback)(uint64_t subscription_id, double delta_seconds, void* user_data);
 typedef void (UEC_CALL *uec_audio_finished_callback)(uint64_t subscription_id, void* user_data);
@@ -250,7 +259,6 @@ typedef struct uec_api {
     uint32_t struct_size;
     uint32_t abi_major;
     uint32_t abi_minor;
-    /* Bootstrap, diagnostics, and context ownership. */
     uec_result (UEC_CALL *get_capabilities)(uec_context* context,
                                              uec_capabilities* out_capabilities);
     uec_result (UEC_CALL *get_last_error)(uec_context* context,
@@ -259,7 +267,6 @@ typedef struct uec_api {
                                            size_t* required_size);
     uec_result (UEC_CALL *log)(uec_context* context, uec_string_view message);
     uec_result (UEC_CALL *release_context)(uec_context* context);
-    /* World selection and player flow. */
     uec_result (UEC_CALL *get_world_count)(uec_context* context, uint32_t* out_count);
     uec_result (UEC_CALL *get_world_at)(uec_context* context,
                                         uint32_t index,
@@ -280,7 +287,6 @@ typedef struct uec_api {
                                         uec_actor* pawn);
     uec_result (UEC_CALL *set_controller_view_target)(uec_actor* controller,
                                                       uec_actor* view_target);
-    /* Input polling, physics, and the default-world convenience path. */
     uec_result (UEC_CALL *get_input_key_down)(uec_actor* controller,
                                               uec_string_view key_name,
                                               uec_bool* out_down);
@@ -299,7 +305,6 @@ typedef struct uec_api {
                                              uec_vector3 force);
     uec_result (UEC_CALL *get_default_world)(uec_context* context, uec_world** out_world);
     uec_result (UEC_CALL *release_world)(uec_world* world);
-    /* Actor and scene-component lifetime, transforms, tags, and timers. */
     uec_result (UEC_CALL *spawn_actor)(uec_world* world,
                                        uec_string_view class_path,
                                        const uec_transform* transform,
@@ -343,7 +348,6 @@ typedef struct uec_api {
                                      void* user_data,
                                      uint64_t* out_timer_id);
     uec_result (UEC_CALL *clear_timer)(uec_world* world, uint64_t timer_id);
-    /* Class and reflected-property metadata and access. */
     uec_result (UEC_CALL *find_class)(uec_context* context,
                                       uec_string_view class_path,
                                       uec_class** out_class);
@@ -378,7 +382,6 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_actor_property_string)(uec_actor* actor,
                                                      uec_string_view property_name,
                                                      uec_string_view value);
-    /* Collision, object loading, and initial presentation adapters. */
     uec_result (UEC_CALL *line_trace)(uec_world* world,
                                       uec_vector3 start,
                                       uec_vector3 end,
@@ -434,7 +437,6 @@ typedef struct uec_api {
                                                     double* out_degrees);
     uec_result (UEC_CALL *set_camera_field_of_view)(uec_scene_component* component,
                                                     double degrees);
-    /* Generic object properties and save-game persistence. */
     uec_result (UEC_CALL *get_object_property_value)(uec_object* object,
                                                      uec_string_view property_name,
                                                      uec_property_value* out_value);
@@ -466,7 +468,6 @@ typedef struct uec_api {
                                             uec_string_view slot_name,
                                             int32_t user_index,
                                             uec_bool* out_deleted);
-    /* Queued game-thread work, movement, meshes, animation, and materials. */
     uec_result (UEC_CALL *run_on_game_thread)(uec_context* context,
                                               uec_game_thread_callback callback,
                                               void* user_data,
@@ -494,7 +495,6 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_component_material_vector)(uec_scene_component* component,
                                                          uec_string_view parameter_name,
                                                          uec_vector3 value);
-    /* Retained objects, component/actor identity, and input mappings. */
     uec_result (UEC_CALL *retain_object)(uec_object* object,
                                          uec_object** out_retained_object);
     uec_result (UEC_CALL *get_component_class_name)(uec_scene_component* component,
@@ -522,7 +522,6 @@ typedef struct uec_api {
                                                      int32_t priority);
     uec_result (UEC_CALL *remove_input_mapping_context)(uec_actor* controller,
                                                         uec_object* mapping_context);
-    /* Reflected functions, collision settings, and attached audio. */
     uec_result (UEC_CALL *get_class_function_count)(uec_class* klass,
                                                     uint32_t* out_count);
     uec_result (UEC_CALL *get_class_function_at)(uec_class* klass,
@@ -574,7 +573,6 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_object_property_object)(uec_object* object,
                                                       uec_string_view property_name,
                                                       uec_object* value);
-    /* Asynchronous save operations and indexed actor queries. */
     uec_result (UEC_CALL *async_save_game_to_slot)(uec_object* save_game,
                                                    uec_string_view slot_name,
                                                    int32_t user_index,
@@ -597,7 +595,6 @@ typedef struct uec_api {
                                                  uint32_t index,
                                                  uec_actor** out_actor);
     uec_result (UEC_CALL *destroy_audio_component)(uec_object* audio_component);
-    /* Tokenized input bindings and explicit world-context access. */
     uec_result (UEC_CALL *bind_input_action)(uec_actor* actor,
                                              uec_object* action,
                                              uec_input_trigger_event trigger_event,
@@ -611,8 +608,6 @@ typedef struct uec_api {
                                                  uec_actor** out_controller);
     uec_result (UEC_CALL *get_world_game_instance)(uec_world* world,
                                                    uec_object** out_game_instance);
-    /* Append-only ABI extensions: reflected calls, subscriptions, identity,
-     * UMG, component velocity, and network context. */
     uec_result (UEC_CALL *invoke_actor_function_text)(
         uec_actor* actor,
         uec_string_view function_name,
@@ -786,10 +781,14 @@ typedef struct uec_api {
     uec_result (UEC_CALL *get_config_bool)(uec_context* context, uec_string_view section, uec_string_view key, uec_bool* out_value);
     uec_result (UEC_CALL *get_actor_property_array_count)(uec_actor* actor, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_actor_property_array_element_text)(uec_actor* actor, uec_string_view property_name, uint32_t index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind);
     uec_result (UEC_CALL *get_object_property_array_count)(uec_object* object, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_object_property_array_element_text)(uec_object* object, uec_string_view property_name, uint32_t index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *get_object_property_map_count)(uec_object* object, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_object_property_map_entry_text)(uec_object* object, uec_string_view property_name, uint32_t index, uec_text_output* out_key, uec_text_output* out_value); uec_result (UEC_CALL *get_object_property_set_count)(uec_object* object, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_object_property_set_element_text)(uec_object* object, uec_string_view property_name, uint32_t index, uec_text_output* out_element); uec_result (UEC_CALL *get_actor_property_soft_path)(uec_actor* actor, uec_string_view property_name, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *get_object_property_soft_path)(uec_object* object, uec_string_view property_name, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *get_actor_property_map_count)(uec_actor* actor, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_actor_property_map_entry_text)(uec_actor* actor, uec_string_view property_name, uint32_t index, uec_text_output* out_key, uec_text_output* out_value); uec_result (UEC_CALL *get_actor_property_set_count)(uec_actor* actor, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_actor_property_set_element_text)(uec_actor* actor, uec_string_view property_name, uint32_t index, uec_text_output* out_element); uec_result (UEC_CALL *set_actor_property_soft_path)(uec_actor* actor, uec_string_view property_name, uec_string_view path); uec_result (UEC_CALL *set_object_property_soft_path)(uec_object* object, uec_string_view property_name, uec_string_view path); uec_result (UEC_CALL *get_actor_property_struct_field_text)(uec_actor* actor, uec_string_view property_name, uec_string_view field_name, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *get_object_property_struct_field_text)(uec_object* object, uec_string_view property_name, uec_string_view field_name, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *set_actor_property_struct_field_text)(uec_actor* actor, uec_string_view property_name, uec_string_view field_name, uec_string_view value); uec_result (UEC_CALL *set_object_property_struct_field_text)(uec_object* object, uec_string_view property_name, uec_string_view field_name, uec_string_view value); uec_result (UEC_CALL *set_actor_property_array_element_text)(uec_actor* actor, uec_string_view property_name, uint32_t index, uec_string_view value); uec_result (UEC_CALL *set_object_property_array_element_text)(uec_object* object, uec_string_view property_name, uint32_t index, uec_string_view value); uec_result (UEC_CALL *set_actor_property_map_value_text)(uec_actor* actor, uec_string_view property_name, uint32_t index, uec_string_view value); uec_result (UEC_CALL *set_object_property_map_value_text)(uec_object* object, uec_string_view property_name, uint32_t index, uec_string_view value); uec_result (UEC_CALL *get_class_property_flags)(uec_class* klass, uint32_t index, uint32_t* out_flags); uec_result (UEC_CALL *get_actor_property_array_element_value)(uec_actor* actor, uec_string_view property_name, uint32_t index, uec_property_value* out_value); uec_result (UEC_CALL *get_object_property_array_element_value)(uec_object* object, uec_string_view property_name, uint32_t index, uec_property_value* out_value); uec_result (UEC_CALL *get_actor_property_map_value)(uec_actor* actor, uec_string_view property_name, uint32_t index, uec_property_value* out_value); uec_result (UEC_CALL *get_object_property_map_value)(uec_object* object, uec_string_view property_name, uint32_t index, uec_property_value* out_value); uec_result (UEC_CALL *get_actor_property_set_element_value)(uec_actor* actor, uec_string_view property_name, uint32_t index, uec_property_value* out_value); uec_result (UEC_CALL *get_object_property_set_element_value)(uec_object* object, uec_string_view property_name, uint32_t index, uec_property_value* out_value); uec_result (UEC_CALL *get_actor_property_struct_field_value)(uec_actor* actor, uec_string_view property_name, uec_string_view field_name, uec_property_value* out_value); uec_result (UEC_CALL *get_object_property_struct_field_value)(uec_object* object, uec_string_view property_name, uec_string_view field_name, uec_property_value* out_value); uec_result (UEC_CALL *set_actor_property_array_element_value)(uec_actor* actor, uec_string_view property_name, uint32_t index, const uec_property_value* value); uec_result (UEC_CALL *set_object_property_array_element_value)(uec_object* object, uec_string_view property_name, uint32_t index, const uec_property_value* value); uec_result (UEC_CALL *set_actor_property_map_value)(uec_actor* actor, uec_string_view property_name, uint32_t index, const uec_property_value* value); uec_result (UEC_CALL *set_object_property_map_value)(uec_object* object, uec_string_view property_name, uint32_t index, const uec_property_value* value); uec_result (UEC_CALL *set_actor_property_struct_field_value)(uec_actor* actor, uec_string_view property_name, uec_string_view field_name, const uec_property_value* value); uec_result (UEC_CALL *set_object_property_struct_field_value)(uec_object* object, uec_string_view property_name, uec_string_view field_name, const uec_property_value* value); uec_result (UEC_CALL *get_class_property_default_text)(uec_class* klass, uint32_t index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *get_class_property_reference_class_path)(uec_class* klass, uint32_t index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *get_class_property_enum_value_count)(uec_class* klass, uint32_t index, uint32_t* out_count); uec_result (UEC_CALL *get_class_property_enum_value_at)(uec_class* klass, uint32_t index, uint32_t value_index, char* name_buffer, size_t name_buffer_size, size_t* name_required_size, int64_t* out_value); uec_result (UEC_CALL *get_class_property_struct_field_count)(uec_class* klass, uint32_t property_index, uint32_t* out_count); uec_result (UEC_CALL *get_class_property_struct_field_at)(uec_class* klass, uint32_t property_index, uint32_t field_index, char* name_buffer, size_t name_buffer_size, size_t* name_required_size, uec_property_kind* out_kind, uint32_t* out_flags); uec_result (UEC_CALL *get_actor_property_class)(uec_actor* actor, uec_string_view property_name, uec_class** out_class); uec_result (UEC_CALL *set_actor_property_class)(uec_actor* actor, uec_string_view property_name, uec_class* klass); uec_result (UEC_CALL *get_object_property_class)(uec_object* object, uec_string_view property_name, uec_class** out_class); uec_result (UEC_CALL *set_object_property_class)(uec_object* object, uec_string_view property_name, uec_class* klass); uec_result (UEC_CALL *get_class_property_struct_path)(uec_class* klass, uint32_t property_index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *get_class_property_container_kinds)(uec_class* klass, uint32_t property_index, uec_property_kind* out_key_kind, uec_property_kind* out_value_kind); uec_result (UEC_CALL *set_actor_property_set_element_text)(uec_actor* actor, uec_string_view property_name, uint32_t index, uec_string_view value); uec_result (UEC_CALL *set_object_property_set_element_text)(uec_object* object, uec_string_view property_name, uint32_t index, uec_string_view value); uec_result (UEC_CALL *set_actor_property_set_element_value)(uec_actor* actor, uec_string_view property_name, uint32_t index, const uec_property_value* value); uec_result (UEC_CALL *set_object_property_set_element_value)(uec_object* object, uec_string_view property_name, uint32_t index, const uec_property_value* value);
+
+    /* Append-only detailed collision query. */
+    uec_result (UEC_CALL *trace_detailed)(uec_world* world, uec_vector3 start,
+                                          uec_vector3 end, const uec_collision_shape* shape,
+                                          uec_trace_channel channel, uec_bool trace_complex,
+                                          uec_hit_result_details* out_hit);
 } uec_api;
-/* Bootstrap entry point. The returned function table remains valid until the
- * plugin is unloaded. The context is opaque and must be released with the
- * table's release_context function. */
+/* Bootstrap entry point; release the opaque context through the returned table. */
 UEC_API uec_result UEC_CALL uec_get_api(uint32_t requested_major,
                                         uint32_t requested_minor,
                                         const uec_api** out_api,

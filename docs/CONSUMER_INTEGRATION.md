@@ -153,6 +153,13 @@ returns `UEC_RESULT_UNSUPPORTED` for non-container properties.
 ABI 123 adds set element replacement through text and typed scalar writers.
 The bridge rejects a replacement that duplicates another set element, rehashes
 a successful replacement, and invalidates all cached logical indices.
+
+ABI 124 adds `trace_detailed`, an append-only collision query entry. Pass a null
+shape for a line trace or a size-initialized sphere, box, or capsule descriptor
+for a sweep. The returned `uec_hit_result_details` owns any actor and component
+handles until the consumer releases them; the call runs on the game thread and
+returns `UEC_RESULT_UNSUPPORTED` when the bridge does not advertise
+`UEC_CAPABILITY_COLLISION_DETAILS`.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

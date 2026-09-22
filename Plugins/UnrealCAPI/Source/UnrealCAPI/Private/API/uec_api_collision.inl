@@ -401,3 +401,94 @@
         }
         return UEC_RESULT_OK;
     }
+
+    static uec_result PrepareHitResultDetails(uec_hit_result_details* outHit)
+    {
+        if (outHit == nullptr || outHit->struct_size < sizeof(uec_hit_result_details)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        outHit->struct_size = sizeof(uec_hit_result_details);
+        outHit->reserved = 0;
+        outHit->hit = {};
+        outHit->impact_point = {};
+        outHit->impact_normal = {};
+        outHit->trace_start = {};
+        outHit->trace_end = {};
+        outHit->penetration_depth = 0.0;
+        outHit->item = -1;
+        outHit->face_index = -1;
+        outHit->component = nullptr;
+        return UEC_RESULT_OK;
+    }
+
+    static uec_result CopyHitResultDetails(const FHitResult& hit,
+                                           uec_hit_result_details* outHit)
+    {
+        const uec_result baseResult = CopyHitResult(hit, &outHit->hit);
+        if (baseResult != UEC_RESULT_OK) return baseResult;
+        outHit->impact_point = {hit.ImpactPoint.X, hit.ImpactPoint.Y, hit.ImpactPoint.Z};
+        outHit->impact_normal = {hit.ImpactNormal.X, hit.ImpactNormal.Y, hit.ImpactNormal.Z};
+        outHit->trace_start = {hit.TraceStart.X, hit.TraceStart.Y, hit.TraceStart.Z};
+        outHit->trace_end = {hit.TraceEnd.X, hit.TraceEnd.Y, hit.TraceEnd.Z};
+        outHit->penetration_depth = hit.PenetrationDepth;
+        outHit->item = hit.Item;
+        outHit->face_index = hit.FaceIndex;
+        if (UPrimitiveComponent* component = hit.GetComponent())
+        {
+            FUECSceneComponent* componentHandle = MakeSceneComponentHandle(component);
+            if (componentHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            outHit->component = reinterpret_cast<uec_scene_component*>(componentHandle);
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL TraceDetailed(uec_world* rawWorld,
+                                      uec_vector3 start,
+                                      uec_vector3 end,
+                                      const uec_collision_shape* descriptor,
+                                      uec_trace_channel channel,
+                                      uec_bool traceComplex,
+                                      uec_hit_result_details* outHit)
+    {
+        const uec_result outputResult = PrepareHitResultDetails(outHit);
+        if (outputResult != UEC_RESULT_OK) return outputResult;
+        if (!IsValidTraceEndpoints(start, end, traceComplex)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        ECollisionChannel collisionChannel;
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
+        FCollisionQueryParams queryParams = MakeTraceQueryParams(traceComplex);
+        FHitResult hit;
+        bool didHit = false;
+        if (descriptor == nullptr)
+        {
+            didHit = world->LineTraceSingleByChannel(
+                hit,
+                ToUnrealVector(start),
+                ToUnrealVector(end),
+                collisionChannel,
+                queryParams);
+        }
+        else
+        {
+            FCollisionShape collisionShape;
+            const uec_result shapeResult = MakeCollisionShape(descriptor, collisionShape);
+            if (shapeResult != UEC_RESULT_OK) return shapeResult;
+            didHit = world->SweepSingleByChannel(
+                hit,
+                ToUnrealVector(start),
+                ToUnrealVector(end),
+                FQuat::Identity,
+                collisionChannel,
+                collisionShape,
+                queryParams,
+                FCollisionResponseParams::DefaultResponseParam);
+        }
+        if (!didHit) return UEC_RESULT_OK;
+        return CopyHitResultDetails(hit, outHit);
+    }
