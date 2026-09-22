@@ -22,7 +22,8 @@ destroys or unloads that object. Every operation reports
 Releasing a handle releases the bridge handle; it does not destroy an Unreal
 object. `destroy_actor` destroys the actor and tombstones its actor handle.
 
-World and actor operations must run on Unreal's game thread. The initial slice
+World, object, class, actor, and component operations must run on Unreal's game
+thread. The initial slice
 returns `UEC_RESULT_WRONG_THREAD` for calls made from another thread. Queued
 work is available through `run_on_game_thread`, which invokes a borrowed
 callback on the game thread with cancellation and a bounded queue.
@@ -146,7 +147,8 @@ released independently.
 Timers are owned by the selected world and run on the game thread. The bridge
 does not copy `user_data`; callers must keep it valid until the timer callback
 fires or `clear_timer` succeeds. One-shot timers are removed after their
-callback. Looping timers remain active until cleared or module shutdown.
+callback. Looping timers remain active until cleared, their world is
+invalidated, or module shutdown begins.
 
 Class metadata is read through an opaque class handle obtained from a loadable
 Unreal class path. The current metadata surface reports the class name,
@@ -206,7 +208,8 @@ must release it. `user_data` is borrowed until completion or cancellation;
 `cancel_object_load` prevents the callback from being delivered when called
 before completion. At most 1024 object-load requests can be pending; callers
 should cancel or await requests after `UEC_RESULT_QUEUE_FULL`. Outstanding
-requests are cancelled during module shutdown.
+requests are cancelled during module shutdown, and completion rechecks the
+shutdown gate before calling consumer code.
 
 `is_object_path_loaded` checks whether a valid soft object path currently
 resolves in memory. It does not load or retain the object and is safe to use
@@ -246,7 +249,8 @@ retain the sound handle, and does not expose playback completion or replication.
 callback on the game thread. At most 1024 callbacks can be queued at once;
 submissions beyond that bound return `UEC_RESULT_QUEUE_FULL`. Cancellation
 removes a pending callback before it runs, and module shutdown cancels all
-remaining callbacks.
+remaining callbacks. A callback that has just been dequeued is still
+suppressed if shutdown begins before consumer code is entered.
 
 `create_widget` loads a `UUserWidget` class path and creates a weak object handle
 owned by the caller. `add_widget_to_viewport` and `remove_widget_from_parent`
@@ -327,8 +331,9 @@ subsystem. Adding accepts an integer priority; removing is idempotent at the
 engine level. `bind_input_action` binds a typed value callback to an actor's
 `UEnhancedInputComponent` and returns a bridge binding id; unbind it with
 `unbind_input_action`. Binding callbacks run on the game thread, borrow the
-user pointer, and are suppressed after unbinding or module shutdown. At most
-1024 bindings can be active.
+user pointer, and are suppressed after unbinding or module shutdown. Unbinding
+from inside a callback defers native binding removal until that callback
+returns. At most 1024 bindings can be active.
 
 `get_class_function_count` and `get_class_function_at` enumerate reflected
 functions, report non-return parameter counts, and identify return values and

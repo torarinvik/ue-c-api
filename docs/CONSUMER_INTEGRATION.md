@@ -46,7 +46,8 @@ request completes or is canceled.
 Timer, tick, input, audio, widget, and primitive-component hit subscriptions
 return tokens. Unsubscribe with the matching context before releasing consumer
 state. A callback may unsubscribe itself; the bridge suppresses later calls
-after cancellation and during module shutdown.
+after cancellation and during module shutdown. Input binding removal is
+deferred until an in-flight input callback returns.
 
 Skeletal-animation completion subscriptions use the same token rules. Bind only
 while a single animation is playing; the one-shot callback fires when that
