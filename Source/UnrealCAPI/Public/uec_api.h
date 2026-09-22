@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 93u
+#define UEC_ABI_MINOR 94u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -784,6 +784,7 @@ typedef struct uec_api {
     uec_result (UEC_CALL *get_component_visible)(uec_scene_component* component, uec_bool* out_visible); uec_result (UEC_CALL *get_component_active)(uec_scene_component* component, uec_bool* out_active);
     uec_result (UEC_CALL *get_class_function_flags)(uec_class* klass, uint32_t index, uint32_t* out_flags);
     uec_result (UEC_CALL *get_widget_visibility)(uec_object* widget, uec_widget_visibility* out_visibility); uec_result (UEC_CALL *get_text_block_text)(uec_object* widget, char* buffer, size_t buffer_size, size_t* required_size);
+    uec_result (UEC_CALL *get_component_collision_enabled)(uec_scene_component* component, uec_collision_enabled* out_enabled); uec_result (UEC_CALL *get_audio_component_playing)(uec_object* audio_component, uec_bool* out_playing);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

@@ -221,6 +221,8 @@ development; they do not imply a published or runtime-verified release.
   event, latent, network, and authority-only functions.
 - ABI minor 93 adds UMG visibility and text-block readback with caller-sized
   UTF-8 output buffers.
+- ABI minor 94 adds primitive collision-mode and audio-component playback
+  state readback.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

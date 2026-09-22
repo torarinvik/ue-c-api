@@ -243,6 +243,22 @@ static uec_result UEC_CALL StubGetTextBlockText(uec_object* widget,
     return requiredSize == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetComponentCollisionEnabled(uec_scene_component* component,
+                                                            uec_collision_enabled* outEnabled)
+{
+    (void)component;
+    if (outEnabled != NULL) *outEnabled = UEC_COLLISION_DISABLED;
+    return outEnabled == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetAudioComponentPlaying(uec_object* audioComponent,
+                                                        uec_bool* outPlaying)
+{
+    (void)audioComponent;
+    if (outPlaying != NULL) *outPlaying = UEC_FALSE;
+    return outPlaying == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -279,6 +295,8 @@ static const uec_api g_api = {
     .get_class_function_flags = &StubGetClassFunctionFlags,
     .get_widget_visibility = &StubGetWidgetVisibility,
     .get_text_block_text = &StubGetTextBlockText,
+    .get_component_collision_enabled = &StubGetComponentCollisionEnabled,
+    .get_audio_component_playing = &StubGetAudioComponentPlaying,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

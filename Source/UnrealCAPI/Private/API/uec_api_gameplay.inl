@@ -360,6 +360,27 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetComponentCollisionEnabled(uec_scene_component* rawComponent,
+                                                     uec_collision_enabled* outEnabled)
+    {
+        if (outEnabled != nullptr) *outEnabled = UEC_COLLISION_DISABLED;
+        if (outEnabled == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        switch (component->GetCollisionEnabled())
+        {
+        case ECollisionEnabled::NoCollision: *outEnabled = UEC_COLLISION_DISABLED; break;
+        case ECollisionEnabled::QueryOnly: *outEnabled = UEC_COLLISION_QUERY_ONLY; break;
+        case ECollisionEnabled::PhysicsOnly: *outEnabled = UEC_COLLISION_PHYSICS_ONLY; break;
+        case ECollisionEnabled::QueryAndPhysics: *outEnabled = UEC_COLLISION_QUERY_AND_PHYSICS; break;
+        default: return UEC_RESULT_UNSUPPORTED;
+        }
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL SetComponentCollisionResponse(uec_scene_component* rawComponent,
                                                       uec_trace_channel channel,
                                                       uec_bool block)

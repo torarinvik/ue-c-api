@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 93u, "ABI minor must include widget readback");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 94u, "ABI minor must include state readback");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -175,6 +175,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_widget_visibility) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_text_block_text) >
                    offsetof(uec_api, get_widget_visibility),
                "text block readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_component_collision_enabled) >
+                   offsetof(uec_api, get_text_block_text),
+               "collision readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_audio_component_playing) >
+                   offsetof(uec_api, get_component_collision_enabled),
+               "audio readback must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -337,6 +343,17 @@ int main(void)
     {
         api->release_context(context);
         return 20;
+    }
+
+    uec_collision_enabled collision_enabled = UEC_COLLISION_QUERY_AND_PHYSICS;
+    uec_bool audio_playing = UEC_TRUE;
+    if (api->get_component_collision_enabled(NULL, &collision_enabled) != UEC_RESULT_UNSUPPORTED ||
+        collision_enabled != UEC_COLLISION_DISABLED ||
+        api->get_audio_component_playing(NULL, &audio_playing) != UEC_RESULT_UNSUPPORTED ||
+        audio_playing != UEC_FALSE)
+    {
+        api->release_context(context);
+        return 21;
     }
 
     const char message[] = "C ABI smoke test";

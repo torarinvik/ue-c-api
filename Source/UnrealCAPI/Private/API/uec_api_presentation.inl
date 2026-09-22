@@ -277,6 +277,20 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetAudioComponentPlaying(uec_object* rawAudioComponent,
+                                                uec_bool* outPlaying)
+    {
+        if (outPlaying != nullptr) *outPlaying = UEC_FALSE;
+        if (outPlaying == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* audioHandle = reinterpret_cast<FUECObject*>(rawAudioComponent);
+        if (!IsValidObject(audioHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UAudioComponent* audio = Cast<UAudioComponent>(audioHandle->Value.Get());
+        if (audio == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outPlaying = audio->IsPlaying() ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL BindAudioFinished(uec_object* rawAudioComponent,
                                           uec_audio_finished_callback callback,
                                           void* userData,
