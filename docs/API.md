@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.15`.
+The current runtime slice is intentionally small and versioned as ABI `1.16`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -38,6 +38,11 @@ output convention as other names. `travel_world` submits a game-thread level
 travel request through `UGameplayStatics::OpenLevel`; the call returning `OK`
 means the request was submitted, not that loading has completed. Existing world
 and object handles may become invalid during travel.
+
+Player-flow helpers use actor handles for controllers, pawns, and view targets.
+The controller lookup selects local player index zero. Possession and view-target
+changes are submitted on the game thread and require the supplied handles to
+reference the corresponding Unreal types.
 
 The actor class path passed to `spawn_actor` is an Unreal object/class path that
 must be loadable in the current runtime build. A missing or non-actor class is

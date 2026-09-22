@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 15u
+#define UEC_ABI_MINOR 16u
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,7 +65,8 @@ enum {
     UEC_CAPABILITY_COLLISION = UINT64_C(1) << 8,
     UEC_CAPABILITY_ASSETS = UINT64_C(1) << 9,
     UEC_CAPABILITY_ASYNC_ASSETS = UINT64_C(1) << 10,
-    UEC_CAPABILITY_LEVEL_TRAVEL = UINT64_C(1) << 11
+    UEC_CAPABILITY_LEVEL_TRAVEL = UINT64_C(1) << 11,
+    UEC_CAPABILITY_PLAYER_FLOW = UINT64_C(1) << 12
 };
 
 typedef struct uec_context uec_context;
@@ -180,6 +181,14 @@ typedef struct uec_api {
                                           size_t* required_size);
     uec_result (UEC_CALL *travel_world)(uec_world* world,
                                         uec_string_view level_path);
+    uec_result (UEC_CALL *get_first_player_controller)(uec_world* world,
+                                                      uec_actor** out_controller);
+    uec_result (UEC_CALL *get_controller_pawn)(uec_actor* controller,
+                                               uec_actor** out_pawn);
+    uec_result (UEC_CALL *possess_pawn)(uec_actor* controller,
+                                        uec_actor* pawn);
+    uec_result (UEC_CALL *set_controller_view_target)(uec_actor* controller,
+                                                      uec_actor* view_target);
     uec_result (UEC_CALL *get_default_world)(uec_context* context, uec_world** out_world);
     uec_result (UEC_CALL *release_world)(uec_world* world);
     uec_result (UEC_CALL *spawn_actor)(uec_world* world,

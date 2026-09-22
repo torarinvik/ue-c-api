@@ -6,6 +6,8 @@
 #include "Engine/StreamableManager.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SceneComponent.h"
 #include "HAL/CriticalSection.h"
@@ -192,7 +194,7 @@ namespace
             UEC_CAPABILITY_WORLD | UEC_CAPABILITY_ACTORS | UEC_CAPABILITY_COMPONENTS |
             UEC_CAPABILITY_TIMERS | UEC_CAPABILITY_CLASS_METADATA | UEC_CAPABILITY_REFLECTION |
             UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS | UEC_CAPABILITY_ASYNC_ASSETS;
-        *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL;
+        *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW;
         return UEC_RESULT_OK;
     }
 
@@ -348,6 +350,75 @@ namespace
         const FString path = ToFString(levelPath);
         if (path.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
         UGameplayStatics::OpenLevel(world, FName(*path));
+        return UEC_RESULT_OK;
+    }
+
+    static FUECActor* MakeActorHandle(AActor* actor)
+    {
+        if (actor == nullptr) return nullptr;
+        auto* handle = new FUECActor();
+        handle->Value = actor;
+        {
+            FScopeLock lock(&GHandleMutex);
+            GActors.Add(handle);
+        }
+        return handle;
+    }
+
+    uec_result UEC_CALL GetFirstPlayerController(uec_world* rawWorld, uec_actor** outController)
+    {
+        if (outController == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outController = nullptr;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        APlayerController* controller = UGameplayStatics::GetPlayerController(world, 0);
+        FUECActor* handle = MakeActorHandle(controller);
+        if (handle == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        *outController = reinterpret_cast<uec_actor*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetControllerPawn(uec_actor* rawController, uec_actor** outPawn)
+    {
+        if (outPawn == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outPawn = nullptr;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        FUECActor* handle = MakeActorHandle(controller->GetPawn());
+        if (handle == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        *outPawn = reinterpret_cast<uec_actor*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL PossessPawn(uec_actor* rawController, uec_actor* rawPawn)
+    {
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        auto* pawnHandle = reinterpret_cast<FUECActor*>(rawPawn);
+        if (!IsValidActor(controllerHandle) || !IsValidActor(pawnHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        APawn* pawn = Cast<APawn>(pawnHandle->Value.Get());
+        if (controller == nullptr || pawn == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        controller->Possess(pawn);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetControllerViewTarget(uec_actor* rawController, uec_actor* rawViewTarget)
+    {
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        auto* viewTargetHandle = reinterpret_cast<FUECActor*>(rawViewTarget);
+        if (!IsValidActor(controllerHandle) || !IsValidActor(viewTargetHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        AActor* viewTarget = viewTargetHandle->Value.Get();
+        if (controller == nullptr || viewTarget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        controller->SetViewTarget(viewTarget);
         return UEC_RESULT_OK;
     }
 
@@ -1163,7 +1234,8 @@ namespace
         sizeof(uec_api), UEC_ABI_MAJOR, UEC_ABI_MINOR,
         &GetCapabilities, &GetLastError, &Log, &ReleaseContext,
         &GetWorldCount, &GetWorldAt, &GetWorldKind, &GetWorldName, &TravelWorld,
-        &GetDefaultWorld,
+        &GetFirstPlayerController, &GetControllerPawn, &PossessPawn,
+        &SetControllerViewTarget, &GetDefaultWorld,
         &ReleaseWorld, &SpawnActor, &ReleaseActor, &DestroyActor,
         &GetActorTransform, &SetActorTransform, &GetActorName, &ActorHasTag,
         &GetActorRootComponent, &GetActorComponentCount, &GetActorComponentAt,
