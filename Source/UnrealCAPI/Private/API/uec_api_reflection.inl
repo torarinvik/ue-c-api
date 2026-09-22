@@ -651,6 +651,7 @@
                     *outHasReturnValue = UEC_TRUE;
                 }
                 else {
+                    if (*outParameterCount == UINT32_MAX) return UEC_RESULT_INTERNAL_ERROR;
                     ++(*outParameterCount);
                 }
             }
