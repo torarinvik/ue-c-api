@@ -16,6 +16,10 @@
 #include "CollisionShape.h"
 #include "Components/SceneComponent.h"
 #include "Components/PrimitiveComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/StaticMesh.h"
+#include "Engine/SkeletalMesh.h"
 #include "Camera/CameraComponent.h"
 #include "Sound/SoundBase.h"
 #include "Blueprint/UserWidget.h"
@@ -268,7 +272,8 @@ namespace
         *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW |
             UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_COLLISION_QUERIES |
             UEC_CAPABILITY_AUDIO | UEC_CAPABILITY_UI | UEC_CAPABILITY_CAMERA |
-            UEC_CAPABILITY_SAVE_DATA | UEC_CAPABILITY_THREADING | UEC_CAPABILITY_MOVEMENT;
+            UEC_CAPABILITY_SAVE_DATA | UEC_CAPABILITY_THREADING | UEC_CAPABILITY_MOVEMENT |
+            UEC_CAPABILITY_PRESENTATION;
         return UEC_RESULT_OK;
     }
 
@@ -1911,6 +1916,33 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL SetStaticMesh(uec_scene_component* rawComponent, uec_object* rawMesh)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        auto* meshHandle = reinterpret_cast<FUECObject*>(rawMesh);
+        if (!IsValidComponent(componentHandle) || !IsValidObject(meshHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UStaticMeshComponent* component = Cast<UStaticMeshComponent>(componentHandle->Value.Get());
+        UStaticMesh* mesh = Cast<UStaticMesh>(meshHandle->Value.Get());
+        if (component == nullptr || mesh == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        return component->SetStaticMesh(mesh) ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    uec_result UEC_CALL SetSkeletalMesh(uec_scene_component* rawComponent,
+                                        uec_object* rawMesh,
+                                        uec_bool reinitializePose)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        auto* meshHandle = reinterpret_cast<FUECObject*>(rawMesh);
+        if (!IsValidComponent(componentHandle) || !IsValidObject(meshHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(componentHandle->Value.Get());
+        USkeletalMesh* mesh = Cast<USkeletalMesh>(meshHandle->Value.Get());
+        if (component == nullptr || mesh == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        component->SetSkeletalMesh(mesh, reinitializePose != UEC_FALSE);
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -1960,7 +1992,8 @@ namespace
         &SetObjectPropertyValue, &SetObjectPropertyString,
         &CreateSaveGame, &SaveGameToSlot, &LoadGameFromSlot, &DeleteGameSlot,
         &RunOnGameThread, &CancelGameThreadRequest,
-        &AddPawnMovementInput, &JumpCharacter, &StopCharacterJumping
+        &AddPawnMovementInput, &JumpCharacter, &StopCharacterJumping,
+        &SetStaticMesh, &SetSkeletalMesh
     };
 }
 

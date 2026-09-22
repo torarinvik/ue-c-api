@@ -26,6 +26,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Save-game slots and object properties | Runtime implemented / Unreal integration pending | Create, load, save, delete, and edit supported reflected save-object fields |
 | Game-thread dispatch | Runtime implemented / Unreal integration pending | Queue and cancel borrowed callbacks from worker threads |
 | Pawn and character movement | Runtime implemented / Unreal integration pending | Add world-space pawn input and character jump state |
+| Mesh presentation | Runtime implemented / Unreal integration pending | Assign loaded static or skeletal meshes to compatible components |
 | Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, and game-thread callbacks |
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries and game-thread `OpenLevel` requests |
