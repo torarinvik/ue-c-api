@@ -69,6 +69,7 @@
         *outCount = 0;
         for (TFieldIterator<FProperty> iterator(klass, EFieldIteratorFlags::IncludeSuper); iterator; ++iterator)
         {
+            if (*outCount == UINT32_MAX) return UEC_RESULT_INTERNAL_ERROR;
             ++(*outCount);
         }
         return UEC_RESULT_OK;
@@ -583,6 +584,7 @@
         *outCount = 0;
         for (TFieldIterator<UFunction> iterator(klass, EFieldIteratorFlags::IncludeSuper); iterator; ++iterator)
         {
+            if (*outCount == UINT32_MAX) return UEC_RESULT_INTERNAL_ERROR;
             ++(*outCount);
         }
         return UEC_RESULT_OK;

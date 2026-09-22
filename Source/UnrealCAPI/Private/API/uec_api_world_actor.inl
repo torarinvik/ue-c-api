@@ -101,6 +101,7 @@
             if (worldContext.World() != nullptr &&
                 (worldContext.WorldType == EWorldType::Game || worldContext.WorldType == EWorldType::PIE))
             {
+                if (*outCount == UINT32_MAX) return UEC_RESULT_INTERNAL_ERROR;
                 ++(*outCount);
             }
         }
@@ -438,6 +439,7 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         TArray<USceneComponent*> components;
         actor->GetComponents<USceneComponent>(components);
+        if (static_cast<uint64>(components.Num()) > UINT32_MAX) return UEC_RESULT_INTERNAL_ERROR;
         *outCount = static_cast<uint32_t>(components.Num());
         return UEC_RESULT_OK;
     }
