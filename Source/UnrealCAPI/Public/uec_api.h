@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 97u
+#define UEC_ABI_MINOR 98u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -226,14 +226,14 @@ typedef void (UEC_CALL *uec_timer_callback)(uint64_t timer_id, void* user_data);
 typedef void (UEC_CALL *uec_tick_callback)(uint64_t subscription_id,
                                            double delta_seconds,
                                            void* user_data);
-typedef void (UEC_CALL *uec_audio_finished_callback)(uint64_t subscription_id,
-                                                     void* user_data);
+typedef void (UEC_CALL *uec_audio_finished_callback)(uint64_t subscription_id, void* user_data);
 typedef void (UEC_CALL *uec_animation_finished_callback)(uint64_t subscription_id,
                                                          void* user_data);
 typedef void (UEC_CALL *uec_component_hit_callback)(uint64_t subscription_id,
                                                     uec_actor* other_actor,
                                                     uec_vector3 normal_impulse,
                                                     void* user_data);
+typedef void (UEC_CALL *uec_actor_destroyed_callback)(uint64_t subscription_id, void* user_data);
 typedef void (UEC_CALL *uec_widget_event_callback)(uint64_t subscription_id,
                                                    void* user_data);
 typedef void (UEC_CALL *uec_object_load_callback)(uint64_t request_id,
@@ -785,6 +785,7 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_streaming_level_state_async)(uec_world* world, uec_string_view package_path, uec_bool should_be_loaded, uec_bool should_be_visible, uec_streaming_callback callback, void* user_data, uint64_t* out_request_id); uec_result (UEC_CALL *cancel_streaming_level_request)(uec_context* context, uint64_t request_id);
     uec_result (UEC_CALL *get_component_collision_response)(uec_scene_component* component, uec_trace_channel channel, uec_collision_response* out_response);
     uec_result (UEC_CALL *get_config_integer)(uec_context* context, uec_string_view section, uec_string_view key, int64_t* out_value); uec_result (UEC_CALL *set_config_integer)(uec_context* context, uec_string_view section, uec_string_view key, int64_t value);
+    uec_result (UEC_CALL *bind_actor_destroyed)(uec_actor* actor, uec_actor_destroyed_callback callback, void* user_data, uint64_t* out_subscription_id); uec_result (UEC_CALL *unbind_actor_destroyed)(uec_context* context, uint64_t subscription_id);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

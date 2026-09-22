@@ -69,7 +69,7 @@ namespace
     static void CancelActorSubscriptions(AActor* actor);
     static void CancelActorSubscriptionsForWorld(UWorld* world);
     static void RemoveActorDestroyedHandler(UWorld* world);
-    static void RemoveAllActorDestroyedHandlers();
+    static void RemoveAllActorDestroyedHandlers(); static void ClearAllActorDestroyedSubscriptions();
     static void HandleWorldCleanup(UWorld* world, bool sessionEnded, bool cleanupResources);
     static void HandlePostLoadMap(UWorld* world); static void CancelAllTravelRequests(); static void CancelAllStreamingRequests(); static void CancelStreamingRequestsFor(UWorld* world);
     static bool AllocateMonotonicId(uint64& nextId, uint64& outId)
@@ -719,7 +719,7 @@ namespace
         &InvokeActorFunctionValue,
         &InvokeActorFunctionValues, &GetClassFunctionParameterAt,
         &InvokeActorFunctionTextValues, &FindObjectHandle,
-        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText, &GetComponentCollisionEnabled, &GetAudioComponentPlaying, &SetStreamingLevelStateAsync, &CancelStreamingLevelRequest, &GetComponentCollisionResponse, &GetConfigInteger, &SetConfigInteger
+        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText, &GetComponentCollisionEnabled, &GetAudioComponentPlaying, &SetStreamingLevelStateAsync, &CancelStreamingLevelRequest, &GetComponentCollisionResponse, &GetConfigInteger, &SetConfigInteger, &BindActorDestroyed, &UnbindActorDestroyed
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
@@ -758,7 +758,7 @@ public:
         CancelAllTravelRequests(); CancelAllStreamingRequests();
         CancelAllSaveGameRequests();
         CancelAllInputBindings();
-        RemoveAllActorDestroyedHandlers();
+        RemoveAllActorDestroyedHandlers(); ClearAllActorDestroyedSubscriptions();
         ClearAllHandles();
         UE_LOG(LogTemp, Log, TEXT("%s runtime module stopped"), UTF8_TO_TCHAR(kModuleName));
     }

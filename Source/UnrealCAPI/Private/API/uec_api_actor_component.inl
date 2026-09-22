@@ -29,6 +29,9 @@
     }
 
     static TMap<UWorld*, FDelegateHandle> GActorDestroyedHandlers;
+    struct FUECActorDestroyedSubscription final { uint64 Id = 0; TWeakObjectPtr<AActor> Actor; uec_actor_destroyed_callback Callback = nullptr; void* UserData = nullptr; bool Cancelled = false; bool InCallback = false; };
+    static TMap<uint64, TSharedPtr<FUECActorDestroyedSubscription>> GActorDestroyedSubscriptions;
+    static uint64 GNextActorDestroyedSubscriptionId = 1;
 
     static void InvalidateDestroyedActorHandles(AActor* actor)
     {
@@ -63,6 +66,20 @@
     static void HandleActorDestroyed(AActor* actor)
     {
         if (actor == nullptr) return;
+        TArray<TSharedPtr<FUECActorDestroyedSubscription>> completed;
+        TArray<uint64> completedIds;
+        for (const TPair<uint64, TSharedPtr<FUECActorDestroyedSubscription>>& pair : GActorDestroyedSubscriptions)
+        {
+            if (pair.Value.IsValid() && pair.Value->Actor.Get() == actor) { completedIds.Add(pair.Key); completed.Add(pair.Value); }
+        }
+        for (uint64 id : completedIds) GActorDestroyedSubscriptions.Remove(id);
+        for (const TSharedPtr<FUECActorDestroyedSubscription>& subscription : completed)
+        {
+            if (!subscription.IsValid() || subscription->Cancelled || subscription->Callback == nullptr) continue;
+            subscription->InCallback = true; FUECCallbackScope callbackScope;
+            subscription->Callback(subscription->Id, subscription->UserData);
+            subscription->InCallback = false; subscription->Cancelled = true;
+        }
         CancelActorSubscriptions(actor);
         InvalidateDestroyedActorHandles(actor);
     }
@@ -167,6 +184,49 @@
             }
         }
         for (AActor* actor : actors) CancelActorSubscriptions(actor);
+        TArray<uint64> destroyedIds;
+        for (const TPair<uint64, TSharedPtr<FUECActorDestroyedSubscription>>& pair : GActorDestroyedSubscriptions)
+        {
+            if (pair.Value.IsValid() && pair.Value->Actor.IsValid() && pair.Value->Actor->GetWorld() == world) destroyedIds.Add(pair.Key);
+        }
+        for (uint64 id : destroyedIds) { TSharedPtr<FUECActorDestroyedSubscription>* subscription = GActorDestroyedSubscriptions.Find(id); if (subscription != nullptr && subscription->IsValid()) (*subscription)->Cancelled = true; GActorDestroyedSubscriptions.Remove(id); }
+    }
+
+    uec_result UEC_CALL BindActorDestroyed(uec_actor* rawActor, uec_actor_destroyed_callback callback, void* userData, uint64_t* outSubscriptionId)
+    {
+        if (outSubscriptionId != nullptr) *outSubscriptionId = 0;
+        if (callback == nullptr || outSubscriptionId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr || actor->GetWorld() == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (GActorDestroyedSubscriptions.Num() >= MaxSubscriptions) return UEC_RESULT_QUEUE_FULL;
+        EnsureActorDestroyedHandler(actor->GetWorld());
+        if (!GActorDestroyedHandlers.Contains(actor->GetWorld())) return UEC_RESULT_INTERNAL_ERROR;
+        uint64 id = 0;
+        if (!AllocateMonotonicId(GNextActorDestroyedSubscriptionId, id)) return UEC_RESULT_INTERNAL_ERROR;
+        auto subscription = MakeShared<FUECActorDestroyedSubscription>();
+        subscription->Id = id; subscription->Actor = actor; subscription->Callback = callback; subscription->UserData = userData;
+        GActorDestroyedSubscriptions.Add(id, subscription); *outSubscriptionId = id;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL UnbindActorDestroyed(uec_context* rawContext, uint64_t subscriptionId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        TSharedPtr<FUECActorDestroyedSubscription>* subscription = GActorDestroyedSubscriptions.Find(subscriptionId);
+        if (subscription == nullptr || !subscription->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
+        (*subscription)->Cancelled = true; GActorDestroyedSubscriptions.Remove(subscriptionId);
+        return UEC_RESULT_OK;
+    }
+
+    static void ClearAllActorDestroyedSubscriptions()
+    {
+        for (const TPair<uint64, TSharedPtr<FUECActorDestroyedSubscription>>& pair : GActorDestroyedSubscriptions)
+            if (pair.Value.IsValid()) pair.Value->Cancelled = true;
+        GActorDestroyedSubscriptions.Empty();
     }
 
     /* Actor lifetime and transform operations. */

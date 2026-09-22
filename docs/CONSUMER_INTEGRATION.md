@@ -82,6 +82,9 @@ ABI 96 adds per-channel collision response readback, including overlap values
 that the boolean setter cannot express.
 ABI 97 adds game-INI integer get/set helpers; values outside Unreal's signed
 32-bit configuration range are rejected before writing.
+ABI 98 adds one-shot actor-destruction callbacks. Unbind while the actor is
+alive when possible; world cleanup and module shutdown remove remaining
+subscriptions without invoking consumer code.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

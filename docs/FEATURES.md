@@ -12,7 +12,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Runtime drain diagnostics | Runtime implemented | Game-thread counts for subscriptions, pending requests, and in-flight callbacks before consumer unload |
 | Context/world/actor handles | Runtime implemented / Unreal integration pending | Typed active registries and weak UObject references |
 | World selection | Runtime implemented / Unreal integration pending | Indexed active Game/PIE enumeration, explicit world-kind enumeration including editor/preview/inactive contexts, world kind, PIE instance identifiers, network mode, authority query, game-mode/game-state access, authority-gated mutators, and first-world convenience |
-| Actor spawn and destruction | Runtime implemented / Unreal integration pending | Loadable actor class paths; game thread only |
+| Actor spawn and destruction | Runtime implemented / Unreal integration pending | Loadable actor class paths, stale-handle invalidation, and one-shot destruction callbacks; game thread only |
 | Actor identity and tags | Runtime implemented / Unreal integration pending | UTF-8 name output, tag lookup/enumeration, authority-gated tag add/remove, and game-thread access |
 | Actor transforms | Runtime implemented / Unreal integration pending | Double-precision C POD transform; game thread only |
 | Scene components | Runtime implemented / Unreal integration pending | Root-component handle, world transforms, visibility and activation read/write, and class-filtered enumeration |

@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 97u, "ABI minor must include config integers");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 98u, "ABI minor must include actor destruction callbacks");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -196,6 +196,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_config_integer) >
 UEC_TEST_ASSERT(offsetof(uec_api, set_config_integer) >
                    offsetof(uec_api, get_config_integer),
                "config integer write must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, bind_actor_destroyed) >
+                   offsetof(uec_api, set_config_integer),
+               "actor destruction binding must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, unbind_actor_destroyed) >
+                   offsetof(uec_api, bind_actor_destroyed),
+               "actor destruction unbinding must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -401,6 +407,15 @@ int main(void)
     {
         api->release_context(context);
         return 24;
+    }
+
+    uint64_t destroyed_subscription_id = 42u;
+    if (api->bind_actor_destroyed(NULL, NULL, NULL, &destroyed_subscription_id) != UEC_RESULT_INVALID_ARGUMENT ||
+        destroyed_subscription_id != 0u ||
+        api->unbind_actor_destroyed(context, 42u) != UEC_RESULT_UNSUPPORTED)
+    {
+        api->release_context(context);
+        return 25;
     }
 
     const char message[] = "C ABI smoke test";

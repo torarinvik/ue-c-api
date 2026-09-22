@@ -319,6 +319,24 @@ static uec_result UEC_CALL StubSetConfigInteger(uec_context* context,
     return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubBindActorDestroyed(uec_actor* actor,
+                                                  uec_actor_destroyed_callback callback,
+                                                  void* userData,
+                                                  uint64_t* outSubscriptionId)
+{
+    (void)actor;
+    (void)userData;
+    if (outSubscriptionId != NULL) *outSubscriptionId = 0u;
+    return callback == NULL || outSubscriptionId == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubUnbindActorDestroyed(uec_context* context,
+                                                    uint64_t subscriptionId)
+{
+    (void)subscriptionId;
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -362,6 +380,8 @@ static const uec_api g_api = {
     .get_component_collision_response = &StubGetComponentCollisionResponse,
     .get_config_integer = &StubGetConfigInteger,
     .set_config_integer = &StubSetConfigInteger,
+    .bind_actor_destroyed = &StubBindActorDestroyed,
+    .unbind_actor_destroyed = &StubUnbindActorDestroyed,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
