@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.20`.
+The current runtime slice is intentionally small and versioned as ABI `1.21`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -8,7 +8,7 @@ Unreal headers and C++ types stay inside the plugin.
 `get_capabilities` reports the feature bits present in the loaded bridge. The
 current implementation reports bootstrap, logging, world, actor, component,
 timer, reflection, collision, asset loading, player flow, input, physics,
-collision-query, and audio adapters.
+collision-query, audio, and UI adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed active
 handle registries. A world or actor handle is a bridge-owned reference to an
@@ -115,6 +115,12 @@ overlap ordering is unspecified and every copied handle must be released.
 `play_sound_at_location` is a game-thread, fire-and-forget adapter for a loaded
 `USoundBase` object handle. It accepts volume and pitch multipliers, does not
 retain the sound handle, and does not expose playback completion or replication.
+
+`create_widget` loads a `UUserWidget` class path and creates a weak object handle
+owned by the caller. `add_widget_to_viewport` and `remove_widget_from_parent`
+operate on that handle on the game thread. The widget must be kept alive by
+being added to a viewport or another Unreal owner; releasing the bridge handle
+does not destroy the widget.
 
 ## Verification
 

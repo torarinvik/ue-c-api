@@ -17,7 +17,8 @@ public class UnrealCAPI : ModuleRules
             "Engine",
             "CoreUObject",
             "InputCore",
-            "AssetManager"
+            "AssetManager",
+            "UMG"
         });
 
         // Keep the first ABI slice usable by packaged runtime builds. Editor-only

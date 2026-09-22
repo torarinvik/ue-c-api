@@ -23,6 +23,7 @@ development; they do not imply a published or runtime-verified release.
   simulating primitive roots.
 - World-aligned sphere, box, and capsule sweeps and bounded overlap queries.
 - Fire-and-forget spatial playback for loaded `USoundBase` objects.
+- Basic UMG widget creation and viewport add/remove operations.
 - Reflected actor property writes and reads for supported scalar, string, name,
   and text types.
 - C consumer source and public math-type layout assertions.

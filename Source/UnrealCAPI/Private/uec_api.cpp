@@ -14,6 +14,7 @@
 #include "Components/SceneComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Sound/SoundBase.h"
+#include "Blueprint/UserWidget.h"
 #include "HAL/CriticalSection.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/ScopeLock.h"
@@ -253,7 +254,7 @@ namespace
             UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS | UEC_CAPABILITY_ASYNC_ASSETS;
         *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW |
             UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_COLLISION_QUERIES |
-            UEC_CAPABILITY_AUDIO;
+            UEC_CAPABILITY_AUDIO | UEC_CAPABILITY_UI;
         return UEC_RESULT_OK;
     }
 
@@ -420,6 +421,18 @@ namespace
         {
             FScopeLock lock(&GHandleMutex);
             GActors.Add(handle);
+        }
+        return handle;
+    }
+
+    static FUECObject* MakeObjectHandle(UObject* object)
+    {
+        if (object == nullptr) return nullptr;
+        auto* handle = new FUECObject();
+        handle->Value = object;
+        {
+            FScopeLock lock(&GHandleMutex);
+            GObjects.Add(handle);
         }
         return handle;
     }
@@ -1349,6 +1362,53 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL CreateWidget(uec_world* rawWorld,
+                                     uec_string_view widgetClassPath,
+                                     uec_object** outWidget)
+    {
+        if (outWidget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outWidget = nullptr;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (widgetClassPath.data == nullptr && widgetClassPath.size != 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        APlayerController* controller = world->GetFirstPlayerController();
+        if (controller == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        UClass* widgetClass = LoadClass<UUserWidget>(nullptr, *ToFString(widgetClassPath));
+        if (widgetClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        UUserWidget* widget = CreateWidget<UUserWidget>(controller, widgetClass);
+        FUECObject* handle = MakeObjectHandle(widget);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outWidget = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL AddWidgetToViewport(uec_object* rawWidget, int32_t zOrder)
+    {
+        auto* widgetHandle = reinterpret_cast<FUECObject*>(rawWidget);
+        if (!IsValidObject(widgetHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UUserWidget* widget = Cast<UUserWidget>(widgetHandle->Value.Get());
+        if (widget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        widget->AddToViewport(zOrder);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL RemoveWidgetFromParent(uec_object* rawWidget)
+    {
+        auto* widgetHandle = reinterpret_cast<FUECObject*>(rawWidget);
+        if (!IsValidObject(widgetHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UUserWidget* widget = Cast<UUserWidget>(widgetHandle->Value.Get());
+        if (widget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        widget->RemoveFromParent();
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL InvokeActorFunction(uec_actor* rawActor, uec_string_view functionName)
     {
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
@@ -1383,12 +1443,7 @@ namespace
         *outObject = nullptr;
         UObject* object = LoadObject<UObject>(nullptr, *ToFString(objectPath));
         if (object == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        auto* handle = new FUECObject();
-        handle->Value = object;
-        {
-            FScopeLock lock(&GHandleMutex);
-            GObjects.Add(handle);
-        }
+        auto* handle = MakeObjectHandle(object);
         *outObject = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -1526,7 +1581,8 @@ namespace
         &SetActorPropertyValue, &SetActorPropertyString, &LineTrace,
         &InvokeActorFunction, &LoadObjectHandle, &ReleaseObject,
         &GetObjectName, &ObjectIsA, &RequestObjectLoad, &CancelObjectLoad,
-        &SweepTrace, &OverlapShape, &PlaySoundAtLocation
+        &SweepTrace, &OverlapShape, &PlaySoundAtLocation,
+        &CreateWidget, &AddWidgetToViewport, &RemoveWidgetFromParent
     };
 }
 

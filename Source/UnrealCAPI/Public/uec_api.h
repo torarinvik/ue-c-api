@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 20u
+#define UEC_ABI_MINOR 21u
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,7 +70,8 @@ enum {
     UEC_CAPABILITY_INPUT = UINT64_C(1) << 13,
     UEC_CAPABILITY_PHYSICS = UINT64_C(1) << 14,
     UEC_CAPABILITY_COLLISION_QUERIES = UINT64_C(1) << 15,
-    UEC_CAPABILITY_AUDIO = UINT64_C(1) << 16
+    UEC_CAPABILITY_AUDIO = UINT64_C(1) << 16,
+    UEC_CAPABILITY_UI = UINT64_C(1) << 17
 };
 
 typedef struct uec_context uec_context;
@@ -348,6 +349,12 @@ typedef struct uec_api {
                                                   uec_vector3 location,
                                                   double volume_multiplier,
                                                   double pitch_multiplier);
+    uec_result (UEC_CALL *create_widget)(uec_world* world,
+                                         uec_string_view widget_class_path,
+                                         uec_object** out_widget);
+    uec_result (UEC_CALL *add_widget_to_viewport)(uec_object* widget,
+                                                  int32_t z_order);
+    uec_result (UEC_CALL *remove_widget_from_parent)(uec_object* widget);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the
