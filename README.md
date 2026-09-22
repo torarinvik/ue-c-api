@@ -22,6 +22,10 @@ compilation and runtime tests still need an engine installation. See
 [CONTRIBUTING.md](CONTRIBUTING.md) to participate and [CHANGELOG.md](CHANGELOG.md)
 for changes in development.
 
+When Unreal Engine is installed locally, `UE_ROOT=/path/to/UnrealEngine sh
+tests/run_unreal_build.sh` compiles, cooks, stages, and packages the host project;
+set `UEC_UNREAL_CONFIGURATION=Shipping` for a Shipping build.
+
 Consumer startup, table compatibility, threading, callback ownership, handle
 lifetime, and shutdown rules are collected in
 [docs/CONSUMER_INTEGRATION.md](docs/CONSUMER_INTEGRATION.md).

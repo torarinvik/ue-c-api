@@ -105,6 +105,8 @@ development; they do not imply a published or runtime-verified release.
   live handles, subscriptions, bindings, and queued requests.
 - External Unreal world cleanup now cancels world-owned work and invalidates
   world-bound bridge handles, including during PIE restart and non-bridge travel.
+- Added an opt-in `tests/run_unreal_build.sh` gate for compiling, cooking,
+  staging, and packaging the host project when `UE_ROOT` is available.
 - Actor and attached-audio creation clean up the newly created Unreal object if
   bridge-handle allocation fails.
 - Queued game-thread, object-load, and save-game callbacks now recheck the

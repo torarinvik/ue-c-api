@@ -21,3 +21,6 @@ Config/DefaultEditorPerProjectUserSettings.ini
 
 # Build artifacts from the standalone C smoke consumer
 tests/c_smoke/c_smoke
+
+# Unreal build verification output
+.unreal-ci/

@@ -19,6 +19,13 @@ the CI matrix also repeats those linked consumers with AddressSanitizer and
 UndefinedBehaviorSanitizer. These checks do not compile the Unreal module or
 run PIE.
 
+With an installed engine, run `UE_ROOT=/path/to/UnrealEngine
+sh tests/run_unreal_build.sh` to compile, cook, stage, and package the minimal
+host project for the current platform. Set `UEC_UNREAL_CONFIGURATION=Shipping`
+to repeat the build in Shipping mode. The script exits with status 2 when the
+engine path is unavailable, so the portable gate remains usable on contributors'
+machines without Unreal installed.
+
 When an engine installation is available, record the exact UE patch, host OS,
 architecture, compiler version, build configuration, and whether the check ran
 in Editor PIE, packaged Development, packaged Shipping, or dedicated-server
