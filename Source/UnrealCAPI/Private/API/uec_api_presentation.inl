@@ -347,6 +347,7 @@
         CancelAudioSubscriptionsFor(audio);
         TombstoneHandle(audioHandle->Header);
         audioHandle->Value.Reset();
+        audioHandle->StrongValue.Reset();
         audio->Stop();
         audio->DestroyComponent();
         return UEC_RESULT_OK;

@@ -188,7 +188,8 @@ development; they do not imply a published or runtime-verified release.
 - Bounded world, class, object, component, and actor-name outputs now reject a
   null required-size pointer before touching the associated Unreal handle.
 - Explicit audio-component destruction now tombstones and clears the bridge
-  handle before destroying the Unreal component.
+  handle, including any retained strong reference, before destroying the
+  Unreal component.
 - One-shot widget, audio, and component-hit callbacks now avoid touching a raw
   Unreal delegate after cancellation or destruction from inside the callback.
 - Asynchronous object-load completions now use the shared gated object-handle
