@@ -377,6 +377,92 @@
         return ReadInvocationPropertyValue(outputProperty, parameterMemory, outReturnValue);
     }
 
+    uec_result UEC_CALL InvokeActorFunctionValues(
+        uec_actor* rawActor,
+        uec_string_view functionName,
+        const uec_property_value* argumentValues,
+        uint32_t argumentCount,
+        uec_property_value* outValues,
+        uint32_t outCapacity,
+        uint32_t* outCount)
+    {
+        if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outCount = 0;
+        if (outCapacity != 0 && outValues == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(functionName) || functionName.size == 0 ||
+            (argumentCount != 0 && argumentValues == nullptr)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
+        if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net) ||
+            (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly) &&
+             actor->GetWorld() != nullptr && actor->GetWorld()->GetNetMode() == NM_Client)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (!function->HasAnyFunctionFlags(FUNC_BlueprintCallable | FUNC_Native | FUNC_BlueprintEvent)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+
+        TArray<FProperty*> inputParameters;
+        TArray<FProperty*> outputParameters;
+        FProperty* returnProperty = nullptr;
+        for (TFieldIterator<FProperty> iterator(function); iterator; ++iterator)
+        {
+            FProperty* parameter = *iterator;
+            if (!parameter->HasAnyPropertyFlags(CPF_Parm)) continue;
+            if (parameter->HasAnyPropertyFlags(CPF_ReturnParm)) {
+                returnProperty = parameter;
+                continue;
+            }
+            if (parameter->HasAnyPropertyFlags(CPF_OutParm)) outputParameters.Add(parameter);
+            if (!parameter->HasAnyPropertyFlags(CPF_OutParm) ||
+                parameter->HasAnyPropertyFlags(CPF_ReferenceParm)) inputParameters.Add(parameter);
+        }
+        if (argumentCount != static_cast<uint32_t>(inputParameters.Num())) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+
+        TArray<FProperty*> outputProperties;
+        if (returnProperty != nullptr) outputProperties.Add(returnProperty);
+        outputProperties.Append(outputParameters);
+        if (static_cast<uint64>(outputProperties.Num()) > UINT32_MAX) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        *outCount = static_cast<uint32_t>(outputProperties.Num());
+        if (static_cast<uint64>(outputProperties.Num()) > outCapacity) {
+            return UEC_RESULT_BUFFER_TOO_SMALL;
+        }
+        for (uint32_t index = 0; index < *outCount; ++index)
+        {
+            if (outValues[index].struct_size < sizeof(uec_property_value)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+        }
+
+        FStructOnScope parameters(function);
+        uint8* parameterMemory = parameters.GetStructMemory();
+        for (uint32_t index = 0; index < argumentCount; ++index)
+        {
+            const uec_result result = SetInvocationPropertyValue(
+                inputParameters[static_cast<int32>(index)], parameterMemory, argumentValues[index]);
+            if (result != UEC_RESULT_OK) return result;
+        }
+        actor->ProcessEvent(function, parameterMemory);
+        for (uint32_t index = 0; index < *outCount; ++index)
+        {
+            const uec_result result = ReadInvocationPropertyValue(
+                outputProperties[static_cast<int32>(index)], parameterMemory, &outValues[index]);
+            if (result != UEC_RESULT_OK) return result;
+        }
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetClassFunctionCount(uec_class* rawClass, uint32_t* outCount)
     {
         if (outCount != nullptr) *outCount = 0;

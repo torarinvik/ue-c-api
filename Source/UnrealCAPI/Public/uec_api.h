@@ -1,10 +1,8 @@
 #ifndef UEC_API_H
 #define UEC_API_H
-
 /* Public header: this file must compile as C11 and C++. */
 #include <stddef.h>
 #include <stdint.h>
-
 #if defined(_WIN32) || defined(__CYGWIN__)
 #  if defined(UEC_BUILDING_LIBRARY)
 #    define UEC_API __declspec(dllexport)
@@ -22,13 +20,12 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 84u
+#define UEC_ABI_MINOR 85u
 #ifdef __cplusplus
 extern "C" {
 #endif
 typedef uint8_t uec_bool;
 enum { UEC_FALSE = 0u, UEC_TRUE = 1u };
-
 typedef enum uec_result {
     UEC_RESULT_OK = 0,
     UEC_RESULT_INVALID_ARGUMENT = 1,
@@ -41,7 +38,6 @@ typedef enum uec_result {
     UEC_RESULT_INTERNAL_ERROR = 8,
     UEC_RESULT_QUEUE_FULL = 9
 } uec_result;
-
 typedef enum uec_world_kind {
     UEC_WORLD_KIND_UNKNOWN = 0,
     UEC_WORLD_KIND_GAME = 1,
@@ -50,7 +46,6 @@ typedef enum uec_world_kind {
     UEC_WORLD_KIND_GAME_PREVIEW = 4,
     UEC_WORLD_KIND_INACTIVE = 5
 } uec_world_kind;
-
 typedef enum uec_net_mode {
     UEC_NET_MODE_UNKNOWN = 0,
     UEC_NET_MODE_STANDALONE = 1,
@@ -58,7 +53,6 @@ typedef enum uec_net_mode {
     UEC_NET_MODE_LISTEN_SERVER = 3,
     UEC_NET_MODE_CLIENT = 4
 } uec_net_mode;
-
 typedef uint64_t uec_capabilities;
 enum {
     UEC_CAPABILITY_BOOTSTRAP = UINT64_C(1) << 0,
@@ -783,6 +777,13 @@ typedef struct uec_api {
                                                        const uec_property_value* argument_values,
                                                        uint32_t argument_count,
                                                        uec_property_value* out_return_value);
+    uec_result (UEC_CALL *invoke_actor_function_values)(uec_actor* actor,
+                                                        uec_string_view function_name,
+                                                        const uec_property_value* argument_values,
+                                                        uint32_t argument_count,
+                                                        uec_property_value* out_values,
+                                                        uint32_t out_capacity,
+                                                        uint32_t* out_count);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the
@@ -796,5 +797,4 @@ UEC_API uec_result UEC_CALL uec_get_api(uint32_t requested_major,
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
-
 #endif /* UEC_API_H */

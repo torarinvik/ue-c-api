@@ -204,6 +204,8 @@ development; they do not imply a published or runtime-verified release.
   game-preview, inactive, and game contexts.
 - ABI minor 84 adds scalar reflected function invocation for boolean, integer,
   enum, float, and double arguments with a return or first-out value.
+- ABI minor 85 adds scalar reflected function invocation with a caller-sized
+  output array containing the return value and every scalar out parameter.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

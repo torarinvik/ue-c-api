@@ -100,6 +100,25 @@ static uec_result UEC_CALL StubInvokeActorFunctionValue(
     return UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubInvokeActorFunctionValues(
+    uec_actor* actor,
+    uec_string_view functionName,
+    const uec_property_value* argumentValues,
+    uint32_t argumentCount,
+    uec_property_value* outValues,
+    uint32_t outCapacity,
+    uint32_t* outCount)
+{
+    (void)actor;
+    (void)functionName;
+    (void)argumentValues;
+    (void)argumentCount;
+    (void)outValues;
+    (void)outCapacity;
+    if (outCount != NULL) *outCount = 0u;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -125,6 +144,7 @@ static const uec_api g_api = {
     .get_world_count_by_kind = &StubGetWorldCountByKind,
     .get_world_at_by_kind = &StubGetWorldAtByKind,
     .invoke_actor_function_value = &StubInvokeActorFunctionValue,
+    .invoke_actor_function_values = &StubInvokeActorFunctionValues,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

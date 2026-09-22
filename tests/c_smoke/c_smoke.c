@@ -18,7 +18,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 84u, "ABI minor must include typed invocation");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 85u, "ABI minor must include multi-output invocation");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -142,6 +142,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_world_at_by_kind) >
 UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_value) >
                    offsetof(uec_api, get_world_at_by_kind),
                "typed invocation must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_values) >
+                   offsetof(uec_api, invoke_actor_function_value),
+               "multi-output invocation must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -224,6 +227,15 @@ int main(void)
     {
         api->release_context(context);
         return 12;
+    }
+
+    uint32_t invocation_count = 42u;
+    result = api->invoke_actor_function_values(NULL, empty_function_name, NULL, 0, NULL, 0,
+                                               &invocation_count);
+    if (result != UEC_RESULT_UNSUPPORTED || invocation_count != 0u)
+    {
+        api->release_context(context);
+        return 13;
     }
 
     const char message[] = "C ABI smoke test";

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.84`.
+The current runtime slice is intentionally small and versioned as ABI `1.85`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -52,6 +52,13 @@ integer, enum, float, and double arguments into reflected native or Blueprint
 functions and returns the function return value or first out parameter in a
 `uec_property_value`. Strings, objects, structs, containers, latent functions,
 and network functions remain on the text or unsupported paths.
+
+ABI minor 85 adds `invoke_actor_function_values`. It preserves the scalar
+marshaling rules while returning the function result followed by every scalar
+out parameter into a caller-sized `uec_property_value` array. The required
+output count is reported before an undersized call returns
+`UEC_RESULT_BUFFER_TOO_SMALL`; strings, objects, structs, containers, latent
+functions, and network functions remain on the text or unsupported paths.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

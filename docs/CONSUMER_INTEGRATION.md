@@ -41,6 +41,11 @@ explicit editor, PIE, game-preview, inactive, and game-world selection. The
 original Game/PIE lookup remains the convenience path for active gameplay.
 ABI 84 adds scalar `invoke_actor_function_value`; initialize every argument and
 return `uec_property_value` with its `struct_size` before calling it.
+ABI 85 adds `invoke_actor_function_values`; initialize every argument and each
+caller-provided output slot with its `struct_size`, call once with a capacity,
+and retry with the reported count when the result is
+`UEC_RESULT_BUFFER_TOO_SMALL`. Outputs are ordered as the return value first,
+then reflected scalar out parameters.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

@@ -483,7 +483,6 @@ namespace
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return world->GetNetMode() == NM_Client ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_OK;
     }
-
     static bool IsFiniteTransform(const uec_transform& value)
     {
         const double rotationLengthSquared = value.rotation.x * value.rotation.x +
@@ -718,7 +717,8 @@ namespace
         &GetRuntimeStats,
         &GetWorldCountByKind,
         &GetWorldAtByKind,
-        &InvokeActorFunctionValue
+        &InvokeActorFunctionValue,
+        &InvokeActorFunctionValues
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
