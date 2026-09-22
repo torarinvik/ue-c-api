@@ -592,7 +592,10 @@
         UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
 
-        const uint64 subscriptionId = GNextCollisionSubscriptionId++;
+        uint64 subscriptionId = 0;
+        if (!AllocateMonotonicId(GNextCollisionSubscriptionId, subscriptionId)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         auto subscription = MakeShared<FUECCollisionSubscription>();
         subscription->Id = subscriptionId;
         subscription->Component = component;

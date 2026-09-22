@@ -72,6 +72,13 @@ namespace
     static uint64 AllocateHandleGeneration();
     static bool InitializeHandle(FUECHandleHeader& header, EUECHandleKind kind);
 
+    static bool AllocateMonotonicId(uint64& nextId, uint64& outId)
+    {
+        if (nextId == 0) return false;
+        outId = nextId++;
+        return true;
+    }
+
     struct FUECContext final
     {
         FUECHandleHeader Header;

@@ -449,7 +449,8 @@
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
 
-        const uint64 timerId = GNextTimerId++;
+        uint64 timerId = 0;
+        if (!AllocateMonotonicId(GNextTimerId, timerId)) return UEC_RESULT_INTERNAL_ERROR;
         auto state = MakeShared<FUECTimerState>();
         state->Id = timerId;
         state->World = world;
@@ -508,7 +509,10 @@
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
 
-        const uint64 subscriptionId = GNextTickSubscriptionId++;
+        uint64 subscriptionId = 0;
+        if (!AllocateMonotonicId(GNextTickSubscriptionId, subscriptionId)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         auto subscription = MakeShared<FUECTickSubscription>();
         subscription->Id = subscriptionId;
         subscription->World = world;

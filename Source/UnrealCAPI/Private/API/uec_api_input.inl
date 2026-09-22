@@ -385,7 +385,9 @@
         if (GInputBindings.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
 
         auto binding = MakeShared<FUECInputBinding>();
-        binding->Id = GNextInputBindingId++;
+        if (!AllocateMonotonicId(GNextInputBindingId, binding->Id)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         binding->Component = inputComponent;
         binding->Callback = callback;
         binding->UserData = userData;

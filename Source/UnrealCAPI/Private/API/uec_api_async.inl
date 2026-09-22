@@ -104,7 +104,10 @@
         const FSoftObjectPath path(pathString);
         if (!path.IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
 
-        const uint64 requestId = GNextObjectLoadRequestId++;
+        uint64 requestId = 0;
+        if (!AllocateMonotonicId(GNextObjectLoadRequestId, requestId)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         auto request = MakeShared<FUECObjectLoadRequest>();
         request->Id = requestId;
         request->Path = path;
@@ -271,7 +274,9 @@
             {
                 return UEC_RESULT_QUEUE_FULL;
             }
-            request->Id = GNextGameThreadRequestId++;
+            if (!AllocateMonotonicId(GNextGameThreadRequestId, request->Id)) {
+                return UEC_RESULT_INTERNAL_ERROR;
+            }
             GGameThreadRequests.Add(request->Id, request);
         }
         *outRequestId = request->Id;
@@ -338,7 +343,9 @@
         if (GSaveGameRequests.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
 
         auto request = MakeShared<FUECSaveGameRequest>();
-        request->Id = GNextSaveGameRequestId++;
+        if (!AllocateMonotonicId(GNextSaveGameRequestId, request->Id)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         request->Callback = callback;
         request->UserData = userData;
         GSaveGameRequests.Add(request->Id, request);
@@ -383,7 +390,9 @@
         if (GSaveGameRequests.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
 
         auto request = MakeShared<FUECSaveGameRequest>();
-        request->Id = GNextSaveGameRequestId++;
+        if (!AllocateMonotonicId(GNextSaveGameRequestId, request->Id)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         request->Callback = callback;
         request->UserData = userData;
         GSaveGameRequests.Add(request->Id, request);

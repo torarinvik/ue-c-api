@@ -94,7 +94,10 @@
         UButton* button = Cast<UButton>(buttonHandle->Value.Get());
         if (button == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
 
-        const uint64 subscriptionId = GNextWidgetSubscriptionId++;
+        uint64 subscriptionId = 0;
+        if (!AllocateMonotonicId(GNextWidgetSubscriptionId, subscriptionId)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         auto subscription = MakeShared<FUECWidgetSubscription>();
         subscription->Id = subscriptionId;
         subscription->Button = button;
@@ -245,7 +248,10 @@
         UAudioComponent* audio = Cast<UAudioComponent>(audioHandle->Value.Get());
         if (audio == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
 
-        const uint64 subscriptionId = GNextAudioSubscriptionId++;
+        uint64 subscriptionId = 0;
+        if (!AllocateMonotonicId(GNextAudioSubscriptionId, subscriptionId)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         auto subscription = MakeShared<FUECAudioSubscription>();
         subscription->Id = subscriptionId;
         subscription->Component = audio;
@@ -432,7 +438,10 @@
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!component->IsPlaying()) return UEC_RESULT_NOT_INITIALIZED;
 
-        const uint64 subscriptionId = GNextAnimationSubscriptionId++;
+        uint64 subscriptionId = 0;
+        if (!AllocateMonotonicId(GNextAnimationSubscriptionId, subscriptionId)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         auto subscription = MakeShared<FUECAnimationSubscription>();
         subscription->Id = subscriptionId;
         subscription->Component = component;
