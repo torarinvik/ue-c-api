@@ -27,6 +27,31 @@ UEC_TEST_ASSERT(UEC_CAPABILITY_REFLECTION_CONTAINERS == (UINT64_C(1) << 26),
                "reflection container capability changed");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
+UEC_TEST_ASSERT(offsetof(uec_api, get_last_error) >
+                   offsetof(uec_api, get_capabilities),
+               "diagnostic retrieval must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, log) > offsetof(uec_api, get_last_error),
+               "logging must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, release_context) > offsetof(uec_api, log),
+               "context release must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_world_count) >
+                   offsetof(uec_api, release_context),
+               "world enumeration must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_world_at) >
+                   offsetof(uec_api, get_world_count),
+               "world lookup must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_world_kind) >
+                   offsetof(uec_api, get_world_at),
+               "world kind metadata must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_world_name) >
+                   offsetof(uec_api, get_world_kind),
+               "world names must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, travel_world) >
+                   offsetof(uec_api, get_world_name),
+               "world travel must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_first_player_controller) >
+                   offsetof(uec_api, travel_world),
+               "player lookup must append to uec_api");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
                "collision query functions must append to uec_api");
 UEC_TEST_ASSERT(offsetof(uec_api, run_on_game_thread) > offsetof(uec_api, delete_game_slot),
