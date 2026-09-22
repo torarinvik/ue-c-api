@@ -1,3 +1,21 @@
+/* Collision queries, attached audio, and component physics adapters. */
+    static uec_result CopyHitResult(const FHitResult& hit, uec_hit_result* outHit)
+    {
+        if (outHit == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        outHit->blocking_hit = hit.bBlockingHit ? UEC_TRUE : UEC_FALSE;
+        outHit->location = {hit.Location.X, hit.Location.Y, hit.Location.Z};
+        outHit->normal = {hit.Normal.X, hit.Normal.Y, hit.Normal.Z};
+        outHit->distance = hit.Distance;
+        outHit->actor = nullptr;
+        if (AActor* actor = hit.GetActor())
+        {
+            FUECActor* actorHandle = MakeActorHandle(actor);
+            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
+        }
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL LineTrace(uec_world* rawWorld,
                                   uec_vector3 start,
                                   uec_vector3 end,
@@ -28,17 +46,7 @@
             collisionChannel,
             queryParams);
         if (!didHit) return UEC_RESULT_OK;
-        outHit->blocking_hit = hit.bBlockingHit ? UEC_TRUE : UEC_FALSE;
-        outHit->location = {hit.Location.X, hit.Location.Y, hit.Location.Z};
-        outHit->normal = {hit.Normal.X, hit.Normal.Y, hit.Normal.Z};
-        outHit->distance = hit.Distance;
-        if (AActor* actor = hit.GetActor())
-        {
-            auto* actorHandle = MakeActorHandle(actor);
-            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
-            outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
-        }
-        return UEC_RESULT_OK;
+        return CopyHitResult(hit, outHit);
     }
 
     uec_result UEC_CALL SweepTrace(uec_world* rawWorld,
@@ -78,17 +86,7 @@
             queryParams,
             FCollisionResponseParams::DefaultResponseParam);
         if (!didHit) return UEC_RESULT_OK;
-        outHit->blocking_hit = hit.bBlockingHit ? UEC_TRUE : UEC_FALSE;
-        outHit->location = {hit.Location.X, hit.Location.Y, hit.Location.Z};
-        outHit->normal = {hit.Normal.X, hit.Normal.Y, hit.Normal.Z};
-        outHit->distance = hit.Distance;
-        if (AActor* actor = hit.GetActor())
-        {
-            FUECActor* actorHandle = MakeActorHandle(actor);
-            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
-            outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
-        }
-        return UEC_RESULT_OK;
+        return CopyHitResult(hit, outHit);
     }
 
     uec_result UEC_CALL OverlapShape(uec_world* rawWorld,
@@ -462,17 +460,7 @@
             collisionChannel,
             queryParams);
         if (!didHit) return UEC_RESULT_OK;
-        outHit->blocking_hit = hit.bBlockingHit ? UEC_TRUE : UEC_FALSE;
-        outHit->location = {hit.Location.X, hit.Location.Y, hit.Location.Z};
-        outHit->normal = {hit.Normal.X, hit.Normal.Y, hit.Normal.Z};
-        outHit->distance = hit.Distance;
-        if (AActor* actor = hit.GetActor())
-        {
-            FUECActor* actorHandle = MakeActorHandle(actor);
-            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
-            outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
-        }
-        return UEC_RESULT_OK;
+        return CopyHitResult(hit, outHit);
     }
 
     uec_result UEC_CALL SweepTraceFiltered(uec_world* rawWorld,
@@ -521,17 +509,7 @@
             queryParams,
             FCollisionResponseParams::DefaultResponseParam);
         if (!didHit) return UEC_RESULT_OK;
-        outHit->blocking_hit = hit.bBlockingHit ? UEC_TRUE : UEC_FALSE;
-        outHit->location = {hit.Location.X, hit.Location.Y, hit.Location.Z};
-        outHit->normal = {hit.Normal.X, hit.Normal.Y, hit.Normal.Z};
-        outHit->distance = hit.Distance;
-        if (AActor* actor = hit.GetActor())
-        {
-            FUECActor* actorHandle = MakeActorHandle(actor);
-            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
-            outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
-        }
-        return UEC_RESULT_OK;
+        return CopyHitResult(hit, outHit);
     }
 
     uec_result UEC_CALL OverlapShapeFiltered(uec_world* rawWorld,
