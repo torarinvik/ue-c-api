@@ -148,6 +148,8 @@ development; they do not imply a published or runtime-verified release.
   UndefinedBehaviorSanitizer coverage.
 - The C smoke consumer now verifies unsupported ABI requests clear output
   pointers before returning.
+- `get_last_error` now validates its context and requires the caller's
+  required-size output, matching other bounded string APIs.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

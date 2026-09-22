@@ -24,7 +24,8 @@ static uec_result UEC_CALL StubGetLastError(uec_context* context,
                                             size_t* requiredSize)
 {
     static const char message[] = "No error";
-    if (context != &g_context || requiredSize == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (requiredSize == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (context != &g_context) return UEC_RESULT_INVALID_HANDLE;
     *requiredSize = sizeof(message);
     if (buffer == NULL || bufferSize < sizeof(message)) return UEC_RESULT_BUFFER_TOO_SMALL;
     memcpy(buffer, message, sizeof(message));

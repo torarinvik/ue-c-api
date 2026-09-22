@@ -22,6 +22,10 @@ destroys or unloads that object. Every operation reports
 Releasing a handle releases the bridge handle; it does not destroy an Unreal
 object. `destroy_actor` destroys the actor and tombstones its actor handle.
 
+`get_last_error` requires a valid context and a non-null required-size output;
+it returns the bounded diagnostic string using the same terminating-NUL buffer
+contract as other text APIs.
+
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
 returns `UEC_RESULT_WRONG_THREAD` for calls made from another thread. Queued

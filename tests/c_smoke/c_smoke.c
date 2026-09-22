@@ -151,6 +151,14 @@ int main(void)
         return 7;
     }
 
+    size_t invalid_required = 0;
+    result = api->get_last_error(NULL, NULL, 0, &invalid_required);
+    if (result != UEC_RESULT_INVALID_HANDLE || invalid_required != 0)
+    {
+        api->release_context(context);
+        return 8;
+    }
+
     uec_capabilities capabilities = 0;
     result = api->get_capabilities(context, &capabilities);
     if (result != UEC_RESULT_OK || (capabilities & UEC_CAPABILITY_BOOTSTRAP) == 0 ||
