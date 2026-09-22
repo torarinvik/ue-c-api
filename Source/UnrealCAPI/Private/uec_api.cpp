@@ -50,20 +50,48 @@ namespace
 {
     constexpr char kModuleName[] = "UnrealCAPI";
 
+    enum class EUECHandleKind : uint8
+    {
+        Context,
+        World,
+        Actor,
+        SceneComponent,
+        Class,
+        Object
+    };
+
+    struct FUECHandleHeader final
+    {
+        EUECHandleKind Kind = EUECHandleKind::Context;
+        uint64 Generation = 0;
+        bool bReleased = false;
+    };
+
+    static uint64 AllocateHandleGeneration();
+    static bool InitializeHandle(FUECHandleHeader& header, EUECHandleKind kind);
+
     struct FUECContext final
     {
-        uint64 Generation = 1;
-        bool bReleased = false;
+        FUECHandleHeader Header;
     };
 
     struct FUECWorld final
     {
+        FUECHandleHeader Header;
         TWeakObjectPtr<UWorld> Value;
         uec_world_kind Kind = UEC_WORLD_KIND_UNKNOWN;
         int32 PIEInstance = -1;
     };
-    struct FUECActor final { TWeakObjectPtr<AActor> Value; };
-    struct FUECSceneComponent final { TWeakObjectPtr<USceneComponent> Value; };
+    struct FUECActor final
+    {
+        FUECHandleHeader Header;
+        TWeakObjectPtr<AActor> Value;
+    };
+    struct FUECSceneComponent final
+    {
+        FUECHandleHeader Header;
+        TWeakObjectPtr<USceneComponent> Value;
+    };
     struct FUECTimerState final
     {
         uint64 Id = 0;
@@ -115,9 +143,14 @@ namespace
         bool InCallback = false;
         bool WasPlaying = false;
     };
-    struct FUECClass final { TWeakObjectPtr<UClass> Value; };
+    struct FUECClass final
+    {
+        FUECHandleHeader Header;
+        TWeakObjectPtr<UClass> Value;
+    };
     struct FUECObject final
     {
+        FUECHandleHeader Header;
         TWeakObjectPtr<UObject> Value;
         TStrongObjectPtr<UObject> StrongValue;
     };
@@ -156,6 +189,7 @@ namespace
 
     FCriticalSection GHandleMutex;
     bool GShuttingDown = false;
+    uint64 GNextHandleGeneration = 1;
     TSet<const FUECContext*> GContexts;
     TSet<const FUECWorld*> GWorlds;
     TSet<const FUECActor*> GActors;
@@ -183,6 +217,29 @@ namespace
     constexpr int32 MaxQueuedObjectLoads = 1024;
     constexpr int32 MaxQueuedGameThreadRequests = 1024;
 
+    static uint64 AllocateHandleGeneration()
+    {
+        FScopeLock lock(&GHandleMutex);
+        if (GNextHandleGeneration == 0) return 0;
+        return GNextHandleGeneration++;
+    }
+
+    static bool InitializeHandle(FUECHandleHeader& header, EUECHandleKind kind)
+    {
+        const uint64 generation = AllocateHandleGeneration();
+        if (generation == 0) return false;
+        header.Kind = kind;
+        header.Generation = generation;
+        header.bReleased = false;
+        return true;
+    }
+
+    static void TombstoneHandle(FUECHandleHeader& header)
+    {
+        FScopeLock lock(&GHandleMutex);
+        header.bReleased = true;
+    }
+
     static bool IsShuttingDown()
     {
         FScopeLock lock(&GHandleMutex);
@@ -193,37 +250,49 @@ namespace
     {
         const auto* context = reinterpret_cast<const FUECContext*>(rawContext);
         FScopeLock lock(&GHandleMutex);
-        return context != nullptr && !GShuttingDown && GContexts.Contains(context) && !context->bReleased;
+        return context != nullptr && !GShuttingDown && GContexts.Contains(context) &&
+            context->Header.Kind == EUECHandleKind::Context &&
+            context->Header.Generation != 0 && !context->Header.bReleased;
     }
 
     static bool IsValidWorld(const FUECWorld* world)
     {
         FScopeLock lock(&GHandleMutex);
-        return world != nullptr && !GShuttingDown && GWorlds.Contains(world);
+        return world != nullptr && !GShuttingDown && GWorlds.Contains(world) &&
+            world->Header.Kind == EUECHandleKind::World && world->Header.Generation != 0 &&
+            !world->Header.bReleased;
     }
 
     static bool IsValidActor(const FUECActor* actor)
     {
         FScopeLock lock(&GHandleMutex);
-        return actor != nullptr && !GShuttingDown && GActors.Contains(actor);
+        return actor != nullptr && !GShuttingDown && GActors.Contains(actor) &&
+            actor->Header.Kind == EUECHandleKind::Actor && actor->Header.Generation != 0 &&
+            !actor->Header.bReleased;
     }
 
     static bool IsValidComponent(const FUECSceneComponent* component)
     {
         FScopeLock lock(&GHandleMutex);
-        return component != nullptr && !GShuttingDown && GComponents.Contains(component);
+        return component != nullptr && !GShuttingDown && GComponents.Contains(component) &&
+            component->Header.Kind == EUECHandleKind::SceneComponent &&
+            component->Header.Generation != 0 && !component->Header.bReleased;
     }
 
     static bool IsValidClass(const FUECClass* klass)
     {
         FScopeLock lock(&GHandleMutex);
-        return klass != nullptr && !GShuttingDown && GClasses.Contains(klass);
+        return klass != nullptr && !GShuttingDown && GClasses.Contains(klass) &&
+            klass->Header.Kind == EUECHandleKind::Class && klass->Header.Generation != 0 &&
+            !klass->Header.bReleased;
     }
 
     static bool IsValidObject(const FUECObject* object)
     {
         FScopeLock lock(&GHandleMutex);
-        return object != nullptr && !GShuttingDown && GObjects.Contains(object);
+        return object != nullptr && !GShuttingDown && GObjects.Contains(object) &&
+            object->Header.Kind == EUECHandleKind::Object && object->Header.Generation != 0 &&
+            !object->Header.bReleased;
     }
 
     static uec_property_kind GetPropertyKind(const FProperty* property)
@@ -605,13 +674,19 @@ UEC_API uec_result UEC_CALL uec_get_api(uint32_t requestedMajor,
         return UEC_RESULT_UNSUPPORTED;
     }
 
+    auto* context = new FUECContext();
+    if (!InitializeHandle(context->Header, EUECHandleKind::Context))
+    {
+        delete context;
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
     {
         FScopeLock lock(&GHandleMutex);
         if (GShuttingDown)
         {
+            delete context;
             return UEC_RESULT_SHUTTING_DOWN;
         }
-        auto* context = new FUECContext();
         GContexts.Add(context);
         *outApi = &GApi;
         *outContext = reinterpret_cast<uec_context*>(context);

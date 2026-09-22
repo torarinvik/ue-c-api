@@ -51,10 +51,12 @@ animation stops. Looping playback remains active until the consumer stops it.
 
 ## Handles and shutdown
 
-Handles are opaque bridge references to Unreal objects. Releasing a handle does
-not destroy the Unreal object. Weak object handles become invalid when Unreal
-destroys or unloads the object; use `retain_object` when a GC-tracked strong
-reference is needed and release that retained handle when finished.
+Handles are opaque bridge references to Unreal objects. Each handle has a
+typed, monotonic generation and released handles remain tombstoned until module
+shutdown, preventing stale pointer acceptance after address reuse. Releasing a
+handle does not destroy the Unreal object. Weak object handles become invalid
+when Unreal destroys or unloads the object; use `retain_object` when a GC-tracked
+strong reference is needed and release that retained handle when finished.
 
 Stop submitting work before unloading the module. Shutdown first rejects new
 API entry points, then cancels timers, subscriptions, queued callbacks, asset

@@ -9,6 +9,11 @@
         UClass* klass = LoadClass<UObject>(nullptr, *ToFString(classPath));
         if (klass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = new FUECClass();
+        if (!InitializeHandle(handle->Header, EUECHandleKind::Class))
+        {
+            delete handle;
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         handle->Value = klass;
         {
             FScopeLock lock(&GHandleMutex);
@@ -22,11 +27,8 @@
     {
         auto* handle = reinterpret_cast<FUECClass*>(rawClass);
         if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
-        {
-            FScopeLock lock(&GHandleMutex);
-            GClasses.Remove(handle);
-        }
-        delete handle;
+        TombstoneHandle(handle->Header);
+        handle->Value.Reset();
         return UEC_RESULT_OK;
     }
 

@@ -17,11 +17,8 @@
     {
         auto* handle = reinterpret_cast<FUECObject*>(rawObject);
         if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
-        {
-            FScopeLock lock(&GHandleMutex);
-            GObjects.Remove(handle);
-        }
-        delete handle;
+        TombstoneHandle(handle->Header);
+        handle->Value.Reset();
         return UEC_RESULT_OK;
     }
 
@@ -114,6 +111,13 @@
             if (loadedObject != nullptr)
             {
                 auto* handle = new FUECObject();
+                if (!InitializeHandle(handle->Header, EUECHandleKind::Object))
+                {
+                    delete handle;
+                    GObjectLoadRequests.Remove(current->Id);
+                    current->Callback(current->Id, UEC_RESULT_INTERNAL_ERROR, nullptr, current->UserData);
+                    return;
+                }
                 handle->Value = loadedObject;
                 {
                     FScopeLock lock(&GHandleMutex);

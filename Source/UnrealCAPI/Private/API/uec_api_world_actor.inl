@@ -54,12 +54,7 @@
         {
             return UEC_RESULT_INVALID_HANDLE;
         }
-        context->bReleased = true;
-        {
-            FScopeLock lock(&GHandleMutex);
-            GContexts.Remove(context);
-        }
-        delete context;
+        TombstoneHandle(context->Header);
         return UEC_RESULT_OK;
     }
 
@@ -76,6 +71,11 @@
             if (world != nullptr && (worldContext.WorldType == EWorldType::Game || worldContext.WorldType == EWorldType::PIE))
             {
                 auto* handle = new FUECWorld();
+                if (!InitializeHandle(handle->Header, EUECHandleKind::World))
+                {
+                    delete handle;
+                    return UEC_RESULT_INTERNAL_ERROR;
+                }
                 handle->Value = world;
                 handle->Kind = ToWorldKind(worldContext.WorldType);
                 handle->PIEInstance = worldContext.PIEInstance;
@@ -126,6 +126,11 @@
             }
             if (current++ != index) continue;
             auto* handle = new FUECWorld();
+            if (!InitializeHandle(handle->Header, EUECHandleKind::World))
+            {
+                delete handle;
+                return UEC_RESULT_INTERNAL_ERROR;
+            }
             handle->Value = world;
             handle->Kind = ToWorldKind(worldContext.WorldType);
             handle->PIEInstance = worldContext.PIEInstance;
@@ -253,6 +258,11 @@
     {
         if (actor == nullptr) return nullptr;
         auto* handle = new FUECActor();
+        if (!InitializeHandle(handle->Header, EUECHandleKind::Actor))
+        {
+            delete handle;
+            return nullptr;
+        }
         handle->Value = actor;
         {
             FScopeLock lock(&GHandleMutex);
@@ -265,6 +275,11 @@
     {
         if (object == nullptr) return nullptr;
         auto* handle = new FUECObject();
+        if (!InitializeHandle(handle->Header, EUECHandleKind::Object))
+        {
+            delete handle;
+            return nullptr;
+        }
         handle->Value = object;
         {
             FScopeLock lock(&GHandleMutex);
@@ -339,11 +354,8 @@
     {
         auto* world = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(world)) return UEC_RESULT_INVALID_HANDLE;
-        {
-            FScopeLock lock(&GHandleMutex);
-            GWorlds.Remove(world);
-        }
-        delete world;
+        TombstoneHandle(world->Header);
+        world->Value.Reset();
         return UEC_RESULT_OK;
     }
 

@@ -11,13 +11,15 @@ timer, reflection, collision, asset loading, player flow, input, physics,
 collision-query, audio, UI, camera, save-data, game-thread dispatch, and
 movement, presentation, retained-object, and component-introspection adapters.
 
-Contexts, worlds, and actors are opaque handles validated against typed active
-handle registries. A world or actor handle is a bridge-owned reference to an
-Unreal object that may become invalid when Unreal destroys or unloads that
-object. Every operation reports
+Contexts, worlds, and actors are opaque handles validated against typed
+registries. Each handle receives a monotonic generation and kind tag; released
+handles are tombstoned until module shutdown so a stale pointer cannot be
+accepted after allocator address reuse. A world or actor handle is a
+bridge-owned reference to an Unreal object that may become invalid when Unreal
+destroys or unloads that object. Every operation reports
 `UEC_RESULT_INVALID_HANDLE` when the referenced object is no longer valid.
 Releasing a handle releases the bridge handle; it does not destroy an Unreal
-object. `destroy_actor` destroys the actor and consumes its actor handle.
+object. `destroy_actor` destroys the actor and tombstones its actor handle.
 
 World and actor operations must run on Unreal's game thread. The initial slice
 returns `UEC_RESULT_WRONG_THREAD` for calls made from another thread. Queued

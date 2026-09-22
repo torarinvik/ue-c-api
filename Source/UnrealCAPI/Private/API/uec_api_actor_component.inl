@@ -2,6 +2,11 @@
     {
         if (component == nullptr) return nullptr;
         auto* handle = new FUECSceneComponent();
+        if (!InitializeHandle(handle->Header, EUECHandleKind::SceneComponent))
+        {
+            delete handle;
+            return nullptr;
+        }
         handle->Value = component;
         {
             FScopeLock lock(&GHandleMutex);
@@ -34,12 +39,8 @@
         if (actorClass == nullptr || !actorClass->IsChildOf(AActor::StaticClass())) return UEC_RESULT_INVALID_ARGUMENT;
         AActor* actor = world->SpawnActor<AActor>(actorClass, ToFTransform(*transform));
         if (actor == nullptr) return UEC_RESULT_INTERNAL_ERROR;
-        auto* handle = new FUECActor();
-        handle->Value = actor;
-        {
-            FScopeLock lock(&GHandleMutex);
-            GActors.Add(handle);
-        }
+        auto* handle = MakeActorHandle(actor);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
         *outActor = reinterpret_cast<uec_actor*>(handle);
         return UEC_RESULT_OK;
     }
@@ -50,11 +51,8 @@
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = handle->Value.Get();
-        {
-            FScopeLock lock(&GHandleMutex);
-            GActors.Remove(handle);
-        }
-        delete handle;
+        TombstoneHandle(handle->Header);
+        handle->Value.Reset();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return actor->Destroy() ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;
     }
@@ -64,11 +62,8 @@
         auto* handle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        {
-            FScopeLock lock(&GHandleMutex);
-            GActors.Remove(handle);
-        }
-        delete handle;
+        TombstoneHandle(handle->Header);
+        handle->Value.Reset();
         return UEC_RESULT_OK;
     }
 
@@ -246,11 +241,8 @@
         auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        {
-            FScopeLock lock(&GHandleMutex);
-            GComponents.Remove(handle);
-        }
-        delete handle;
+        TombstoneHandle(handle->Header);
+        handle->Value.Reset();
         return UEC_RESULT_OK;
     }
 

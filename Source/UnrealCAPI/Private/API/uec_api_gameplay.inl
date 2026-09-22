@@ -34,12 +34,8 @@
         outHit->distance = hit.Distance;
         if (AActor* actor = hit.GetActor())
         {
-            auto* actorHandle = new FUECActor();
-            actorHandle->Value = actor;
-            {
-                FScopeLock lock(&GHandleMutex);
-                GActors.Add(actorHandle);
-            }
+            auto* actorHandle = MakeActorHandle(actor);
+            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
             outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
         }
         return UEC_RESULT_OK;
