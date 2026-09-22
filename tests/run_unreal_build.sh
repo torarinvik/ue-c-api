@@ -5,6 +5,7 @@ repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 engine_root=${UE_ROOT:-}
 configuration=${UEC_UNREAL_CONFIGURATION:-Development}
 requested_platform=${UEC_UNREAL_PLATFORM:-}
+skip_editor_args=
 
 if [ -z "$engine_root" ]; then
     printf '%s\n' 'UE_ROOT must point to an Unreal Engine installation.' >&2
@@ -16,9 +17,9 @@ if [ ! -d "$engine_root/Engine" ]; then
 fi
 
 case "$(uname -s)" in
-    Darwin) platform=Mac; uat="$engine_root/Engine/Build/BatchFiles/RunUAT.sh" ;;
-    Linux) platform=Linux; uat="$engine_root/Engine/Build/BatchFiles/RunUAT.sh" ;;
-    MINGW*|MSYS*|CYGWIN*) platform=Win64; uat="$engine_root/Engine/Build/BatchFiles/RunUAT.bat" ;;
+    Darwin) host_platform=Mac; platform=$host_platform; uat="$engine_root/Engine/Build/BatchFiles/RunUAT.sh" ;;
+    Linux) host_platform=Linux; platform=$host_platform; uat="$engine_root/Engine/Build/BatchFiles/RunUAT.sh" ;;
+    MINGW*|MSYS*|CYGWIN*) host_platform=Win64; platform=$host_platform; uat="$engine_root/Engine/Build/BatchFiles/RunUAT.bat" ;;
     *) printf 'Unsupported host platform: %s\n' "$(uname -s)" >&2; exit 2 ;;
 esac
 if [ -n "$requested_platform" ]; then
@@ -27,7 +28,12 @@ if [ -n "$requested_platform" ]; then
             printf 'UEC_UNREAL_PLATFORM contains unsupported characters: %s\n' "$requested_platform" >&2
             exit 2
             ;;
-        *) platform=$requested_platform ;;
+        *)
+            platform=$requested_platform
+            if [ "$platform" != "$host_platform" ]; then
+                skip_editor_args=-skipbuildeditor
+            fi
+            ;;
     esac
 fi
 if [ ! -f "$uat" ]; then
@@ -43,6 +49,7 @@ trap 'rm -rf "$build_dir"' EXIT HUP INT TERM
     -noP4 -utf8output -unattended \
     -platform="$platform" -clientconfig="$configuration" \
     -build -cook -stage -pak -archive \
-    -archivedirectory="$build_dir/archive"
+    -archivedirectory="$build_dir/archive" \
+    $skip_editor_args
 
 printf 'Unreal %s %s build and cook completed.\n' "$platform" "$configuration"

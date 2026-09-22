@@ -31,7 +31,8 @@ sh tests/run_unreal_build.sh` to compile, cook, stage, and package the minimal
 host project for the current platform. Set `UEC_UNREAL_CONFIGURATION=Shipping`
 to repeat the build in Shipping mode. Set `UEC_UNREAL_PLATFORM=Win64` (or
 another platform supplied by the engine installation) to validate a target
-different from the host platform. The script exits with status 2 when the
+different from the host platform; cross-platform requests skip rebuilding the
+local Editor target. The script exits with status 2 when the
 engine path or requested platform is unavailable, so the portable gate remains
 usable on contributors' machines without Unreal installed.
 

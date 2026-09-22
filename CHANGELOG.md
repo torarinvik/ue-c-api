@@ -17,6 +17,8 @@ development; they do not imply a published or runtime-verified release.
   consumers import the bootstrap symbol through the intended module boundary.
 - Calling-thread bounded diagnostics for invalid or stale handles, malformed
   UTF-8 views, missing required-size outputs, and undersized buffers.
+- Cross-platform Unreal build requests now skip rebuilding the local Editor
+  target while preserving the host-platform default.
 - Public C function table with version negotiation and capability discovery.
 - Initial world, actor, scene-component, timer, collision line-trace, and class
   metadata adapters.
