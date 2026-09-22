@@ -1,10 +1,10 @@
     uec_result UEC_CALL GetControllerPawn(uec_actor* rawController, uec_actor** outPawn)
     {
+        if (outPawn != nullptr) *outPawn = nullptr;
         if (outPawn == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
         if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outPawn = nullptr;
         APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
         if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         FUECActor* handle = MakeActorHandle(controller->GetPawn());
@@ -51,6 +51,7 @@
                                         uec_string_view keyName,
                                         uec_bool* outDown)
     {
+        if (outDown != nullptr) *outDown = UEC_FALSE;
         if (outDown == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
         if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -69,6 +70,7 @@
                                          uec_string_view keyName,
                                          double* outValue)
     {
+        if (outValue != nullptr) *outValue = 0.0;
         if (outValue == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
         if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -109,6 +111,7 @@
 
     uec_result UEC_CALL GetActorVelocity(uec_actor* rawActor, uec_vector3* outVelocity)
     {
+        if (outVelocity != nullptr) *outVelocity = {};
         if (outVelocity == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -374,6 +377,7 @@
                                          void* userData,
                                          uint64_t* outBindingId)
     {
+        if (outBindingId != nullptr) *outBindingId = 0;
         if (callback == nullptr || outBindingId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         auto* actionHandle = reinterpret_cast<FUECObject*>(rawAction);
