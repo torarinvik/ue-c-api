@@ -442,17 +442,21 @@
         return UEC_RESULT_OK;
     }
 
-    uec_result UEC_CALL TraceDetailed(uec_world* rawWorld,
-                                      uec_vector3 start,
-                                      uec_vector3 end,
-                                      const uec_collision_shape* descriptor,
-                                      uec_trace_channel channel,
-                                      uec_bool traceComplex,
-                                      uec_hit_result_details* outHit)
+    static uec_result TraceDetailedInternal(
+        uec_world* rawWorld,
+        uec_vector3 start,
+        uec_vector3 end,
+        const uec_collision_shape* descriptor,
+        uec_trace_channel channel,
+        uec_bool traceComplex,
+        const uec_actor* const* ignoredActors,
+        uint32_t ignoredActorCount,
+        uec_hit_result_details* outHit)
     {
         const uec_result outputResult = PrepareHitResultDetails(outHit);
         if (outputResult != UEC_RESULT_OK) return outputResult;
-        if (!IsValidTraceEndpoints(start, end, traceComplex)) {
+        if (!IsValidTraceEndpoints(start, end, traceComplex) ||
+            (ignoredActorCount != 0 && ignoredActors == nullptr)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
@@ -463,6 +467,9 @@
         ECollisionChannel collisionChannel;
         if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
         FCollisionQueryParams queryParams = MakeTraceQueryParams(traceComplex);
+        const uec_result ignoredResult = AddIgnoredActors(
+            queryParams, ignoredActors, ignoredActorCount);
+        if (ignoredResult != UEC_RESULT_OK) return ignoredResult;
         FHitResult hit;
         bool didHit = false;
         if (descriptor == nullptr)
@@ -491,4 +498,31 @@
         }
         if (!didHit) return UEC_RESULT_OK;
         return CopyHitResultDetails(hit, outHit);
+    }
+
+    uec_result UEC_CALL TraceDetailed(uec_world* rawWorld,
+                                      uec_vector3 start,
+                                      uec_vector3 end,
+                                      const uec_collision_shape* descriptor,
+                                      uec_trace_channel channel,
+                                      uec_bool traceComplex,
+                                      uec_hit_result_details* outHit)
+    {
+        return TraceDetailedInternal(rawWorld, start, end, descriptor, channel,
+                                     traceComplex, nullptr, 0, outHit);
+    }
+
+    uec_result UEC_CALL TraceDetailedFiltered(
+        uec_world* rawWorld,
+        uec_vector3 start,
+        uec_vector3 end,
+        const uec_collision_shape* descriptor,
+        uec_trace_channel channel,
+        uec_bool traceComplex,
+        const uec_actor* const* ignoredActors,
+        uint32_t ignoredActorCount,
+        uec_hit_result_details* outHit)
+    {
+        return TraceDetailedInternal(rawWorld, start, end, descriptor, channel,
+                                     traceComplex, ignoredActors, ignoredActorCount, outHit);
     }

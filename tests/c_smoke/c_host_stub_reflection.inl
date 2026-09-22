@@ -701,6 +701,7 @@ static const uec_api g_api = {
     .set_actor_property_set_element_value = &StubSetActorPropertySetElementValue,
     .set_object_property_set_element_value = &StubSetObjectPropertySetElementValue,
     .trace_detailed = &StubTraceDetailed,
+    .trace_detailed_filtered = &StubTraceDetailedFiltered,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

@@ -467,3 +467,19 @@ static uec_result UEC_CALL StubTraceDetailed(
     outHit->component = NULL;
     return UEC_RESULT_UNSUPPORTED;
 }
+
+static uec_result UEC_CALL StubTraceDetailedFiltered(
+    uec_world* world,
+    uec_vector3 start,
+    uec_vector3 end,
+    const uec_collision_shape* shape,
+    uec_trace_channel channel,
+    uec_bool traceComplex,
+    const uec_actor* const* ignoredActors,
+    uint32_t ignoredActorCount,
+    uec_hit_result_details* outHit)
+{
+    (void)ignoredActors;
+    (void)ignoredActorCount;
+    return StubTraceDetailed(world, start, end, shape, channel, traceComplex, outHit);
+}

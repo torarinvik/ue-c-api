@@ -407,3 +407,6 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_class_property_flags) >
 UEC_TEST_ASSERT(offsetof(uec_api, trace_detailed) >
                    offsetof(uec_api, set_object_property_set_element_value),
                "detailed collision tracing must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, trace_detailed_filtered) >
+                   offsetof(uec_api, trace_detailed),
+               "filtered detailed collision tracing must append to uec_api");

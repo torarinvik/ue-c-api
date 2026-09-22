@@ -787,6 +787,7 @@ typedef struct uec_api {
                                           uec_vector3 end, const uec_collision_shape* shape,
                                           uec_trace_channel channel, uec_bool trace_complex,
                                           uec_hit_result_details* out_hit);
+    uec_result (UEC_CALL *trace_detailed_filtered)(uec_world* world, uec_vector3 start, uec_vector3 end, const uec_collision_shape* shape, uec_trace_channel channel, uec_bool trace_complex, const uec_actor* const* ignored_actors, uint32_t ignored_actor_count, uec_hit_result_details* out_hit);
 } uec_api;
 /* Bootstrap entry point; release the opaque context through the returned table. */
 UEC_API uec_result UEC_CALL uec_get_api(uint32_t requested_major,

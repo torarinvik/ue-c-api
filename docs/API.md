@@ -243,14 +243,14 @@ ABI minor 123 adds text and typed scalar replacement for existing set elements.
 The bridge rejects duplicate values, rehashes the set after a successful write,
 and requires callers to re-query logical indices after every mutation.
 
-ABI minor 124 adds `trace_detailed` and the `UEC_CAPABILITY_COLLISION_DETAILS`
-bit. Pass a null shape for a line trace or a validated sphere, box, or capsule
-shape for a sweep. The caller must initialize `uec_hit_result_details.struct_size`
+ABI minor 124 adds `trace_detailed`, `trace_detailed_filtered`, and the
+`UEC_CAPABILITY_COLLISION_DETAILS` bit. Pass a null shape for a line trace or a
+validated sphere, box, or capsule shape for a sweep. The caller must initialize `uec_hit_result_details.struct_size`
 to `sizeof(uec_hit_result_details)`; the bridge clears a valid full-size record
 before query validation and returns the base hit, impact point and normal, trace endpoints,
 penetration depth, item and face indices, and a separately owned component
-handle when Unreal reports one. The call is game-thread-only and does not
-apply ignored-actor filters.
+handle when Unreal reports one. Both calls are game-thread-only; the filtered
+variant validates and ignores the supplied actor handles.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

@@ -55,7 +55,7 @@ int main(void)
         (capabilities & UEC_CAPABILITY_STREAMING) == 0 ||
         (capabilities & UEC_CAPABILITY_REFLECTION_CONTAINERS) == 0 ||
         (capabilities & UEC_CAPABILITY_COLLISION_DETAILS) == 0 ||
-        api->trace_detailed == NULL)
+        api->trace_detailed == NULL || api->trace_detailed_filtered == NULL)
     {
         api->release_context(context);
         return 5;
@@ -71,6 +71,9 @@ int main(void)
     const uec_vector3 trace_end = {1.0, 1.0, 1.0};
     if (api->trace_detailed(NULL, trace_start, trace_end, NULL,
                             UEC_TRACE_VISIBILITY, UEC_FALSE, &details) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->trace_detailed_filtered(NULL, trace_start, trace_end, NULL,
+                                     UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &details) !=
             UEC_RESULT_UNSUPPORTED || details.hit.blocking_hit != UEC_FALSE ||
         details.item != -1 || details.face_index != -1 || details.component != NULL)
     {
