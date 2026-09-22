@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.41`.
+The current runtime slice is intentionally small and versioned as ABI `1.44`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -165,12 +165,19 @@ does not destroy the widget.
 handles that refer to `UCameraComponent` instances. Field of view is expressed
 in degrees and writes are restricted to the open interval `(0, 360)`.
 
-Object property accessors apply the same supported scalar, string, name, and text
-reflection rules as actor property accessors, but accept any valid object handle.
+Object property accessors apply the same supported scalar, enum, string, name,
+text, and hard object-reference reflection rules as actor property accessors,
+but accept any valid object handle.
 Save-game helpers create a `USaveGame` subclass by class path, save or delete a
 named slot synchronously, and load a slot only when its object is compatible
 with the requested class. Save failures are returned through the `out_saved` or
 `out_deleted` boolean; a missing load slot returns `UEC_RESULT_NOT_INITIALIZED`.
+
+`async_save_game_to_slot` and `async_load_game_from_slot` use Unreal's platform
+save delegates and invoke `uec_save_game_callback` on the game thread. Pending
+requests are bounded at 1024, can be cancelled by request id, and suppress the
+callback when cancelled. A successful async load returns a weak save-game
+object handle; retain it if it must survive beyond the callback.
 
 `run_on_game_thread` queues a borrowed callback and user pointer for execution
 on Unreal's game thread and returns a request id. `cancel_game_thread_request`

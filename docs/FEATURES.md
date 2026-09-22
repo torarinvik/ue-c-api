@@ -23,7 +23,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | One-shot spatial audio | Runtime implemented / Unreal integration pending | Fire-and-forget `USoundBase` playback at a world location |
 | Basic UMG widgets | Runtime implemented / Unreal integration pending | Create a `UUserWidget` class and add or remove it from the viewport |
 | Camera field of view | Runtime implemented / Unreal integration pending | Read and write perspective FOV on camera scene components |
-| Save-game slots and object properties | Runtime implemented / Unreal integration pending | Create, load, save, delete, and edit supported reflected save-object fields |
+| Save-game slots and object properties | Runtime implemented / Unreal integration pending | Create, load, save, delete, edit supported reflected save-object fields, and bounded async completion |
 | Game-thread dispatch | Runtime implemented / Unreal integration pending | Queue and cancel borrowed callbacks from worker threads; bounded at 1024 pending requests |
 | Pawn and character movement | Runtime implemented / Unreal integration pending | Add world-space pawn input and character jump state |
 | Mesh presentation | Runtime implemented / Unreal integration pending | Assign loaded static or skeletal meshes to compatible components |

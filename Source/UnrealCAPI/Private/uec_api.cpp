@@ -86,6 +86,13 @@ namespace
         void* UserData = nullptr;
         bool Cancelled = false;
     };
+    struct FUECSaveGameRequest final
+    {
+        uint64 Id = 0;
+        uec_save_game_callback Callback = nullptr;
+        void* UserData = nullptr;
+        bool Cancelled = false;
+    };
 
     FCriticalSection GHandleMutex;
     TSet<const FUECContext*> GContexts;
@@ -97,9 +104,11 @@ namespace
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
     TMap<uint64, TSharedPtr<FUECGameThreadRequest>> GGameThreadRequests;
+    TMap<uint64, TSharedPtr<FUECSaveGameRequest>> GSaveGameRequests;
     uint64 GNextObjectLoadRequestId = 1;
     uint64 GNextGameThreadRequestId = 1;
     uint64 GNextTimerId = 1;
+    uint64 GNextSaveGameRequestId = 1;
     constexpr int32 MaxQueuedObjectLoads = 1024;
     constexpr int32 MaxQueuedGameThreadRequests = 1024;
 
@@ -2680,6 +2689,108 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL AsyncSaveGameToSlot(uec_object* rawSaveGame,
+                                            uec_string_view slotName,
+                                            int32_t userIndex,
+                                            uec_save_game_callback callback,
+                                            void* userData,
+                                            uint64_t* outRequestId)
+    {
+        if (callback == nullptr || outRequestId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* saveHandle = reinterpret_cast<FUECObject*>(rawSaveGame);
+        if (!IsValidObject(saveHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(slotName) || slotName.size == 0 || userIndex < 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        USaveGame* saveGame = Cast<USaveGame>(saveHandle->Value.Get());
+        if (saveGame == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (GSaveGameRequests.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
+
+        auto request = MakeShared<FUECSaveGameRequest>();
+        request->Id = GNextSaveGameRequestId++;
+        request->Callback = callback;
+        request->UserData = userData;
+        GSaveGameRequests.Add(request->Id, request);
+        TWeakPtr<FUECSaveGameRequest> weakRequest = request;
+        UGameplayStatics::AsyncSaveGameToSlot(
+            saveGame,
+            ToFString(slotName),
+            userIndex,
+            FAsyncSaveGameToSlotDelegate::CreateLambda(
+                [weakRequest](const FString&, const int32, bool success)
+                {
+                    TSharedPtr<FUECSaveGameRequest> current = weakRequest.Pin();
+                    if (!current.IsValid() || current->Cancelled || current->Callback == nullptr) return;
+                    GSaveGameRequests.Remove(current->Id);
+                    current->Callback(current->Id,
+                                      success ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR,
+                                      nullptr,
+                                      success ? UEC_TRUE : UEC_FALSE,
+                                      current->UserData);
+                }));
+        *outRequestId = request->Id;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL AsyncLoadGameFromSlot(uec_context* rawContext,
+                                              uec_string_view slotName,
+                                              int32_t userIndex,
+                                              uec_save_game_callback callback,
+                                              void* userData,
+                                              uint64_t* outRequestId)
+    {
+        if (callback == nullptr || outRequestId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(slotName) || slotName.size == 0 || userIndex < 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (GSaveGameRequests.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
+
+        auto request = MakeShared<FUECSaveGameRequest>();
+        request->Id = GNextSaveGameRequestId++;
+        request->Callback = callback;
+        request->UserData = userData;
+        GSaveGameRequests.Add(request->Id, request);
+        TWeakPtr<FUECSaveGameRequest> weakRequest = request;
+        UGameplayStatics::AsyncLoadGameFromSlot(
+            ToFString(slotName),
+            userIndex,
+            FAsyncLoadGameFromSlotDelegate::CreateLambda(
+                [weakRequest](const FString&, const int32, USaveGame* saveGame)
+                {
+                    TSharedPtr<FUECSaveGameRequest> current = weakRequest.Pin();
+                    if (!current.IsValid() || current->Cancelled || current->Callback == nullptr) return;
+                    uec_object* objectHandle = nullptr;
+                    if (saveGame != nullptr)
+                    {
+                        FUECObject* handle = MakeObjectHandle(saveGame);
+                        if (handle != nullptr) objectHandle = reinterpret_cast<uec_object*>(handle);
+                    }
+                    const bool success = saveGame != nullptr && objectHandle != nullptr;
+                    GSaveGameRequests.Remove(current->Id);
+                    current->Callback(current->Id,
+                                      success ? UEC_RESULT_OK : UEC_RESULT_NOT_INITIALIZED,
+                                      objectHandle,
+                                      success ? UEC_TRUE : UEC_FALSE,
+                                      current->UserData);
+                }));
+        *outRequestId = request->Id;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL CancelSaveGameRequest(uec_context* rawContext, uint64_t requestId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        TSharedPtr<FUECSaveGameRequest>* requestPtr = GSaveGameRequests.Find(requestId);
+        if (requestPtr == nullptr || !requestPtr->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
+        (*requestPtr)->Cancelled = true;
+        GSaveGameRequests.Remove(requestId);
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2701,6 +2812,15 @@ namespace
             if (pair.Value.IsValid()) pair.Value->Cancelled = true;
         }
         GGameThreadRequests.Empty();
+    }
+
+    static void CancelAllSaveGameRequests()
+    {
+        for (const TPair<uint64, TSharedPtr<FUECSaveGameRequest>>& pair : GSaveGameRequests)
+        {
+            if (pair.Value.IsValid()) pair.Value->Cancelled = true;
+        }
+        GSaveGameRequests.Empty();
     }
 
     const uec_api GApi = {
@@ -2742,7 +2862,8 @@ namespace
         &IsObjectPathLoaded, &SpawnSoundAttached, &StopAudioComponent,
         &GetInputActionValue, &LineTraceFiltered, &InjectInputActionValue,
         &GetActorPropertyObject, &SetActorPropertyObject,
-        &GetObjectPropertyObject, &SetObjectPropertyObject
+        &GetObjectPropertyObject, &SetObjectPropertyObject,
+        &AsyncSaveGameToSlot, &AsyncLoadGameFromSlot, &CancelSaveGameRequest
     };
 }
 
@@ -2760,6 +2881,7 @@ public:
         ClearAllTimers();
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
+        CancelAllSaveGameRequests();
         ClearAllHandles();
         UE_LOG(LogTemp, Log, TEXT("%s runtime module stopped"), UTF8_TO_TCHAR(kModuleName));
     }

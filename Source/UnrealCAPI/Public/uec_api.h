@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 41u
+#define UEC_ABI_MINOR 44u
 
 #ifdef __cplusplus
 extern "C" {
@@ -204,6 +204,11 @@ typedef void (UEC_CALL *uec_object_load_callback)(uint64_t request_id,
                                                   uec_result result,
                                                   uec_object* object,
                                                   void* user_data);
+typedef void (UEC_CALL *uec_save_game_callback)(uint64_t request_id,
+                                                uec_result result,
+                                                uec_object* save_game,
+                                                uec_bool success,
+                                                void* user_data);
 typedef void (UEC_CALL *uec_game_thread_callback)(void* user_data);
 
 typedef struct uec_api {
@@ -525,6 +530,20 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_object_property_object)(uec_object* object,
                                                       uec_string_view property_name,
                                                       uec_object* value);
+    uec_result (UEC_CALL *async_save_game_to_slot)(uec_object* save_game,
+                                                   uec_string_view slot_name,
+                                                   int32_t user_index,
+                                                   uec_save_game_callback callback,
+                                                   void* user_data,
+                                                   uint64_t* out_request_id);
+    uec_result (UEC_CALL *async_load_game_from_slot)(uec_context* context,
+                                                     uec_string_view slot_name,
+                                                     int32_t user_index,
+                                                     uec_save_game_callback callback,
+                                                     void* user_data,
+                                                     uint64_t* out_request_id);
+    uec_result (UEC_CALL *cancel_save_game_request)(uec_context* context,
+                                                    uint64_t request_id);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the
