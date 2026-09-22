@@ -10,6 +10,8 @@ headers and are not compiled as independent translation units.
 - `uec_api_actor_component.inl` owns actor/component lifetime, transforms,
   component enumeration, actor queries, and cross-subsystem handle cleanup.
 - `uec_api_reflection.inl` owns class metadata and reflected scalar/string properties.
+- `uec_api_reflection_containers.inl` owns reflected arrays, maps, sets, soft
+  reference paths, and caller-owned container text outputs.
 - `uec_api_reflection_invoke.inl` owns reflected invocation, scalar marshaling,
   and object-reference property adapters.
 - `uec_api_presentation.inl` owns UMG, camera, audio (including completion

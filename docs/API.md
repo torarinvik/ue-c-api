@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.103`.
+The current runtime slice is intentionally small and versioned as ABI `1.104`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -152,6 +152,10 @@ ABI minor 103 adds `get_actor_property_soft_path` and
 class properties through the bounded UTF-8 path contract and report
 `UEC_PROPERTY_SOFT_OBJECT` or `UEC_PROPERTY_SOFT_CLASS` respectively. The
 readback does not load or retain the referenced asset.
+
+ABI minor 104 adds actor map and set count/entry readers matching the UObject
+container contract. Map keys and values and set elements use initialized
+`uec_text_output` records and remain caller-owned.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

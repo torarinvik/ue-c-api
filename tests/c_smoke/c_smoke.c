@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 103u, "ABI minor must include soft property paths");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 104u, "ABI minor must include actor map/set readback");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
                "soft property kind values changed");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
@@ -237,6 +237,18 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_soft_path) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_soft_path) >
                    offsetof(uec_api, get_actor_property_soft_path),
                "object soft path readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_map_count) >
+                   offsetof(uec_api, get_object_property_soft_path),
+               "actor map count must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_map_entry_text) >
+                   offsetof(uec_api, get_actor_property_map_count),
+               "actor map entry readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_set_count) >
+                   offsetof(uec_api, get_actor_property_map_entry_text),
+               "actor set count must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_set_element_text) >
+                   offsetof(uec_api, get_actor_property_set_count),
+               "actor set element readback must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -518,6 +530,29 @@ int main(void)
     {
         api->release_context(context);
         return 30;
+    }
+
+    map_count = 42u;
+    map_key.kind = UEC_PROPERTY_STRING;
+    map_key.required_size = 42u;
+    map_value.kind = UEC_PROPERTY_STRING;
+    map_value.required_size = 42u;
+    set_element.kind = UEC_PROPERTY_STRING;
+    set_element.required_size = 42u;
+    if (api->get_actor_property_map_count(NULL, streaming_package, &map_count) != UEC_RESULT_UNSUPPORTED ||
+        map_count != 0u ||
+        api->get_actor_property_map_entry_text(NULL, streaming_package, 0u, &map_key, &map_value) !=
+            UEC_RESULT_UNSUPPORTED || map_key.kind != UEC_PROPERTY_UNKNOWN ||
+        map_key.required_size != 0u || map_value.kind != UEC_PROPERTY_UNKNOWN ||
+        map_value.required_size != 0u ||
+        api->get_actor_property_set_count(NULL, streaming_package, &map_count) != UEC_RESULT_UNSUPPORTED ||
+        map_count != 0u ||
+        api->get_actor_property_set_element_text(NULL, streaming_package, 0u, &set_element) !=
+            UEC_RESULT_UNSUPPORTED || set_element.kind != UEC_PROPERTY_UNKNOWN ||
+        set_element.required_size != 0u)
+    {
+        api->release_context(context);
+        return 31;
     }
 
     const char message[] = "C ABI smoke test";

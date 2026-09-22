@@ -99,6 +99,8 @@ iteration order is Unreal-defined and indices must be re-queried after mutation.
 ABI 103 adds bounded soft object/class path readback for actor and UObject
 properties. These calls report distinct soft-reference kinds and never load or
 retain the referenced asset.
+ABI 104 adds actor map/set counts and text entries. The container adapters are
+append-only and invalidate indices after mutation; re-query before later reads.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

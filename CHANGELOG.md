@@ -239,6 +239,8 @@ development; they do not imply a published or runtime-verified release.
   UObject-set counts and element text readback using `uec_text_output` records.
 - ABI minor 103 adds explicit actor and UObject soft object/class property path
   readback and distinct soft-reference property kinds.
+- ABI minor 104 adds actor map/set counts and caller-owned key/value or element
+  text readback; container adapters now live in a dedicated reflection unit.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

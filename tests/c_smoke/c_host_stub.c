@@ -496,6 +496,53 @@ static uec_result UEC_CALL StubGetObjectPropertySoftPath(uec_object* object,
     return requiredSize == NULL || outKind == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetActorPropertyMapCount(uec_actor* actor,
+                                                        uec_string_view propertyName,
+                                                        uint32_t* outCount)
+{
+    (void)actor;
+    (void)propertyName;
+    if (outCount != NULL) *outCount = 0u;
+    return outCount == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetActorPropertyMapEntryText(uec_actor* actor,
+                                                            uec_string_view propertyName,
+                                                            uint32_t index,
+                                                            uec_text_output* outKey,
+                                                            uec_text_output* outValue)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    const uec_result keyResult = StubPrepareTextOutput(outKey);
+    const uec_result valueResult = StubPrepareTextOutput(outValue);
+    return keyResult != UEC_RESULT_OK || valueResult != UEC_RESULT_OK
+        ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetActorPropertySetCount(uec_actor* actor,
+                                                        uec_string_view propertyName,
+                                                        uint32_t* outCount)
+{
+    (void)actor;
+    (void)propertyName;
+    if (outCount != NULL) *outCount = 0u;
+    return outCount == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetActorPropertySetElementText(uec_actor* actor,
+                                                               uec_string_view propertyName,
+                                                               uint32_t index,
+                                                               uec_text_output* outElement)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubPrepareTextOutput(outElement) == UEC_RESULT_OK
+        ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_ARGUMENT;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -552,6 +599,10 @@ static const uec_api g_api = {
     .get_object_property_set_element_text = &StubGetObjectPropertySetElementText,
     .get_actor_property_soft_path = &StubGetActorPropertySoftPath,
     .get_object_property_soft_path = &StubGetObjectPropertySoftPath,
+    .get_actor_property_map_count = &StubGetActorPropertyMapCount,
+    .get_actor_property_map_entry_text = &StubGetActorPropertyMapEntryText,
+    .get_actor_property_set_count = &StubGetActorPropertySetCount,
+    .get_actor_property_set_element_text = &StubGetActorPropertySetElementText,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

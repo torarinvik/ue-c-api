@@ -635,6 +635,7 @@ namespace
     #include "API/uec_api_world_actor.inl"
     #include "API/uec_api_actor_component.inl"
     #include "API/uec_api_reflection.inl"
+    #include "API/uec_api_reflection_containers.inl"
     #include "API/uec_api_reflection_invoke.inl"
     #include "API/uec_api_presentation.inl"
     #include "API/uec_api_gameplay.inl"
@@ -716,12 +717,11 @@ namespace
         &OverlapShapeFiltered,
         &SetActorTag,
         &GetRuntimeStats,
-        &GetWorldCountByKind,
-        &GetWorldAtByKind,
+        &GetWorldCountByKind, &GetWorldAtByKind,
         &InvokeActorFunctionValue,
         &InvokeActorFunctionValues, &GetClassFunctionParameterAt,
         &InvokeActorFunctionTextValues, &FindObjectHandle,
-        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText, &GetComponentCollisionEnabled, &GetAudioComponentPlaying, &SetStreamingLevelStateAsync, &CancelStreamingLevelRequest, &GetComponentCollisionResponse, &GetConfigInteger, &SetConfigInteger, &BindActorDestroyed, &UnbindActorDestroyed, &GetConfigBool, &GetActorPropertyArrayCount, &GetActorPropertyArrayElementText, &GetObjectPropertyArrayCount, &GetObjectPropertyArrayElementText, &GetObjectPropertyMapCount, &GetObjectPropertyMapEntryText, &GetObjectPropertySetCount, &GetObjectPropertySetElementText, &GetActorPropertySoftPath, &GetObjectPropertySoftPath
+        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText, &GetComponentCollisionEnabled, &GetAudioComponentPlaying, &SetStreamingLevelStateAsync, &CancelStreamingLevelRequest, &GetComponentCollisionResponse, &GetConfigInteger, &SetConfigInteger, &BindActorDestroyed, &UnbindActorDestroyed, &GetConfigBool, &GetActorPropertyArrayCount, &GetActorPropertyArrayElementText, &GetObjectPropertyArrayCount, &GetObjectPropertyArrayElementText, &GetObjectPropertyMapCount, &GetObjectPropertyMapEntryText, &GetObjectPropertySetCount, &GetObjectPropertySetElementText, &GetActorPropertySoftPath, &GetObjectPropertySoftPath, &GetActorPropertyMapCount, &GetActorPropertyMapEntryText, &GetActorPropertySetCount, &GetActorPropertySetElementText
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
