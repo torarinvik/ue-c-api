@@ -21,6 +21,8 @@ development; they do not imply a published or runtime-verified release.
   target while preserving the host-platform default.
 - The portable C smoke consumer now verifies that an invalid handle produces a
   bounded readable diagnostic through `get_last_error`.
+- The portable gate links and executes the Unreal host's tracked C bootstrap
+  translation unit against the host stub.
 - Public C function table with version negotiation and capability discovery.
 - Initial world, actor, scene-component, timer, collision line-trace, and class
   metadata adapters.

@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
+uec_result UEC_CALL uec_host_smoke_bootstrap(void);
+
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
     (void)user_data;
@@ -655,6 +657,12 @@ int main(void)
     {
         api->release_context(context);
         return 6;
+    }
+
+    if (uec_host_smoke_bootstrap() != UEC_RESULT_OK)
+    {
+        api->release_context(context);
+        return 54;
     }
 
     api->release_context(context);

@@ -19,7 +19,8 @@ synthesize temporary targets before compiling the plugin and its first C
 consumer.
 The portable gate is `sh tests/run_checks.sh`. It validates the public header
 as C11 and C++17, links and runs the current and old-minor C consumers against
-an explicit host stub, checks the C gameplay example and Unreal descriptor JSON,
+an explicit host stub, including the tracked Unreal host's C bootstrap
+translation unit, checks the C gameplay example and Unreal descriptor JSON,
 and enforces the 400–800 line budget for private implementation units. The host
 stub proves consumer-side bootstrap, table calls, and the append-only prefix;
 the CI matrix also repeats those linked consumers with AddressSanitizer and

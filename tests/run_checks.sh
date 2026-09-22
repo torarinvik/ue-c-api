@@ -28,7 +28,8 @@ if [ "${UEC_SANITIZE:-0}" = 1 ]; then
     sanitizer_flags='-fsanitize=address,undefined -fno-omit-frame-pointer'
 fi
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
-    ${sanitizer_flags} "$consumer" "$layout_consumer" "$host_stub" -o "$stub_build_dir/c_smoke"
+    ${sanitizer_flags} "$consumer" "$layout_consumer" "$host_stub" "$host_consumer" \
+    -o "$stub_build_dir/c_smoke"
 "$stub_build_dir/c_smoke" >/dev/null
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     ${sanitizer_flags} "$compat_consumer" "$host_stub" -o "$stub_build_dir/c_compat"
