@@ -574,6 +574,18 @@ namespace
         }
     }
 
+    static void LogOutstandingResources()
+    {
+        FScopeLock lock(&GHandleMutex);
+        UE_LOG(LogTemp, Verbose,
+            TEXT("%s shutdown resources: handles context=%d world=%d actor=%d component=%d class=%d object=%d; timers=%d tick=%d audio=%d widget=%d animation=%d collision=%d input=%d loads=%d game_thread=%d saves=%d"),
+            UTF8_TO_TCHAR(kModuleName), GContexts.Num(), GWorlds.Num(), GActors.Num(),
+            GComponents.Num(), GClasses.Num(), GObjects.Num(), GTimers.Num(),
+            GTickSubscriptions.Num(), GAudioSubscriptions.Num(), GWidgetSubscriptions.Num(),
+            GAnimationSubscriptions.Num(), GCollisionSubscriptions.Num(), GInputBindings.Num(),
+            GObjectLoadRequests.Num(), GGameThreadRequests.Num(), GSaveGameRequests.Num());
+    }
+
 
     #include "API/uec_api_world_actor.inl"
     #include "API/uec_api_actor_component.inl"
@@ -678,6 +690,7 @@ public:
             FScopeLock lock(&GHandleMutex);
             GShuttingDown = true;
         }
+        LogOutstandingResources();
         ClearAllTimers();
         ClearAllTickSubscriptions();
         ClearAllAudioSubscriptions();

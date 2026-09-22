@@ -101,6 +101,8 @@ development; they do not imply a published or runtime-verified release.
   completion cannot leave an orphaned request in the shutdown queue.
 - World, object, and class name reads now enforce the documented game-thread
   boundary before touching Unreal reflection objects.
+- Module shutdown now emits a verbose resource summary before cleanup, covering
+  live handles, subscriptions, bindings, and queued requests.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Embedded NUL rejection for all public UTF-8 string views, including reflected,
   input, save-game, and configuration adapters.
