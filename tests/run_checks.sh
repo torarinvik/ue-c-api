@@ -29,6 +29,11 @@ fi
 "$stub_build_dir/c_compat" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPI.uplugin" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPIHost.uproject" >/dev/null
+sh -n "$repo_dir/tests/run_unreal_build.sh"
+if [ ! -x "$repo_dir/tests/run_unreal_build.sh" ]; then
+    printf '%s\n' 'The Unreal build gate must remain executable.' >&2
+    exit 1
+fi
 
 if ! rg -q 'bEnableExceptions\s*=\s*false' "$repo_dir/Source/UnrealCAPI/UnrealCAPI.Build.cs"; then
     printf '%s\n' 'The Unreal module must keep C++ exceptions disabled at the ABI boundary.' >&2
