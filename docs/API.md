@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.128`.
+The current runtime slice is intentionally small and versioned as ABI `1.129`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -263,6 +263,12 @@ ABI minor 127 adds authority-gated angular impulse application in radians for
 the simulated root body.
 ABI minor 128 adds equivalent actor-root angular-velocity readback, angular
 velocity writes, torque, and angular-impulse operations.
+ABI minor 129 adds `get_actor_property_soft_value` and
+`get_object_property_soft_value`, which return a size-checked typed output
+record containing the reflected soft-object or soft-class kind and its path.
+Matching `set_*_property_soft_value` entries require the caller's kind to match
+the reflected property's soft-object or soft-class type before importing the
+path.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

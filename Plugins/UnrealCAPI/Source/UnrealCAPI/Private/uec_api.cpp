@@ -330,7 +330,9 @@ namespace
         &GetComponentPhysicsAngularVelocity, &SetComponentPhysicsAngularVelocity,
         &ApplyComponentTorque, &ApplyComponentAngularImpulse,
         &GetActorPhysicsAngularVelocity, &SetActorPhysicsAngularVelocity,
-        &ApplyActorTorque, &ApplyActorAngularImpulse
+        &ApplyActorTorque, &ApplyActorAngularImpulse,
+        &GetActorPropertySoftValue, &GetObjectPropertySoftValue,
+        &SetActorPropertySoftValue, &SetObjectPropertySoftValue
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

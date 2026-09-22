@@ -78,6 +78,48 @@ static uec_result UEC_CALL StubGetObjectPropertySoftPath(uec_object* object,
     return requiredSize == NULL || outKind == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetActorPropertySoftValue(uec_actor* actor,
+                                                         uec_string_view propertyName,
+                                                         uec_text_output* outValue)
+{
+    (void)actor;
+    (void)propertyName;
+    const uec_result result = StubPrepareTextOutput(outValue);
+    return result == UEC_RESULT_OK ? UEC_RESULT_UNSUPPORTED : result;
+}
+
+static uec_result UEC_CALL StubGetObjectPropertySoftValue(uec_object* object,
+                                                          uec_string_view propertyName,
+                                                          uec_text_output* outValue)
+{
+    (void)object;
+    (void)propertyName;
+    const uec_result result = StubPrepareTextOutput(outValue);
+    return result == UEC_RESULT_OK ? UEC_RESULT_UNSUPPORTED : result;
+}
+
+static uec_result UEC_CALL StubSetActorPropertySoftValue(uec_actor* actor,
+                                                         uec_string_view propertyName,
+                                                         uec_property_kind kind,
+                                                         uec_string_view path)
+{
+    (void)propertyName;
+    (void)kind;
+    (void)path;
+    return actor == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetObjectPropertySoftValue(uec_object* object,
+                                                          uec_string_view propertyName,
+                                                          uec_property_kind kind,
+                                                          uec_string_view path)
+{
+    (void)propertyName;
+    (void)kind;
+    (void)path;
+    return object == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetActorPropertyMapCount(uec_actor* actor,
                                                         uec_string_view propertyName,
                                                         uint32_t* outCount)
@@ -655,6 +697,10 @@ static const uec_api g_api = {
     .get_object_property_set_element_text = &StubGetObjectPropertySetElementText,
     .get_actor_property_soft_path = &StubGetActorPropertySoftPath,
     .get_object_property_soft_path = &StubGetObjectPropertySoftPath,
+    .get_actor_property_soft_value = &StubGetActorPropertySoftValue,
+    .get_object_property_soft_value = &StubGetObjectPropertySoftValue,
+    .set_actor_property_soft_value = &StubSetActorPropertySoftValue,
+    .set_object_property_soft_value = &StubSetObjectPropertySoftValue,
     .get_actor_property_map_count = &StubGetActorPropertyMapCount,
     .get_actor_property_map_entry_text = &StubGetActorPropertyMapEntryText,
     .get_actor_property_set_count = &StubGetActorPropertySetCount,

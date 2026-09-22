@@ -110,6 +110,36 @@
         return ExportSoftPropertyPath(object, propertyName, buffer, bufferSize, requiredSize, outKind);
     }
 
+    static uec_result PrepareSoftValueOutput(uec_text_output* output)
+    {
+        if (output == nullptr || output->struct_size < sizeof(uec_text_output)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        output->kind = UEC_PROPERTY_UNKNOWN;
+        output->required_size = 0;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetActorPropertySoftValue(uec_actor* rawActor,
+                                                  uec_string_view propertyName,
+                                                  uec_text_output* outValue)
+    {
+        if (PrepareSoftValueOutput(outValue) != UEC_RESULT_OK) return UEC_RESULT_INVALID_ARGUMENT;
+        return GetActorPropertySoftPath(rawActor, propertyName, outValue->buffer,
+                                        outValue->buffer_size, &outValue->required_size,
+                                        &outValue->kind);
+    }
+
+    uec_result UEC_CALL GetObjectPropertySoftValue(uec_object* rawObject,
+                                                   uec_string_view propertyName,
+                                                   uec_text_output* outValue)
+    {
+        if (PrepareSoftValueOutput(outValue) != UEC_RESULT_OK) return UEC_RESULT_INVALID_ARGUMENT;
+        return GetObjectPropertySoftPath(rawObject, propertyName, outValue->buffer,
+                                         outValue->buffer_size, &outValue->required_size,
+                                         &outValue->kind);
+    }
+
     uec_result UEC_CALL GetObjectPropertyArrayCount(uec_object* rawObject,
                                                     uec_string_view propertyName,
                                                     uint32_t* outCount)
@@ -182,6 +212,48 @@
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         return UEC_RESULT_OK;
+    }
+
+    static uec_result ImportSoftPropertyValue(UObject* owner,
+                                              uec_string_view propertyName,
+                                              uec_property_kind kind,
+                                              uec_string_view path)
+    {
+        if (kind != UEC_PROPERTY_SOFT_OBJECT && kind != UEC_PROPERTY_SOFT_CLASS) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0 ||
+            !IsValidStringView(path)) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (GetPropertyKind(property) != kind) return UEC_RESULT_INVALID_ARGUMENT;
+        return ImportSoftPropertyPath(owner, propertyName, path);
+    }
+
+    uec_result UEC_CALL SetActorPropertySoftValue(uec_actor* rawActor,
+                                                  uec_string_view propertyName,
+                                                  uec_property_kind kind,
+                                                  uec_string_view path)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ImportSoftPropertyValue(actor, propertyName, kind, path);
+    }
+
+    uec_result UEC_CALL SetObjectPropertySoftValue(uec_object* rawObject,
+                                                   uec_string_view propertyName,
+                                                   uec_property_kind kind,
+                                                   uec_string_view path)
+    {
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ImportSoftPropertyValue(object, propertyName, kind, path);
     }
 
     uec_result UEC_CALL SetActorPropertySoftPath(uec_actor* rawActor,

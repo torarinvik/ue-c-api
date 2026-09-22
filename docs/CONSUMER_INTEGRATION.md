@@ -171,6 +171,11 @@ ABI 127 adds angular impulse application in radians to the same authority-gated
 simulating-component physics boundary.
 ABI 128 adds the same angular readback and mutation operations through the
 actor's simulating primitive root.
+ABI 129 adds typed output records for actor and UObject soft object/class
+properties. Initialize `uec_text_output.struct_size`; the `kind` distinguishes
+soft object from soft class, and the path is copied to the caller's buffer.
+Typed write entries require a matching kind and reject mismatched soft-object
+or soft-class properties.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

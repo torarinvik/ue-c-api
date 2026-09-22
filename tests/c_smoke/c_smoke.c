@@ -57,6 +57,8 @@ int main(void)
         (capabilities & UEC_CAPABILITY_COLLISION_DETAILS) == 0 ||
         (capabilities & UEC_CAPABILITY_PHYSICS) == 0 ||
         api->trace_detailed == NULL || api->trace_detailed_filtered == NULL ||
+        api->get_actor_property_soft_value == NULL || api->get_object_property_soft_value == NULL ||
+        api->set_actor_property_soft_value == NULL || api->set_object_property_soft_value == NULL ||
         api->set_component_physics_velocity == NULL || api->apply_component_impulse == NULL ||
         api->apply_component_force == NULL || api->get_component_physics_angular_velocity == NULL ||
         api->set_component_physics_angular_velocity == NULL || api->apply_component_torque == NULL ||
@@ -353,6 +355,25 @@ int main(void)
     {
         api->release_context(context);
         return 30;
+    }
+
+    uec_text_output soft_value = {sizeof(soft_value), UEC_PROPERTY_STRING,
+                                  NULL, 0u, 42u};
+    if (api->get_actor_property_soft_value(NULL, streaming_package, &soft_value) !=
+            UEC_RESULT_UNSUPPORTED || soft_value.kind != UEC_PROPERTY_UNKNOWN ||
+        soft_value.required_size != 0u ||
+        api->get_object_property_soft_value(NULL, streaming_package, &soft_value) !=
+            UEC_RESULT_UNSUPPORTED || soft_value.kind != UEC_PROPERTY_UNKNOWN ||
+        soft_value.required_size != 0u ||
+        api->set_actor_property_soft_value(NULL, streaming_package,
+                                           UEC_PROPERTY_SOFT_OBJECT, streaming_package) !=
+            UEC_RESULT_INVALID_HANDLE ||
+        api->set_object_property_soft_value(NULL, streaming_package,
+                                            UEC_PROPERTY_SOFT_CLASS, streaming_package) !=
+            UEC_RESULT_INVALID_HANDLE)
+    {
+        api->release_context(context);
+        return 58;
     }
 
     map_count = 42u;

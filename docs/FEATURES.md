@@ -22,6 +22,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Reflected scalar/string reads and writes | Runtime implemented / Unreal integration pending | Typed bool, integer, enum, and floating-point values plus string, name, text, hard object references, and Unreal text serialization for supported structs and containers |
 | Reflected container schema metadata | Runtime implemented / Unreal integration pending | ABI 122 reports array/set element kinds and map key/value kinds; non-container properties return unsupported |
 | Reflected set mutation | Runtime implemented / Unreal integration pending | ABI 123 replaces existing text or scalar set elements with duplicate rejection and rehashing |
+| Reflected soft references | Runtime implemented / Unreal integration pending | ABI 129 provides typed soft object/class path reads and kind-checked writes for actor and UObject properties |
 | Collision line traces | Runtime implemented / Unreal integration pending | Game-thread traces with stable channel mapping, ignored-actor filtering, and ABI 124 detailed hit readback |
 | Collision sweeps and overlaps | Runtime implemented / Unreal integration pending | World-aligned sphere, box, and capsule queries with ignored-actor filters and bounded unique-actor results |
 | Collision event callbacks | Runtime implemented / Unreal integration pending | One-shot primitive-component hit callbacks with unsubscribe tokens and shutdown cleanup |
