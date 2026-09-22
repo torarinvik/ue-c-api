@@ -52,6 +52,11 @@ then reflected scalar out parameters.
 ABI 86 adds `get_class_function_parameter_at`; its parameter index follows
 Unreal's reflected property order, including a return property when present.
 Inspect its flags before selecting the scalar or text invocation path.
+ABI 88 adds `invoke_actor_function_text_values`; initialize each
+`uec_text_output` with its full `struct_size`, provide caller-owned buffers (or
+zero capacity for a required-size probe), and inspect `required_size` and
+`kind` after the call. Outputs are ordered as the return value first, followed
+by reflected out parameters.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

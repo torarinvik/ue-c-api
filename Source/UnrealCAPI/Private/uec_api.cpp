@@ -533,7 +533,6 @@ namespace
             return false;
         }
     }
-
     static FTransform ToFTransform(const uec_transform& value)
     {
         return FTransform(
@@ -718,7 +717,8 @@ namespace
         &GetWorldCountByKind,
         &GetWorldAtByKind,
         &InvokeActorFunctionValue,
-        &InvokeActorFunctionValues, &GetClassFunctionParameterAt
+        &InvokeActorFunctionValues, &GetClassFunctionParameterAt,
+        &InvokeActorFunctionTextValues
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

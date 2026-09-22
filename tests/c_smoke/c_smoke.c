@@ -13,12 +13,13 @@ UEC_TEST_ASSERT(sizeof(uec_vector3) == 24, "uec_vector3 ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_quaternion) == 32, "uec_quaternion ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_transform) == 80, "uec_transform ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_property_value) == 32, "uec_property_value ABI changed");
+UEC_TEST_ASSERT(sizeof(uec_text_output) == 32, "uec_text_output ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 87u, "ABI minor must include handle diagnostics");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 88u, "ABI minor must include text outputs");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -148,6 +149,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_values) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_class_function_parameter_at) >
                    offsetof(uec_api, invoke_actor_function_values),
                "parameter metadata must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_text_values) >
+                   offsetof(uec_api, get_class_function_parameter_at),
+               "text outputs must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -254,6 +258,15 @@ int main(void)
     {
         api->release_context(context);
         return 14;
+    }
+
+    uint32_t text_output_count = 42u;
+    result = api->invoke_actor_function_text_values(NULL, empty_function_name, NULL, 0u,
+                                                    NULL, 0u, &text_output_count);
+    if (result != UEC_RESULT_UNSUPPORTED || text_output_count != 0u)
+    {
+        api->release_context(context);
+        return 15;
     }
 
     const char message[] = "C ABI smoke test";

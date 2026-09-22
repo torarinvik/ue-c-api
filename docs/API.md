@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.87`.
+The current runtime slice is intentionally small and versioned as ABI `1.88`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -71,6 +71,14 @@ ABI minor 87 extends `uec_runtime_stats` with live context, world, actor,
 component, class, and object counts. The original four-field prefix remains
 valid for older consumers; newer callers should set `struct_size` to the full
 size before reading the appended fields.
+
+ABI minor 88 adds `invoke_actor_function_text_values`. It imports positional
+UTF-8 arguments through Unreal's text property conversion and returns the
+function result followed by every out parameter as caller-owned UTF-8 buffers.
+Each output reports its required size and reflected property kind, so strings,
+names, localized text, structs, arrays, maps, and sets can use the same
+bounded-buffer contract; unsupported signatures still return an explicit
+unsupported result.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

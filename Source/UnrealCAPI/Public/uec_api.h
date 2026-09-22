@@ -20,7 +20,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 87u
+#define UEC_ABI_MINOR 88u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -132,7 +132,6 @@ typedef enum uec_property_kind {
 } uec_property_kind;
 enum { UEC_FUNCTION_PARAMETER_INPUT = 1u << 0, UEC_FUNCTION_PARAMETER_OUT = 1u << 1,
        UEC_FUNCTION_PARAMETER_RETURN = 1u << 2, UEC_FUNCTION_PARAMETER_REFERENCE = 1u << 3 };
-
 typedef struct uec_property_value {
     uint32_t struct_size;
     uec_property_kind kind;
@@ -141,6 +140,13 @@ typedef struct uec_property_value {
     int64_t integer_value;
     double real_value;
 } uec_property_value;
+typedef struct uec_text_output {
+    uint32_t struct_size;
+    uec_property_kind kind;
+    char* buffer;
+    size_t buffer_size;
+    size_t required_size;
+} uec_text_output;
 typedef enum uec_trace_channel {
     UEC_TRACE_VISIBILITY = 0,
     UEC_TRACE_CAMERA = 1,
@@ -165,7 +171,6 @@ typedef enum uec_widget_visibility {
     UEC_WIDGET_COLLAPSED = 1,
     UEC_WIDGET_HIDDEN = 2
 } uec_widget_visibility;
-
 typedef enum uec_input_action_value_kind {
     UEC_INPUT_ACTION_VALUE_BOOLEAN = 0,
     UEC_INPUT_ACTION_VALUE_AXIS_1D = 1,
@@ -217,7 +222,6 @@ typedef struct uec_hit_result {
     double distance;
     uec_actor* actor;
 } uec_hit_result;
-
 typedef void (UEC_CALL *uec_timer_callback)(uint64_t timer_id, void* user_data);
 typedef void (UEC_CALL *uec_tick_callback)(uint64_t subscription_id,
                                            double delta_seconds,
@@ -242,12 +246,10 @@ typedef void (UEC_CALL *uec_save_game_callback)(uint64_t request_id,
                                                 uec_bool success,
                                                 void* user_data);
 typedef void (UEC_CALL *uec_game_thread_callback)(void* user_data);
-
 typedef struct uec_api {
     uint32_t struct_size;
     uint32_t abi_major;
     uint32_t abi_minor;
-
     /* Bootstrap, diagnostics, and context ownership. */
     uec_result (UEC_CALL *get_capabilities)(uec_context* context,
                                              uec_capabilities* out_capabilities);
@@ -257,7 +259,6 @@ typedef struct uec_api {
                                            size_t* required_size);
     uec_result (UEC_CALL *log)(uec_context* context, uec_string_view message);
     uec_result (UEC_CALL *release_context)(uec_context* context);
-
     /* World selection and player flow. */
     uec_result (UEC_CALL *get_world_count)(uec_context* context, uint32_t* out_count);
     uec_result (UEC_CALL *get_world_at)(uec_context* context,
@@ -279,7 +280,6 @@ typedef struct uec_api {
                                         uec_actor* pawn);
     uec_result (UEC_CALL *set_controller_view_target)(uec_actor* controller,
                                                       uec_actor* view_target);
-
     /* Input polling, physics, and the default-world convenience path. */
     uec_result (UEC_CALL *get_input_key_down)(uec_actor* controller,
                                               uec_string_view key_name,
@@ -299,7 +299,6 @@ typedef struct uec_api {
                                              uec_vector3 force);
     uec_result (UEC_CALL *get_default_world)(uec_context* context, uec_world** out_world);
     uec_result (UEC_CALL *release_world)(uec_world* world);
-
     /* Actor and scene-component lifetime, transforms, tags, and timers. */
     uec_result (UEC_CALL *spawn_actor)(uec_world* world,
                                        uec_string_view class_path,
@@ -344,7 +343,6 @@ typedef struct uec_api {
                                      void* user_data,
                                      uint64_t* out_timer_id);
     uec_result (UEC_CALL *clear_timer)(uec_world* world, uint64_t timer_id);
-
     /* Class and reflected-property metadata and access. */
     uec_result (UEC_CALL *find_class)(uec_context* context,
                                       uec_string_view class_path,
@@ -380,7 +378,6 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_actor_property_string)(uec_actor* actor,
                                                      uec_string_view property_name,
                                                      uec_string_view value);
-
     /* Collision, object loading, and initial presentation adapters. */
     uec_result (UEC_CALL *line_trace)(uec_world* world,
                                       uec_vector3 start,
@@ -437,7 +434,6 @@ typedef struct uec_api {
                                                     double* out_degrees);
     uec_result (UEC_CALL *set_camera_field_of_view)(uec_scene_component* component,
                                                     double degrees);
-
     /* Generic object properties and save-game persistence. */
     uec_result (UEC_CALL *get_object_property_value)(uec_object* object,
                                                      uec_string_view property_name,
@@ -470,7 +466,6 @@ typedef struct uec_api {
                                             uec_string_view slot_name,
                                             int32_t user_index,
                                             uec_bool* out_deleted);
-
     /* Queued game-thread work, movement, meshes, animation, and materials. */
     uec_result (UEC_CALL *run_on_game_thread)(uec_context* context,
                                               uec_game_thread_callback callback,
@@ -786,6 +781,10 @@ typedef struct uec_api {
                                                            size_t* name_required_size,
                                                            uec_property_kind* out_kind,
                                                            uint32_t* out_flags);
+    uec_result (UEC_CALL *invoke_actor_function_text_values)(
+        uec_actor* actor, uec_string_view function_name,
+        const uec_string_view* argument_values, uint32_t argument_count,
+        uec_text_output* out_values, uint32_t out_capacity, uint32_t* out_count);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

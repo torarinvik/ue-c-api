@@ -463,6 +463,106 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL InvokeActorFunctionTextValues(
+        uec_actor* rawActor,
+        uec_string_view functionName,
+        const uec_string_view* argumentValues,
+        uint32_t argumentCount,
+        uec_text_output* outValues,
+        uint32_t outCapacity,
+        uint32_t* outCount)
+    {
+        if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outCount = 0;
+        if (outCapacity != 0 && outValues == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(functionName) || functionName.size == 0 ||
+            (argumentCount != 0 && argumentValues == nullptr)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
+        if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net) ||
+            (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly) &&
+             actor->GetWorld() != nullptr && actor->GetWorld()->GetNetMode() == NM_Client)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (!function->HasAnyFunctionFlags(FUNC_BlueprintCallable | FUNC_Native | FUNC_BlueprintEvent)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        TArray<FProperty*> inputParameters;
+        TArray<FProperty*> outputProperties;
+        FProperty* returnProperty = nullptr;
+        for (TFieldIterator<FProperty> iterator(function); iterator; ++iterator)
+        {
+            FProperty* parameter = *iterator;
+            if (!parameter->HasAnyPropertyFlags(CPF_Parm)) continue;
+            if (parameter->HasAnyPropertyFlags(CPF_ReturnParm)) {
+                returnProperty = parameter;
+                continue;
+            }
+            if (parameter->HasAnyPropertyFlags(CPF_OutParm)) outputProperties.Add(parameter);
+            if (!parameter->HasAnyPropertyFlags(CPF_OutParm) ||
+                parameter->HasAnyPropertyFlags(CPF_ReferenceParm)) inputParameters.Add(parameter);
+        }
+        if (returnProperty != nullptr) outputProperties.Insert(returnProperty, 0);
+        if (argumentCount != static_cast<uint32_t>(inputParameters.Num())) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        for (uint32_t index = 0; index < argumentCount; ++index) {
+            if (!IsValidStringView(argumentValues[index])) return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (static_cast<uint64>(outputProperties.Num()) > UINT32_MAX) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        *outCount = static_cast<uint32_t>(outputProperties.Num());
+        if (static_cast<uint64>(outputProperties.Num()) > outCapacity) {
+            return UEC_RESULT_BUFFER_TOO_SMALL;
+        }
+        for (uint32_t index = 0; index < *outCount; ++index) {
+            if (outValues[index].struct_size < sizeof(uec_text_output)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            outValues[index].kind = UEC_PROPERTY_UNKNOWN;
+            outValues[index].required_size = 0;
+        }
+        FStructOnScope parameters(function);
+        uint8* parameterMemory = parameters.GetStructMemory();
+        for (uint32_t index = 0; index < argumentCount; ++index) {
+            const FString text = ToFString(argumentValues[index]);
+            if (inputParameters[static_cast<int32>(index)]->ImportText_InContainer(
+                    *text, parameterMemory, actor, PPF_None, GWarn) == nullptr) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+        }
+        actor->ProcessEvent(function, parameterMemory);
+        TArray<FString> outputTexts;
+        outputTexts.Reserve(outputProperties.Num());
+        for (FProperty* property : outputProperties)
+        {
+            FString text;
+            if (!property->ExportText_InContainer(0, text, parameterMemory, nullptr, actor,
+                                                  PPF_None, actor)) {
+                return UEC_RESULT_UNSUPPORTED;
+            }
+            outputTexts.Add(MoveTemp(text));
+        }
+        uec_result finalResult = UEC_RESULT_OK;
+        for (uint32_t index = 0; index < *outCount; ++index)
+        {
+            outValues[index].kind = GetPropertyKind(outputProperties[static_cast<int32>(index)]);
+            const uec_result result = CopyFStringToUtf8(
+                outputTexts[static_cast<int32>(index)], outValues[index].buffer,
+                outValues[index].buffer_size, &outValues[index].required_size);
+            if (result != UEC_RESULT_OK) finalResult = result;
+        }
+        return finalResult;
+    }
+
     uec_result UEC_CALL GetClassFunctionCount(uec_class* rawClass, uint32_t* outCount)
     {
         if (outCount != nullptr) *outCount = 0;

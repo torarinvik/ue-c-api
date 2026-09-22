@@ -148,6 +148,25 @@ static uec_result UEC_CALL StubGetClassFunctionParameterAt(
     return UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubInvokeActorFunctionTextValues(
+    uec_actor* actor,
+    uec_string_view functionName,
+    const uec_string_view* argumentValues,
+    uint32_t argumentCount,
+    uec_text_output* outValues,
+    uint32_t outCapacity,
+    uint32_t* outCount)
+{
+    (void)actor;
+    (void)functionName;
+    (void)argumentValues;
+    (void)argumentCount;
+    (void)outValues;
+    (void)outCapacity;
+    if (outCount != NULL) *outCount = 0u;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -175,6 +194,7 @@ static const uec_api g_api = {
     .get_class_function_parameter_at = &StubGetClassFunctionParameterAt,
     .invoke_actor_function_value = &StubInvokeActorFunctionValue,
     .invoke_actor_function_values = &StubInvokeActorFunctionValues,
+    .invoke_actor_function_text_values = &StubInvokeActorFunctionTextValues,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
