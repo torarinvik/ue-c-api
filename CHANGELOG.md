@@ -86,6 +86,8 @@ development; they do not imply a published or runtime-verified release.
   with explicit `USceneComponent` class validation.
 - Game-INI string reads and writes with game-thread validation, bounded UTF-8
   output, immediate flushes, and a dedicated configuration capability bit.
+- Indexed world streaming-level inspection and game-thread load/visibility state
+  requests using Unreal package names.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Explicit overflow checks on world, component, class-property, and reflected-function enumeration counts.
 - Strict 0/1 validation for boolean inputs across transforms, collision,

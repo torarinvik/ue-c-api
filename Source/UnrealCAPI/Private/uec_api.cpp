@@ -8,6 +8,7 @@
 #include "EngineUtils.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/World.h"
+#include "Engine/LevelStreaming.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
@@ -625,7 +626,10 @@ namespace
         &GetActorComponentCountByClass,
         &GetActorComponentAtByClass,
         &GetConfigString,
-        &SetConfigString
+        &SetConfigString,
+        &GetStreamingLevelCount,
+        &GetStreamingLevelAt,
+        &SetStreamingLevelState
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

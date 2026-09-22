@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.75`.
+The current runtime slice is intentionally small and versioned as ABI `1.76`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -114,6 +114,12 @@ game thread. Sections and keys are non-empty UTF-8 strings; reads use the usual
 caller-owned output buffer and return `UEC_RESULT_NOT_INITIALIZED` when the key
 does not exist. Writes flush the game INI immediately and should be treated as
 application configuration, not as a substitute for save-game data.
+
+`get_streaming_level_count` and `get_streaming_level_at` expose the world's
+current `ULevelStreaming` entries in engine order, including package name,
+loaded state, and requested visibility. `set_streaming_level_state` submits
+load and visibility flags for a matching package on the game thread; the call
+changes streaming intent and does not wait for asynchronous loading to finish.
 
 `get_actor_bounds` reports a caller-owned world-space origin and box extent for
 an actor. `find_player_start` selects the start actor for an explicit local

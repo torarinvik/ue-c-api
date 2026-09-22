@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 75u
+#define UEC_ABI_MINOR 76u
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,7 +87,8 @@ enum {
     UEC_CAPABILITY_MOVEMENT = UINT64_C(1) << 21,
     UEC_CAPABILITY_PRESENTATION = UINT64_C(1) << 22,
     UEC_CAPABILITY_RETAINED_OBJECTS = UINT64_C(1) << 23,
-    UEC_CAPABILITY_CONFIGURATION = UINT64_C(1) << 24
+    UEC_CAPABILITY_CONFIGURATION = UINT64_C(1) << 24,
+    UEC_CAPABILITY_STREAMING = UINT64_C(1) << 25
 };
 
 typedef struct uec_context uec_context;
@@ -716,6 +717,19 @@ typedef struct uec_api {
                                              uec_string_view section,
                                              uec_string_view key,
                                              uec_string_view value);
+    uec_result (UEC_CALL *get_streaming_level_count)(uec_world* world,
+                                                     uint32_t* out_count);
+    uec_result (UEC_CALL *get_streaming_level_at)(uec_world* world,
+                                                  uint32_t index,
+                                                  char* package_buffer,
+                                                  size_t package_buffer_size,
+                                                  size_t* package_required_size,
+                                                  uec_bool* out_loaded,
+                                                  uec_bool* out_visible);
+    uec_result (UEC_CALL *set_streaming_level_state)(uec_world* world,
+                                                     uec_string_view package_path,
+                                                     uec_bool should_be_loaded,
+                                                     uec_bool should_be_visible);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the
