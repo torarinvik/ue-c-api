@@ -741,7 +741,8 @@ user pointer, and are suppressed after unbinding or module shutdown. Unbinding
 from inside a callback defers native binding removal until that callback
 returns. Select one of Started, Ongoing, Triggered, Canceled, or Completed for
 each binding using `uec_input_trigger_event`. At most 1024 bindings can be
-active.
+active. An undeclared trigger value returns `UEC_RESULT_INVALID_ARGUMENT` and
+leaves the output binding id at zero.
 `get_controller_enhanced_input_subsystem` returns a weak object handle to the
 local player's `UEnhancedInputLocalPlayerSubsystem`; it returns
 `UEC_RESULT_NOT_INITIALIZED` when the controller is not associated with a local

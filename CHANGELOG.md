@@ -24,8 +24,9 @@ development; they do not imply a published or runtime-verified release.
   complete; Shipping and cross-platform runs remain package-only.
 - `get_last_error` now preserves the diagnostic during a null-buffer size query,
   so a single correctly sized retry returns the original message.
-- The Unreal-host C smoke probe now checks that an undeclared collision-enabled
-  enum is rejected before component-handle lookup.
+- The Unreal-host C smoke probe now checks that undeclared collision-enabled and
+  input-trigger enums are rejected before handle lookup, with the binding id
+  cleared on input-trigger failure.
 - The portable C smoke consumer now verifies that an invalid handle produces a
   bounded readable diagnostic through `get_last_error`.
 - The portable gate links and executes the Unreal host's tracked C bootstrap

@@ -1,0 +1,60 @@
+#include "uec_api.h"
+
+#include <stddef.h>
+
+static void UEC_CALL IgnoreInputActionCallback(uint64_t bindingId,
+                                               uec_input_action_value value,
+                                               void* userData)
+{
+    (void)bindingId; (void)value; (void)userData;
+}
+
+uec_result UEC_CALL uec_host_smoke_bootstrap(void)
+{
+    const uec_api* api = NULL;
+    uec_context* context = NULL;
+    uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
+    if (result != UEC_RESULT_OK) return result;
+    if (api == NULL || context == NULL ||
+        api->struct_size < offsetof(uec_api, release_context) + sizeof(api->release_context)) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (api->release_context == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    if (api->abi_major != UEC_ABI_MAJOR || api->abi_minor < UEC_ABI_MINOR ||
+        api->get_capabilities == NULL || api->get_world_count_by_kind == NULL ||
+        api->log == NULL || api->set_widget_visibility == NULL ||
+        api->set_component_collision_enabled == NULL ||
+        api->set_component_collision_channel_response == NULL || api->bind_input_action == NULL) {
+        api->release_context(context);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uec_capabilities capabilities = 0;
+    result = api->get_capabilities(context, &capabilities);
+    if (result == UEC_RESULT_OK && (capabilities & UEC_CAPABILITY_BOOTSTRAP) == 0)
+        result = UEC_RESULT_INTERNAL_ERROR;
+
+    uint32_t invalidWorldKindCount = 1u;
+    uint64_t invalidInputBindingId = 1u;
+    if (result == UEC_RESULT_OK &&
+        (api->get_world_count_by_kind(context, (uec_world_kind)99, &invalidWorldKindCount) !=
+             UEC_RESULT_INVALID_ARGUMENT || invalidWorldKindCount != 0u ||
+         api->set_component_collision_channel_response(NULL, UEC_TRACE_VISIBILITY,
+             (uec_collision_response)99) != UEC_RESULT_INVALID_ARGUMENT ||
+         api->set_component_collision_channel_response(NULL, (uec_trace_channel)99,
+             UEC_COLLISION_RESPONSE_IGNORE) != UEC_RESULT_INVALID_ARGUMENT ||
+         api->set_widget_visibility(NULL, (uec_widget_visibility)99) != UEC_RESULT_INVALID_ARGUMENT ||
+         api->set_component_collision_enabled(NULL, (uec_collision_enabled)99) !=
+             UEC_RESULT_INVALID_ARGUMENT ||
+         api->bind_input_action(NULL, NULL, (uec_input_trigger_event)99,
+             &IgnoreInputActionCallback, NULL, &invalidInputBindingId) != UEC_RESULT_INVALID_ARGUMENT ||
+         invalidInputBindingId != 0u)) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const char message[] = "UnrealCAPI C host bootstrap reached the bridge";
+        const uec_string_view view = {message, sizeof(message) - 1};
+        result = api->log(context, view);
+    }
+    const uec_result releaseResult = api->release_context(context);
+    return result == UEC_RESULT_OK ? releaseResult : result;
+}
