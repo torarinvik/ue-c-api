@@ -50,8 +50,8 @@ if ! rg -q 'UEC_BUILDING_LIBRARY' "$plugin_dir/Source/UnrealCAPI/UnrealCAPI.Buil
     exit 1
 fi
 
-if [ ! -f "$repo_dir/IMPLEMENTATION_PLAN.md" ] || ! git -C "$repo_dir" check-ignore -q IMPLEMENTATION_PLAN.md; then
-    printf '%s\n' 'IMPLEMENTATION_PLAN.md must exist and remain gitignored.' >&2
+if ! git -C "$repo_dir" check-ignore -q --no-index IMPLEMENTATION_PLAN.md; then
+    printf '%s\n' 'IMPLEMENTATION_PLAN.md must remain gitignored when present locally.' >&2
     exit 1
 fi
 
