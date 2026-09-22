@@ -9,7 +9,8 @@ headers and are not compiled as independent translation units.
 - `uec_api_world_actor.inl` owns context, world, player, timer, world-tick, and world-framework access.
 - `uec_api_actor_component.inl` owns actor/component lifetime, transforms,
   component enumeration, actor queries, and cross-subsystem handle cleanup.
-- `uec_api_reflection.inl` owns reflected scalar/string properties and conversion helpers.
+- `uec_api_reflection.inl` owns reflected scalar/string and hard object-reference
+  properties, plus conversion helpers.
 - `uec_api_reflection_metadata.inl` owns reflected class metadata, enum metadata,
   struct-field enumeration, and container element-kind metadata.
 - `uec_api_reflection_containers.inl` owns reflected arrays, maps, sets, soft
@@ -18,8 +19,8 @@ headers and are not compiled as independent translation units.
 - `uec_api_reflection_map_set.inl` owns reflected map/set enumeration, map
   value writes, and rehashed set element replacement, keeping hashed-container
   iteration and mutation together, plus typed scalar map-key reads.
-- `uec_api_reflection_invoke.inl` owns reflected invocation, scalar marshaling,
-  and object-reference property adapters.
+- `uec_api_reflection_invoke.inl` owns reflected invocation and scalar parameter
+  marshaling.
 - `uec_api_presentation.inl` owns UMG, camera, audio (including completion
   subscriptions), mesh assignment, and transient animation playback.
 - `uec_api_collision.inl` owns hit-result conversion, line/sweep/overlap queries,
