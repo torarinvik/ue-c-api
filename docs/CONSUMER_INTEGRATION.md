@@ -101,6 +101,12 @@ bridge also removes collision and Enhanced Input delegates attached to its
 components; an in-flight callback is allowed to return before its native
 delegate is removed.
 
+Level travel cancels timers, world-tick subscriptions, and actor-scoped
+collision/input subscriptions for the traveled world before submitting the
+request. It then invalidates world, actor, component, and world-bound object
+handles from that world; reacquire the new world and its objects after travel.
+Global asset handles remain valid.
+
 In networked worlds, call `get_world_net_mode` and `get_world_has_authority`
 before mutating gameplay state. The authority query does not provide
 replication or RPC behavior; those contracts remain explicit future adapters.

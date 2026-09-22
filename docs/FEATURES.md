@@ -44,7 +44,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | C gameplay example | Source and header verified | Spawn, timer-driven movement, callback, and cleanup flow |
 | Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, full object paths, class paths, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, game-thread callbacks, and a 1024-request bound |
-| Level travel | Runtime implemented / Unreal integration pending | Map name queries and game-thread `OpenLevel` requests |
+| Level travel | Runtime implemented / Unreal integration pending | Map name queries, game-thread `OpenLevel` requests, world-owned timer/tick and actor-scoped subscription cancellation, and invalidation of old-world handles |
 | Player flow | Runtime implemented / Unreal integration pending | Indexed local controller lookup, player-start lookup, world game-instance, game-mode, and game-state access, possession, and view-target selection |
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |
 | Basic physics | Runtime implemented / Unreal integration pending | Finite-validated actor and primitive-component velocity reads, impulses, and forces on simulating primitive roots |
