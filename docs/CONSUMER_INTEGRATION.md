@@ -64,6 +64,9 @@ must be treated as unusable once shutdown begins.
 In networked worlds, call `get_world_net_mode` and `get_world_has_authority`
 before mutating gameplay state. The authority query does not provide
 replication or RPC behavior; those contracts remain explicit future adapters.
+Use `get_world_game_mode` only on an authoritative world, and use
+`get_world_game_state` when a world-scoped framework object is needed. Both
+return ordinary weak object handles that must be released by the consumer.
 
 ## Verification path
 

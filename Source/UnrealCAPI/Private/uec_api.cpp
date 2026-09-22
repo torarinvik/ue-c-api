@@ -10,6 +10,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameStateBase.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
@@ -543,7 +544,8 @@ namespace
         &BindAnimationFinished,
         &UnbindAnimationFinished,
         &GetWorldHasAuthority,
-        &GetWorldGameMode
+        &GetWorldGameMode,
+        &GetWorldGameState
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

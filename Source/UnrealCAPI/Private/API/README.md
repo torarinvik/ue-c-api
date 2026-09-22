@@ -6,7 +6,7 @@ has a reviewable source file of its own. These `.inl` files are included from
 `uec_api.cpp` inside its private implementation namespace; they are not public
 headers and are not compiled as independent translation units.
 
-- `uec_api_world_actor.inl` owns context, world, player, timer, and world-tick access.
+- `uec_api_world_actor.inl` owns context, world, player, timer, world-tick, and world-framework access.
 - `uec_api_actor_component.inl` owns actor/component lifetime, transforms,
   component enumeration, actor queries, and cross-subsystem handle cleanup.
 - `uec_api_reflection.inl` owns class metadata, reflected properties, and object references.
