@@ -550,3 +550,45 @@
         UObject* object = handle->Value.Get();
         return object == nullptr ? UEC_RESULT_INVALID_HANDLE : SetArrayElementValue(object, propertyName, index, value);
     }
+
+    static uec_result SetStructFieldValue(UObject* owner,
+                                          uec_string_view propertyName,
+                                          uec_string_view fieldName,
+                                          const uec_property_value* value)
+    {
+        if (value == nullptr || value->struct_size < sizeof(uec_property_value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0 ||
+            !IsValidStringView(fieldName) || fieldName.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
+        FStructProperty* structProperty = CastField<FStructProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (structProperty == nullptr || structProperty->Struct == nullptr) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritableProperty(structProperty)) return UEC_RESULT_UNSUPPORTED;
+        void* fieldContainer = nullptr;
+        FProperty* field = ResolveStructFieldPath(structProperty, owner, ToFString(fieldName), fieldContainer);
+        if (field == nullptr || fieldContainer == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        return ImportScalarPropertyValue(field, field->ContainerPtrToValuePtr<void>(fieldContainer), value);
+    }
+    uec_result UEC_CALL SetActorPropertyStructFieldValue(uec_actor* rawActor,
+                                                         uec_string_view propertyName,
+                                                         uec_string_view fieldName,
+                                                         const uec_property_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        return actor == nullptr ? UEC_RESULT_INVALID_HANDLE : SetStructFieldValue(actor, propertyName, fieldName, value);
+    }
+    uec_result UEC_CALL SetObjectPropertyStructFieldValue(uec_object* rawObject,
+                                                          uec_string_view propertyName,
+                                                          uec_string_view fieldName,
+                                                          const uec_property_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        return object == nullptr ? UEC_RESULT_INVALID_HANDLE : SetStructFieldValue(object, propertyName, fieldName, value);
+    }
