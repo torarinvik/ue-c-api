@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.17`.
+The current runtime slice is intentionally small and versioned as ABI `1.18`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -48,6 +48,11 @@ Input polling accepts Unreal key names such as `SpaceBar` or `Gamepad_LeftX`.
 `get_input_key_down` returns the current digital state, while
 `get_input_key_value` returns the controller's analog value. Both require a
 player-controller handle and run on the game thread.
+
+Physics helpers read actor velocity and operate on a simulating primitive root
+component. Velocity replacement/addition, impulses, and forces return
+`UEC_RESULT_UNSUPPORTED` when the actor has no simulating primitive root. Values
+use Unreal world units and the API's double-precision vector type.
 
 The actor class path passed to `spawn_actor` is an Unreal object/class path that
 must be loadable in the current runtime build. A missing or non-actor class is

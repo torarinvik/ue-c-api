@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 17u
+#define UEC_ABI_MINOR 18u
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,7 +67,8 @@ enum {
     UEC_CAPABILITY_ASYNC_ASSETS = UINT64_C(1) << 10,
     UEC_CAPABILITY_LEVEL_TRAVEL = UINT64_C(1) << 11,
     UEC_CAPABILITY_PLAYER_FLOW = UINT64_C(1) << 12,
-    UEC_CAPABILITY_INPUT = UINT64_C(1) << 13
+    UEC_CAPABILITY_INPUT = UINT64_C(1) << 13,
+    UEC_CAPABILITY_PHYSICS = UINT64_C(1) << 14
 };
 
 typedef struct uec_context uec_context;
@@ -196,6 +197,16 @@ typedef struct uec_api {
     uec_result (UEC_CALL *get_input_key_value)(uec_actor* controller,
                                                uec_string_view key_name,
                                                double* out_value);
+    uec_result (UEC_CALL *get_actor_velocity)(uec_actor* actor,
+                                              uec_vector3* out_velocity);
+    uec_result (UEC_CALL *set_actor_physics_velocity)(uec_actor* actor,
+                                                      uec_vector3 velocity,
+                                                      uec_bool add_to_current);
+    uec_result (UEC_CALL *apply_actor_impulse)(uec_actor* actor,
+                                               uec_vector3 impulse,
+                                               uec_bool velocity_change);
+    uec_result (UEC_CALL *apply_actor_force)(uec_actor* actor,
+                                             uec_vector3 force);
     uec_result (UEC_CALL *get_default_world)(uec_context* context, uec_world** out_world);
     uec_result (UEC_CALL *release_world)(uec_world* world);
     uec_result (UEC_CALL *spawn_actor)(uec_world* world,

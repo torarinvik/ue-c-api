@@ -11,6 +11,7 @@
 #include "InputCoreTypes.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SceneComponent.h"
+#include "Components/PrimitiveComponent.h"
 #include "HAL/CriticalSection.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/ScopeLock.h"
@@ -195,7 +196,8 @@ namespace
             UEC_CAPABILITY_WORLD | UEC_CAPABILITY_ACTORS | UEC_CAPABILITY_COMPONENTS |
             UEC_CAPABILITY_TIMERS | UEC_CAPABILITY_CLASS_METADATA | UEC_CAPABILITY_REFLECTION |
             UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS | UEC_CAPABILITY_ASYNC_ASSETS;
-        *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW | UEC_CAPABILITY_INPUT;
+        *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW |
+            UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS;
         return UEC_RESULT_OK;
     }
 
@@ -456,6 +458,70 @@ namespace
         if (name.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
         const FKey key{FName(*name)};
         *outValue = static_cast<double>(controller->GetInputAnalogKeyState(key));
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetActorVelocity(uec_actor* rawActor, uec_vector3* outVelocity)
+    {
+        if (outVelocity == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const FVector velocity = actor->GetVelocity();
+        *outVelocity = {velocity.X, velocity.Y, velocity.Z};
+        return UEC_RESULT_OK;
+    }
+
+    static UPrimitiveComponent* GetActorPrimitiveRoot(FUECActor* actorHandle)
+    {
+        AActor* actor = actorHandle == nullptr ? nullptr : actorHandle->Value.Get();
+        return actor == nullptr ? nullptr : Cast<UPrimitiveComponent>(actor->GetRootComponent());
+    }
+
+    uec_result UEC_CALL SetActorPhysicsVelocity(uec_actor* rawActor,
+                                                uec_vector3 velocity,
+                                                uec_bool addToCurrent)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
+        if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
+        const FVector value(velocity.x, velocity.y, velocity.z);
+        if (addToCurrent != UEC_FALSE)
+        {
+            component->SetPhysicsLinearVelocity(component->GetPhysicsLinearVelocity() + value);
+        }
+        else
+        {
+            component->SetPhysicsLinearVelocity(value);
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL ApplyActorImpulse(uec_actor* rawActor,
+                                          uec_vector3 impulse,
+                                          uec_bool velocityChange)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
+        if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
+        component->AddImpulse(FVector(impulse.x, impulse.y, impulse.z), NAME_None, velocityChange != UEC_FALSE);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL ApplyActorForce(uec_actor* rawActor, uec_vector3 force)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
+        if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
+        component->AddForce(FVector(force.x, force.y, force.z));
         return UEC_RESULT_OK;
     }
 
@@ -1273,7 +1339,8 @@ namespace
         &GetWorldCount, &GetWorldAt, &GetWorldKind, &GetWorldName, &TravelWorld,
         &GetFirstPlayerController, &GetControllerPawn, &PossessPawn,
         &SetControllerViewTarget, &GetInputKeyDown, &GetInputKeyValue,
-        &GetDefaultWorld,
+        &GetActorVelocity, &SetActorPhysicsVelocity, &ApplyActorImpulse,
+        &ApplyActorForce, &GetDefaultWorld,
         &ReleaseWorld, &SpawnActor, &ReleaseActor, &DestroyActor,
         &GetActorTransform, &SetActorTransform, &GetActorName, &ActorHasTag,
         &GetActorRootComponent, &GetActorComponentCount, &GetActorComponentAt,
