@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 73u
+#define UEC_ABI_MINOR 74u
 
 #ifdef __cplusplus
 extern "C" {
@@ -696,6 +696,15 @@ typedef struct uec_api {
                                                uec_object** out_game_mode);
     uec_result (UEC_CALL *get_world_game_state)(uec_world* world,
                                                 uec_object** out_game_state);
+    uec_result (UEC_CALL *get_actor_component_count_by_class)(
+        uec_actor* actor,
+        uec_string_view class_path,
+        uint32_t* out_count);
+    uec_result (UEC_CALL *get_actor_component_at_by_class)(
+        uec_actor* actor,
+        uec_string_view class_path,
+        uint32_t index,
+        uec_scene_component** out_component);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

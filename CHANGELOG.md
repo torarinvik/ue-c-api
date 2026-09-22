@@ -82,6 +82,8 @@ development; they do not imply a published or runtime-verified release.
   clear unsupported result on client worlds.
 - Explicit world game-state object access from world handles, with a clear
   not-initialized result before the world has created its game state.
+- Class-filtered scene-component count and indexed lookup for actor handles,
+  with explicit `USceneComponent` class validation.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Explicit overflow checks on world, component, class-property, and reflected-function enumeration counts.
 - Strict 0/1 validation for boolean inputs across transforms, collision,

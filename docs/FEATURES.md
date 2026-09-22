@@ -14,7 +14,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Actor spawn and destruction | Runtime implemented / Unreal integration pending | Loadable actor class paths; game thread only |
 | Actor identity and tags | Runtime implemented / Unreal integration pending | UTF-8 name output, tag lookup/enumeration, and game-thread access |
 | Actor transforms | Runtime implemented / Unreal integration pending | Double-precision C POD transform; game thread only |
-| Scene components | Runtime implemented / Unreal integration pending | Root-component handle, world transforms, visibility, activation |
+| Scene components | Runtime implemented / Unreal integration pending | Root-component handle, world transforms, visibility, activation, and class-filtered enumeration |
 | Timers | Runtime implemented / Unreal integration pending | One-shot and looping game-thread callbacks with cancellation |
 | World tick subscriptions | Runtime implemented / Unreal integration pending | Per-frame game-thread callbacks scoped to a world with unsubscribe tokens and teardown cleanup |
 | Class/property metadata | Runtime implemented / Unreal integration pending | Class lookup, inheritance, names, and broad reflected property kinds |

@@ -1,3 +1,23 @@
+    static FUECSceneComponent* MakeSceneComponentHandle(USceneComponent* component)
+    {
+        if (component == nullptr) return nullptr;
+        auto* handle = new FUECSceneComponent();
+        handle->Value = component;
+        {
+            FScopeLock lock(&GHandleMutex);
+            GComponents.Add(handle);
+        }
+        return handle;
+    }
+
+    static UClass* LoadSceneComponentClass(uec_string_view classPath)
+    {
+        if (!IsValidStringView(classPath) || classPath.size == 0) return nullptr;
+        UClass* componentClass = LoadClass<USceneComponent>(nullptr, *ToFString(classPath));
+        return componentClass != nullptr && componentClass->IsChildOf(USceneComponent::StaticClass())
+            ? componentClass : nullptr;
+    }
+
     /* Actor lifetime and transform operations. */
     uec_result UEC_CALL SpawnActor(uec_world* rawWorld, uec_string_view classPath,
                                    const uec_transform* transform, uec_actor** outActor)
@@ -122,12 +142,8 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         USceneComponent* component = actor->GetRootComponent();
         if (component == nullptr) return UEC_RESULT_NOT_INITIALIZED;
-        auto* handle = new FUECSceneComponent();
-        handle->Value = component;
-        {
-            FScopeLock lock(&GHandleMutex);
-            GComponents.Add(handle);
-        }
+        auto* handle = MakeSceneComponentHandle(component);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
         *outComponent = reinterpret_cast<uec_scene_component*>(handle);
         return UEC_RESULT_OK;
     }
@@ -164,14 +180,65 @@
         if (index >= static_cast<uint32_t>(components.Num())) return UEC_RESULT_INVALID_ARGUMENT;
         USceneComponent* component = components[static_cast<int32>(index)];
         if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        auto* handle = new FUECSceneComponent();
-        handle->Value = component;
-        {
-            FScopeLock lock(&GHandleMutex);
-            GComponents.Add(handle);
-        }
+        auto* handle = MakeSceneComponentHandle(component);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
         *outComponent = reinterpret_cast<uec_scene_component*>(handle);
         return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetActorComponentCountByClass(uec_actor* rawActor,
+                                                       uec_string_view classPath,
+                                                       uint32_t* outCount)
+    {
+        if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outCount = 0;
+        UClass* componentClass = LoadSceneComponentClass(classPath);
+        if (componentClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        TArray<USceneComponent*> components;
+        actor->GetComponents<USceneComponent>(components);
+        for (USceneComponent* component : components)
+        {
+            if (component != nullptr && component->IsA(componentClass))
+            {
+                if (*outCount == UINT32_MAX) return UEC_RESULT_INTERNAL_ERROR;
+                ++(*outCount);
+            }
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetActorComponentAtByClass(uec_actor* rawActor,
+                                                    uec_string_view classPath,
+                                                    uint32_t index,
+                                                    uec_scene_component** outComponent)
+    {
+        if (outComponent == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outComponent = nullptr;
+        UClass* componentClass = LoadSceneComponentClass(classPath);
+        if (componentClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        TArray<USceneComponent*> components;
+        actor->GetComponents<USceneComponent>(components);
+        uint32_t current = 0;
+        for (USceneComponent* component : components)
+        {
+            if (component == nullptr || !component->IsA(componentClass)) continue;
+            if (current++ != index) continue;
+            FUECSceneComponent* handle = MakeSceneComponentHandle(component);
+            if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            *outComponent = reinterpret_cast<uec_scene_component*>(handle);
+            return UEC_RESULT_OK;
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
     }
 
     uec_result UEC_CALL ReleaseSceneComponent(uec_scene_component* rawComponent)

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.73`.
+The current runtime slice is intentionally small and versioned as ABI `1.74`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -98,6 +98,11 @@ Actor names use UTF-8 output-buffer semantics, including a terminating NUL in
 the required size. Tag checks accept a UTF-8 tag view and return an explicit
 boolean result. `get_actor_tag_count` and `get_actor_tag_at` enumerate the
 actor's tags with the same caller-owned output-buffer convention.
+
+`get_actor_component_count_by_class` and `get_actor_component_at_by_class`
+filter an actor's scene components by a loaded class path. The class must derive
+from `USceneComponent`; results are returned in Unreal's component enumeration
+order and each result is a weak scene-component handle.
 
 `get_actor_bounds` reports a caller-owned world-space origin and box extent for
 an actor. `find_player_start` selects the start actor for an explicit local

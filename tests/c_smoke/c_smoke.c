@@ -17,7 +17,7 @@ UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI chan
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 73u, "ABI minor must include game-state access");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 74u, "ABI minor must include component class queries");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -90,6 +90,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_world_has_authority) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_world_game_state) >
                    offsetof(uec_api, get_world_game_mode),
                "game-state query must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_component_count_by_class) >
+                   offsetof(uec_api, get_world_game_state),
+               "component class count must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_component_at_by_class) >
+                   offsetof(uec_api, get_actor_component_count_by_class),
+               "component class lookup must append to uec_api");
 
 int main(void)
 {
