@@ -16,6 +16,7 @@ public class UnrealCAPI : ModuleRules
             "Projects",
             "Engine",
             "CoreUObject",
+            "InputCore",
             "AssetManager"
         });
 

@@ -18,6 +18,7 @@ development; they do not imply a published or runtime-verified release.
 - Asynchronous streamable object loading with cancellation and game-thread callbacks.
 - World map-name queries and game-thread level-travel requests.
 - Local player-controller/pawn lookup, possession, and view-target selection.
+- Digital and analog input polling by Unreal key name.
 - Reflected actor property writes and reads for supported scalar, string, name,
   and text types.
 - C consumer source and public math-type layout assertions.

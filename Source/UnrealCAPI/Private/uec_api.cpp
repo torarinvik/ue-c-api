@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "InputCoreTypes.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SceneComponent.h"
 #include "HAL/CriticalSection.h"
@@ -194,7 +195,7 @@ namespace
             UEC_CAPABILITY_WORLD | UEC_CAPABILITY_ACTORS | UEC_CAPABILITY_COMPONENTS |
             UEC_CAPABILITY_TIMERS | UEC_CAPABILITY_CLASS_METADATA | UEC_CAPABILITY_REFLECTION |
             UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS | UEC_CAPABILITY_ASYNC_ASSETS;
-        *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW;
+        *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW | UEC_CAPABILITY_INPUT;
         return UEC_RESULT_OK;
     }
 
@@ -419,6 +420,42 @@ namespace
         AActor* viewTarget = viewTargetHandle->Value.Get();
         if (controller == nullptr || viewTarget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         controller->SetViewTarget(viewTarget);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetInputKeyDown(uec_actor* rawController,
+                                        uec_string_view keyName,
+                                        uec_bool* outDown)
+    {
+        if (outDown == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (keyName.data == nullptr && keyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        const FString name = ToFString(keyName);
+        if (name.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
+        const FKey key{FName(*name)};
+        *outDown = controller->IsInputKeyDown(key) ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetInputKeyValue(uec_actor* rawController,
+                                         uec_string_view keyName,
+                                         double* outValue)
+    {
+        if (outValue == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (keyName.data == nullptr && keyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        const FString name = ToFString(keyName);
+        if (name.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
+        const FKey key{FName(*name)};
+        *outValue = static_cast<double>(controller->GetInputAnalogKeyState(key));
         return UEC_RESULT_OK;
     }
 
@@ -1235,7 +1272,8 @@ namespace
         &GetCapabilities, &GetLastError, &Log, &ReleaseContext,
         &GetWorldCount, &GetWorldAt, &GetWorldKind, &GetWorldName, &TravelWorld,
         &GetFirstPlayerController, &GetControllerPawn, &PossessPawn,
-        &SetControllerViewTarget, &GetDefaultWorld,
+        &SetControllerViewTarget, &GetInputKeyDown, &GetInputKeyValue,
+        &GetDefaultWorld,
         &ReleaseWorld, &SpawnActor, &ReleaseActor, &DestroyActor,
         &GetActorTransform, &SetActorTransform, &GetActorName, &ActorHasTag,
         &GetActorRootComponent, &GetActorComponentCount, &GetActorComponentAt,
