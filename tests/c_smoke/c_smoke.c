@@ -59,6 +59,7 @@ int main(void)
         api->trace_detailed == NULL || api->trace_detailed_filtered == NULL ||
         api->get_actor_property_soft_value == NULL || api->get_object_property_soft_value == NULL ||
         api->set_actor_property_soft_value == NULL || api->set_object_property_soft_value == NULL ||
+        api->get_actor_property_map_key == NULL || api->get_object_property_map_key == NULL ||
         api->set_component_physics_velocity == NULL || api->apply_component_impulse == NULL ||
         api->apply_component_force == NULL || api->get_component_physics_angular_velocity == NULL ||
         api->set_component_physics_angular_velocity == NULL || api->apply_component_torque == NULL ||
@@ -325,11 +326,19 @@ int main(void)
     }
 
     uint32_t map_count = 42u;
+    uec_property_value map_key_value = {sizeof(map_key_value), UEC_PROPERTY_STRING,
+                                        UEC_FALSE, {0u, 0u, 0u}, 42, 42.0};
     uec_text_output map_key = {sizeof(map_key), UEC_PROPERTY_STRING, NULL, 0u, 42u};
     uec_text_output map_value = {sizeof(map_value), UEC_PROPERTY_STRING, NULL, 0u, 42u};
     uec_text_output set_element = {sizeof(set_element), UEC_PROPERTY_STRING, NULL, 0u, 42u};
     if (api->get_object_property_map_count(NULL, streaming_package, &map_count) != UEC_RESULT_UNSUPPORTED ||
         map_count != 0u ||
+        api->get_actor_property_map_key(NULL, streaming_package, 0u, &map_key_value) !=
+            UEC_RESULT_UNSUPPORTED || map_key_value.kind != UEC_PROPERTY_UNKNOWN ||
+        map_key_value.integer_value != 0 || map_key_value.real_value != 0.0 ||
+        api->get_object_property_map_key(NULL, streaming_package, 0u, &map_key_value) !=
+            UEC_RESULT_UNSUPPORTED || map_key_value.kind != UEC_PROPERTY_UNKNOWN ||
+        map_key_value.integer_value != 0 || map_key_value.real_value != 0.0 ||
         api->get_object_property_map_entry_text(NULL, streaming_package, 0u, &map_key, &map_value) !=
             UEC_RESULT_UNSUPPORTED || map_key.kind != UEC_PROPERTY_UNKNOWN ||
         map_key.required_size != 0u || map_value.kind != UEC_PROPERTY_UNKNOWN ||

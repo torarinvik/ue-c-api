@@ -176,6 +176,9 @@ properties. Initialize `uec_text_output.struct_size`; the `kind` distinguishes
 soft object from soft class, and the path is copied to the caller's buffer.
 Typed write entries require a matching kind and reject mismatched soft-object
 or soft-class properties.
+ABI 130 adds typed scalar map-key reads for actor and UObject properties. Use
+the existing text-entry calls for map keys whose kinds do not fit
+`uec_property_value`, and re-query map indices after mutations.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

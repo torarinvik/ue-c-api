@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.129`.
+The current runtime slice is intentionally small and versioned as ABI `1.130`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -269,6 +269,11 @@ record containing the reflected soft-object or soft-class kind and its path.
 Matching `set_*_property_soft_value` entries require the caller's kind to match
 the reflected property's soft-object or soft-class type before importing the
 path.
+ABI minor 130 adds `get_actor_property_map_key` and
+`get_object_property_map_key`. These return typed scalar keys through
+`uec_property_value`; text map-entry reads remain available for string, name,
+text, and other keys without scalar representations. Map iteration indices are
+invalid after mutation and should be queried again.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

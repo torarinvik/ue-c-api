@@ -369,6 +369,22 @@ static uec_result UEC_CALL StubGetObjectPropertyMapValue(
     return StubGetArrayElementValue(outValue);
 }
 
+static uec_result UEC_CALL StubGetActorPropertyMapKey(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    uec_property_value* outKey)
+{
+    (void)actor; (void)propertyName; (void)index;
+    return StubGetArrayElementValue(outKey);
+}
+
+static uec_result UEC_CALL StubGetObjectPropertyMapKey(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    uec_property_value* outKey)
+{
+    (void)object; (void)propertyName; (void)index;
+    return StubGetArrayElementValue(outKey);
+}
+
 static uec_result UEC_CALL StubGetActorPropertySetElementValue(
     uec_actor* actor, uec_string_view propertyName, uint32_t index,
     uec_property_value* outValue)
@@ -759,6 +775,8 @@ static const uec_api g_api = {
     .set_actor_physics_angular_velocity = &StubSetActorPhysicsAngularVelocity,
     .apply_actor_torque = &StubApplyActorTorque,
     .apply_actor_angular_impulse = &StubApplyActorAngularImpulse,
+    .get_actor_property_map_key = &StubGetActorPropertyMapKey,
+    .get_object_property_map_key = &StubGetObjectPropertyMapKey,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

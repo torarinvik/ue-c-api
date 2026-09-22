@@ -17,7 +17,7 @@ headers and are not compiled as independent translation units.
   caller-owned array text outputs.
 - `uec_api_reflection_map_set.inl` owns reflected map/set enumeration, map
   value writes, and rehashed set element replacement, keeping hashed-container
-  iteration and mutation together.
+  iteration and mutation together, plus typed scalar map-key reads.
 - `uec_api_reflection_invoke.inl` owns reflected invocation, scalar marshaling,
   and object-reference property adapters.
 - `uec_api_presentation.inl` owns UMG, camera, audio (including completion

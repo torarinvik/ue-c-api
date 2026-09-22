@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details A
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 129u, "ABI minor must include typed soft property outputs");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 130u, "ABI minor must include typed reflected map keys");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
@@ -455,3 +455,4 @@ UEC_TEST_ASSERT(offsetof(uec_api, set_actor_property_soft_value) >
 UEC_TEST_ASSERT(offsetof(uec_api, set_object_property_soft_value) >
                    offsetof(uec_api, set_actor_property_soft_value),
                "object soft reference value input must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_map_key) > offsetof(uec_api, set_object_property_soft_value), "actor typed map key must append to uec_api"); UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_map_key) > offsetof(uec_api, get_actor_property_map_key), "object typed map key must append to uec_api");
