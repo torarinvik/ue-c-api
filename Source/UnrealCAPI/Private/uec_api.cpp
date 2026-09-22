@@ -57,6 +57,7 @@ namespace
     {
         TWeakObjectPtr<UWorld> Value;
         uec_world_kind Kind = UEC_WORLD_KIND_UNKNOWN;
+        int32 PIEInstance = -1;
     };
     struct FUECActor final { TWeakObjectPtr<AActor> Value; };
     struct FUECSceneComponent final { TWeakObjectPtr<USceneComponent> Value; };
@@ -458,7 +459,8 @@ namespace
         &GetObjectPath, &GetObjectClassName,
         &SetWidgetVisibility, &SetTextBlockText,
         &BindButtonClicked, &UnbindButtonClicked,
-        &GetComponentVelocity
+        &GetComponentVelocity,
+        &GetWorldPIEInstance
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

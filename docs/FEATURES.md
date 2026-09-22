@@ -10,7 +10,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | C and C++ public-header compatibility | Verified | C11 and C++17 syntax checks pass |
 | Diagnostics and logging | Runtime implemented | Bounded `get_last_error`; game log output |
 | Context/world/actor handles | Runtime implemented / Unreal integration pending | Typed active registries and weak UObject references |
-| World selection | Runtime implemented / Unreal integration pending | Indexed active Game/PIE enumeration, world kind, and first-world convenience |
+| World selection | Runtime implemented / Unreal integration pending | Indexed active Game/PIE enumeration, world kind, PIE instance identifiers, and first-world convenience |
 | Actor spawn and destruction | Runtime implemented / Unreal integration pending | Loadable actor class paths; game thread only |
 | Actor identity and tags | Runtime implemented / Unreal integration pending | UTF-8 name output and tag lookup; game thread only |
 | Actor transforms | Runtime implemented / Unreal integration pending | Double-precision C POD transform; game thread only |

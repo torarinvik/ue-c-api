@@ -77,6 +77,7 @@
                 auto* handle = new FUECWorld();
                 handle->Value = world;
                 handle->Kind = ToWorldKind(worldContext.WorldType);
+                handle->PIEInstance = worldContext.PIEInstance;
                 {
                     FScopeLock lock(&GHandleMutex);
                     GWorlds.Add(handle);
@@ -125,6 +126,7 @@
             auto* handle = new FUECWorld();
             handle->Value = world;
             handle->Kind = ToWorldKind(worldContext.WorldType);
+            handle->PIEInstance = worldContext.PIEInstance;
             {
                 FScopeLock lock(&GHandleMutex);
                 GWorlds.Add(handle);
@@ -141,6 +143,15 @@
         auto* world = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(world)) return UEC_RESULT_INVALID_HANDLE;
         *outKind = world->Kind;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetWorldPIEInstance(uec_world* rawWorld, int32_t* outInstance)
+    {
+        if (outInstance == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* world = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(world)) return UEC_RESULT_INVALID_HANDLE;
+        *outInstance = world->PIEInstance;
         return UEC_RESULT_OK;
     }
 

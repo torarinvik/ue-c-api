@@ -55,6 +55,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, bind_button_clicked) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_component_velocity) >
                    offsetof(uec_api, unbind_button_clicked),
                "component physics queries must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_world_pie_instance) >
+                   offsetof(uec_api, get_component_velocity),
+               "world context queries must append to uec_api");
 
 int main(void)
 {
