@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 31u
+#define UEC_ABI_MINOR 32u
 
 #ifdef __cplusplus
 extern "C" {
@@ -446,6 +446,11 @@ typedef struct uec_api {
     uec_result (UEC_CALL *actor_is_a)(uec_actor* actor,
                                       uec_string_view class_path,
                                       uec_bool* out_is_a);
+    uec_result (UEC_CALL *add_input_mapping_context)(uec_actor* controller,
+                                                     uec_object* mapping_context,
+                                                     int32_t priority);
+    uec_result (UEC_CALL *remove_input_mapping_context)(uec_actor* controller,
+                                                        uec_object* mapping_context);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

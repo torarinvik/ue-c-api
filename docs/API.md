@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.31`.
+The current runtime slice is intentionally small and versioned as ABI `1.32`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -173,6 +173,12 @@ parent. Both operations are game-thread-only.
 `get_actor_class_name` returns an actor's full Unreal class path, while
 `actor_is_a` checks inheritance against another actor class path. These queries
 run on the game thread and return invalid-argument for non-actor class paths.
+
+`add_input_mapping_context` and `remove_input_mapping_context` apply loaded
+`UInputMappingContext` objects to a local player controller's Enhanced Input
+subsystem. Adding accepts an integer priority; removing is idempotent at the
+engine level. Action value polling, event callbacks, and binding tokens remain
+outside this slice.
 
 `play_skeletal_animation` and `stop_skeletal_animation` control the transient
 animation state of skeletal mesh components using a loaded animation asset.

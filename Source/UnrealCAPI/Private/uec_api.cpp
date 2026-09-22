@@ -12,6 +12,8 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SaveGame.h"
 #include "InputCoreTypes.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
 #include "Kismet/GameplayStatics.h"
 #include "CollisionShape.h"
 #include "Components/SceneComponent.h"
@@ -2148,6 +2150,47 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL AddInputMappingContext(uec_actor* rawController,
+                                               uec_object* rawMappingContext,
+                                               int32_t priority)
+    {
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        auto* contextHandle = reinterpret_cast<FUECObject*>(rawMappingContext);
+        if (!IsValidActor(controllerHandle) || !IsValidObject(contextHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        UInputMappingContext* mappingContext = Cast<UInputMappingContext>(contextHandle->Value.Get());
+        if (controller == nullptr || mappingContext == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        ULocalPlayer* localPlayer = controller->GetLocalPlayer();
+        if (localPlayer == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        UEnhancedInputLocalPlayerSubsystem* subsystem =
+            localPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+        if (subsystem == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        FModifyContextOptions options;
+        subsystem->AddMappingContext(mappingContext, priority, options);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL RemoveInputMappingContext(uec_actor* rawController,
+                                                  uec_object* rawMappingContext)
+    {
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        auto* contextHandle = reinterpret_cast<FUECObject*>(rawMappingContext);
+        if (!IsValidActor(controllerHandle) || !IsValidObject(contextHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        UInputMappingContext* mappingContext = Cast<UInputMappingContext>(contextHandle->Value.Get());
+        if (controller == nullptr || mappingContext == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        ULocalPlayer* localPlayer = controller->GetLocalPlayer();
+        if (localPlayer == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        UEnhancedInputLocalPlayerSubsystem* subsystem =
+            localPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+        if (subsystem == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        FModifyContextOptions options;
+        subsystem->RemoveMappingContext(mappingContext, options);
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2203,7 +2246,8 @@ namespace
         &SetComponentMaterialScalar, &SetComponentMaterialVector,
         &RetainObject, &GetComponentClassName, &ComponentIsA,
         &AttachSceneComponent, &DetachSceneComponent,
-        &GetActorClassName, &ActorIsA
+        &GetActorClassName, &ActorIsA,
+        &AddInputMappingContext, &RemoveInputMappingContext
     };
 }
 
