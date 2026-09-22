@@ -159,6 +159,8 @@ development; they do not imply a published or runtime-verified release.
   invalid-context failures deterministic with the other bounded-output APIs.
 - Reflected actor invocation now rejects network functions and authority-only
   functions on client worlds before entering `ProcessEvent`.
+- Possession and view-target changes now reject actor handles from different
+  worlds or PIE instances before calling Unreal.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

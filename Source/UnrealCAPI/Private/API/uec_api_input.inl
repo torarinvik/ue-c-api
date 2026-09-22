@@ -22,6 +22,9 @@
         APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
         APawn* pawn = Cast<APawn>(pawnHandle->Value.Get());
         if (controller == nullptr || pawn == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (controller->GetWorld() == nullptr || controller->GetWorld() != pawn->GetWorld()) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         const uec_result authorityResult = RequireWorldAuthority(controller->GetWorld());
         if (authorityResult != UEC_RESULT_OK) return authorityResult;
         controller->Possess(pawn);
@@ -37,6 +40,9 @@
         APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
         AActor* viewTarget = viewTargetHandle->Value.Get();
         if (controller == nullptr || viewTarget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (controller->GetWorld() == nullptr || controller->GetWorld() != viewTarget->GetWorld()) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         controller->SetViewTarget(viewTarget);
         return UEC_RESULT_OK;
     }

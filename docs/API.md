@@ -84,7 +84,9 @@ travel request through `UGameplayStatics::OpenLevel`; the call returning `OK`
 means the request was submitted, not that loading has completed. Existing world
 and object handles may become invalid during travel.
 
-Player-flow helpers use actor handles for controllers, pawns, and view targets.
+Player-flow helpers use actor handles for controllers, pawns, and view targets;
+the controller and target handles must belong to the same world, including the
+same PIE instance.
 `get_player_controller` selects an explicit local-player index, while
 `get_first_player_controller` remains a convenience wrapper for index zero.
 `get_world_game_instance` returns the world-scoped game-instance object as a
