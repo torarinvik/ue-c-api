@@ -467,6 +467,111 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL InvokeActorFunctionText(
+        uec_actor* rawActor,
+        uec_string_view functionName,
+        const uec_string_view* argumentValues,
+        uint32_t argumentCount,
+        char* returnBuffer,
+        size_t returnBufferSize,
+        size_t* returnRequiredSize,
+        uec_property_kind* outReturnKind)
+    {
+        if (returnRequiredSize == nullptr || outReturnKind == nullptr)
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        *returnRequiredSize = 0;
+        *outReturnKind = UEC_PROPERTY_UNKNOWN;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(functionName) || functionName.size == 0)
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (argumentCount != 0 && argumentValues == nullptr)
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
+        if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net))
+        {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (!function->HasAnyFunctionFlags(FUNC_BlueprintCallable | FUNC_Native | FUNC_BlueprintEvent))
+        {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+
+        TArray<FProperty*> inputParameters;
+        TArray<FProperty*> outputParameters;
+        FProperty* outputProperty = nullptr;
+        for (TFieldIterator<FProperty> iterator(function); iterator; ++iterator)
+        {
+            FProperty* parameter = *iterator;
+            if (!parameter->HasAnyPropertyFlags(CPF_Parm)) continue;
+            if (parameter->HasAnyPropertyFlags(CPF_ReturnParm))
+            {
+                outputProperty = parameter;
+                continue;
+            }
+            if (parameter->HasAnyPropertyFlags(CPF_OutParm))
+            {
+                outputParameters.Add(parameter);
+            }
+            if (!parameter->HasAnyPropertyFlags(CPF_OutParm) ||
+                parameter->HasAnyPropertyFlags(CPF_ReferenceParm))
+            {
+                inputParameters.Add(parameter);
+            }
+        }
+        if (argumentCount != static_cast<uint32_t>(inputParameters.Num()))
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        for (uint32_t index = 0; index < argumentCount; ++index)
+        {
+            if (!IsValidStringView(argumentValues[index])) return UEC_RESULT_INVALID_ARGUMENT;
+        }
+
+        FStructOnScope parameters(function);
+        uint8* parameterMemory = parameters.GetStructMemory();
+        for (int32 index = 0; index < inputParameters.Num(); ++index)
+        {
+            FProperty* parameter = inputParameters[index];
+            const FString text = ToFString(argumentValues[index]);
+            if (parameter->ImportText_InContainer(*text, parameterMemory, actor,
+                                                   PPF_None, GWarn) == nullptr)
+            {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+        }
+
+        actor->ProcessEvent(function, parameterMemory);
+        if (outputProperty == nullptr)
+        {
+            for (FProperty* parameter : outputParameters)
+            {
+                outputProperty = parameter;
+                break;
+            }
+        }
+        if (outputProperty == nullptr) return UEC_RESULT_OK;
+
+        FString outputText;
+        if (!outputProperty->ExportText_InContainer(0, outputText, parameterMemory,
+                                                    nullptr, actor, PPF_None, actor))
+        {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        *outReturnKind = GetPropertyKind(outputProperty);
+        return CopyFStringToUtf8(outputText, returnBuffer, returnBufferSize, returnRequiredSize);
+    }
+
     uec_result UEC_CALL GetClassFunctionCount(uec_class* rawClass, uint32_t* outCount)
     {
         if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
@@ -626,4 +731,3 @@
         objectProperty->SetObjectPropertyValue_InContainer(owner, value);
         return UEC_RESULT_OK;
     }
-

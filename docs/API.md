@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.52`.
+The current runtime slice is intentionally small and versioned as ABI `1.53`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -104,9 +104,14 @@ culture-neutral `FText` values for text properties; they do not create
 localization tables.
 
 `invoke_actor_function` supports only reflected actor functions with no
-parameters, no return or out values, and no latent flag. Functions with any
-parameters or latent behavior return `UEC_RESULT_UNSUPPORTED` until a typed
-argument and async completion ABI is available.
+parameters, no return or out values, and no latent flag. The appended
+`invoke_actor_function_text` path accepts positional arguments in Unreal's
+property text syntax and returns the function's return value, or its first out
+parameter, through a bounded UTF-8 buffer. Pure out parameters are initialized
+by Unreal before the call and do not consume an argument. It rejects latent and
+network functions; text syntax is engine-version-specific and the call remains
+game-thread-only. Multiple out parameters beyond the first are executed but
+are not returned by this convenience surface.
 
 `load_object` synchronously loads an object from a runtime object path and
 returns a weak opaque handle. The handle does not keep the UObject alive; calls

@@ -58,6 +58,8 @@ development; they do not imply a published or runtime-verified release.
   and text types.
 - Reflected property string access for Unreal's supported struct and container
   text serialization, including import and export for actor and object owners.
+- Text-marshaled reflected actor-function calls with positional arguments and a
+  bounded return or first-out value, excluding latent and network functions.
 - C consumer source and public math-type layout assertions.
 - GitHub Actions checks for C11/C++17 headers and descriptor JSON on Linux
   (GCC and Clang) and macOS (Clang), on pushes and pull requests.

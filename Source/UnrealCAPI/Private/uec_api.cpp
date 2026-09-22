@@ -38,6 +38,7 @@
 #include "UObject/UnrealType.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/StrongObjectPtrTemplates.h"
+#include "UObject/StructOnScope.h"
 
 namespace
 {
@@ -404,7 +405,8 @@ namespace
         &AsyncSaveGameToSlot, &AsyncLoadGameFromSlot, &CancelSaveGameRequest,
         &GetActorCountByClass, &GetActorAtByClass, &DestroyAudioComponent,
         &BindInputAction, &UnbindInputAction,
-        &GetPlayerController, &GetWorldGameInstance
+        &GetPlayerController, &GetWorldGameInstance,
+        &InvokeActorFunctionText
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

@@ -34,6 +34,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, bind_input_action) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_player_controller) >
                    offsetof(uec_api, unbind_input_action),
                "context access functions must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_text) >
+                   offsetof(uec_api, get_world_game_instance),
+               "text-marshaled invocation must append to uec_api");
 
 int main(void)
 {
