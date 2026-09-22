@@ -125,8 +125,7 @@ mutation before using a later index.
 ABI 113 adds typed scalar reads for nested struct fields, including dotted paths
 such as `Transform.Location.X`; compound leaves remain on the text accessor.
 ABI 114 adds typed scalar writes for reflected array elements and map values.
-Writes reject read-only containers and invalid scalar ranges before mutation;
-set mutation remains unsupported.
+Writes reject read-only containers and invalid scalar ranges before mutation.
 ABI 115 adds typed scalar writes for nested struct fields, including dotted
 paths such as `Transform.Location.X`.
 ABI 116 adds class-default property text readback using the reflected property
@@ -145,6 +144,9 @@ ABI 122 adds reflected container kind metadata. Arrays and sets report their
 element kind in `out_value_kind`; maps report both key and value kinds. The
 unused output for arrays and sets is `UEC_PROPERTY_UNKNOWN`, and the call
 returns `UEC_RESULT_UNSUPPORTED` for non-container properties.
+ABI 123 adds set element replacement through text and typed scalar writers.
+The bridge rejects a replacement that duplicates another set element, rehashes
+a successful replacement, and invalidates all cached logical indices.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

@@ -480,3 +480,136 @@
         UObject* object = handle->Value.Get();
         return object == nullptr ? UEC_RESULT_INVALID_HANDLE : SetMapValue(object, propertyName, index, value);
     }
+
+    static uec_result CommitSetElement(FSetProperty* setProperty,
+                                       FScriptSetHelper& helper,
+                                       int32 slot,
+                                       void* parsedValue)
+    {
+        if (setProperty == nullptr || setProperty->ElementProp == nullptr ||
+            parsedValue == nullptr || slot == INDEX_NONE) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FProperty* elementProperty = setProperty->ElementProp;
+        for (int32 candidate = 0; candidate < helper.GetMaxIndex(); ++candidate)
+        {
+            if (candidate == slot || !helper.IsValidIndex(candidate)) continue;
+            if (elementProperty->Identical(parsedValue, helper.GetElementPtr(candidate), PPF_None))
+            {
+                elementProperty->DestroyAndFreeValue(parsedValue);
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+        }
+        elementProperty->CopySingleValue(helper.GetElementPtr(slot), parsedValue);
+        elementProperty->DestroyAndFreeValue(parsedValue);
+        helper.Rehash();
+        return UEC_RESULT_OK;
+    }
+
+    static uec_result SetSetElementText(UObject* owner,
+                                        uec_string_view propertyName,
+                                        uint32_t index,
+                                        uec_string_view value)
+    {
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0 ||
+            !IsValidStringView(value)) return UEC_RESULT_INVALID_ARGUMENT;
+        FSetProperty* setProperty = CastField<FSetProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (setProperty == nullptr || setProperty->ElementProp == nullptr) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (!IsWritableProperty(setProperty)) return UEC_RESULT_UNSUPPORTED;
+        FScriptSetHelper helper(setProperty, setProperty->ContainerPtrToValuePtr<void>(owner));
+        int32 slot = INDEX_NONE;
+        if (!FindSetSlot(helper, index, slot)) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* elementProperty = setProperty->ElementProp;
+        void* parsedValue = elementProperty->AllocateAndInitializeValue();
+        if (parsedValue == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        const FString text = ToFString(value);
+        if (elementProperty->ImportText_Direct(*text, parsedValue, owner, PPF_None, GWarn) == nullptr)
+        {
+            elementProperty->DestroyAndFreeValue(parsedValue);
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return CommitSetElement(setProperty, helper, slot, parsedValue);
+    }
+
+    static uec_result SetSetElementValue(UObject* owner,
+                                         uec_string_view propertyName,
+                                         uint32_t index,
+                                         const uec_property_value* value)
+    {
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0 ||
+            value == nullptr || value->struct_size < sizeof(uec_property_value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FSetProperty* setProperty = CastField<FSetProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (setProperty == nullptr || setProperty->ElementProp == nullptr) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (!IsWritableProperty(setProperty)) return UEC_RESULT_UNSUPPORTED;
+        FScriptSetHelper helper(setProperty, setProperty->ContainerPtrToValuePtr<void>(owner));
+        int32 slot = INDEX_NONE;
+        if (!FindSetSlot(helper, index, slot)) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* elementProperty = setProperty->ElementProp;
+        void* parsedValue = elementProperty->AllocateAndInitializeValue();
+        if (parsedValue == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        const uec_result importResult = ImportScalarPropertyValue(elementProperty, parsedValue, value);
+        if (importResult != UEC_RESULT_OK)
+        {
+            elementProperty->DestroyAndFreeValue(parsedValue);
+            return importResult;
+        }
+        return CommitSetElement(setProperty, helper, slot, parsedValue);
+    }
+
+    uec_result UEC_CALL SetActorPropertySetElementText(uec_actor* rawActor,
+                                                       uec_string_view propertyName,
+                                                       uint32_t index,
+                                                       uec_string_view value)
+    {
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        return actor == nullptr ? UEC_RESULT_INVALID_HANDLE
+                                : SetSetElementText(actor, propertyName, index, value);
+    }
+
+    uec_result UEC_CALL SetObjectPropertySetElementText(uec_object* rawObject,
+                                                        uec_string_view propertyName,
+                                                        uint32_t index,
+                                                        uec_string_view value)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        return object == nullptr ? UEC_RESULT_INVALID_HANDLE
+                                 : SetSetElementText(object, propertyName, index, value);
+    }
+
+    uec_result UEC_CALL SetActorPropertySetElementValue(
+        uec_actor* rawActor, uec_string_view propertyName, uint32_t index,
+        const uec_property_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        return actor == nullptr ? UEC_RESULT_INVALID_HANDLE
+                                : SetSetElementValue(actor, propertyName, index, value);
+    }
+
+    uec_result UEC_CALL SetObjectPropertySetElementValue(
+        uec_object* rawObject, uec_string_view propertyName, uint32_t index,
+        const uec_property_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        return object == nullptr ? UEC_RESULT_INVALID_HANDLE
+                                 : SetSetElementValue(object, propertyName, index, value);
+    }

@@ -250,7 +250,7 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 108 adds text writes for indexed reflected array elements on actor
   and UObject properties.
 - ABI minor 109 adds actor and UObject map value text writes while preserving
-  map keys; set mutation remains unsupported until rehash semantics are covered.
+  map keys.
 - ABI minor 110 adds reflected class-property access flags for editability,
   Blueprint read-only state, parameter, return, out, and reference metadata.
 - ABI minor 111 adds typed scalar reads for reflected actor and UObject array
@@ -276,6 +276,7 @@ development; they do not imply a published or runtime-verified release.
   declared enum-value validation.
 - ABI minor 121 adds reflected struct type paths for schema-aware field access.
 - ABI minor 122 adds reflected array, map, and set element-kind metadata.
+- ABI minor 123 adds duplicate-safe text and typed scalar replacement for existing set elements with rehashing.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

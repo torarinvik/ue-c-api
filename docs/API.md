@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.122`.
+The current runtime slice is intentionally small and versioned as ABI `1.123`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -177,9 +177,7 @@ properties. The array property must be writable; callers must re-query the
 count and avoid retaining indices after any mutation.
 
 ABI minor 109 adds actor and UObject map value text writers. Keys are never
-changed by these calls, and logical indices must be re-queried after mutation;
-set element mutation remains unsupported until Unreal rehash behavior is
-covered by the contract.
+changed by these calls, and logical indices must be re-queried after mutation.
 
 ABI minor 110 adds `get_class_property_flags`. It reports edit-const,
 Blueprint-read-only, const-parameter, parameter, return, out, and reference
@@ -200,7 +198,7 @@ accessor, and scalar leaves use `uec_property_value`.
 
 ABI minor 114 adds typed scalar writes for reflected array elements and map
 values. The same access checks, numeric range checks, and finite-value rules as
-top-level property writes apply; set mutation remains separate.
+top-level property writes apply.
 
 ABI minor 115 adds typed scalar writes for nested struct fields. Dotted paths
 use the same traversal and access checks as the nested text writer.
@@ -237,6 +235,10 @@ ABI minor 122 adds `get_class_property_container_kinds`, which reports the
 declared element kind for arrays and sets, and both key and value kinds for
 maps. Non-container properties return `UEC_RESULT_UNSUPPORTED`; unused output
 kinds are reset to `UEC_PROPERTY_UNKNOWN`.
+
+ABI minor 123 adds text and typed scalar replacement for existing set elements.
+The bridge rejects duplicate values, rehashes the set after a successful write,
+and requires callers to re-query logical indices after every mutation.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

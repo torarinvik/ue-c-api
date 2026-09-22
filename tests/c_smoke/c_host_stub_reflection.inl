@@ -125,6 +125,26 @@ static uec_result UEC_CALL StubGetActorPropertySetElementText(uec_actor* actor,
         ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_ARGUMENT;
 }
 
+static uec_result UEC_CALL StubSetActorPropertySetElementText(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index, uec_string_view value)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    (void)value;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetObjectPropertySetElementText(
+    uec_object* object, uec_string_view propertyName, uint32_t index, uec_string_view value)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    (void)value;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubSetActorPropertySoftPath(uec_actor* actor,
                                                         uec_string_view propertyName,
                                                         uec_string_view path)
@@ -384,6 +404,26 @@ static uec_result UEC_CALL StubSetActorPropertyMapValue(
 }
 
 static uec_result UEC_CALL StubSetObjectPropertyMapValue(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    const uec_property_value* value)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    return StubSetContainerValue(value);
+}
+
+static uec_result UEC_CALL StubSetActorPropertySetElementValue(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    const uec_property_value* value)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubSetContainerValue(value);
+}
+
+static uec_result UEC_CALL StubSetObjectPropertySetElementValue(
     uec_object* object, uec_string_view propertyName, uint32_t index,
     const uec_property_value* value)
 {
@@ -656,6 +696,10 @@ static const uec_api g_api = {
     .set_object_property_class = &StubSetObjectPropertyClass,
     .get_class_property_struct_path = &StubGetClassPropertyStructPath,
     .get_class_property_container_kinds = &StubGetClassPropertyContainerKinds,
+    .set_actor_property_set_element_text = &StubSetActorPropertySetElementText,
+    .set_object_property_set_element_text = &StubSetObjectPropertySetElementText,
+    .set_actor_property_set_element_value = &StubSetActorPropertySetElementValue,
+    .set_object_property_set_element_value = &StubSetObjectPropertySetElementValue,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

@@ -519,6 +519,19 @@ int main(void)
         return 52;
     }
 
+    if (api->set_actor_property_set_element_text(NULL, streaming_package, 0u, streaming_package) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->set_object_property_set_element_text(NULL, streaming_package, 0u, streaming_package) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->set_actor_property_set_element_value(NULL, streaming_package, 0u, NULL) !=
+            UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_object_property_set_element_value(NULL, streaming_package, 0u,
+                                                   &invocation_result) != UEC_RESULT_UNSUPPORTED)
+    {
+        api->release_context(context);
+        return 53;
+    }
+
     const char message[] = "C ABI smoke test";
     const uec_string_view message_view = {message, sizeof(message) - 1u};
     result = api->log(context, message_view);

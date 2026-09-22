@@ -14,8 +14,9 @@ headers and are not compiled as independent translation units.
   struct-field enumeration, and container element-kind metadata.
 - `uec_api_reflection_containers.inl` owns reflected arrays, maps, sets, soft
   reference paths, nested structs, and caller-owned array text outputs.
-- `uec_api_reflection_map_set.inl` owns reflected map/set enumeration and text
-  value writes, keeping hashed-container iteration and mutation together.
+- `uec_api_reflection_map_set.inl` owns reflected map/set enumeration, map
+  value writes, and rehashed set element replacement, keeping hashed-container
+  iteration and mutation together.
 - `uec_api_reflection_invoke.inl` owns reflected invocation, scalar marshaling,
   and object-reference property adapters.
 - `uec_api_presentation.inl` owns UMG, camera, audio (including completion
