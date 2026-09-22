@@ -453,6 +453,7 @@
     {
         auto* world = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(world)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         TombstoneHandle(world->Header);
         world->Value.Reset();
         return UEC_RESULT_OK;
