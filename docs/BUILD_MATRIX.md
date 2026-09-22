@@ -32,9 +32,13 @@ host project for the current platform. Set `UEC_UNREAL_CONFIGURATION=Shipping`
 to repeat the build in Shipping mode. Set `UEC_UNREAL_PLATFORM=Win64` (or
 another platform supplied by the engine installation) to validate a target
 different from the host platform; cross-platform requests skip rebuilding the
-local Editor target. The script exits with status 2 when the
-engine path or requested platform is unavailable, so the portable gate remains
-usable on contributors' machines without Unreal installed.
+local Editor target. The script runs the portable gate first, reads the exact
+patch from `Engine/Build/Build.version`, and rejects an engine whose major/minor
+version does not match the host descriptor's `EngineAssociation`. Set
+`UEC_ALLOW_ENGINE_MISMATCH=1` only for an explicit compatibility probe. The
+script exits with status 2 when the engine path, version metadata, or requested
+platform is unavailable, so the portable gate remains usable on contributors'
+machines without Unreal installed.
 
 The minimum consumer language standard is C11. The plugin implementation uses
 C++17 through Unreal Build Tool; consumers may compile the public header as C11
