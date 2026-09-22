@@ -90,7 +90,10 @@ API entry points, then cancels timers, subscriptions, queued callbacks, asset
 requests, save requests, and input bindings. Existing handles and callbacks
 must be treated as unusable once shutdown begins. Worker-thread dispatch checks
 the shutdown gate while registering its request, so a request cannot be added
-after teardown has already drained the queue.
+after teardown has already drained the queue. Destroying an actor through the
+bridge also removes collision and Enhanced Input delegates attached to its
+components; an in-flight callback is allowed to return before its native
+delegate is removed.
 
 In networked worlds, call `get_world_net_mode` and `get_world_has_authority`
 before mutating gameplay state. The authority query does not provide

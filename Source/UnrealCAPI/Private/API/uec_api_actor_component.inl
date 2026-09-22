@@ -23,6 +23,57 @@
             ? componentClass : nullptr;
     }
 
+    static void CancelActorSubscriptions(AActor* actor)
+    {
+        if (actor == nullptr) return;
+        TArray<uint64> collisionIds;
+        for (const TPair<uint64, TSharedPtr<FUECCollisionSubscription>>& pair : GCollisionSubscriptions)
+        {
+            if (!pair.Value.IsValid()) continue;
+            UPrimitiveComponent* component = pair.Value->Component.Get();
+            if (component != nullptr && component->GetOwner() == actor) collisionIds.Add(pair.Key);
+        }
+        for (uint64 subscriptionId : collisionIds)
+        {
+            TSharedPtr<FUECCollisionSubscription>* subscriptionPtr =
+                GCollisionSubscriptions.Find(subscriptionId);
+            if (subscriptionPtr == nullptr || !subscriptionPtr->IsValid()) continue;
+            TSharedPtr<FUECCollisionSubscription> subscription = *subscriptionPtr;
+            subscription->Cancelled = true;
+            if (!subscription->InCallback)
+            {
+                if (UPrimitiveComponent* component = subscription->Component.Get())
+                {
+                    component->OnComponentHit().Remove(subscription->Handle);
+                }
+            }
+            GCollisionSubscriptions.Remove(subscriptionId);
+        }
+
+        TArray<uint64> inputIds;
+        for (const TPair<uint64, TSharedPtr<FUECInputBinding>>& pair : GInputBindings)
+        {
+            if (!pair.Value.IsValid()) continue;
+            UEnhancedInputComponent* component = pair.Value->Component.Get();
+            if (component != nullptr && component->GetOwner() == actor) inputIds.Add(pair.Key);
+        }
+        for (uint64 bindingId : inputIds)
+        {
+            TSharedPtr<FUECInputBinding>* bindingPtr = GInputBindings.Find(bindingId);
+            if (bindingPtr == nullptr || !bindingPtr->IsValid()) continue;
+            TSharedPtr<FUECInputBinding> binding = *bindingPtr;
+            binding->Cancelled = true;
+            if (!binding->InCallback)
+            {
+                if (UEnhancedInputComponent* component = binding->Component.Get())
+                {
+                    component->RemoveBindingByHandle(binding->EngineHandle);
+                }
+            }
+            GInputBindings.Remove(bindingId);
+        }
+    }
+
     /* Actor lifetime and transform operations. */
     uec_result UEC_CALL SpawnActor(uec_world* rawWorld, uec_string_view classPath,
                                    const uec_transform* transform, uec_actor** outActor)
@@ -60,6 +111,7 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         const uec_result authorityResult = RequireWorldAuthority(actor->GetWorld());
         if (authorityResult != UEC_RESULT_OK) return authorityResult;
+        CancelActorSubscriptions(actor);
         TombstoneHandle(handle->Header);
         handle->Value.Reset();
         return actor->Destroy() ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;

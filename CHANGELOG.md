@@ -127,6 +127,8 @@ development; they do not imply a published or runtime-verified release.
   Unreal transform.
 - Worker-thread dispatch now checks the shutdown gate while registering a
   request, preventing work from being queued after teardown has drained it.
+- Actor destruction now removes collision and Enhanced Input subscriptions
+  attached to the actor's components, including safe in-flight cancellation.
 - Failed Enhanced Input binding creation now removes the native delegate before
   returning an internal error, preventing an untracked callback from surviving.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
