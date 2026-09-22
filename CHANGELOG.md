@@ -121,6 +121,8 @@ development; they do not imply a published or runtime-verified release.
   entering Unreal's property storage.
 - Reflected integer and enum writes now reject values outside the underlying
   Unreal property's representable range.
+- Failed Enhanced Input binding creation now removes the native delegate before
+  returning an internal error, preventing an untracked callback from surviving.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Embedded NUL rejection for all public UTF-8 string views, including reflected,
   input, save-game, and configuration adapters.

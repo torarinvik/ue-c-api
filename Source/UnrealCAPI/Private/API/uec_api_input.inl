@@ -415,7 +415,11 @@
                 }
             });
         binding->EngineHandle = engineBinding.GetHandle();
-        if (binding->EngineHandle == 0) return UEC_RESULT_INTERNAL_ERROR;
+        if (binding->EngineHandle == 0)
+        {
+            inputComponent->RemoveBindingByHandle(engineBinding.GetHandle());
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         GInputBindings.Add(binding->Id, binding);
         *outBindingId = binding->Id;
         return UEC_RESULT_OK;
