@@ -152,6 +152,9 @@ development; they do not imply a published or runtime-verified release.
   required-size output, matching other bounded string APIs.
 - Reflected `FFloatProperty` writes now reject finite doubles outside Unreal's
   representable float range before conversion.
+- Object, save-game, path-query, and queued-request outputs now clear at entry,
+  so invalid calls cannot leave stale handles, booleans, or request ids in the
+  caller's variables.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

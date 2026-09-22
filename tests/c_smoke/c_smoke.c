@@ -131,6 +131,11 @@ UEC_TEST_ASSERT(offsetof(uec_api, set_actor_tag) >
                    offsetof(uec_api, overlap_shape_filtered),
                "actor tag mutation must append to uec_api");
 
+static void UEC_CALL NoopGameThreadCallback(void* user_data)
+{
+    (void)user_data;
+}
+
 int main(void)
 {
     const uec_api* api = NULL;
@@ -157,6 +162,15 @@ int main(void)
     {
         api->release_context(context);
         return 8;
+    }
+
+    uint64_t invalid_request_id = UINT64_C(42);
+    result = api->run_on_game_thread(NULL, &NoopGameThreadCallback, NULL,
+                                     &invalid_request_id);
+    if (result != UEC_RESULT_INVALID_HANDLE || invalid_request_id != 0)
+    {
+        api->release_context(context);
+        return 9;
     }
 
     uec_capabilities capabilities = 0;

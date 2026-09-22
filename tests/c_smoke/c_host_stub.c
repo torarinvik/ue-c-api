@@ -45,6 +45,19 @@ static uec_result UEC_CALL StubReleaseContext(uec_context* context)
     return context == &g_context ? UEC_RESULT_OK : UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
+                                               uec_game_thread_callback callback,
+                                               void* userData,
+                                               uint64_t* outRequestId)
+{
+    (void)userData;
+    if (outRequestId != NULL) *outRequestId = 0;
+    if (callback == NULL || outRequestId == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (context != &g_context) return UEC_RESULT_INVALID_HANDLE;
+    *outRequestId = 1;
+    return UEC_RESULT_OK;
+}
+
 static const uec_api g_api = {
     .struct_size = sizeof(uec_api),
     .abi_major = UEC_ABI_MAJOR,
@@ -52,7 +65,8 @@ static const uec_api g_api = {
     .get_capabilities = &StubGetCapabilities,
     .get_last_error = &StubGetLastError,
     .log = &StubLog,
-    .release_context = &StubReleaseContext
+    .release_context = &StubReleaseContext,
+    .run_on_game_thread = &StubRunOnGameThread
 };
 
 UEC_API uec_result UEC_CALL uec_get_api(uint32_t requestedMajor,

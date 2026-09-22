@@ -2,12 +2,12 @@
                                          uec_string_view objectPath,
                                          uec_object** outObject)
     {
+        if (outObject != nullptr) *outObject = nullptr;
         if (outObject == nullptr || !IsValidStringView(objectPath) || objectPath.size == 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outObject = nullptr;
         UObject* object = LoadObject<UObject>(nullptr, *ToFString(objectPath));
         if (object == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = MakeObjectHandle(object);
@@ -72,6 +72,7 @@
                                   uec_string_view classPath,
                                   uec_bool* outIsA)
     {
+        if (outIsA != nullptr) *outIsA = UEC_FALSE;
         if (outIsA == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidStringView(classPath) || classPath.size == 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -93,6 +94,7 @@
                                            void* userData,
                                            uint64_t* outRequestId)
     {
+        if (outRequestId != nullptr) *outRequestId = 0;
         if (callback == nullptr || outRequestId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -184,10 +186,10 @@
                                        uec_string_view classPath,
                                        uec_object** outSaveGame)
     {
+        if (outSaveGame != nullptr) *outSaveGame = nullptr;
         if (outSaveGame == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outSaveGame = nullptr;
         if (!IsValidStringView(classPath) || classPath.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
         UClass* saveClass = LoadClass<USaveGame>(nullptr, *ToFString(classPath));
         if (saveClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
@@ -203,6 +205,7 @@
                                        int32_t userIndex,
                                        uec_bool* outSaved)
     {
+        if (outSaved != nullptr) *outSaved = UEC_FALSE;
         if (outSaved == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* saveHandle = reinterpret_cast<FUECObject*>(rawSaveGame);
         if (!IsValidObject(saveHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -223,10 +226,10 @@
                                          int32_t userIndex,
                                          uec_object** outSaveGame)
     {
+        if (outSaveGame != nullptr) *outSaveGame = nullptr;
         if (outSaveGame == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outSaveGame = nullptr;
         if (!IsValidStringView(classPath) || !IsValidStringView(slotName) ||
             classPath.size == 0 || slotName.size == 0 || userIndex < 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -247,6 +250,7 @@
                                        int32_t userIndex,
                                        uec_bool* outDeleted)
     {
+        if (outDeleted != nullptr) *outDeleted = UEC_FALSE;
         if (outDeleted == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -263,6 +267,7 @@
                                         void* userData,
                                         uint64_t* outRequestId)
     {
+        if (outRequestId != nullptr) *outRequestId = 0;
         if (callback == nullptr || outRequestId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         auto request = MakeShared<FUECGameThreadRequest>();
@@ -316,6 +321,7 @@
                                            uec_string_view objectPath,
                                            uec_bool* outLoaded)
     {
+        if (outLoaded != nullptr) *outLoaded = UEC_FALSE;
         if (outLoaded == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -332,6 +338,7 @@
                                             void* userData,
                                             uint64_t* outRequestId)
     {
+        if (outRequestId != nullptr) *outRequestId = 0;
         if (callback == nullptr || outRequestId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* saveHandle = reinterpret_cast<FUECObject*>(rawSaveGame);
         if (!IsValidObject(saveHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -382,6 +389,7 @@
                                               void* userData,
                                               uint64_t* outRequestId)
     {
+        if (outRequestId != nullptr) *outRequestId = 0;
         if (callback == nullptr || outRequestId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;

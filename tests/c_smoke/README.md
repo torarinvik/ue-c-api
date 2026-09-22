@@ -12,4 +12,9 @@ To run only the C11 syntax check:
 cc -std=c11 -I../../Source/UnrealCAPI/Public -fsyntax-only c_smoke.c
 ```
 
-The executable is intentionally not linked here: `uec_get_api` is exported by the Unreal plugin when it is loaded into an Unreal host. The program documents the expected bootstrap and function-table usage for a real C consumer. `c_compat.c` models an older minor-version consumer that only uses the stable table prefix; a linked Unreal-host compatibility run remains part of the engine-dependent release gate.
+The local gate links both consumers against `tests/c_smoke/c_host_stub.c` so
+bootstrap, table calls, output clearing, and the append-only prefix can run
+without Unreal. `uec_get_api` is still exported by the Unreal plugin when it is
+loaded into a real host. `c_compat.c` models an older minor-version consumer
+that only uses the stable table prefix; a linked Unreal-host compatibility run
+remains part of the engine-dependent release gate.
