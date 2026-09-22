@@ -28,7 +28,10 @@ headers and are not compiled as independent translation units.
   save-game operations, game-thread dispatch, and shutdown cancellation.
 - `uec_api_streaming.inl` owns level streaming state, immediate and callback-
   based travel, and cancellable streaming completion requests.
+- `uec_api_runtime.inl` owns shared handle validation, UTF-8/numeric/geometry
+  conversion, ID allocation, callback scope, queue limits, and shutdown
+  diagnostics.
 
-The shared handle types, registries, conversion helpers, and ABI function table
-remain in `uec_api.cpp` so moving a subsystem cannot change the public function
-ordering or the lifetime rules for opaque handles.
+The shared handle types, registries, and ABI function table remain in
+`uec_api.cpp` so moving a subsystem cannot change the public function ordering
+or the lifetime rules for opaque handles.
