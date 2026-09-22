@@ -248,9 +248,12 @@
             if (value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
+            FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
+            if (!IsIntegerValueInRange(underlying, value->integer_value)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
             const FString text = LexToString(value->integer_value);
-            enumProperty->GetUnderlyingProperty()->SetNumericPropertyValueFromString_InContainer(
-                actor, *text);
+            underlying->SetNumericPropertyValueFromString_InContainer(actor, *text);
             return UEC_RESULT_OK;
         }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
@@ -266,6 +269,9 @@
             if (numericProperty->IsInteger())
             {
                 if (value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) return UEC_RESULT_INVALID_ARGUMENT;
+                if (!IsIntegerValueInRange(numericProperty, value->integer_value)) {
+                    return UEC_RESULT_INVALID_ARGUMENT;
+                }
                 const FString text = LexToString(value->integer_value);
                 numericProperty->SetNumericPropertyValueFromString_InContainer(actor, *text);
                 return UEC_RESULT_OK;
@@ -438,9 +444,12 @@
             if (value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
+            FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
+            if (!IsIntegerValueInRange(underlying, value->integer_value)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
             const FString text = LexToString(value->integer_value);
-            enumProperty->GetUnderlyingProperty()->SetNumericPropertyValueFromString_InContainer(
-                object, *text);
+            underlying->SetNumericPropertyValueFromString_InContainer(object, *text);
             return UEC_RESULT_OK;
         }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
@@ -456,6 +465,9 @@
             if (numericProperty->IsInteger())
             {
                 if (value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) return UEC_RESULT_INVALID_ARGUMENT;
+                if (!IsIntegerValueInRange(numericProperty, value->integer_value)) {
+                    return UEC_RESULT_INVALID_ARGUMENT;
+                }
                 const FString text = LexToString(value->integer_value);
                 numericProperty->SetNumericPropertyValueFromString_InContainer(object, *text);
                 return UEC_RESULT_OK;

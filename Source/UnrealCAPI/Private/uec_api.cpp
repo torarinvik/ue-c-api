@@ -354,6 +354,30 @@ namespace
             CastField<FUInt64Property>(property);
     }
 
+    static bool IsIntegerValueInRange(const FNumericProperty* property, int64 value)
+    {
+        if (property == nullptr) return false;
+        if (IsUnsignedIntegerProperty(property))
+        {
+            if (value < 0) return false;
+            const uint64 unsignedValue = static_cast<uint64>(value);
+            if (CastField<FByteProperty>(property) || CastField<FUInt8Property>(property))
+                return unsignedValue <= TNumericLimits<uint8>::Max();
+            if (CastField<FUInt16Property>(property))
+                return unsignedValue <= TNumericLimits<uint16>::Max();
+            if (CastField<FUInt32Property>(property))
+                return unsignedValue <= TNumericLimits<uint32>::Max();
+            return true;
+        }
+        if (CastField<FInt8Property>(property))
+            return value >= TNumericLimits<int8>::Lowest() && value <= TNumericLimits<int8>::Max();
+        if (CastField<FInt16Property>(property))
+            return value >= TNumericLimits<int16>::Lowest() && value <= TNumericLimits<int16>::Max();
+        if (CastField<FIntProperty>(property))
+            return value >= TNumericLimits<int32>::Lowest() && value <= TNumericLimits<int32>::Max();
+        return true;
+    }
+
     static uec_result CopyFStringToUtf8(const FString& value, char* buffer,
                                         size_t bufferSize, size_t* requiredSize)
     {

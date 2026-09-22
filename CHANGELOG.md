@@ -119,6 +119,8 @@ development; they do not imply a published or runtime-verified release.
   while read access remains available for those properties.
 - Reflected floating-point property writes reject non-finite values before
   entering Unreal's property storage.
+- Reflected integer and enum writes now reject values outside the underlying
+  Unreal property's representable range.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Embedded NUL rejection for all public UTF-8 string views, including reflected,
   input, save-game, and configuration adapters.
