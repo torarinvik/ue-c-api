@@ -379,6 +379,22 @@
             TombstoneHandle(mutableCandidate->Header);
             mutableCandidate->Value.Reset();
         }
+        for (const FUECActor* candidate : GActors)
+        {
+            AActor* actor = candidate == nullptr ? nullptr : candidate->Value.Get();
+            if (actor == nullptr || actor->GetWorld() != world) continue;
+            auto* mutableCandidate = const_cast<FUECActor*>(candidate);
+            TombstoneHandle(mutableCandidate->Header);
+            mutableCandidate->Value.Reset();
+        }
+        for (const FUECSceneComponent* candidate : GComponents)
+        {
+            USceneComponent* component = candidate == nullptr ? nullptr : candidate->Value.Get();
+            if (component == nullptr || component->GetWorld() != world) continue;
+            auto* mutableCandidate = const_cast<FUECSceneComponent*>(candidate);
+            TombstoneHandle(mutableCandidate->Header);
+            mutableCandidate->Value.Reset();
+        }
     }
 
     uec_result UEC_CALL TravelWorld(uec_world* rawWorld, uec_string_view levelPath)
@@ -395,8 +411,8 @@
         if (path.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
         CancelTimersFor(world);
         CancelTickSubscriptionsFor(world);
-        UGameplayStatics::OpenLevel(world, FName(*path));
         InvalidateWorldHandles(world);
+        UGameplayStatics::OpenLevel(world, FName(*path));
         return UEC_RESULT_OK;
     }
 
