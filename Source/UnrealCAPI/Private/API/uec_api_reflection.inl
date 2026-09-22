@@ -154,9 +154,9 @@
         if (FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
         {
             FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
-            outValue->integer_value = IsUnsignedIntegerProperty(underlying)
-                ? static_cast<int64>(underlying->GetUnsignedIntPropertyValue_InContainer(actor))
-                : underlying->GetSignedIntPropertyValue_InContainer(actor);
+            if (!TryReadIntegerProperty(underlying, actor, outValue->integer_value)) {
+                return UEC_RESULT_UNSUPPORTED;
+            }
             return UEC_RESULT_OK;
         }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
@@ -168,9 +168,9 @@
             }
             if (numericProperty->IsInteger())
             {
-                outValue->integer_value = IsUnsignedIntegerProperty(property)
-                    ? static_cast<int64>(numericProperty->GetUnsignedIntPropertyValue_InContainer(actor))
-                    : numericProperty->GetSignedIntPropertyValue_InContainer(actor);
+                if (!TryReadIntegerProperty(numericProperty, actor, outValue->integer_value)) {
+                    return UEC_RESULT_UNSUPPORTED;
+                }
                 return UEC_RESULT_OK;
             }
         }
@@ -210,9 +210,8 @@
         else if (const FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
         {
             const FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
-            const int64 enumValue = IsUnsignedIntegerProperty(underlying)
-                ? static_cast<int64>(underlying->GetUnsignedIntPropertyValue_InContainer(actor))
-                : underlying->GetSignedIntPropertyValue_InContainer(actor);
+            int64 enumValue = 0;
+            if (!TryReadIntegerProperty(underlying, actor, enumValue)) return UEC_RESULT_UNSUPPORTED;
             value = enumProperty->GetEnum()->GetNameStringByValue(enumValue);
         }
         else
@@ -352,9 +351,9 @@
         if (FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
         {
             FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
-            outValue->integer_value = IsUnsignedIntegerProperty(underlying)
-                ? static_cast<int64>(underlying->GetUnsignedIntPropertyValue_InContainer(object))
-                : underlying->GetSignedIntPropertyValue_InContainer(object);
+            if (!TryReadIntegerProperty(underlying, object, outValue->integer_value)) {
+                return UEC_RESULT_UNSUPPORTED;
+            }
             return UEC_RESULT_OK;
         }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
@@ -366,9 +365,9 @@
             }
             if (numericProperty->IsInteger())
             {
-                outValue->integer_value = IsUnsignedIntegerProperty(property)
-                    ? static_cast<int64>(numericProperty->GetUnsignedIntPropertyValue_InContainer(object))
-                    : numericProperty->GetSignedIntPropertyValue_InContainer(object);
+                if (!TryReadIntegerProperty(numericProperty, object, outValue->integer_value)) {
+                    return UEC_RESULT_UNSUPPORTED;
+                }
                 return UEC_RESULT_OK;
             }
         }
@@ -409,9 +408,8 @@
         else if (const FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
         {
             const FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
-            const int64 enumValue = IsUnsignedIntegerProperty(underlying)
-                ? static_cast<int64>(underlying->GetUnsignedIntPropertyValue_InContainer(object))
-                : underlying->GetSignedIntPropertyValue_InContainer(object);
+            int64 enumValue = 0;
+            if (!TryReadIntegerProperty(underlying, object, enumValue)) return UEC_RESULT_UNSUPPORTED;
             value = enumProperty->GetEnum()->GetNameStringByValue(enumValue);
         }
         else

@@ -206,7 +206,6 @@ namespace
         bool Cancelled = false;
         bool InCallback = false;
     };
-
     FCriticalSection GHandleMutex;
     bool GShuttingDown = false;
     uint64 GNextHandleGeneration = 1;
@@ -238,14 +237,12 @@ namespace
     uint64 GNextInputBindingId = 1;
     constexpr int32 MaxQueuedObjectLoads = 1024;
     constexpr int32 MaxQueuedGameThreadRequests = 1024;
-
     static uint64 AllocateHandleGeneration()
     {
         FScopeLock lock(&GHandleMutex);
         if (GNextHandleGeneration == 0) return 0;
         return GNextHandleGeneration++;
     }
-
     static bool InitializeHandle(FUECHandleHeader& header, EUECHandleKind kind)
     {
         const uint64 generation = AllocateHandleGeneration();
@@ -255,19 +252,16 @@ namespace
         header.bReleased = false;
         return true;
     }
-
     static void TombstoneHandle(FUECHandleHeader& header)
     {
         FScopeLock lock(&GHandleMutex);
         header.bReleased = true;
     }
-
     static bool IsShuttingDown()
     {
         FScopeLock lock(&GHandleMutex);
         return GShuttingDown;
     }
-
     static bool IsValidContext(uec_context* rawContext)
     {
         const auto* context = reinterpret_cast<const FUECContext*>(rawContext);
@@ -276,7 +270,6 @@ namespace
             context->Header.Kind == EUECHandleKind::Context &&
             context->Header.Generation != 0 && !context->Header.bReleased;
     }
-
     static bool IsValidWorld(const FUECWorld* world)
     {
         FScopeLock lock(&GHandleMutex);
@@ -284,7 +277,6 @@ namespace
             world->Header.Kind == EUECHandleKind::World && world->Header.Generation != 0 &&
             !world->Header.bReleased && world->Value.IsValid();
     }
-
     static bool IsValidActor(const FUECActor* actor)
     {
         FScopeLock lock(&GHandleMutex);
@@ -355,6 +347,21 @@ namespace
             CastField<FUInt64Property>(property);
     }
 
+    static bool TryReadIntegerProperty(const FNumericProperty* property,
+                                       const void* container, int64& outValue)
+    {
+        if (property == nullptr || container == nullptr) return false;
+        if (!IsUnsignedIntegerProperty(property))
+        {
+            outValue = property->GetSignedIntPropertyValue_InContainer(container);
+            return true;
+        }
+        const uint64 value = property->GetUnsignedIntPropertyValue_InContainer(container);
+        if (value > static_cast<uint64>(TNumericLimits<int64>::Max())) return false;
+        outValue = static_cast<int64>(value);
+        return true;
+    }
+
     static bool IsIntegerValueInRange(const FNumericProperty* property, int64 value)
     {
         if (property == nullptr) return false;
@@ -368,7 +375,7 @@ namespace
                 return unsignedValue <= TNumericLimits<uint16>::Max();
             if (CastField<FUInt32Property>(property))
                 return unsignedValue <= TNumericLimits<uint32>::Max();
-            return true;
+            return unsignedValue <= static_cast<uint64>(TNumericLimits<int64>::Max());
         }
         if (CastField<FInt8Property>(property))
             return value >= TNumericLimits<int8>::Lowest() && value <= TNumericLimits<int8>::Max();

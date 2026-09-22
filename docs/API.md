@@ -190,8 +190,10 @@ flags. Text writes create
 culture-neutral `FText` values for text properties; they do not create
 localization tables. Integer and enum writes also reject values outside the
 underlying property's representable range; enum writes additionally require a
-declared value or valid bitfield combination. Float properties reject finite
-doubles outside Unreal's `float` range before conversion.
+declared value or valid bitfield combination. The ABI represents integers as
+signed 64-bit values, so reads and writes reject unsigned values above
+`INT64_MAX`. Float properties reject finite doubles outside Unreal's `float`
+range before conversion.
 
 `invoke_actor_function` supports only reflected actor functions with no
 parameters, no return or out values, and no latent or network flag. The bridge

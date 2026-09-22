@@ -121,6 +121,8 @@ development; they do not imply a published or runtime-verified release.
   entering Unreal's property storage.
 - Reflected integer and enum writes now reject values outside the underlying
   Unreal property's representable range.
+- Reflected unsigned integer reads and writes now reject values that cannot be
+  represented by the ABI's signed 64-bit property field.
 - Vector, transform, and box-shape inputs now reject finite doubles that would
   overflow Unreal's float-backed math types.
 - Transform writes now reject a zero-length quaternion before constructing the
