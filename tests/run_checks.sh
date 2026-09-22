@@ -19,6 +19,7 @@ git -C "$repo_dir" diff --check
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$layout_consumer"
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -x c++ -fsyntax-only "$layout_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$compat_consumer"
+"${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -x c++ -fsyntax-only "$compat_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$gameplay_example"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_consumer"
 stub_build_dir=$(mktemp -d)
@@ -34,6 +35,13 @@ fi
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     ${sanitizer_flags} "$compat_consumer" "$host_stub" -o "$stub_build_dir/c_compat"
 "$stub_build_dir/c_compat" >/dev/null
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    ${sanitizer_flags} -c "$host_stub" -o "$stub_build_dir/c_host_stub.o"
+"${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    ${sanitizer_flags} -x c++ -c "$compat_consumer" -o "$stub_build_dir/c_compat_cpp.o"
+"${CXX:-c++}" ${sanitizer_flags} "$stub_build_dir/c_compat_cpp.o" \
+    "$stub_build_dir/c_host_stub.o" -o "$stub_build_dir/c_compat_cpp"
+"$stub_build_dir/c_compat_cpp" >/dev/null
 python3 -m json.tool "$plugin_dir/UnrealCAPI.uplugin" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPIHost.uproject" >/dev/null
 sh -n "$repo_dir/tests/run_unreal_build.sh"
@@ -84,4 +92,4 @@ for source_file in "$repo_dir"/tests/c_smoke/c_smoke_layout.c; do
     fi
 done
 
-printf '%s\n' 'C/C++ public-header, linked C consumer, Unreal descriptor, and private-layout checks passed.'
+printf '%s\n' 'C/C++ public headers, linked current and legacy consumers, Unreal descriptor, and private-layout checks passed.'

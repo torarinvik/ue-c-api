@@ -36,8 +36,10 @@ until it is released or the documented callback lifetime ends.
 The public header contains only C-compatible declarations. Consumers should
 compile it as C11 or later and may use it from C++. Private Unreal headers and
 the plugin's C++ implementation are not ABI dependencies for consumer code.
-The checked-in C smoke fixtures exercise the current table and an older
-minor-version prefix; the same checks must pass before a release is tagged.
+The checked-in C smoke fixtures exercise the current table and a separately
+compiled ABI 1.135 header against the ABI 1.136 bridge, in both C and C++ modes;
+the older consumer calls the stable table prefix and the ABI 1.135 data methods.
+The same checks must pass before a release is tagged.
 
 ## Deprecation process
 
