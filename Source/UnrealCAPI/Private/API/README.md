@@ -14,8 +14,8 @@ headers and are not compiled as independent translation units.
   and object-reference property adapters.
 - `uec_api_presentation.inl` owns UMG, camera, audio (including completion
   subscriptions), mesh assignment, and transient animation playback.
-- `uec_api_gameplay.inl` owns collision, spatial sound, reflection invocation,
-  attachment, component configuration, and physics queries.
+- `uec_api_gameplay.inl` owns collision, spatial sound, attachment, component
+  configuration, and physics queries.
 - `uec_api_input.inl` owns controller input, movement, Enhanced Input mappings, and action bindings.
 - `uec_api_async.inl` owns object loading, save-game operations, game-thread dispatch, and shutdown cancellation.
 
