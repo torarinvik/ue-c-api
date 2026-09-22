@@ -488,6 +488,42 @@ static uec_result UEC_CALL StubGetClassPropertyStructFieldAt(
         ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetActorPropertyClass(
+    uec_actor* actor, uec_string_view propertyName, uec_class** outClass)
+{
+    (void)actor;
+    (void)propertyName;
+    if (outClass != NULL) *outClass = NULL;
+    return outClass == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetActorPropertyClass(
+    uec_actor* actor, uec_string_view propertyName, uec_class* klass)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)klass;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetObjectPropertyClass(
+    uec_object* object, uec_string_view propertyName, uec_class** outClass)
+{
+    (void)object;
+    (void)propertyName;
+    if (outClass != NULL) *outClass = NULL;
+    return outClass == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetObjectPropertyClass(
+    uec_object* object, uec_string_view propertyName, uec_class* klass)
+{
+    (void)object;
+    (void)propertyName;
+    (void)klass;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetClassPropertyFlags(uec_class* klass,
                                                      uint32_t index,
                                                      uint32_t* outFlags)
@@ -589,6 +625,10 @@ static const uec_api g_api = {
     .get_class_property_enum_value_at = &StubGetClassPropertyEnumValueAt,
     .get_class_property_struct_field_count = &StubGetClassPropertyStructFieldCount,
     .get_class_property_struct_field_at = &StubGetClassPropertyStructFieldAt,
+    .get_actor_property_class = &StubGetActorPropertyClass,
+    .set_actor_property_class = &StubSetActorPropertyClass,
+    .get_object_property_class = &StubGetObjectPropertyClass,
+    .set_object_property_class = &StubSetObjectPropertyClass,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

@@ -18,7 +18,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 119u, "ABI minor must include struct metadata");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 120u, "ABI minor must include class references");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
@@ -161,6 +161,18 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_class_property_struct_field_count) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_class_property_struct_field_at) >
                    offsetof(uec_api, get_class_property_struct_field_count),
                "struct field metadata must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_class) >
+                   offsetof(uec_api, get_class_property_struct_field_at),
+               "actor class references must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_actor_property_class) >
+                   offsetof(uec_api, get_actor_property_class),
+               "actor class writes must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_class) >
+                   offsetof(uec_api, set_actor_property_class),
+               "object class references must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_object_property_class) >
+                   offsetof(uec_api, get_object_property_class),
+               "object class writes must append to uec_api");
 UEC_TEST_ASSERT(offsetof(uec_api, get_config_string) >
                    offsetof(uec_api, get_actor_component_at_by_class),
                "configuration reads must append to uec_api");

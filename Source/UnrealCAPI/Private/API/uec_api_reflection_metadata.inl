@@ -402,3 +402,126 @@
         }
         return UEC_RESULT_INVALID_ARGUMENT;
     }
+
+    static FUECClass* MakeClassPropertyHandle(UClass* klass)
+    {
+        if (klass == nullptr) return nullptr;
+        auto* handle = new FUECClass();
+        if (!InitializeHandle(handle->Header, EUECHandleKind::Class))
+        {
+            delete handle;
+            return nullptr;
+        }
+        handle->Value = klass;
+        {
+            FScopeLock lock(&GHandleMutex);
+            if (GShuttingDown) { delete handle; return nullptr; }
+            GClasses.Add(handle);
+        }
+        return handle;
+    }
+
+    static FClassProperty* FindClassProperty(UObject* owner, uec_string_view propertyName)
+    {
+        if (owner == nullptr || !IsValidStringView(propertyName)) return nullptr;
+        return CastField<FClassProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+    }
+
+    uec_result UEC_CALL GetActorPropertyClass(uec_actor* rawActor,
+                                               uec_string_view propertyName,
+                                               uec_class** outClass)
+    {
+        if (outClass != nullptr) *outClass = nullptr;
+        if (outClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
+        FClassProperty* property = FindClassProperty(actor, propertyName);
+        if (property == nullptr) return UEC_RESULT_UNSUPPORTED;
+        UClass* value = Cast<UClass>(property->GetObjectPropertyValue_InContainer(actor));
+        if (value == nullptr) return UEC_RESULT_OK;
+        FUECClass* handle = MakeClassPropertyHandle(value);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outClass = reinterpret_cast<uec_class*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetActorPropertyClass(uec_actor* rawActor,
+                                               uec_string_view propertyName,
+                                               uec_class* rawClass)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
+        FClassProperty* property = FindClassProperty(actor, propertyName);
+        if (property == nullptr || !IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        UClass* value = nullptr;
+        if (rawClass != nullptr)
+        {
+            auto* classHandle = reinterpret_cast<FUECClass*>(rawClass);
+            if (!IsValidClass(classHandle)) return UEC_RESULT_INVALID_HANDLE;
+            value = classHandle->Value.Get();
+            if (value == nullptr) return UEC_RESULT_INVALID_HANDLE;
+            if (property->MetaClass != nullptr && !value->IsChildOf(property->MetaClass)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+        }
+        property->SetObjectPropertyValue_InContainer(actor, value);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetObjectPropertyClass(uec_object* rawObject,
+                                                uec_string_view propertyName,
+                                                uec_class** outClass)
+    {
+        if (outClass != nullptr) *outClass = nullptr;
+        if (outClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
+        FClassProperty* property = FindClassProperty(object, propertyName);
+        if (property == nullptr) return UEC_RESULT_UNSUPPORTED;
+        UClass* value = Cast<UClass>(property->GetObjectPropertyValue_InContainer(object));
+        if (value == nullptr) return UEC_RESULT_OK;
+        FUECClass* handle = MakeClassPropertyHandle(value);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outClass = reinterpret_cast<uec_class*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetObjectPropertyClass(uec_object* rawObject,
+                                                uec_string_view propertyName,
+                                                uec_class* rawClass)
+    {
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
+        FClassProperty* property = FindClassProperty(object, propertyName);
+        if (property == nullptr || !IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        UClass* value = nullptr;
+        if (rawClass != nullptr)
+        {
+            auto* classHandle = reinterpret_cast<FUECClass*>(rawClass);
+            if (!IsValidClass(classHandle)) return UEC_RESULT_INVALID_HANDLE;
+            value = classHandle->Value.Get();
+            if (value == nullptr) return UEC_RESULT_INVALID_HANDLE;
+            if (property->MetaClass != nullptr && !value->IsChildOf(property->MetaClass)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+        }
+        property->SetObjectPropertyValue_InContainer(object, value);
+        return UEC_RESULT_OK;
+    }

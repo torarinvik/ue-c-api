@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.119`.
+The current runtime slice is intentionally small and versioned as ABI `1.120`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -223,6 +223,10 @@ ABI minor 119 adds `get_class_property_struct_field_count` and
 `get_class_property_struct_field_at`. They enumerate direct fields of a
 reflected struct property with the field name, broad property kind, and the
 same access flags used for class properties.
+
+ABI minor 120 adds typed hard class-reference accessors for actor and UObject
+properties. They accept and return `uec_class*` handles, validate the reflected
+`MetaClass` constraint, and leave soft class references on the path accessors.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
