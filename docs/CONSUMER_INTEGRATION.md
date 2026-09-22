@@ -34,6 +34,28 @@ The public header is C11-compatible and the table contains only fixed-width
 integers, opaque handles, callbacks, and POD values. Keep the header in the
 consumer's build without adding Unreal include paths.
 
+## Cooked assets
+
+Object and class paths are lookup keys; passing a path to `load_object` or
+`request_object_load` does not add its package to a cooked build. Every asset
+that a packaged consumer may request must already be reachable from a cooked
+reference or be included by the project's Asset Manager rules. For assets that
+are selected by path at runtime, register a Primary Asset or a runtime
+`PrimaryAssetLabel` with the explicit asset list or directory rule, and keep
+the label and its targets in the target platform's cook configuration. Unreal's
+[Asset Management](https://dev.epicgames.com/documentation/unreal-engine/asset-management-in-unreal-engine)
+and [cooking and chunking](https://dev.epicgames.com/documentation/unreal-engine/cooking-content-and-creating-chunks-in-unreal-engine)
+documentation describe those project-level rules.
+
+Keep the exact `/Game/...` object or class path in the consumer's data rather
+than constructing it from editor-only names. Before requesting a path, use
+`is_object_path_loaded` or `is_class_path_loaded` as a fast availability check;
+these calls do not load content. Treat a failed load callback or an
+`UEC_RESULT_NOT_INITIALIZED` result as an absent cooked dependency and report
+the path to the host. `retain_object` is still required when the consumer must
+keep a loaded object alive after the callback or beyond the current gameplay
+operation.
+
 ## Threads and callbacks
 
 World, object, actor, component, reflection, input, UI, audio, and save-game

@@ -142,6 +142,8 @@ development; they do not imply a published or runtime-verified release.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,
   callbacks, handles, and shutdown.
+- Cooked-asset guidance covering runtime paths, Asset Manager rules, Primary
+  Asset Labels, and path preflight checks.
 - Private adapters are split into actor/component, presentation, gameplay,
   input, reflection, async, and world units with an enforced 400–800 line
   source budget.
