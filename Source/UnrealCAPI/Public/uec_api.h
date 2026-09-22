@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 18u
+#define UEC_ABI_MINOR 19u
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,7 +68,8 @@ enum {
     UEC_CAPABILITY_LEVEL_TRAVEL = UINT64_C(1) << 11,
     UEC_CAPABILITY_PLAYER_FLOW = UINT64_C(1) << 12,
     UEC_CAPABILITY_INPUT = UINT64_C(1) << 13,
-    UEC_CAPABILITY_PHYSICS = UINT64_C(1) << 14
+    UEC_CAPABILITY_PHYSICS = UINT64_C(1) << 14,
+    UEC_CAPABILITY_COLLISION_QUERIES = UINT64_C(1) << 15
 };
 
 typedef struct uec_context uec_context;
@@ -142,6 +143,21 @@ typedef enum uec_trace_channel {
     UEC_TRACE_PAWN = 4,
     UEC_TRACE_PHYSICS_BODY = 5
 } uec_trace_channel;
+
+typedef enum uec_collision_shape_kind {
+    UEC_COLLISION_SHAPE_SPHERE = 0,
+    UEC_COLLISION_SHAPE_BOX = 1,
+    UEC_COLLISION_SHAPE_CAPSULE = 2
+} uec_collision_shape_kind;
+
+typedef struct uec_collision_shape {
+    uint32_t struct_size;
+    uec_collision_shape_kind kind;
+    uint32_t reserved;
+    double radius;
+    uec_vector3 half_extents;
+    double half_height;
+} uec_collision_shape;
 
 typedef struct uec_hit_result {
     uec_bool blocking_hit;
@@ -312,6 +328,20 @@ typedef struct uec_api {
                                                uint64_t* out_request_id);
     uec_result (UEC_CALL *cancel_object_load)(uec_context* context,
                                               uint64_t request_id);
+    uec_result (UEC_CALL *sweep_trace)(uec_world* world,
+                                       uec_vector3 start,
+                                       uec_vector3 end,
+                                       const uec_collision_shape* shape,
+                                       uec_trace_channel channel,
+                                       uec_bool trace_complex,
+                                       uec_hit_result* out_hit);
+    uec_result (UEC_CALL *overlap_shape)(uec_world* world,
+                                         uec_vector3 center,
+                                         const uec_collision_shape* shape,
+                                         uec_trace_channel channel,
+                                         uint32_t max_hits,
+                                         uec_actor** out_actors,
+                                         uint32_t* out_count);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

@@ -21,6 +21,7 @@ development; they do not imply a published or runtime-verified release.
 - Digital and analog input polling by Unreal key name.
 - Actor velocity reads plus physics velocity, impulse, and force adapters for
   simulating primitive roots.
+- World-aligned sphere, box, and capsule sweeps and bounded overlap queries.
 - Reflected actor property writes and reads for supported scalar, string, name,
   and text types.
 - C consumer source and public math-type layout assertions.

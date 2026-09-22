@@ -1,14 +1,14 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.18`.
+The current runtime slice is intentionally small and versioned as ABI `1.19`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
 
 `get_capabilities` reports the feature bits present in the loaded bridge. The
 current implementation reports bootstrap, logging, world, actor, component,
-timer, class-metadata, and reflected scalar/string reads and writes. Reflected
-function calls are reserved for a later phase and are not exposed.
+timer, reflection, collision, asset loading, player flow, input, physics, and
+collision-query adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed active
 handle registries. A world or actor handle is a bridge-owned reference to an
@@ -104,6 +104,13 @@ before completion. Outstanding requests are cancelled during module shutdown.
 `line_trace` maps a small stable C channel enum to Unreal collision channels and
 returns a POD hit record. A hit actor, when present, is returned as an owned
 weak actor handle and must be released with `release_actor`.
+
+`sweep_trace` applies a world-aligned sphere, box, or capsule shape between two
+points and returns the first blocking hit using the same channel and hit-record
+rules as `line_trace`. `overlap_shape` tests one of those shapes at a point and
+returns the total number of unique actors found, copying at most `max_hits`
+handles into the caller's array. Set `max_hits` to zero to query the count only;
+overlap ordering is unspecified and every copied handle must be released.
 
 ## Verification
 

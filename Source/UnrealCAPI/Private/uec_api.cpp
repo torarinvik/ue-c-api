@@ -10,6 +10,7 @@
 #include "GameFramework/PlayerController.h"
 #include "InputCoreTypes.h"
 #include "Kismet/GameplayStatics.h"
+#include "CollisionShape.h"
 #include "Components/SceneComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "HAL/CriticalSection.h"
@@ -188,6 +189,59 @@ namespace
         }
     }
 
+    static bool ToCollisionChannel(uec_trace_channel channel, ECollisionChannel& outChannel)
+    {
+        switch (channel)
+        {
+        case UEC_TRACE_VISIBILITY: outChannel = ECC_Visibility; return true;
+        case UEC_TRACE_CAMERA: outChannel = ECC_Camera; return true;
+        case UEC_TRACE_WORLD_STATIC: outChannel = ECC_WorldStatic; return true;
+        case UEC_TRACE_WORLD_DYNAMIC: outChannel = ECC_WorldDynamic; return true;
+        case UEC_TRACE_PAWN: outChannel = ECC_Pawn; return true;
+        case UEC_TRACE_PHYSICS_BODY: outChannel = ECC_PhysicsBody; return true;
+        default: return false;
+        }
+    }
+
+    static uec_result MakeCollisionShape(const uec_collision_shape* descriptor,
+                                         FCollisionShape& outShape)
+    {
+        if (descriptor == nullptr || descriptor->struct_size < sizeof(uec_collision_shape))
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        switch (descriptor->kind)
+        {
+        case UEC_COLLISION_SHAPE_SPHERE:
+            if (!FMath::IsFinite(descriptor->radius) || descriptor->radius <= 0.0) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            outShape = FCollisionShape::MakeSphere(static_cast<float>(descriptor->radius));
+            return UEC_RESULT_OK;
+        case UEC_COLLISION_SHAPE_BOX:
+            if (!FMath::IsFinite(descriptor->half_extents.x) ||
+                !FMath::IsFinite(descriptor->half_extents.y) ||
+                !FMath::IsFinite(descriptor->half_extents.z) ||
+                descriptor->half_extents.x <= 0.0 || descriptor->half_extents.y <= 0.0 ||
+                descriptor->half_extents.z <= 0.0) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            outShape = FCollisionShape::MakeBox(FVector(
+                descriptor->half_extents.x, descriptor->half_extents.y, descriptor->half_extents.z));
+            return UEC_RESULT_OK;
+        case UEC_COLLISION_SHAPE_CAPSULE:
+            if (!FMath::IsFinite(descriptor->radius) || !FMath::IsFinite(descriptor->half_height) ||
+                descriptor->radius <= 0.0 || descriptor->half_height < descriptor->radius) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            outShape = FCollisionShape::MakeCapsule(
+                static_cast<float>(descriptor->radius), static_cast<float>(descriptor->half_height));
+            return UEC_RESULT_OK;
+        default:
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+    }
+
     uec_result UEC_CALL GetCapabilities(uec_context* rawContext, uec_capabilities* outCapabilities)
     {
         if (outCapabilities == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
@@ -197,7 +251,7 @@ namespace
             UEC_CAPABILITY_TIMERS | UEC_CAPABILITY_CLASS_METADATA | UEC_CAPABILITY_REFLECTION |
             UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS | UEC_CAPABILITY_ASYNC_ASSETS;
         *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW |
-            UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS;
+            UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_COLLISION_QUERIES;
         return UEC_RESULT_OK;
     }
 
@@ -1136,16 +1190,7 @@ namespace
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         ECollisionChannel collisionChannel;
-        switch (channel)
-        {
-        case UEC_TRACE_VISIBILITY: collisionChannel = ECC_Visibility; break;
-        case UEC_TRACE_CAMERA: collisionChannel = ECC_Camera; break;
-        case UEC_TRACE_WORLD_STATIC: collisionChannel = ECC_WorldStatic; break;
-        case UEC_TRACE_WORLD_DYNAMIC: collisionChannel = ECC_WorldDynamic; break;
-        case UEC_TRACE_PAWN: collisionChannel = ECC_Pawn; break;
-        case UEC_TRACE_PHYSICS_BODY: collisionChannel = ECC_PhysicsBody; break;
-        default: return UEC_RESULT_INVALID_ARGUMENT;
-        }
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
 
         *outHit = {};
         FHitResult hit;
@@ -1171,6 +1216,103 @@ namespace
                 GActors.Add(actorHandle);
             }
             outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SweepTrace(uec_world* rawWorld,
+                                   uec_vector3 start,
+                                   uec_vector3 end,
+                                   const uec_collision_shape* descriptor,
+                                   uec_trace_channel channel,
+                                   uec_bool traceComplex,
+                                   uec_hit_result* outHit)
+    {
+        if (outHit == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FCollisionShape collisionShape;
+        const uec_result shapeResult = MakeCollisionShape(descriptor, collisionShape);
+        if (shapeResult != UEC_RESULT_OK) return shapeResult;
+        ECollisionChannel collisionChannel;
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
+
+        *outHit = {};
+        FHitResult hit;
+        FCollisionQueryParams queryParams;
+        queryParams.bTraceComplex = traceComplex != UEC_FALSE;
+        const bool didHit = world->SweepSingleByChannel(
+            hit,
+            FVector(start.x, start.y, start.z),
+            FVector(end.x, end.y, end.z),
+            FQuat::Identity,
+            collisionChannel,
+            collisionShape,
+            queryParams,
+            FCollisionResponseParams::DefaultResponseParam);
+        if (!didHit) return UEC_RESULT_OK;
+        outHit->blocking_hit = hit.bBlockingHit ? UEC_TRUE : UEC_FALSE;
+        outHit->location = {hit.Location.X, hit.Location.Y, hit.Location.Z};
+        outHit->normal = {hit.Normal.X, hit.Normal.Y, hit.Normal.Z};
+        outHit->distance = hit.Distance;
+        if (AActor* actor = hit.GetActor())
+        {
+            outHit->actor = reinterpret_cast<uec_actor*>(MakeActorHandle(actor));
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL OverlapShape(uec_world* rawWorld,
+                                     uec_vector3 center,
+                                     const uec_collision_shape* descriptor,
+                                     uec_trace_channel channel,
+                                     uint32_t maxHits,
+                                     uec_actor** outActors,
+                                     uint32_t* outCount)
+    {
+        if (outCount == nullptr || (maxHits != 0 && outActors == nullptr))
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FCollisionShape collisionShape;
+        const uec_result shapeResult = MakeCollisionShape(descriptor, collisionShape);
+        if (shapeResult != UEC_RESULT_OK) return shapeResult;
+        ECollisionChannel collisionChannel;
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
+
+        *outCount = 0;
+        for (uint32_t index = 0; index < maxHits; ++index) outActors[index] = nullptr;
+        TArray<FOverlapResult> overlaps;
+        FCollisionQueryParams queryParams;
+        const bool hasOverlap = world->OverlapMultiByChannel(
+            overlaps,
+            FVector(center.x, center.y, center.z),
+            FQuat::Identity,
+            collisionChannel,
+            collisionShape,
+            queryParams,
+            FCollisionResponseParams::DefaultResponseParam);
+        if (!hasOverlap) return UEC_RESULT_OK;
+
+        TSet<AActor*> actors;
+        for (const FOverlapResult& overlap : overlaps)
+        {
+            if (AActor* actor = overlap.GetActor()) actors.Add(actor);
+        }
+        *outCount = static_cast<uint32_t>(actors.Num());
+        uint32_t copied = 0;
+        for (AActor* actor : actors)
+        {
+            if (copied == maxHits) break;
+            outActors[copied++] = reinterpret_cast<uec_actor*>(MakeActorHandle(actor));
         }
         return UEC_RESULT_OK;
     }
@@ -1351,7 +1493,8 @@ namespace
         &GetActorPropertyValue, &GetActorPropertyString,
         &SetActorPropertyValue, &SetActorPropertyString, &LineTrace,
         &InvokeActorFunction, &LoadObjectHandle, &ReleaseObject,
-        &GetObjectName, &ObjectIsA, &RequestObjectLoad, &CancelObjectLoad
+        &GetObjectName, &ObjectIsA, &RequestObjectLoad, &CancelObjectLoad,
+        &SweepTrace, &OverlapShape
     };
 }
 

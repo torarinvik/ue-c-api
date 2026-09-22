@@ -19,6 +19,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Class/property metadata | Runtime implemented / Unreal integration pending | Class lookup, inheritance, names, and broad reflected property kinds |
 | Reflected scalar/string reads and writes | Runtime implemented / Unreal integration pending | Bool, integer, floating-point, string, name, and text values |
 | Collision line traces | Runtime implemented / Unreal integration pending | Game-thread single traces with stable channel mapping |
+| Collision sweeps and overlaps | Runtime implemented / Unreal integration pending | World-aligned sphere, box, and capsule queries with bounded actor results |
 | Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, and game-thread callbacks |
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries and game-thread `OpenLevel` requests |
@@ -26,7 +27,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |
 | Basic physics | Runtime implemented / Unreal integration pending | Velocity, impulses, and forces on simulating primitive roots |
 | Reflection and Blueprint calls | Partial | Property writes and zero-argument calls are available; typed calls remain |
-| Input, collision, movement, camera, UI, audio, save data | Planned | No public functions yet |
+| Input, movement, camera, UI, audio, save data | Planned | No public functions yet beyond the input and movement slices above |
 | Async loading, travel, streaming | Planned | No public functions yet |
 | Multiplayer and replication | Planned | No public functions yet |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
