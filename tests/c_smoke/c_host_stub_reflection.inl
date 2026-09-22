@@ -691,7 +691,7 @@ static const uec_api g_api = {
     .get_component_visible = &StubGetComponentVisible,
     .get_component_active = &StubGetComponentActive,
     .get_class_function_flags = &StubGetClassFunctionFlags,
-    .get_widget_visibility = &StubGetWidgetVisibility,
+    .get_widget_visibility = &StubGetWidgetVisibility, .set_widget_visibility = &StubSetWidgetVisibility,
     .get_text_block_text = &StubGetTextBlockText,
     .get_component_collision_enabled = &StubGetComponentCollisionEnabled,
     .get_audio_component_playing = &StubGetAudioComponentPlaying,

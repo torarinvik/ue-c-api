@@ -55,7 +55,11 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details A
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 139u, "ABI minor must include UMG enabled-state adapters");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 140u, "ABI minor must include full UMG visibility values");
+UEC_TEST_ASSERT(UEC_WIDGET_VISIBLE == 0 && UEC_WIDGET_COLLAPSED == 1 &&
+                   UEC_WIDGET_HIDDEN == 2 && UEC_WIDGET_HIT_TEST_INVISIBLE == 3 &&
+                   UEC_WIDGET_SELF_HIT_TEST_INVISIBLE == 4,
+               "UMG visibility enum values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,

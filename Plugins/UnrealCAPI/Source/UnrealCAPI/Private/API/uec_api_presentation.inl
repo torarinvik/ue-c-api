@@ -49,19 +49,25 @@
     uec_result UEC_CALL SetWidgetVisibility(uec_object* rawWidget,
                                             uec_widget_visibility visibility)
     {
-        auto* widgetHandle = reinterpret_cast<FUECObject*>(rawWidget);
-        if (!IsValidObject(widgetHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        UWidget* widget = Cast<UWidget>(widgetHandle->Value.Get());
-        if (widget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         ESlateVisibility engineVisibility;
         switch (visibility)
         {
         case UEC_WIDGET_VISIBLE: engineVisibility = ESlateVisibility::Visible; break;
         case UEC_WIDGET_COLLAPSED: engineVisibility = ESlateVisibility::Collapsed; break;
         case UEC_WIDGET_HIDDEN: engineVisibility = ESlateVisibility::Hidden; break;
+        case UEC_WIDGET_HIT_TEST_INVISIBLE:
+            engineVisibility = ESlateVisibility::HitTestInvisible;
+            break;
+        case UEC_WIDGET_SELF_HIT_TEST_INVISIBLE:
+            engineVisibility = ESlateVisibility::SelfHitTestInvisible;
+            break;
         default: return UEC_RESULT_INVALID_ARGUMENT;
         }
+        auto* widgetHandle = reinterpret_cast<FUECObject*>(rawWidget);
+        if (!IsValidObject(widgetHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWidget* widget = Cast<UWidget>(widgetHandle->Value.Get());
+        if (widget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         widget->SetVisibility(engineVisibility);
         return UEC_RESULT_OK;
     }
@@ -94,6 +100,12 @@
         case ESlateVisibility::Visible: *outVisibility = UEC_WIDGET_VISIBLE; return UEC_RESULT_OK;
         case ESlateVisibility::Collapsed: *outVisibility = UEC_WIDGET_COLLAPSED; return UEC_RESULT_OK;
         case ESlateVisibility::Hidden: *outVisibility = UEC_WIDGET_HIDDEN; return UEC_RESULT_OK;
+        case ESlateVisibility::HitTestInvisible:
+            *outVisibility = UEC_WIDGET_HIT_TEST_INVISIBLE;
+            return UEC_RESULT_OK;
+        case ESlateVisibility::SelfHitTestInvisible:
+            *outVisibility = UEC_WIDGET_SELF_HIT_TEST_INVISIBLE;
+            return UEC_RESULT_OK;
         default: return UEC_RESULT_UNSUPPORTED;
         }
     }

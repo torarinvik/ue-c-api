@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.139`.
+The current runtime slice is intentionally small and versioned as ABI `1.140`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -363,6 +363,11 @@ ABI minor 139 appends `get_widget_enabled` and `set_widget_enabled`. They read
 or change the enabled state of a `UWidget`; reads clear the output to false on
 failure, writes accept only `UEC_FALSE` or `UEC_TRUE`, and both require the
 game thread.
+ABI minor 140 adds `UEC_WIDGET_HIT_TEST_INVISIBLE` and
+`UEC_WIDGET_SELF_HIT_TEST_INVISIBLE` to `uec_widget_visibility`, preserving
+the existing enum values. The first makes the widget and its children visible
+but non-interactive; the second makes only the widget non-interactive while
+leaving its children hit-testable.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
@@ -637,8 +642,10 @@ owned by the caller. `add_widget_to_viewport` and `remove_widget_from_parent`
 operate on that handle on the game thread. The widget must be kept alive by
 being added to a viewport or another Unreal owner; releasing the bridge handle
 does not destroy the widget. `set_widget_visibility` supports visible,
-collapsed, and hidden states for any `UWidget`; `set_text_block_text` updates
-the text of a `UTextBlock` using a culture-neutral `FText`.
+collapsed, hidden, and both hit-test-invisible states for any `UWidget`; the
+two hit-test modes control whether children can still receive pointer input.
+`set_text_block_text` updates the text of a `UTextBlock` using a culture-neutral
+`FText`.
 `get_progress_bar_percent` and `set_progress_bar_percent` read and write a
 `UProgressBar`'s normalized percentage on the game thread. Writes outside
 `[0, 1]` or values that cannot be represented as an Unreal `float` return

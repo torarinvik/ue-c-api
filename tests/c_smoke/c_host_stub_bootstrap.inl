@@ -520,6 +520,12 @@ static uec_result UEC_CALL StubGetWidgetVisibility(uec_object* widget,
     return outVisibility == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubSetWidgetVisibility(uec_object* widget, uec_widget_visibility visibility)
+{
+    if (visibility < UEC_WIDGET_VISIBLE || visibility > UEC_WIDGET_SELF_HIT_TEST_INVISIBLE) return UEC_RESULT_INVALID_ARGUMENT;
+    return widget == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetTextBlockText(uec_object* widget,
                                                 char* buffer,
                                                 size_t bufferSize,
@@ -539,7 +545,6 @@ static uec_result UEC_CALL StubGetProgressBarPercent(uec_object* progressBar,
     if (outPercent == NULL) return UEC_RESULT_INVALID_ARGUMENT;
     return progressBar == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
-
 static uec_result UEC_CALL StubSetProgressBarPercent(uec_object* progressBar,
                                                      double percent)
 {
@@ -553,7 +558,6 @@ static uec_result UEC_CALL StubGetWidgetEnabled(uec_object* widget, uec_bool* ou
     if (outEnabled == NULL) return UEC_RESULT_INVALID_ARGUMENT;
     return widget == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
-
 static uec_result UEC_CALL StubSetWidgetEnabled(uec_object* widget, uec_bool enabled)
 {
     if (enabled != UEC_FALSE && enabled != UEC_TRUE) return UEC_RESULT_INVALID_ARGUMENT;

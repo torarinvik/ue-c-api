@@ -259,6 +259,10 @@ for normalized UMG progress values. Setter inputs must be finite and in
 ABI minor 139 adds `get_widget_enabled` and `set_widget_enabled` for a `UWidget`;
 the getter clears its output on failure, and the setter accepts only `UEC_FALSE`
 or `UEC_TRUE`. Both calls require the game thread.
+ABI minor 140 adds the `UEC_WIDGET_HIT_TEST_INVISIBLE` and
+`UEC_WIDGET_SELF_HIT_TEST_INVISIBLE` visibility modes. Both remain visible;
+the first also blocks hit testing for child widgets, while the second leaves
+child hit testing enabled.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

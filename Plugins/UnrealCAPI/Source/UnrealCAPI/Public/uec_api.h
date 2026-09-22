@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 139u
+#define UEC_ABI_MINOR 140u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -171,7 +171,7 @@ typedef enum uec_collision_response { UEC_COLLISION_RESPONSE_IGNORE = 0, UEC_COL
 typedef enum uec_widget_visibility {
     UEC_WIDGET_VISIBLE = 0,
     UEC_WIDGET_COLLAPSED = 1,
-    UEC_WIDGET_HIDDEN = 2
+    UEC_WIDGET_HIDDEN = 2, UEC_WIDGET_HIT_TEST_INVISIBLE = 3, UEC_WIDGET_SELF_HIT_TEST_INVISIBLE = 4
 } uec_widget_visibility;
 typedef enum uec_input_action_value_kind {
     UEC_INPUT_ACTION_VALUE_BOOLEAN = 0,

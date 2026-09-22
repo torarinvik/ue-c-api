@@ -37,7 +37,7 @@ The public header contains only C-compatible declarations. Consumers should
 compile it as C11 or later and may use it from C++. Private Unreal headers and
 the plugin's C++ implementation are not ABI dependencies for consumer code.
 The checked-in C smoke fixtures exercise the current table and a separately
-compiled ABI 1.135 header against the ABI 1.139 bridge, in both C and C++ modes;
+compiled ABI 1.135 header against the ABI 1.140 bridge, in both C and C++ modes;
 the older consumer calls the stable table prefix and the ABI 1.135 data methods.
 The same checks must pass before a release is tagged.
 
@@ -63,7 +63,8 @@ then rerun the portable gate and the full engine verification matrix.
 ## Release checklist
 
 - Update `UEC_ABI_MINOR` only for an append-only compatible extension.
-- Add the new function or structure field at the end of the public contract.
+- Append function-table fields and enum values; never reorder existing fields or
+  change published enum values.
 - Add a capability bit when runtime availability is optional.
 - Add C11/C++17 syntax and layout assertions for new public data.
 - Extend the current and old-minor linked smoke fixtures where applicable.

@@ -360,6 +360,8 @@ int main(void)
     size_t widget_text_required = 42u;
     if (api->get_widget_visibility(NULL, &widget_visibility) != UEC_RESULT_UNSUPPORTED ||
         widget_visibility != UEC_WIDGET_VISIBLE ||
+        api->set_widget_visibility(NULL, (uec_widget_visibility)99) != UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_widget_visibility(NULL, UEC_WIDGET_SELF_HIT_TEST_INVISIBLE) != UEC_RESULT_INVALID_HANDLE ||
         api->get_widget_enabled(NULL, &widget_enabled) != UEC_RESULT_INVALID_HANDLE || widget_enabled != UEC_FALSE ||
         api->get_widget_enabled(NULL, NULL) != UEC_RESULT_INVALID_ARGUMENT ||
         api->set_widget_enabled(NULL, (uec_bool)2u) != UEC_RESULT_INVALID_ARGUMENT ||
@@ -370,7 +372,6 @@ int main(void)
         api->release_context(context);
         return 20;
     }
-
     uec_collision_enabled collision_enabled = UEC_COLLISION_QUERY_AND_PHYSICS;
     uec_bool audio_playing = UEC_TRUE;
     if (api->get_component_collision_enabled(NULL, &collision_enabled) != UEC_RESULT_UNSUPPORTED ||
@@ -381,7 +382,6 @@ int main(void)
         api->release_context(context);
         return 21;
     }
-
     uint64_t streaming_request_id = 42u;
     const uec_string_view streaming_package = {"/Game/Test", 10u};
     if (api->set_streaming_level_state_async(NULL, streaming_package,
