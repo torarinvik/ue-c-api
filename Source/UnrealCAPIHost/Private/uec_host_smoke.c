@@ -200,7 +200,7 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL ||
         api->get_runtime_stats == NULL || api->get_capabilities == NULL ||
         api->line_trace == NULL || api->sweep_trace == NULL ||
-        api->get_component_transform == NULL) {
+        api->get_component_transform == NULL || api->get_widget_enabled == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -238,11 +238,14 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     result = api->spawn_actor(world, classPath, &initialTransform, &actor);
     if (result != UEC_RESULT_OK) goto cleanup;
     uec_transform zeroTransform = {0};
+    uec_bool wrongKindEnabled = UEC_TRUE;
     uec_transform wrongKindTransform = {
         {41.0, 42.0, 43.0}, {44.0, 45.0, 46.0, 47.0}, {48.0, 49.0, 50.0}};
     if (api->get_component_transform((uec_scene_component*)actor, &wrongKindTransform) !=
             UEC_RESULT_INVALID_HANDLE ||
-        memcmp(&wrongKindTransform, &zeroTransform, sizeof(zeroTransform)) != 0) {
+        memcmp(&wrongKindTransform, &zeroTransform, sizeof(zeroTransform)) != 0 ||
+        api->get_widget_enabled((uec_object*)actor, &wrongKindEnabled) !=
+            UEC_RESULT_INVALID_HANDLE || wrongKindEnabled != UEC_FALSE) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -363,7 +366,6 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     if (state->started == UEC_TRUE) return UEC_RESULT_INVALID_ARGUMENT;
     *state = (uec_latent_smoke_state){0};
     state->started = UEC_TRUE;
-
     uec_runtime_stats baselineStats = {0};
     baselineStats.struct_size = sizeof(baselineStats);
 
@@ -393,7 +395,6 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->api->release_context == NULL) {
         return FailLatentSmoke(state);
     }
-
     uec_capabilities capabilities = 0;
     result = state->api->get_capabilities(state->context, &capabilities);
     if (result != UEC_RESULT_OK ||
