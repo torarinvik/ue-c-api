@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.22`.
+The current runtime slice is intentionally small and versioned as ABI `1.23`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -8,7 +8,7 @@ Unreal headers and C++ types stay inside the plugin.
 `get_capabilities` reports the feature bits present in the loaded bridge. The
 current implementation reports bootstrap, logging, world, actor, component,
 timer, reflection, collision, asset loading, player flow, input, physics,
-collision-query, audio, UI, and camera adapters.
+collision-query, audio, UI, camera, and save-data adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed active
 handle registries. A world or actor handle is a bridge-owned reference to an
@@ -125,6 +125,13 @@ does not destroy the widget.
 `get_camera_field_of_view` and `set_camera_field_of_view` accept scene-component
 handles that refer to `UCameraComponent` instances. Field of view is expressed
 in degrees and writes are restricted to the open interval `(0, 360)`.
+
+Object property accessors apply the same supported scalar, string, name, and text
+reflection rules as actor property accessors, but accept any valid object handle.
+Save-game helpers create a `USaveGame` subclass by class path, save or delete a
+named slot synchronously, and load a slot only when its object is compatible
+with the requested class. Save failures are returned through the `out_saved` or
+`out_deleted` boolean; a missing load slot returns `UEC_RESULT_NOT_INITIALIZED`.
 
 ## Verification
 

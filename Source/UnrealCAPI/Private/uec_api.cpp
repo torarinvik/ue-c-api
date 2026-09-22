@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/SaveGame.h"
 #include "InputCoreTypes.h"
 #include "Kismet/GameplayStatics.h"
 #include "CollisionShape.h"
@@ -255,7 +256,8 @@ namespace
             UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS | UEC_CAPABILITY_ASYNC_ASSETS;
         *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW |
             UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_COLLISION_QUERIES |
-            UEC_CAPABILITY_AUDIO | UEC_CAPABILITY_UI | UEC_CAPABILITY_CAMERA;
+            UEC_CAPABILITY_AUDIO | UEC_CAPABILITY_UI | UEC_CAPABILITY_CAMERA |
+            UEC_CAPABILITY_SAVE_DATA;
         return UEC_RESULT_OK;
     }
 
@@ -1192,6 +1194,157 @@ namespace
         return UEC_RESULT_UNSUPPORTED;
     }
 
+    uec_result UEC_CALL GetObjectPropertyValue(uec_object* rawObject,
+                                               uec_string_view propertyName,
+                                               uec_property_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(uec_property_value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+
+        outValue->kind = GetPropertyKind(property);
+        outValue->bool_value = UEC_FALSE;
+        outValue->integer_value = 0;
+        outValue->real_value = 0.0;
+        if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
+        {
+            outValue->bool_value = boolProperty->GetPropertyValue_InContainer(object) ? UEC_TRUE : UEC_FALSE;
+            return UEC_RESULT_OK;
+        }
+        if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
+        {
+            if (numericProperty->IsFloatingPoint())
+            {
+                outValue->real_value = numericProperty->GetFloatingPointPropertyValue_InContainer(object);
+                return UEC_RESULT_OK;
+            }
+            if (numericProperty->IsInteger())
+            {
+                outValue->integer_value = IsUnsignedIntegerProperty(property)
+                    ? static_cast<int64>(numericProperty->GetUnsignedIntPropertyValue_InContainer(object))
+                    : numericProperty->GetSignedIntPropertyValue_InContainer(object);
+                return UEC_RESULT_OK;
+            }
+        }
+        return UEC_RESULT_UNSUPPORTED;
+    }
+
+    uec_result UEC_CALL GetObjectPropertyString(uec_object* rawObject,
+                                                uec_string_view propertyName,
+                                                char* buffer,
+                                                size_t bufferSize,
+                                                size_t* requiredSize,
+                                                uec_property_kind* outKind)
+    {
+        if (requiredSize == nullptr || outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        FString value;
+        *outKind = GetPropertyKind(property);
+        if (const FStrProperty* stringProperty = CastField<FStrProperty>(property))
+        {
+            value = stringProperty->GetPropertyValue_InContainer(object);
+        }
+        else if (const FNameProperty* nameProperty = CastField<FNameProperty>(property))
+        {
+            value = nameProperty->GetPropertyValue_InContainer(object).ToString();
+        }
+        else if (const FTextProperty* textProperty = CastField<FTextProperty>(property))
+        {
+            value = textProperty->GetPropertyValue_InContainer(object).ToString();
+        }
+        else
+        {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        return CopyFStringToUtf8(value, buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL SetObjectPropertyValue(uec_object* rawObject,
+                                               uec_string_view propertyName,
+                                               const uec_property_value* value)
+    {
+        if (value == nullptr || value->struct_size < sizeof(uec_property_value)) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
+        {
+            if (value->kind != UEC_PROPERTY_BOOL) return UEC_RESULT_INVALID_ARGUMENT;
+            boolProperty->SetPropertyValue_InContainer(object, value->bool_value != UEC_FALSE);
+            return UEC_RESULT_OK;
+        }
+        if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
+        {
+            if (numericProperty->IsFloatingPoint())
+            {
+                if (value->kind != UEC_PROPERTY_FLOAT && value->kind != UEC_PROPERTY_DOUBLE) return UEC_RESULT_INVALID_ARGUMENT;
+                numericProperty->SetFloatingPointPropertyValue(
+                    numericProperty->ContainerPtrToValuePtr<void>(object), value->real_value);
+                return UEC_RESULT_OK;
+            }
+            if (numericProperty->IsInteger())
+            {
+                if (value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) return UEC_RESULT_INVALID_ARGUMENT;
+                const FString text = LexToString(value->integer_value);
+                numericProperty->SetNumericPropertyValueFromString_InContainer(object, *text);
+                return UEC_RESULT_OK;
+            }
+        }
+        return UEC_RESULT_UNSUPPORTED;
+    }
+
+    uec_result UEC_CALL SetObjectPropertyString(uec_object* rawObject,
+                                                uec_string_view propertyName,
+                                                uec_string_view value)
+    {
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if ((propertyName.data == nullptr && propertyName.size != 0) ||
+            (value.data == nullptr && value.size != 0)) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const FString text = ToFString(value);
+        if (const FStrProperty* stringProperty = CastField<FStrProperty>(property))
+        {
+            stringProperty->SetPropertyValue_InContainer(object, text);
+            return UEC_RESULT_OK;
+        }
+        if (const FNameProperty* nameProperty = CastField<FNameProperty>(property))
+        {
+            nameProperty->SetPropertyValue_InContainer(object, FName(*text));
+            return UEC_RESULT_OK;
+        }
+        if (const FTextProperty* textProperty = CastField<FTextProperty>(property))
+        {
+            textProperty->SetPropertyValue_InContainer(object, FText::FromString(text));
+            return UEC_RESULT_OK;
+        }
+        return UEC_RESULT_UNSUPPORTED;
+    }
+
     uec_result UEC_CALL LineTrace(uec_world* rawWorld,
                                   uec_vector3 start,
                                   uec_vector3 end,
@@ -1578,6 +1731,85 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL CreateSaveGame(uec_context* rawContext,
+                                       uec_string_view classPath,
+                                       uec_object** outSaveGame)
+    {
+        if (outSaveGame == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outSaveGame = nullptr;
+        if (classPath.data == nullptr && classPath.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        UClass* saveClass = LoadClass<USaveGame>(nullptr, *ToFString(classPath));
+        if (saveClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        USaveGame* saveGame = UGameplayStatics::CreateSaveGameObject(saveClass);
+        FUECObject* handle = MakeObjectHandle(saveGame);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outSaveGame = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SaveGameToSlot(uec_object* rawSaveGame,
+                                       uec_string_view slotName,
+                                       int32_t userIndex,
+                                       uec_bool* outSaved)
+    {
+        if (outSaved == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* saveHandle = reinterpret_cast<FUECObject*>(rawSaveGame);
+        if (!IsValidObject(saveHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if ((slotName.data == nullptr && slotName.size != 0) || userIndex < 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        USaveGame* saveGame = Cast<USaveGame>(saveHandle->Value.Get());
+        if (saveGame == nullptr || slotName.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
+        *outSaved = UGameplayStatics::SaveGameToSlot(
+            saveGame, ToFString(slotName), userIndex) ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL LoadGameFromSlot(uec_context* rawContext,
+                                         uec_string_view classPath,
+                                         uec_string_view slotName,
+                                         int32_t userIndex,
+                                         uec_object** outSaveGame)
+    {
+        if (outSaveGame == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outSaveGame = nullptr;
+        if ((classPath.data == nullptr && classPath.size != 0) ||
+            (slotName.data == nullptr && slotName.size != 0) ||
+            classPath.size == 0 || slotName.size == 0 || userIndex < 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        UClass* saveClass = LoadClass<USaveGame>(nullptr, *ToFString(classPath));
+        if (saveClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        USaveGame* saveGame = UGameplayStatics::LoadGameFromSlot(ToFString(slotName), userIndex);
+        if (saveGame == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        if (!saveGame->IsA(saveClass)) return UEC_RESULT_INVALID_ARGUMENT;
+        FUECObject* handle = MakeObjectHandle(saveGame);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outSaveGame = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL DeleteGameSlot(uec_context* rawContext,
+                                       uec_string_view slotName,
+                                       int32_t userIndex,
+                                       uec_bool* outDeleted)
+    {
+        if (outDeleted == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if ((slotName.data == nullptr && slotName.size != 0) || slotName.size == 0 || userIndex < 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        *outDeleted = UGameplayStatics::DeleteGameInSlot(ToFString(slotName), userIndex)
+            ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -1612,7 +1844,10 @@ namespace
         &GetObjectName, &ObjectIsA, &RequestObjectLoad, &CancelObjectLoad,
         &SweepTrace, &OverlapShape, &PlaySoundAtLocation,
         &CreateWidget, &AddWidgetToViewport, &RemoveWidgetFromParent,
-        &GetCameraFieldOfView, &SetCameraFieldOfView
+        &GetCameraFieldOfView, &SetCameraFieldOfView,
+        &GetObjectPropertyValue, &GetObjectPropertyString,
+        &SetObjectPropertyValue, &SetObjectPropertyString,
+        &CreateSaveGame, &SaveGameToSlot, &LoadGameFromSlot, &DeleteGameSlot
     };
 }
 

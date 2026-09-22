@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 22u
+#define UEC_ABI_MINOR 23u
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,7 +72,8 @@ enum {
     UEC_CAPABILITY_COLLISION_QUERIES = UINT64_C(1) << 15,
     UEC_CAPABILITY_AUDIO = UINT64_C(1) << 16,
     UEC_CAPABILITY_UI = UINT64_C(1) << 17,
-    UEC_CAPABILITY_CAMERA = UINT64_C(1) << 18
+    UEC_CAPABILITY_CAMERA = UINT64_C(1) << 18,
+    UEC_CAPABILITY_SAVE_DATA = UINT64_C(1) << 19
 };
 
 typedef struct uec_context uec_context;
@@ -360,6 +361,37 @@ typedef struct uec_api {
                                                     double* out_degrees);
     uec_result (UEC_CALL *set_camera_field_of_view)(uec_scene_component* component,
                                                     double degrees);
+    uec_result (UEC_CALL *get_object_property_value)(uec_object* object,
+                                                     uec_string_view property_name,
+                                                     uec_property_value* out_value);
+    uec_result (UEC_CALL *get_object_property_string)(uec_object* object,
+                                                      uec_string_view property_name,
+                                                      char* buffer,
+                                                      size_t buffer_size,
+                                                      size_t* required_size,
+                                                      uec_property_kind* out_kind);
+    uec_result (UEC_CALL *set_object_property_value)(uec_object* object,
+                                                     uec_string_view property_name,
+                                                     const uec_property_value* value);
+    uec_result (UEC_CALL *set_object_property_string)(uec_object* object,
+                                                      uec_string_view property_name,
+                                                      uec_string_view value);
+    uec_result (UEC_CALL *create_save_game)(uec_context* context,
+                                            uec_string_view class_path,
+                                            uec_object** out_save_game);
+    uec_result (UEC_CALL *save_game_to_slot)(uec_object* save_game,
+                                             uec_string_view slot_name,
+                                             int32_t user_index,
+                                             uec_bool* out_saved);
+    uec_result (UEC_CALL *load_game_from_slot)(uec_context* context,
+                                               uec_string_view class_path,
+                                               uec_string_view slot_name,
+                                               int32_t user_index,
+                                               uec_object** out_save_game);
+    uec_result (UEC_CALL *delete_game_slot)(uec_context* context,
+                                            uec_string_view slot_name,
+                                            int32_t user_index,
+                                            uec_bool* out_deleted);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

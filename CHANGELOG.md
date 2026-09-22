@@ -25,6 +25,8 @@ development; they do not imply a published or runtime-verified release.
 - Fire-and-forget spatial playback for loaded `USoundBase` objects.
 - Basic UMG widget creation and viewport add/remove operations.
 - Camera-component field-of-view reads and writes.
+- Generic reflected object property access plus synchronous save-game slot create,
+  load, save, and delete operations.
 - Reflected actor property writes and reads for supported scalar, string, name,
   and text types.
 - C consumer source and public math-type layout assertions.
