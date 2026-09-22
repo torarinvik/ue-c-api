@@ -436,7 +436,15 @@
         if (UPrimitiveComponent* component = hit.GetComponent())
         {
             FUECSceneComponent* componentHandle = MakeSceneComponentHandle(component);
-            if (componentHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            if (componentHandle == nullptr)
+            {
+                if (outHit->hit.actor != nullptr)
+                {
+                    ReleaseActor(outHit->hit.actor);
+                    outHit->hit.actor = nullptr;
+                }
+                return UEC_RESULT_INTERNAL_ERROR;
+            }
             outHit->component = reinterpret_cast<uec_scene_component*>(componentHandle);
         }
         return UEC_RESULT_OK;
