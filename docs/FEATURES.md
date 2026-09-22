@@ -46,7 +46,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Basic physics | Runtime implemented / Unreal integration pending | Finite-validated velocity, impulses, and forces on simulating primitive roots |
 | Reflection and Blueprint calls | Partial | Property writes and zero-argument calls are available; typed calls remain |
 | Input | Planned | No public functions yet beyond the input, movement, audio, UI, camera, save-data, and dispatch slices above |
-| Async loading, travel, streaming | Planned | No public functions yet |
+| Async loading, travel, streaming | Partial | Async object requests, cancellation, loaded-state queries, and level-travel submission are available; streaming and completion events remain |
 | Multiplayer and replication | Planned | No public functions yet |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
 

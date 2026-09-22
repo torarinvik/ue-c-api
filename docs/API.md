@@ -21,8 +21,8 @@ object. `destroy_actor` destroys the actor and consumes its actor handle.
 
 World and actor operations must run on Unreal's game thread. The initial slice
 returns `UEC_RESULT_WRONG_THREAD` for calls made from another thread. Queued
-work and completion callbacks are deliberately deferred until the threading
-phase of the implementation plan.
+work is available through `run_on_game_thread`, which invokes a borrowed
+callback on the game thread with cancellation and a bounded queue.
 
 Strings are UTF-8 views with an explicit byte length. The caller owns the bytes
 for the duration of a call; the bridge does not retain them. Transforms use
