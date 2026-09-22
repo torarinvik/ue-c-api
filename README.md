@@ -9,7 +9,8 @@ released so the API remains compatible with the state of the art.
 The runtime API provides ABI negotiation, bounded diagnostics and logging,
 explicit opaque handles, world and actor operations, reflection, collision and
 physics queries, input and movement, camera and mesh presentation, audio, UMG,
-save-game slots, and cancellable game-thread dispatch. See [docs/API.md](docs/API.md)
+save-game slots, configuration, streaming-level controls, asset preflight,
+authority gates, and cancellable game-thread dispatch. See [docs/API.md](docs/API.md)
 for ownership, threading, and unsupported-operation rules.
 
 Run `sh tests/run_checks.sh` to validate the public C/C++ ABI headers and Unreal descriptors without an engine installation. The current feature boundary is tracked in [docs/FEATURES.md](docs/FEATURES.md).
