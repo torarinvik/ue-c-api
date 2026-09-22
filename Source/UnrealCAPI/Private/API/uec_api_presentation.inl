@@ -113,13 +113,10 @@
                 current->InCallback = true;
                 current->Callback(current->Id, current->UserData);
                 current->InCallback = false;
-                if (!current->Cancelled && !IsShuttingDown())
+                current->Cancelled = true;
+                if (UButton* button = current->Button.Get())
                 {
-                    current->Cancelled = true;
-                    if (UButton* button = current->Button.Get())
-                    {
-                        button->OnClicked.Remove(current->Handle);
-                    }
+                    button->OnClicked.Remove(current->Handle);
                 }
                 GWidgetSubscriptions.Remove(current->Id);
             });
@@ -278,13 +275,10 @@
                 current->InCallback = true;
                 current->Callback(current->Id, current->UserData);
                 current->InCallback = false;
-                if (!current->Cancelled && !IsShuttingDown())
+                current->Cancelled = true;
+                if (UAudioComponent* finishedAudio = current->Component.Get())
                 {
-                    current->Cancelled = true;
-                    if (UAudioComponent* finishedAudio = current->Component.Get())
-                    {
-                        finishedAudio->OnAudioFinishedNative.Remove(current->Handle);
-                    }
+                    finishedAudio->OnAudioFinishedNative.Remove(current->Handle);
                 }
                 GAudioSubscriptions.Remove(current->Id);
             });

@@ -633,13 +633,10 @@
                                   {normalImpulse.X, normalImpulse.Y, normalImpulse.Z},
                                   current->UserData);
                 current->InCallback = false;
-                if (!current->Cancelled && !IsShuttingDown())
+                current->Cancelled = true;
+                if (UPrimitiveComponent* component = current->Component.Get())
                 {
-                    current->Cancelled = true;
-                    if (UPrimitiveComponent* component = current->Component.Get())
-                    {
-                        component->OnComponentHit().Remove(current->Handle);
-                    }
+                    component->OnComponentHit().Remove(current->Handle);
                 }
                 GCollisionSubscriptions.Remove(current->Id);
             });
