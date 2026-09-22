@@ -418,3 +418,41 @@
         }
         return UEC_RESULT_OK;
     }
+
+    uec_result UEC_CALL GetConfigString(uec_context* rawContext,
+                                        uec_string_view section,
+                                        uec_string_view key,
+                                        char* buffer,
+                                        size_t bufferSize,
+                                        size_t* requiredSize)
+    {
+        if (requiredSize == nullptr || !IsValidStringView(section) || section.size == 0 ||
+            !IsValidStringView(key) || key.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (GConfig == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        FString value;
+        if (!GConfig->GetString(*ToFString(section), *ToFString(key), value, GGameIni)) {
+            return UEC_RESULT_NOT_INITIALIZED;
+        }
+        return CopyFStringToUtf8(value, buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL SetConfigString(uec_context* rawContext,
+                                        uec_string_view section,
+                                        uec_string_view key,
+                                        uec_string_view value)
+    {
+        if (!IsValidStringView(section) || section.size == 0 ||
+            !IsValidStringView(key) || key.size == 0 || !IsValidStringView(value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (GConfig == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        GConfig->SetString(*ToFString(section), *ToFString(key), *ToFString(value), GGameIni);
+        GConfig->Flush(false, GGameIni);
+        return UEC_RESULT_OK;
+    }

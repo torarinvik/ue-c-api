@@ -17,7 +17,7 @@ UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI chan
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 74u, "ABI minor must include component class queries");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 75u, "ABI minor must include configuration access");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -96,6 +96,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_actor_component_count_by_class) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_actor_component_at_by_class) >
                    offsetof(uec_api, get_actor_component_count_by_class),
                "component class lookup must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_config_string) >
+                   offsetof(uec_api, get_actor_component_at_by_class),
+               "configuration reads must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_config_string) >
+                   offsetof(uec_api, get_config_string),
+               "configuration writes must append to uec_api");
 
 int main(void)
 {
@@ -112,7 +118,8 @@ int main(void)
     if (result != UEC_RESULT_OK || (capabilities & UEC_CAPABILITY_BOOTSTRAP) == 0 ||
         (capabilities & UEC_CAPABILITY_ACTORS) == 0 ||
         (capabilities & UEC_CAPABILITY_REFLECTION) == 0 ||
-        (capabilities & UEC_CAPABILITY_CLASS_METADATA) == 0)
+        (capabilities & UEC_CAPABILITY_CLASS_METADATA) == 0 ||
+        (capabilities & UEC_CAPABILITY_CONFIGURATION) == 0)
     {
         api->release_context(context);
         return 5;

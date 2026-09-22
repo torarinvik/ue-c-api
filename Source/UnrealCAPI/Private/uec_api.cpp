@@ -39,6 +39,7 @@
 #include "HAL/CriticalSection.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/ScopeLock.h"
+#include "Misc/ConfigCacheIni.h"
 #include "TimerManager.h"
 #include "UObject/UnrealType.h"
 #include "UObject/UObjectGlobals.h"
@@ -547,7 +548,9 @@ namespace
         &GetWorldGameMode,
         &GetWorldGameState,
         &GetActorComponentCountByClass,
-        &GetActorComponentAtByClass
+        &GetActorComponentAtByClass,
+        &GetConfigString,
+        &SetConfigString
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

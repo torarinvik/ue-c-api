@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.74`.
+The current runtime slice is intentionally small and versioned as ABI `1.75`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -103,6 +103,12 @@ actor's tags with the same caller-owned output-buffer convention.
 filter an actor's scene components by a loaded class path. The class must derive
 from `USceneComponent`; results are returned in Unreal's component enumeration
 order and each result is a weak scene-component handle.
+
+`get_config_string` and `set_config_string` access the runtime's game INI on the
+game thread. Sections and keys are non-empty UTF-8 strings; reads use the usual
+caller-owned output buffer and return `UEC_RESULT_NOT_INITIALIZED` when the key
+does not exist. Writes flush the game INI immediately and should be treated as
+application configuration, not as a substitute for save-game data.
 
 `get_actor_bounds` reports a caller-owned world-space origin and box extent for
 an actor. `find_player_start` selects the start actor for an explicit local

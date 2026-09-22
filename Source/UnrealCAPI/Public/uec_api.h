@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 74u
+#define UEC_ABI_MINOR 75u
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,7 +86,8 @@ enum {
     UEC_CAPABILITY_THREADING = UINT64_C(1) << 20,
     UEC_CAPABILITY_MOVEMENT = UINT64_C(1) << 21,
     UEC_CAPABILITY_PRESENTATION = UINT64_C(1) << 22,
-    UEC_CAPABILITY_RETAINED_OBJECTS = UINT64_C(1) << 23
+    UEC_CAPABILITY_RETAINED_OBJECTS = UINT64_C(1) << 23,
+    UEC_CAPABILITY_CONFIGURATION = UINT64_C(1) << 24
 };
 
 typedef struct uec_context uec_context;
@@ -705,6 +706,16 @@ typedef struct uec_api {
         uec_string_view class_path,
         uint32_t index,
         uec_scene_component** out_component);
+    uec_result (UEC_CALL *get_config_string)(uec_context* context,
+                                             uec_string_view section,
+                                             uec_string_view key,
+                                             char* buffer,
+                                             size_t buffer_size,
+                                             size_t* required_size);
+    uec_result (UEC_CALL *set_config_string)(uec_context* context,
+                                             uec_string_view section,
+                                             uec_string_view key,
+                                             uec_string_view value);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the
