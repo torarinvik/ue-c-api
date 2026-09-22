@@ -162,7 +162,9 @@ reflected text import/export for supported structs, arrays, maps, sets, and
 other property kinds that have a text representation. The serialized text is
 the engine's property syntax, so callers should treat it as versioned Unreal
 data rather than a stable cross-engine format. Typed `uec_property_value`
-access remains limited to scalar and enum values. Text writes create
+access remains limited to scalar and enum values. Property writes reject
+reflected `EditConst`, `BlueprintReadOnly`, const-parameter, and return-value
+flags. Text writes create
 culture-neutral `FText` values for text properties; they do not create
 localization tables.
 

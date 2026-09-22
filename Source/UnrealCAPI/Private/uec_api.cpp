@@ -340,6 +340,13 @@ namespace
         return UEC_PROPERTY_UNKNOWN;
     }
 
+    static bool IsWritableProperty(const FProperty* property)
+    {
+        return property != nullptr &&
+            !property->HasAnyPropertyFlags(
+                CPF_EditConst | CPF_BlueprintReadOnly | CPF_ConstParm | CPF_ReturnParm);
+    }
+
     static bool IsUnsignedIntegerProperty(const FProperty* property)
     {
         return CastField<FByteProperty>(property) || CastField<FUInt8Property>(property) ||
