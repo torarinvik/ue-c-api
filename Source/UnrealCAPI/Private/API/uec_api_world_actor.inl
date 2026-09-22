@@ -442,7 +442,9 @@
         if (outTimerId == nullptr || callback == nullptr || !IsValidBool(looping)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
-        if (!FMath::IsFinite(intervalSeconds) || intervalSeconds <= 0.0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsRepresentableFloat(intervalSeconds) || intervalSeconds <= 0.0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
