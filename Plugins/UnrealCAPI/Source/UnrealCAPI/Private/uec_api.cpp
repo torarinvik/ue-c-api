@@ -376,7 +376,8 @@ namespace
         &InvokeActorFunctionLatent, &CancelActorFunctionLatent,
         &SaveVersionedApplicationData, &LoadVersionedApplicationData,
         &GetControllerEnhancedInputSubsystem, &SetComponentCollisionChannelResponse,
-        &GetProgressBarPercent, &SetProgressBarPercent
+        &GetProgressBarPercent, &SetProgressBarPercent,
+        &GetWidgetEnabled, &SetWidgetEnabled
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

@@ -144,6 +144,31 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetWidgetEnabled(uec_object* rawWidget, uec_bool* outEnabled)
+    {
+        if (outEnabled != nullptr) *outEnabled = UEC_FALSE;
+        if (outEnabled == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECObject*>(rawWidget);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWidget* widget = Cast<UWidget>(handle->Value.Get());
+        if (widget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outEnabled = widget->GetIsEnabled() ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetWidgetEnabled(uec_object* rawWidget, uec_bool enabled)
+    {
+        if (!IsValidBool(enabled)) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECObject*>(rawWidget);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWidget* widget = Cast<UWidget>(handle->Value.Get());
+        if (widget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        widget->SetIsEnabled(enabled != UEC_FALSE);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL BindButtonClicked(uec_object* rawButton,
                                           uec_widget_event_callback callback,
                                           void* userData,

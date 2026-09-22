@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.138`.
+The current runtime slice is intentionally small and versioned as ABI `1.139`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -359,6 +359,10 @@ Ignore, Overlap, and Block responses. ABI minor 138 appends
 `get_progress_bar_percent` and `set_progress_bar_percent`; they operate on a
 `UProgressBar`, return values as `double`, and accept finite writes in the
 inclusive range `[0, 1]`.
+ABI minor 139 appends `get_widget_enabled` and `set_widget_enabled`. They read
+or change the enabled state of a `UWidget`; reads clear the output to false on
+failure, writes accept only `UEC_FALSE` or `UEC_TRUE`, and both require the
+game thread.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
@@ -639,6 +643,9 @@ the text of a `UTextBlock` using a culture-neutral `FText`.
 `UProgressBar`'s normalized percentage on the game thread. Writes outside
 `[0, 1]` or values that cannot be represented as an Unreal `float` return
 `UEC_RESULT_INVALID_ARGUMENT`.
+`get_widget_enabled` and `set_widget_enabled` read and change any `UWidget`'s
+enabled state on the game thread. The setter accepts only the C API's explicit
+boolean values; the getter initializes its output to false before validation.
 `bind_button_clicked` subscribes to a `UButton` click event and returns a
 one-shot token; `unbind_button_clicked` removes it early. Click callbacks run
 on the game thread and borrow their `user_data` until delivery or unbinding.

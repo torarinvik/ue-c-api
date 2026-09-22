@@ -81,7 +81,7 @@ int main(void)
         api->load_versioned_application_data == NULL ||
         api->get_controller_enhanced_input_subsystem == NULL ||
         api->set_component_collision_channel_response == NULL ||
-        api->get_progress_bar_percent == NULL || api->set_progress_bar_percent == NULL ||
+        api->get_progress_bar_percent == NULL || api->set_progress_bar_percent == NULL || api->get_widget_enabled == NULL || api->set_widget_enabled == NULL ||
         api->get_or_create_actor_event_bridge == NULL || api->destroy_actor_event_bridge == NULL ||
         api->bind_actor_event_bridge == NULL || api->unbind_actor_event_bridge == NULL ||
         api->emit_actor_event_bridge == NULL ||
@@ -135,7 +135,6 @@ int main(void)
         api->release_context(context);
         return 62;
     }
-
     const uint8_t expected_payload[] = {0x55u, 0x45u, 0x43u, 0x01u};
     uint8_t short_payload[] = {0xA5u, 0x5Au};
     uint8_t loaded_payload[sizeof(expected_payload)] = {0u};
@@ -177,7 +176,6 @@ int main(void)
         api->release_context(context);
         return 60;
     }
-
     uec_hit_result_details details;
     memset(&details, 0, sizeof(details));
     details.struct_size = sizeof(details);
@@ -331,7 +329,6 @@ int main(void)
         api->release_context(context);
         return 16;
     }
-
     uint64_t travel_request_id = 42u;
     result = api->travel_world_async(NULL, empty_function_name, NULL, NULL, &travel_request_id);
     if (result != UEC_RESULT_UNSUPPORTED || travel_request_id != 0u ||
@@ -340,7 +337,6 @@ int main(void)
         api->release_context(context);
         return 17;
     }
-
     uec_bool component_visible = UEC_TRUE;
     uec_bool component_active = UEC_TRUE;
     if (api->get_component_visible(NULL, &component_visible) != UEC_RESULT_UNSUPPORTED ||
@@ -351,7 +347,6 @@ int main(void)
         api->release_context(context);
         return 18;
     }
-
     uint32_t function_flags = 42u;
     if (api->get_class_function_flags(NULL, 0u, &function_flags) != UEC_RESULT_UNSUPPORTED ||
         function_flags != 0u)
@@ -361,9 +356,14 @@ int main(void)
     }
 
     uec_widget_visibility widget_visibility = UEC_WIDGET_HIDDEN;
+    uec_bool widget_enabled = UEC_TRUE;
     size_t widget_text_required = 42u;
     if (api->get_widget_visibility(NULL, &widget_visibility) != UEC_RESULT_UNSUPPORTED ||
         widget_visibility != UEC_WIDGET_VISIBLE ||
+        api->get_widget_enabled(NULL, &widget_enabled) != UEC_RESULT_INVALID_HANDLE || widget_enabled != UEC_FALSE ||
+        api->get_widget_enabled(NULL, NULL) != UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_widget_enabled(NULL, (uec_bool)2u) != UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_widget_enabled(NULL, UEC_TRUE) != UEC_RESULT_INVALID_HANDLE ||
         api->get_text_block_text(NULL, NULL, 0u, &widget_text_required) != UEC_RESULT_UNSUPPORTED ||
         widget_text_required != 0u)
     {

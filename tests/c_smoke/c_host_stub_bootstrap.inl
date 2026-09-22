@@ -547,6 +547,19 @@ static uec_result UEC_CALL StubSetProgressBarPercent(uec_object* progressBar,
     return progressBar == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetWidgetEnabled(uec_object* widget, uec_bool* outEnabled)
+{
+    if (outEnabled != NULL) *outEnabled = UEC_FALSE;
+    if (outEnabled == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return widget == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetWidgetEnabled(uec_object* widget, uec_bool enabled)
+{
+    if (enabled != UEC_FALSE && enabled != UEC_TRUE) return UEC_RESULT_INVALID_ARGUMENT;
+    return widget == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetComponentCollisionEnabled(uec_scene_component* component,
                                                             uec_collision_enabled* outEnabled)
 {

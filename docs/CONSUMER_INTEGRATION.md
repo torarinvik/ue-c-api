@@ -256,6 +256,9 @@ values.
 ABI minor 138 adds `get_progress_bar_percent` and `set_progress_bar_percent`
 for normalized UMG progress values. Setter inputs must be finite and in
 `[0, 1]`; both calls require the game thread and a valid `UProgressBar` handle.
+ABI minor 139 adds `get_widget_enabled` and `set_widget_enabled` for a `UWidget`;
+the getter clears its output on failure, and the setter accepts only `UEC_FALSE`
+or `UEC_TRUE`. Both calls require the game thread.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.
