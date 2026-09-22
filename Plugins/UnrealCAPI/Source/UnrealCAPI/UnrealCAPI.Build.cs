@@ -25,5 +25,6 @@ public class UnrealCAPI : ModuleRules
         // Keep the first ABI slice usable by packaged runtime builds. Editor-only
         // adapters belong in a separate module added in a later phase.
         bEnableExceptions = false;
+        PrivateDefinitions.Add("UEC_BUILDING_LIBRARY=1");
     }
 }

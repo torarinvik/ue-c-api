@@ -13,6 +13,8 @@ development; they do not imply a published or runtime-verified release.
   Editor targets for Unreal Build Tool discovery.
 - A tracked C host bootstrap probe that exercises table negotiation, capability
   discovery, logging, and context release when the host starts.
+- Explicit private export-marker definition for Windows plugin builds so C
+  consumers import the bootstrap symbol through the intended module boundary.
 - Public C function table with version negotiation and capability discovery.
 - Initial world, actor, scene-component, timer, collision line-trace, and class
   metadata adapters.
