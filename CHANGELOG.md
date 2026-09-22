@@ -68,6 +68,7 @@ development; they do not imply a published or runtime-verified release.
   unsubscribe tokens and cleanup when playback stops or components are destroyed.
 - Full Unreal object-path and class-path queries for valid object handles.
 - Typed UMG visibility and `UTextBlock` text adapters for C-driven interfaces.
+- One-shot `UButton` click subscriptions with unsubscribe tokens and shutdown cleanup.
 - C consumer source and public math-type layout assertions.
 - GitHub Actions checks for C11/C++17 headers and descriptor JSON on Linux
   (GCC and Clang) and macOS (Clang), on pushes and pull requests.

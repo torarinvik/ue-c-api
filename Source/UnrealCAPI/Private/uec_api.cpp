@@ -33,6 +33,7 @@
 #include "Sound/SoundBase.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
+#include "Components/Button.h"
 #include "HAL/CriticalSection.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/ScopeLock.h"
@@ -89,6 +90,16 @@ namespace
         bool Cancelled = false;
         bool InCallback = false;
     };
+    struct FUECWidgetSubscription final
+    {
+        uint64 Id = 0;
+        TWeakObjectPtr<UButton> Button;
+        FDelegateHandle Handle;
+        uec_widget_event_callback Callback = nullptr;
+        void* UserData = nullptr;
+        bool Cancelled = false;
+        bool InCallback = false;
+    };
     struct FUECClass final { TWeakObjectPtr<UClass> Value; };
     struct FUECObject final
     {
@@ -137,6 +148,7 @@ namespace
     TMap<uint64, TSharedPtr<FUECTimerState>> GTimers;
     TMap<uint64, TSharedPtr<FUECTickSubscription>> GTickSubscriptions;
     TMap<uint64, TSharedPtr<FUECAudioSubscription>> GAudioSubscriptions;
+    TMap<uint64, TSharedPtr<FUECWidgetSubscription>> GWidgetSubscriptions;
     TSet<const FUECClass*> GClasses;
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
@@ -148,6 +160,7 @@ namespace
     uint64 GNextTimerId = 1;
     uint64 GNextTickSubscriptionId = 1;
     uint64 GNextAudioSubscriptionId = 1;
+    uint64 GNextWidgetSubscriptionId = 1;
     uint64 GNextSaveGameRequestId = 1;
     uint64 GNextInputBindingId = 1;
     constexpr int32 MaxQueuedObjectLoads = 1024;
@@ -443,7 +456,8 @@ namespace
         &SubscribeWorldTick, &UnsubscribeWorldTick,
         &BindAudioFinished, &UnbindAudioFinished,
         &GetObjectPath, &GetObjectClassName,
-        &SetWidgetVisibility, &SetTextBlockText
+        &SetWidgetVisibility, &SetTextBlockText,
+        &BindButtonClicked, &UnbindButtonClicked
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
@@ -468,6 +482,7 @@ public:
         ClearAllTimers();
         ClearAllTickSubscriptions();
         ClearAllAudioSubscriptions();
+        ClearAllWidgetSubscriptions();
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
         CancelAllSaveGameRequests();

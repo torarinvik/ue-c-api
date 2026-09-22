@@ -252,6 +252,67 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL BindButtonClicked(uec_object* rawButton,
+                                          uec_widget_event_callback callback,
+                                          void* userData,
+                                          uint64_t* outSubscriptionId)
+    {
+        if (callback == nullptr || outSubscriptionId == nullptr)
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* buttonHandle = reinterpret_cast<FUECObject*>(rawButton);
+        if (!IsValidObject(buttonHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UButton* button = Cast<UButton>(buttonHandle->Value.Get());
+        if (button == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+
+        const uint64 subscriptionId = GNextWidgetSubscriptionId++;
+        auto subscription = MakeShared<FUECWidgetSubscription>();
+        subscription->Id = subscriptionId;
+        subscription->Button = button;
+        subscription->Callback = callback;
+        subscription->UserData = userData;
+        TWeakPtr<FUECWidgetSubscription> weakSubscription = subscription;
+        subscription->Handle = button->OnClicked.AddLambda(
+            [weakSubscription]()
+            {
+                TSharedPtr<FUECWidgetSubscription> current = weakSubscription.Pin();
+                if (!current.IsValid() || current->Cancelled || IsShuttingDown()) return;
+                current->InCallback = true;
+                current->Callback(current->Id, current->UserData);
+                current->InCallback = false;
+                current->Cancelled = true;
+                GWidgetSubscriptions.Remove(current->Id);
+            });
+        GWidgetSubscriptions.Add(subscriptionId, subscription);
+        *outSubscriptionId = subscriptionId;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL UnbindButtonClicked(uec_context* rawContext,
+                                            uint64_t subscriptionId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        TSharedPtr<FUECWidgetSubscription>* subscriptionPtr = GWidgetSubscriptions.Find(subscriptionId);
+        if (subscriptionPtr == nullptr || !subscriptionPtr->IsValid())
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        TSharedPtr<FUECWidgetSubscription> subscription = *subscriptionPtr;
+        subscription->Cancelled = true;
+        if (!subscription->InCallback)
+        {
+            if (UButton* button = subscription->Button.Get())
+            {
+                button->OnClicked.Remove(subscription->Handle);
+            }
+        }
+        GWidgetSubscriptions.Remove(subscriptionId);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetCameraFieldOfView(uec_scene_component* rawComponent,
                                              double* outDegrees)
     {
@@ -610,6 +671,20 @@
             }
         }
         GAudioSubscriptions.Empty();
+    }
+
+    static void ClearAllWidgetSubscriptions()
+    {
+        for (const TPair<uint64, TSharedPtr<FUECWidgetSubscription>>& pair : GWidgetSubscriptions)
+        {
+            if (!pair.Value.IsValid()) continue;
+            pair.Value->Cancelled = true;
+            if (UButton* button = pair.Value->Button.Get())
+            {
+                button->OnClicked.Remove(pair.Value->Handle);
+            }
+        }
+        GWidgetSubscriptions.Empty();
     }
 
     uec_result UEC_CALL LineTraceFiltered(uec_world* rawWorld,
