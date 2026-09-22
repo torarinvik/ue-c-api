@@ -245,6 +245,8 @@ development; they do not imply a published or runtime-verified release.
   properties with reflected access checks and text import validation.
 - ABI minor 106 adds one-level nested reflected-struct field text readback for
   actor and UObject properties.
+- ABI minor 107 adds writable one-level nested reflected-struct fields with
+  outer and field access checks.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

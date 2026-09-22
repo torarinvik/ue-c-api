@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.106`.
+The current runtime slice is intentionally small and versioned as ABI `1.107`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -165,6 +165,10 @@ retain or load the referenced asset.
 ABI minor 106 adds one-level nested struct field text readers for actor and
 UObject properties. The outer property must be a reflected struct; the field
 kind and serialized value are returned through the caller-owned UTF-8 buffer.
+
+ABI minor 107 adds matching one-level nested struct field text writers. Both
+the outer struct and selected field must be writable reflected properties;
+Unreal imports the caller's text on the game thread.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

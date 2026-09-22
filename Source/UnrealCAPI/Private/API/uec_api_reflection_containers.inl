@@ -535,3 +535,56 @@
         return ExportStructFieldText(object, propertyName, fieldName, buffer, bufferSize,
                                      requiredSize, outKind);
     }
+
+    static uec_result ImportStructFieldText(UObject* owner,
+                                            uec_string_view propertyName,
+                                            uec_string_view fieldName,
+                                            uec_string_view value)
+    {
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0 ||
+            !IsValidStringView(fieldName) || fieldName.size == 0 || !IsValidStringView(value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FStructProperty* structProperty = CastField<FStructProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (structProperty == nullptr || structProperty->Struct == nullptr) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (!IsWritableProperty(structProperty)) return UEC_RESULT_UNSUPPORTED;
+        FProperty* field = structProperty->Struct->FindPropertyByName(FName(*ToFString(fieldName)));
+        if (field == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsWritableProperty(field)) return UEC_RESULT_UNSUPPORTED;
+        void* structValue = structProperty->ContainerPtrToValuePtr<void>(owner);
+        if (structValue == nullptr) return UEC_RESULT_UNSUPPORTED;
+        const FString text = ToFString(value);
+        if (field->ImportText_InContainer(*text, structValue, owner, PPF_None, GWarn) == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetActorPropertyStructFieldText(uec_actor* rawActor,
+                                                        uec_string_view propertyName,
+                                                        uec_string_view fieldName,
+                                                        uec_string_view value)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ImportStructFieldText(actor, propertyName, fieldName, value);
+    }
+
+    uec_result UEC_CALL SetObjectPropertyStructFieldText(uec_object* rawObject,
+                                                         uec_string_view propertyName,
+                                                         uec_string_view fieldName,
+                                                         uec_string_view value)
+    {
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ImportStructFieldText(object, propertyName, fieldName, value);
+    }

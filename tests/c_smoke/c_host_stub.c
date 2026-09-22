@@ -601,6 +601,30 @@ static uec_result UEC_CALL StubGetObjectPropertyStructFieldText(
     return requiredSize == NULL || outKind == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubSetActorPropertyStructFieldText(uec_actor* actor,
+                                                               uec_string_view propertyName,
+                                                               uec_string_view fieldName,
+                                                               uec_string_view value)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)fieldName;
+    (void)value;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetObjectPropertyStructFieldText(uec_object* object,
+                                                                uec_string_view propertyName,
+                                                                uec_string_view fieldName,
+                                                                uec_string_view value)
+{
+    (void)object;
+    (void)propertyName;
+    (void)fieldName;
+    (void)value;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -665,6 +689,8 @@ static const uec_api g_api = {
     .set_object_property_soft_path = &StubSetObjectPropertySoftPath,
     .get_actor_property_struct_field_text = &StubGetActorPropertyStructFieldText,
     .get_object_property_struct_field_text = &StubGetObjectPropertyStructFieldText,
+    .set_actor_property_struct_field_text = &StubSetActorPropertyStructFieldText,
+    .set_object_property_struct_field_text = &StubSetObjectPropertyStructFieldText,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
