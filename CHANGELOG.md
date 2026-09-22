@@ -38,6 +38,7 @@ development; they do not imply a published or runtime-verified release.
 - Enhanced Input mapping-context add/remove adapters for local controllers.
 - Reflected function enumeration with parameter, return, and latent metadata.
 - Primitive collision-enabled modes and per-channel block/ignore responses.
+- Soft object-path loaded-state queries.
 - C-only gameplay example covering spawn, transforms, timer callbacks, and cleanup.
 - Input validation for oversized UTF-8 views and non-finite transform values.
 - Reflected actor property writes and reads for supported scalar, string, name,

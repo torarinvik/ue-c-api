@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.34`.
+The current runtime slice is intentionally small and versioned as ABI `1.35`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -103,6 +103,10 @@ callback on the game thread. The callback owns any returned object handle and
 must release it. `user_data` is borrowed until completion or cancellation;
 `cancel_object_load` prevents the callback from being delivered when called
 before completion. Outstanding requests are cancelled during module shutdown.
+
+`is_object_path_loaded` checks whether a valid soft object path currently
+resolves in memory. It does not load or retain the object and is safe to use
+before choosing between synchronous and asynchronous loading.
 
 `line_trace` maps a small stable C channel enum to Unreal collision channels and
 returns a POD hit record. A hit actor, when present, is returned as an owned

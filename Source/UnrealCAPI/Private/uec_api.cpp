@@ -2286,6 +2286,19 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL IsObjectPathLoaded(uec_context* rawContext,
+                                           uec_string_view objectPath,
+                                           uec_bool* outLoaded)
+    {
+        if (outLoaded == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(objectPath) || objectPath.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
+        const FSoftObjectPath path(ToFString(objectPath));
+        *outLoaded = path.ResolveObject() != nullptr ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2344,7 +2357,8 @@ namespace
         &GetActorClassName, &ActorIsA,
         &AddInputMappingContext, &RemoveInputMappingContext,
         &GetClassFunctionCount, &GetClassFunctionAt,
-        &SetComponentCollisionEnabled, &SetComponentCollisionResponse
+        &SetComponentCollisionEnabled, &SetComponentCollisionResponse,
+        &IsObjectPathLoaded
     };
 }
 
