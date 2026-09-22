@@ -335,6 +335,25 @@
             ? UEC_RESULT_OK : UEC_RESULT_INVALID_ARGUMENT;
     }
 
+    static bool IsTextBackedFunctionArgumentKind(uec_property_kind kind)
+    {
+        switch (kind)
+        {
+        case UEC_PROPERTY_STRING:
+        case UEC_PROPERTY_NAME:
+        case UEC_PROPERTY_TEXT:
+        case UEC_PROPERTY_STRUCT:
+        case UEC_PROPERTY_ARRAY:
+        case UEC_PROPERTY_MAP:
+        case UEC_PROPERTY_SET:
+        case UEC_PROPERTY_SOFT_OBJECT:
+        case UEC_PROPERTY_SOFT_CLASS:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     static uec_result ValidateFunctionArgumentRecords(
         const uec_function_argument* arguments,
         uint32_t argumentCount)
@@ -350,8 +369,13 @@
                 (argument.object_value != nullptr && argument.world_value != nullptr)) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
-            if (argument.text_value.data != nullptr || argument.text_value.size != 0) {
-                if (!IsValidStringView(argument.text_value)) return UEC_RESULT_INVALID_ARGUMENT;
+            const bool hasText = argument.text_value.data != nullptr ||
+                argument.text_value.size != 0;
+            if (hasText && !IsTextBackedFunctionArgumentKind(argument.kind)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            if (hasText && !IsValidStringView(argument.text_value)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
             }
         }
         return UEC_RESULT_OK;

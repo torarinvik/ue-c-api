@@ -398,6 +398,17 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
         return UEC_RESULT_INTERNAL_ERROR;
     }
+    uec_function_argument scalarWithText = duration;
+    scalarWithText.text_value.data = scalarFunctionName;
+    scalarWithText.text_value.size = sizeof(scalarFunctionName) - 1;
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, scalarName, &scalarWithText, 1u,
+        NULL, 0u, &noOutputs);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
     uint32_t editorWorldCount = 0;
     result = state->api->get_world_count_by_kind(
         state->context, UEC_WORLD_KIND_EDITOR, &editorWorldCount);
