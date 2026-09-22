@@ -621,14 +621,14 @@
     {
         if (outBindingId != nullptr) *outBindingId = 0;
         if (callback == nullptr || outBindingId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        ETriggerEvent engineEvent;
+        if (!ToInputTriggerEvent(triggerEvent, engineEvent)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         auto* actionHandle = reinterpret_cast<FUECObject*>(rawAction);
         if (!IsValidActor(actorHandle) || !IsValidObject(actionHandle)) {
             return UEC_RESULT_INVALID_HANDLE;
         }
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        ETriggerEvent engineEvent;
-        if (!ToInputTriggerEvent(triggerEvent, engineEvent)) return UEC_RESULT_INVALID_ARGUMENT;
         AActor* actor = actorHandle->Value.Get();
         UInputAction* action = Cast<UInputAction>(actionHandle->Value.Get());
         if (actor == nullptr || action == nullptr) return UEC_RESULT_INVALID_ARGUMENT;

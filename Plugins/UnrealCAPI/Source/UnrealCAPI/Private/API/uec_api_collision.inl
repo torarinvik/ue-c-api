@@ -188,11 +188,6 @@
     uec_result UEC_CALL SetComponentCollisionEnabled(uec_scene_component* rawComponent,
                                                      uec_collision_enabled enabled)
     {
-        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
-        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         ECollisionEnabled::Type collisionEnabled;
         switch (enabled)
         {
@@ -202,6 +197,11 @@
         case UEC_COLLISION_QUERY_AND_PHYSICS: collisionEnabled = ECollisionEnabled::QueryAndPhysics; break;
         default: return UEC_RESULT_INVALID_ARGUMENT;
         }
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         component->SetCollisionEnabled(collisionEnabled);
         return UEC_RESULT_OK;
     }
@@ -232,13 +232,13 @@
                                                       uec_bool block)
     {
         if (!IsValidBool(block)) return UEC_RESULT_INVALID_ARGUMENT;
+        ECollisionChannel collisionChannel;
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        ECollisionChannel collisionChannel;
-        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
         component->SetCollisionResponseToChannel(
             collisionChannel, block != UEC_FALSE ? ECR_Block : ECR_Ignore);
         return UEC_RESULT_OK;
@@ -257,13 +257,13 @@
         case UEC_COLLISION_RESPONSE_BLOCK: engineResponse = ECR_Block; break;
         default: return UEC_RESULT_INVALID_ARGUMENT;
         }
+        ECollisionChannel collisionChannel;
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        ECollisionChannel collisionChannel;
-        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
         component->SetCollisionResponseToChannel(collisionChannel, engineResponse);
         return UEC_RESULT_OK;
     }

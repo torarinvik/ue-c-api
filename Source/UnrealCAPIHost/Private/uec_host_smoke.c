@@ -29,7 +29,6 @@ typedef struct uec_latent_smoke_state {
 } uec_latent_smoke_state;
 
 static uec_latent_smoke_state g_latent_smoke_state;
-
 static void FinishLatentSmoke(uec_latent_smoke_state* state,
                               uec_result result,
                               uec_bool cancel_request)
@@ -158,8 +157,9 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
              UEC_RESULT_INVALID_ARGUMENT || invalidWorldKindCount != 0u ||
          api->set_component_collision_channel_response(NULL, UEC_TRACE_VISIBILITY,
              (uec_collision_response)99) != UEC_RESULT_INVALID_ARGUMENT ||
-         api->set_widget_visibility(NULL, (uec_widget_visibility)99) !=
-             UEC_RESULT_INVALID_ARGUMENT)) {
+         api->set_component_collision_channel_response(NULL, (uec_trace_channel)99,
+             UEC_COLLISION_RESPONSE_IGNORE) != UEC_RESULT_INVALID_ARGUMENT ||
+         api->set_widget_visibility(NULL, (uec_widget_visibility)99) != UEC_RESULT_INVALID_ARGUMENT)) {
         result = UEC_RESULT_INTERNAL_ERROR;
     }
     if (result == UEC_RESULT_OK) {
