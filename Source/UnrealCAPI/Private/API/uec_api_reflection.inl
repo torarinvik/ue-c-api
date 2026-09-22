@@ -128,6 +128,37 @@
         return UEC_RESULT_INVALID_ARGUMENT;
     }
 
+    uec_result UEC_CALL GetClassPropertyFlags(uec_class* rawClass,
+                                              uint32_t index,
+                                              uint32_t* outFlags)
+    {
+        if (outFlags != nullptr) *outFlags = 0;
+        if (outFlags == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = handle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        uint32_t current = 0;
+        for (TFieldIterator<FProperty> iterator(klass, EFieldIteratorFlags::IncludeSuper);
+             iterator; ++iterator)
+        {
+            if (current++ != index) continue;
+            const FProperty* property = *iterator;
+            if (property->HasAnyPropertyFlags(CPF_EditConst)) *outFlags |= UEC_PROPERTY_FLAG_EDIT_CONST;
+            if (property->HasAnyPropertyFlags(CPF_BlueprintReadOnly)) {
+                *outFlags |= UEC_PROPERTY_FLAG_BLUEPRINT_READ_ONLY;
+            }
+            if (property->HasAnyPropertyFlags(CPF_ConstParm)) *outFlags |= UEC_PROPERTY_FLAG_CONST_PARAMETER;
+            if (property->HasAnyPropertyFlags(CPF_ReturnParm)) *outFlags |= UEC_PROPERTY_FLAG_RETURN;
+            if (property->HasAnyPropertyFlags(CPF_Parm)) *outFlags |= UEC_PROPERTY_FLAG_PARAMETER;
+            if (property->HasAnyPropertyFlags(CPF_OutParm)) *outFlags |= UEC_PROPERTY_FLAG_OUT;
+            if (property->HasAnyPropertyFlags(CPF_ReferenceParm)) *outFlags |= UEC_PROPERTY_FLAG_REFERENCE;
+            return UEC_RESULT_OK;
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+
     uec_result UEC_CALL GetClassFunctionFlags(uec_class* rawClass,
                                               uint32_t index,
                                               uint32_t* outFlags)

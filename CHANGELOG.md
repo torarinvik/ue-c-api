@@ -251,6 +251,8 @@ development; they do not imply a published or runtime-verified release.
   and UObject properties.
 - ABI minor 109 adds actor and UObject map value text writes while preserving
   map keys; set mutation remains unsupported until rehash semantics are covered.
+- ABI minor 110 adds reflected class-property access flags for editability,
+  Blueprint read-only state, parameter, return, out, and reference metadata.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

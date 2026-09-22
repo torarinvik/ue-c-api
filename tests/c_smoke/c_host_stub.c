@@ -673,6 +673,16 @@ static uec_result UEC_CALL StubSetObjectPropertyMapValueText(uec_object* object,
     return UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetClassPropertyFlags(uec_class* klass,
+                                                     uint32_t index,
+                                                     uint32_t* outFlags)
+{
+    (void)klass;
+    (void)index;
+    if (outFlags != NULL) *outFlags = 0u;
+    return outFlags == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -743,6 +753,7 @@ static const uec_api g_api = {
     .set_object_property_array_element_text = &StubSetObjectPropertyArrayElementText,
     .set_actor_property_map_value_text = &StubSetActorPropertyMapValueText,
     .set_object_property_map_value_text = &StubSetObjectPropertyMapValueText,
+    .get_class_property_flags = &StubGetClassPropertyFlags,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
