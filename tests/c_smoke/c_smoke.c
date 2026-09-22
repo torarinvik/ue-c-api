@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 117u, "ABI minor must include reference metadata");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 118u, "ABI minor must include enum metadata");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
@@ -147,9 +147,15 @@ UEC_TEST_ASSERT(offsetof(uec_api, set_object_property_struct_field_value) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_class_property_default_text) >
                    offsetof(uec_api, set_object_property_struct_field_value),
                "class defaults must append to uec_api");
-UEC_TEST_ASSERT(offsetof(uec_api, get_class_property_reference_class_path) >
+    UEC_TEST_ASSERT(offsetof(uec_api, get_class_property_reference_class_path) >
                    offsetof(uec_api, get_class_property_default_text),
                "reference metadata must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_class_property_enum_value_count) >
+                   offsetof(uec_api, get_class_property_reference_class_path),
+               "enum metadata count must append to uec_api");
+    UEC_TEST_ASSERT(offsetof(uec_api, get_class_property_enum_value_at) >
+                   offsetof(uec_api, get_class_property_enum_value_count),
+               "enum metadata values must append to uec_api");
 UEC_TEST_ASSERT(offsetof(uec_api, get_config_string) >
                    offsetof(uec_api, get_actor_component_at_by_class),
                "configuration reads must append to uec_api");
@@ -775,6 +781,23 @@ int main(void)
     {
         api->release_context(context);
         return 44;
+    }
+
+    uint32_t enum_count = 99u;
+    if (api->get_class_property_enum_value_count(NULL, 0u, &enum_count) !=
+            UEC_RESULT_UNSUPPORTED || enum_count != 0u)
+    {
+        api->release_context(context);
+        return 45;
+    }
+    int64_t enum_value = 99;
+    size_t enum_required = 99u;
+    if (api->get_class_property_enum_value_at(NULL, 0u, 0u, NULL, 0u,
+                                              &enum_required, &enum_value) !=
+            UEC_RESULT_UNSUPPORTED || enum_required != 0u || enum_value != 0)
+    {
+        api->release_context(context);
+        return 46;
     }
 
     const char message[] = "C ABI smoke test";

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.117`.
+The current runtime slice is intentionally small and versioned as ABI `1.118`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -212,6 +212,12 @@ default object's value for a reflected property in the same order as
 ABI minor 117 adds `get_class_property_reference_class_path` for object, class,
 and soft-reference properties. It returns the referenced Unreal class path in
 the same reflected property order and reports the property's broad kind.
+
+ABI minor 118 adds `get_class_property_enum_value_count` and
+`get_class_property_enum_value_at`. They enumerate declared names and signed
+values for reflected `FEnumProperty` and byte-backed enum properties; enum
+indices are metadata order and the returned name uses the usual caller-owned
+UTF-8 buffer contract.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

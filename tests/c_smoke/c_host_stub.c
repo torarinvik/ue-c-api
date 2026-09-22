@@ -857,6 +857,29 @@ static uec_result UEC_CALL StubGetClassPropertyReferenceClassPath(
     return requiredSize == NULL || outKind == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetClassPropertyEnumValueCount(
+    uec_class* klass, uint32_t index, uint32_t* outCount)
+{
+    (void)klass;
+    (void)index;
+    if (outCount != NULL) *outCount = 0u;
+    return outCount == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetClassPropertyEnumValueAt(
+    uec_class* klass, uint32_t index, uint32_t valueIndex, char* nameBuffer,
+    size_t nameBufferSize, size_t* nameRequiredSize, int64_t* outValue)
+{
+    (void)klass;
+    (void)index;
+    (void)valueIndex;
+    (void)nameBuffer;
+    (void)nameBufferSize;
+    if (nameRequiredSize != NULL) *nameRequiredSize = 0u;
+    if (outValue != NULL) *outValue = 0;
+    return nameRequiredSize == NULL || outValue == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetClassPropertyFlags(uec_class* klass,
                                                      uint32_t index,
                                                      uint32_t* outFlags)
@@ -954,6 +977,8 @@ static const uec_api g_api = {
     .set_object_property_struct_field_value = &StubSetObjectPropertyStructFieldValue,
     .get_class_property_default_text = &StubGetClassPropertyDefaultText,
     .get_class_property_reference_class_path = &StubGetClassPropertyReferenceClassPath,
+    .get_class_property_enum_value_count = &StubGetClassPropertyEnumValueCount,
+    .get_class_property_enum_value_at = &StubGetClassPropertyEnumValueAt,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

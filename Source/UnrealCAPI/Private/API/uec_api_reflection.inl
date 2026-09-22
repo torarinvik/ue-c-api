@@ -30,6 +30,16 @@
         const UEnum* enumeration = property == nullptr ? nullptr : property->GetEnum();
         return enumeration != nullptr && enumeration->IsValidEnumValueOrBitfield(value);
     }
+    static const UEnum* GetEnumForProperty(const FProperty* property)
+    {
+        if (const FEnumProperty* enumProperty = CastField<FEnumProperty>(property)) {
+            return enumProperty->GetEnum();
+        }
+        if (const FByteProperty* byteProperty = CastField<FByteProperty>(property)) {
+            return byteProperty->GetIntPropertyEnum();
+        }
+        return nullptr;
+    }
     static void ResetPropertyValue(uec_property_value* value)
     {
         value->kind = UEC_PROPERTY_UNKNOWN;
@@ -325,6 +335,67 @@
             if (referencedClass == nullptr) return UEC_RESULT_UNSUPPORTED;
             *outKind = GetPropertyKind(property);
             return CopyFStringToUtf8(referencedClass->GetPathName(), buffer, bufferSize, requiredSize);
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+
+    uec_result UEC_CALL GetClassPropertyEnumValueCount(uec_class* rawClass,
+                                                       uint32_t index,
+                                                       uint32_t* outCount)
+    {
+        if (outCount != nullptr) *outCount = 0;
+        if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = handle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        uint32_t current = 0;
+        for (TFieldIterator<FProperty> iterator(klass, EFieldIteratorFlags::IncludeSuper);
+             iterator; ++iterator)
+        {
+            if (current++ != index) continue;
+            const UEnum* enumeration = GetEnumForProperty(*iterator);
+            if (enumeration == nullptr) return UEC_RESULT_UNSUPPORTED;
+            const int32 count = enumeration->NumEnums();
+            if (count < 0) return UEC_RESULT_INTERNAL_ERROR;
+            *outCount = static_cast<uint32_t>(count);
+            return UEC_RESULT_OK;
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+
+    uec_result UEC_CALL GetClassPropertyEnumValueAt(uec_class* rawClass,
+                                                     uint32_t index,
+                                                     uint32_t valueIndex,
+                                                     char* nameBuffer,
+                                                     size_t nameBufferSize,
+                                                     size_t* nameRequiredSize,
+                                                     int64_t* outValue)
+    {
+        if (nameRequiredSize != nullptr) *nameRequiredSize = 0;
+        if (outValue != nullptr) *outValue = 0;
+        if (nameRequiredSize == nullptr || outValue == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = handle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        uint32_t current = 0;
+        for (TFieldIterator<FProperty> iterator(klass, EFieldIteratorFlags::IncludeSuper);
+             iterator; ++iterator)
+        {
+            if (current++ != index) continue;
+            const UEnum* enumeration = GetEnumForProperty(*iterator);
+            if (enumeration == nullptr) return UEC_RESULT_UNSUPPORTED;
+            const int32 count = enumeration->NumEnums();
+            if (valueIndex >= static_cast<uint32_t>(FMath::Max(count, 0))) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            const int32 enumIndex = static_cast<int32>(valueIndex);
+            *outValue = enumeration->GetValueByIndex(enumIndex);
+            return CopyFStringToUtf8(enumeration->GetNameStringByIndex(enumIndex),
+                                     nameBuffer, nameBufferSize, nameRequiredSize);
         }
         return UEC_RESULT_INVALID_ARGUMENT;
     }
