@@ -345,6 +345,8 @@
         UAudioComponent* audio = Cast<UAudioComponent>(audioHandle->Value.Get());
         if (audio == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         CancelAudioSubscriptionsFor(audio);
+        TombstoneHandle(audioHandle->Header);
+        audioHandle->Value.Reset();
         audio->Stop();
         audio->DestroyComponent();
         return UEC_RESULT_OK;
