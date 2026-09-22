@@ -7,10 +7,10 @@ Unreal headers and C++ types stay inside the plugin.
 
 `get_capabilities` reports the feature bits present in the loaded bridge. The
 current implementation reports bootstrap, logging, world, actor, component,
-timer, reflection, collision, asset loading, player flow, input, physics,
-collision-query, audio, UI, camera, save-data, game-thread dispatch, movement,
-presentation, retained-object, component-introspection, configuration, and
-streaming adapters.
+timer, reflection, reflection containers, collision, asset loading, player
+flow, input, physics, collision-query, audio, UI, camera, save-data,
+game-thread dispatch, movement, presentation, retained-object,
+component-introspection, configuration, and streaming adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed
 registries. Each handle receives a monotonic generation and kind tag; released

@@ -51,7 +51,8 @@ int main(void)
         (capabilities & UEC_CAPABILITY_REFLECTION) == 0 ||
         (capabilities & UEC_CAPABILITY_CLASS_METADATA) == 0 ||
         (capabilities & UEC_CAPABILITY_CONFIGURATION) == 0 ||
-        (capabilities & UEC_CAPABILITY_STREAMING) == 0)
+        (capabilities & UEC_CAPABILITY_STREAMING) == 0 ||
+        (capabilities & UEC_CAPABILITY_REFLECTION_CONTAINERS) == 0)
     {
         api->release_context(context);
         return 5;

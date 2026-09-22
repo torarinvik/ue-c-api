@@ -23,6 +23,8 @@ UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENC
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
                "soft property kind values changed");
+UEC_TEST_ASSERT(UEC_CAPABILITY_REFLECTION_CONTAINERS == (UINT64_C(1) << 26),
+               "reflection container capability changed");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
