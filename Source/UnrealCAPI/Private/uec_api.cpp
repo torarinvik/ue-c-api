@@ -2473,6 +2473,53 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL InjectInputActionValue(uec_actor* rawController,
+                                               uec_object* rawAction,
+                                               const uec_input_action_value* value)
+    {
+        if (value == nullptr || value->struct_size < sizeof(uec_input_action_value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        auto* actionHandle = reinterpret_cast<FUECObject*>(rawAction);
+        if (!IsValidActor(controllerHandle) || !IsValidObject(actionHandle)) {
+            return UEC_RESULT_INVALID_HANDLE;
+        }
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        UInputAction* action = Cast<UInputAction>(actionHandle->Value.Get());
+        if (controller == nullptr || action == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        UEnhancedPlayerInput* playerInput = Cast<UEnhancedPlayerInput>(controller->PlayerInput);
+        if (playerInput == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        if (!FMath::IsFinite(value->axis.x) || !FMath::IsFinite(value->axis.y) ||
+            !FMath::IsFinite(value->axis.z)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+
+        FInputActionValue inputValue;
+        switch (value->kind)
+        {
+        case UEC_INPUT_ACTION_VALUE_BOOLEAN:
+            inputValue = FInputActionValue(value->bool_value != UEC_FALSE);
+            break;
+        case UEC_INPUT_ACTION_VALUE_AXIS_1D:
+            inputValue = FInputActionValue(static_cast<float>(value->axis.x));
+            break;
+        case UEC_INPUT_ACTION_VALUE_AXIS_2D:
+            inputValue = FInputActionValue(FVector2D(value->axis.x, value->axis.y));
+            break;
+        case UEC_INPUT_ACTION_VALUE_AXIS_3D:
+            inputValue = FInputActionValue(FVector(value->axis.x, value->axis.y, value->axis.z));
+            break;
+        default:
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        const TArray<UInputModifier*> modifiers;
+        const TArray<UInputTrigger*> triggers;
+        playerInput->InjectInputForAction(action, inputValue, modifiers, triggers);
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2533,7 +2580,7 @@ namespace
         &GetClassFunctionCount, &GetClassFunctionAt,
         &SetComponentCollisionEnabled, &SetComponentCollisionResponse,
         &IsObjectPathLoaded, &SpawnSoundAttached, &StopAudioComponent,
-        &GetInputActionValue, &LineTraceFiltered
+        &GetInputActionValue, &LineTraceFiltered, &InjectInputActionValue
     };
 }
 

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.39`.
+The current runtime slice is intentionally small and versioned as ABI `1.40`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -54,7 +54,9 @@ player-controller handle and run on the game thread. `get_input_action_value`
 reads a loaded `UInputAction` through `UEnhancedPlayerInput` and returns its
 current boolean, 1D, 2D, or 3D value. An action that is not currently
 triggering returns zero in its configured value type; action events and
-bindings remain outside this polling API.
+bindings remain outside this polling API. `inject_input_action_value` submits
+a boolean or axis value through the same enhanced player-input path for
+synthetic input and tests; it does not install persistent bindings.
 
 Physics helpers read actor velocity and operate on a simulating primitive root
 component. Velocity replacement/addition, impulses, and forces return

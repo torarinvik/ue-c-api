@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 38u
+#define UEC_ABI_MINOR 40u
 
 #ifdef __cplusplus
 extern "C" {
@@ -510,6 +510,9 @@ typedef struct uec_api {
                                                const uec_actor* const* ignored_actors,
                                                uint32_t ignored_actor_count,
                                                uec_hit_result* out_hit);
+    uec_result (UEC_CALL *inject_input_action_value)(uec_actor* controller,
+                                                     uec_object* action,
+                                                     const uec_input_action_value* value);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

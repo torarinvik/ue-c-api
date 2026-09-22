@@ -42,6 +42,7 @@ development; they do not imply a published or runtime-verified release.
 - Bounded async request queues with an explicit queue-full result.
 - Typed Enhanced Input action-value polling for boolean and axis actions.
 - Ignored-actor filtering for finite-endpoint line traces.
+- Enhanced Input action-value injection for synthetic input and tests.
 - Soft object-path loaded-state queries.
 - C-only gameplay example covering spawn, transforms, timer callbacks, and cleanup.
 - Input validation for oversized UTF-8 views and non-finite transform values.
