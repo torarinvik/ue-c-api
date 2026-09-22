@@ -31,7 +31,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Explicit object retention | Runtime implemented / Unreal integration pending | Promote a weak object handle to a GC-tracked strong handle |
 | Component type introspection | Runtime implemented / Unreal integration pending | Class-path output and inheritance checks for scene components |
 | Component attachment | Runtime implemented / Unreal integration pending | Same-world attach/detach with transform rules and optional sockets |
-| Actor type introspection | Runtime implemented / Unreal integration pending | Class-path output and inheritance checks for actor handles |
+| Actor type introspection | Runtime implemented / Unreal integration pending | Class-path output, inheritance checks, and indexed world queries by actor class |
 | Enhanced Input contexts | Runtime implemented / Unreal integration pending | Add/remove loaded mapping contexts, read typed action values, and inject test values on local player controllers |
 | Reflected function metadata | Runtime implemented / Unreal integration pending | Enumerate names, parameter counts, return presence, and latent flags |
 | Collision settings | Runtime implemented / Unreal integration pending | Primitive collision mode and stable trace-channel responses |

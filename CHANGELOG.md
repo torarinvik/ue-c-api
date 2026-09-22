@@ -47,6 +47,7 @@ development; they do not imply a published or runtime-verified release.
 - Finite-value validation for physics, collision, and spatial-audio inputs.
 - Typed hard object-reference property reads and writes.
 - Bounded asynchronous save-game slot load and save callbacks.
+- Indexed world actor queries by reflected actor class.
 - Soft object-path loaded-state queries.
 - C-only gameplay example covering spawn, transforms, timer callbacks, and cleanup.
 - Input validation for oversized UTF-8 views and non-finite transform values.

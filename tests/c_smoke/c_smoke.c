@@ -25,6 +25,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, run_on_game_thread) > offsetof(uec_api, delete
 UEC_TEST_ASSERT(offsetof(uec_api, async_save_game_to_slot) >
                    offsetof(uec_api, set_object_property_object),
                "async save functions must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_count_by_class) >
+                   offsetof(uec_api, cancel_save_game_request),
+               "actor query functions must append to uec_api");
 
 int main(void)
 {

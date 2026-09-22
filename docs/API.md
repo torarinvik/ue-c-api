@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.44`.
+The current runtime slice is intentionally small and versioned as ABI `1.46`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -216,6 +216,11 @@ parent. Both operations are game-thread-only.
 `get_actor_class_name` returns an actor's full Unreal class path, while
 `actor_is_a` checks inheritance against another actor class path. These queries
 run on the game thread and return invalid-argument for non-actor class paths.
+
+`get_actor_count_by_class` and `get_actor_at_by_class` enumerate actors already
+present in a world whose class derives from a supplied actor class path. The
+enumeration order is unspecified; every returned actor handle is independently
+owned and must be released.
 
 `add_input_mapping_context` and `remove_input_mapping_context` apply loaded
 `UInputMappingContext` objects to a local player controller's Enhanced Input

@@ -4,6 +4,7 @@
 #include "Async/Async.h"
 #include "Engine/AssetManager.h"
 #include "Engine/Engine.h"
+#include "EngineUtils.h"
 #include "Engine/StreamableManager.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -2791,6 +2792,60 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetActorCountByClass(uec_world* rawWorld,
+                                             uec_string_view classPath,
+                                             uint32_t* outCount)
+    {
+        if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(classPath) || classPath.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        UClass* actorClass = LoadClass<AActor>(nullptr, *ToFString(classPath));
+        if (actorClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outCount = 0;
+        for (TActorIterator<AActor> iterator(world); iterator; ++iterator)
+        {
+            if (iterator->IsA(actorClass))
+            {
+                if (*outCount == UINT32_MAX) return UEC_RESULT_INTERNAL_ERROR;
+                ++(*outCount);
+            }
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetActorAtByClass(uec_world* rawWorld,
+                                          uec_string_view classPath,
+                                          uint32_t index,
+                                          uec_actor** outActor)
+    {
+        if (outActor == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outActor = nullptr;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(classPath) || classPath.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        UClass* actorClass = LoadClass<AActor>(nullptr, *ToFString(classPath));
+        if (actorClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        uint32_t current = 0;
+        for (TActorIterator<AActor> iterator(world); iterator; ++iterator)
+        {
+            AActor* actor = *iterator;
+            if (!actor->IsA(actorClass)) continue;
+            if (current++ != index) continue;
+            FUECActor* handle = MakeActorHandle(actor);
+            if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            *outActor = reinterpret_cast<uec_actor*>(handle);
+            return UEC_RESULT_OK;
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2863,7 +2918,8 @@ namespace
         &GetInputActionValue, &LineTraceFiltered, &InjectInputActionValue,
         &GetActorPropertyObject, &SetActorPropertyObject,
         &GetObjectPropertyObject, &SetObjectPropertyObject,
-        &AsyncSaveGameToSlot, &AsyncLoadGameFromSlot, &CancelSaveGameRequest
+        &AsyncSaveGameToSlot, &AsyncLoadGameFromSlot, &CancelSaveGameRequest,
+        &GetActorCountByClass, &GetActorAtByClass
     };
 }
 
