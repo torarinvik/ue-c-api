@@ -671,6 +671,7 @@ namespace
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsFiniteVector(velocity)) return UEC_RESULT_INVALID_ARGUMENT;
         UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
         if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
         const FVector value(velocity.x, velocity.y, velocity.z);
@@ -692,6 +693,7 @@ namespace
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsFiniteVector(impulse)) return UEC_RESULT_INVALID_ARGUMENT;
         UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
         if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
         component->AddImpulse(FVector(impulse.x, impulse.y, impulse.z), NAME_None, velocityChange != UEC_FALSE);
@@ -703,6 +705,7 @@ namespace
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsFiniteVector(force)) return UEC_RESULT_INVALID_ARGUMENT;
         UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
         if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
         component->AddForce(FVector(force.x, force.y, force.z));
@@ -1518,6 +1521,7 @@ namespace
                                   uec_hit_result* outHit)
     {
         if (outHit == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsFiniteVector(start) || !IsFiniteVector(end)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -1563,6 +1567,7 @@ namespace
                                    uec_hit_result* outHit)
     {
         if (outHit == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsFiniteVector(start) || !IsFiniteVector(end)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -1611,6 +1616,7 @@ namespace
         {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
+        if (!IsFiniteVector(center)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -1662,7 +1668,7 @@ namespace
         if (!IsValidWorld(worldHandle) || !IsValidObject(soundHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         if (!FMath::IsFinite(volumeMultiplier) || !FMath::IsFinite(pitchMultiplier) ||
-            volumeMultiplier < 0.0 || pitchMultiplier <= 0.0) {
+            volumeMultiplier < 0.0 || pitchMultiplier <= 0.0 || !IsFiniteVector(location)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         UWorld* world = worldHandle->Value.Get();
