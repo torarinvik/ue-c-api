@@ -484,9 +484,13 @@ namespace
 
     static bool IsFiniteTransform(const uec_transform& value)
     {
+        const double rotationLengthSquared = value.rotation.x * value.rotation.x +
+            value.rotation.y * value.rotation.y + value.rotation.z * value.rotation.z +
+            value.rotation.w * value.rotation.w;
         return IsFiniteVector(value.translation) && IsFiniteVector(value.scale) &&
             IsRepresentableFloat(value.rotation.x) && IsRepresentableFloat(value.rotation.y) &&
-            IsRepresentableFloat(value.rotation.z) && IsRepresentableFloat(value.rotation.w);
+            IsRepresentableFloat(value.rotation.z) && IsRepresentableFloat(value.rotation.w) &&
+            rotationLengthSquared > 0.0;
     }
 
     static bool WriteInputActionValue(const FInputActionValue& value,
