@@ -22,6 +22,8 @@ development; they do not imply a published or runtime-verified release.
 - The Unreal build gate now launches same-platform Development packages and
   requires the host C bootstrap, event-bridge, and latent-call smoke checks to
   complete; Shipping and cross-platform runs remain package-only.
+- `get_last_error` now preserves the diagnostic during a null-buffer size query,
+  so a single correctly sized retry returns the original message.
 - The portable C smoke consumer now verifies that an invalid handle produces a
   bounded readable diagnostic through `get_last_error`.
 - The portable gate links and executes the Unreal host's tracked C bootstrap

@@ -53,7 +53,6 @@ static uec_result UEC_CALL StubGetLastError(uec_context* context,
     }
     *requiredSize = strlen(g_last_error) + 1u;
     if (buffer == NULL || bufferSize < *requiredSize) {
-        StubSetLastError("Output buffer is null or too small");
         return UEC_RESULT_BUFFER_TOO_SMALL;
     }
     memcpy(buffer, g_last_error, *requiredSize);

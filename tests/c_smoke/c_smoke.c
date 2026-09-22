@@ -772,14 +772,14 @@ int main(void)
         api->release_context(context);
         return 2;
     }
-
-    char error[32];
+    char error[64];
     size_t required = 0;
-    result = api->get_last_error(context, error, sizeof(error), &required);
-    if (result != UEC_RESULT_OK || required == 0 || strcmp(error, "Invalid context handle") != 0)
-    {
-        api->release_context(context);
-        return 3;
+    result = api->get_last_error(context, NULL, 0, &required);
+    if (result != UEC_RESULT_BUFFER_TOO_SMALL || required == 0 || required > sizeof(error) ||
+        api->get_last_error(context, error, 1, &required) != UEC_RESULT_BUFFER_TOO_SMALL ||
+        api->get_last_error(context, error, sizeof(error), &required) != UEC_RESULT_OK ||
+        strcmp(error, "Invalid context handle") != 0) {
+        api->release_context(context); return 3;
     }
 
     if (api->struct_size < sizeof(uec_api) || api->abi_major != UEC_ABI_MAJOR)

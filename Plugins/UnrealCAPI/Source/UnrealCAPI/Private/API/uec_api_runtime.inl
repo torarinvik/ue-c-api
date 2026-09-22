@@ -43,7 +43,6 @@
         *requiredSize = GLastErrorRequiredSize;
         if (buffer == nullptr || bufferSize < GLastErrorRequiredSize)
         {
-            SetLastErrorMessage(TEXT("Output buffer is null or too small"));
             return UEC_RESULT_BUFFER_TOO_SMALL;
         }
         FMemory::Memcpy(buffer, GLastErrorMessage, GLastErrorRequiredSize);

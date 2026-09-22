@@ -28,9 +28,12 @@ object. `destroy_actor` destroys the actor and tombstones its actor handle.
 `get_last_error` requires a valid context and a non-null required-size output;
 it returns the calling thread's latest bounded diagnostic string using the same
 terminating-NUL buffer contract as other text APIs. Invalid or stale handles,
-invalid UTF-8 views, missing required-size outputs, and undersized output
-buffers update that diagnostic. Reading it does not transfer ownership or
-clear it; a later successful call may leave the previous diagnostic intact.
+invalid UTF-8 views, and missing required-size outputs update that diagnostic.
+A null or undersized destination returns `UEC_RESULT_BUFFER_TOO_SMALL` and the
+required size without replacing the diagnostic being read, so the usual
+size-query-and-retry sequence returns the original message. Reading it does not
+transfer ownership or clear it; a later successful call may leave the previous
+diagnostic intact.
 
 Output pointers are cleared as soon as they are available on entry for
 diagnostics, world, player, timer, streaming, actor, component, reflection,
