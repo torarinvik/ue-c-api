@@ -105,6 +105,8 @@ development; they do not imply a published or runtime-verified release.
   live handles, subscriptions, bindings, and queued requests.
 - External Unreal world cleanup now cancels world-owned work and invalidates
   world-bound bridge handles, including during PIE restart and non-bridge travel.
+- Collision and Enhanced Input bindings now install per-world actor-destruction
+  cleanup, removing external-owner bindings and tombstoning related handles.
 - Added an opt-in `tests/run_unreal_build.sh` gate for compiling, cooking,
   staging, and packaging the host project when `UE_ROOT` is available.
 - Actor and attached-audio creation clean up the newly created Unreal object if

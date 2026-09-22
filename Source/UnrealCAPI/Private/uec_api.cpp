@@ -72,6 +72,8 @@ namespace
     static bool InitializeHandle(FUECHandleHeader& header, EUECHandleKind kind);
     static void CancelActorSubscriptions(AActor* actor);
     static void CancelActorSubscriptionsForWorld(UWorld* world);
+    static void RemoveActorDestroyedHandler(UWorld* world);
+    static void RemoveAllActorDestroyedHandlers();
     static void HandleWorldCleanup(UWorld* world, bool sessionEnded, bool cleanupResources);
 
     static bool AllocateMonotonicId(uint64& nextId, uint64& outId)
@@ -397,7 +399,6 @@ namespace
         buffer[required - 1] = '\0';
         return UEC_RESULT_OK;
     }
-
     static bool IsValidStringView(uec_string_view value);
     static FString ToFString(uec_string_view value)
     {
@@ -455,14 +456,12 @@ namespace
         }
         return true;
     }
-
     static bool IsValidStringView(uec_string_view value)
     {
         return (value.data != nullptr || value.size == 0) &&
             value.size <= static_cast<size_t>(INT32_MAX) &&
             (value.size == 0 || IsValidUtf8(value));
     }
-
     static bool IsFiniteVector(const uec_vector3& value)
     {
         const double maximum = static_cast<double>(TNumericLimits<float>::Max());
@@ -755,6 +754,7 @@ public:
         CancelAllGameThreadRequests();
         CancelAllSaveGameRequests();
         CancelAllInputBindings();
+        RemoveAllActorDestroyedHandlers();
         ClearAllHandles();
         UE_LOG(LogTemp, Log, TEXT("%s runtime module stopped"), UTF8_TO_TCHAR(kModuleName));
     }

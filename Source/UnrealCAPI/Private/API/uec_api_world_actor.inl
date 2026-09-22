@@ -413,6 +413,7 @@
     static void HandleWorldCleanup(UWorld* world, bool, bool)
     {
         if (IsShuttingDown() || world == nullptr) return;
+        RemoveActorDestroyedHandler(world);
         CancelTimersFor(world);
         CancelTickSubscriptionsFor(world);
         InvalidateWorldHandles(world);

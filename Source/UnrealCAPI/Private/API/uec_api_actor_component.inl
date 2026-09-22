@@ -28,6 +28,71 @@
             ? componentClass : nullptr;
     }
 
+    static TMap<UWorld*, FDelegateHandle> GActorDestroyedHandlers;
+
+    static void InvalidateDestroyedActorHandles(AActor* actor)
+    {
+        if (actor == nullptr) return;
+        for (const FUECActor* candidate : GActors)
+        {
+            if (candidate == nullptr || candidate->Value.Get() != actor) continue;
+            auto* mutableCandidate = const_cast<FUECActor*>(candidate);
+            TombstoneHandle(mutableCandidate->Header);
+            mutableCandidate->Value.Reset();
+        }
+        for (const FUECSceneComponent* candidate : GComponents)
+        {
+            USceneComponent* component = candidate == nullptr ? nullptr : candidate->Value.Get();
+            if (component == nullptr || component->GetOwner() != actor) continue;
+            auto* mutableCandidate = const_cast<FUECSceneComponent*>(candidate);
+            TombstoneHandle(mutableCandidate->Header);
+            mutableCandidate->Value.Reset();
+        }
+        for (const FUECObject* candidate : GObjects)
+        {
+            UObject* object = candidate == nullptr ? nullptr : candidate->Value.Get();
+            UActorComponent* component = object == nullptr ? nullptr : Cast<UActorComponent>(object);
+            if (object != actor && (component == nullptr || component->GetOwner() != actor)) continue;
+            auto* mutableCandidate = const_cast<FUECObject*>(candidate);
+            TombstoneHandle(mutableCandidate->Header);
+            mutableCandidate->Value.Reset();
+            mutableCandidate->StrongValue.Reset();
+        }
+    }
+
+    static void HandleActorDestroyed(AActor* actor)
+    {
+        if (actor == nullptr) return;
+        CancelActorSubscriptions(actor);
+        InvalidateDestroyedActorHandles(actor);
+    }
+
+    static void EnsureActorDestroyedHandler(UWorld* world)
+    {
+        if (world == nullptr || GActorDestroyedHandlers.Contains(world)) return;
+        const FDelegateHandle handler = world->AddOnActorDestroyedHandler(
+            FOnActorDestroyed::FDelegate::CreateStatic(&HandleActorDestroyed));
+        if (handler.IsValid()) GActorDestroyedHandlers.Add(world, handler);
+    }
+
+    static void RemoveActorDestroyedHandler(UWorld* world)
+    {
+        if (world == nullptr) return;
+        FDelegateHandle* handler = GActorDestroyedHandlers.Find(world);
+        if (handler == nullptr) return;
+        world->RemoveOnActorDestroyedHandler(*handler);
+        GActorDestroyedHandlers.Remove(world);
+    }
+
+    static void RemoveAllActorDestroyedHandlers()
+    {
+        for (const TPair<UWorld*, FDelegateHandle>& pair : GActorDestroyedHandlers)
+        {
+            if (pair.Key != nullptr) pair.Key->RemoveOnActorDestroyedHandler(pair.Value);
+        }
+        GActorDestroyedHandlers.Empty();
+    }
+
     static void CancelActorSubscriptions(AActor* actor)
     {
         if (actor == nullptr) return;

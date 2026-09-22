@@ -103,6 +103,9 @@ after teardown has already drained the queue. Destroying an actor through the
 bridge also removes collision and Enhanced Input delegates attached to its
 components; an in-flight callback is allowed to return before its native
 delegate is removed.
+The bridge also watches owners of collision and Enhanced Input subscriptions,
+so external actor destruction removes those bindings and invalidates their
+actor/component handles.
 
 Level travel cancels timers, world-tick subscriptions, and actor-scoped
 collision/input subscriptions for the traveled world before submitting the

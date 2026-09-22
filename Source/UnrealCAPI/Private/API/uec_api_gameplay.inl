@@ -605,6 +605,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        EnsureActorDestroyedHandler(component->GetWorld());
 
         uint64 subscriptionId = 0;
         if (!AllocateMonotonicId(GNextCollisionSubscriptionId, subscriptionId)) {

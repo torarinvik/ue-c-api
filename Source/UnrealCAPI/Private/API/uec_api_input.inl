@@ -396,6 +396,7 @@
         if (actor == nullptr || action == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         UEnhancedInputComponent* inputComponent = Cast<UEnhancedInputComponent>(actor->InputComponent);
         if (inputComponent == nullptr) return UEC_RESULT_UNSUPPORTED;
+        EnsureActorDestroyedHandler(actor->GetWorld());
         if (GInputBindings.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
 
         auto binding = MakeShared<FUECInputBinding>();

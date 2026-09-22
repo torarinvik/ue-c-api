@@ -107,6 +107,11 @@ subscriptions owned by that world and immediately invalidates its world, actor,
 component, and world-bound object handles; global asset handles remain valid.
 Reacquire a world after travel and reacquire objects from the new world.
 
+Collision and Enhanced Input subscriptions also install one actor-destruction
+listener per owning world. If Unreal destroys an actor outside the bridge, its
+actor/component handles are tombstoned and those subscriptions are removed
+before the consumer can observe another callback.
+
 Player-flow helpers use actor handles for controllers, pawns, and view targets;
 the controller and target handles must belong to the same world, including the
 same PIE instance.
