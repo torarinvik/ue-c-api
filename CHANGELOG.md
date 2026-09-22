@@ -35,6 +35,7 @@ development; they do not imply a published or runtime-verified release.
 - Scene-component class-path output and inheritance checks.
 - Same-world scene-component attachment and detachment with transform rules.
 - Actor class-path output and inheritance checks.
+- C-only gameplay example covering spawn, transforms, timer callbacks, and cleanup.
 - Reflected actor property writes and reads for supported scalar, string, name,
   and text types.
 - C consumer source and public math-type layout assertions.

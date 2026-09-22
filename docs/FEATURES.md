@@ -32,6 +32,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Component type introspection | Runtime implemented / Unreal integration pending | Class-path output and inheritance checks for scene components |
 | Component attachment | Runtime implemented / Unreal integration pending | Same-world attach/detach with transform rules and optional sockets |
 | Actor type introspection | Runtime implemented / Unreal integration pending | Class-path output and inheritance checks for actor handles |
+| C gameplay example | Source and header verified | Spawn, timer-driven movement, callback, and cleanup flow |
 | Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, and game-thread callbacks |
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries and game-thread `OpenLevel` requests |
