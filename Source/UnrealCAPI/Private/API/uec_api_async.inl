@@ -115,7 +115,8 @@
         FStreamableDelegate completed = FStreamableDelegate::CreateLambda([weakRequest]()
         {
             TSharedPtr<FUECObjectLoadRequest> current = weakRequest.Pin();
-            if (!current.IsValid() || current->Cancelled || current->Callback == nullptr) return;
+            if (!current.IsValid() || current->Cancelled || current->Callback == nullptr ||
+                IsShuttingDown()) return;
             UObject* loadedObject = current->Path.ResolveObject();
             uec_object* objectHandle = nullptr;
             uec_result result = loadedObject == nullptr ? UEC_RESULT_INTERNAL_ERROR : UEC_RESULT_OK;
@@ -126,7 +127,11 @@
                 {
                     delete handle;
                     GObjectLoadRequests.Remove(current->Id);
-                    current->Callback(current->Id, UEC_RESULT_INTERNAL_ERROR, nullptr, current->UserData);
+                    if (!IsShuttingDown())
+                    {
+                        current->Callback(current->Id, UEC_RESULT_INTERNAL_ERROR, nullptr,
+                                          current->UserData);
+                    }
                     return;
                 }
                 handle->Value = loadedObject;
@@ -137,6 +142,16 @@
                 objectHandle = reinterpret_cast<uec_object*>(handle);
             }
             GObjectLoadRequests.Remove(current->Id);
+            if (IsShuttingDown())
+            {
+                if (FUECObject* handle = reinterpret_cast<FUECObject*>(objectHandle))
+                {
+                    TombstoneHandle(handle->Header);
+                    handle->Value.Reset();
+                    handle->StrongValue.Reset();
+                }
+                return;
+            }
             current->Callback(current->Id, result, objectHandle, current->UserData);
         });
         request->Handle = UAssetManager::Get().GetStreamableManager().RequestAsyncLoad(path, completed);
@@ -275,7 +290,7 @@
                 userDataToRun = request->UserData;
                 GGameThreadRequests.Remove(request->Id);
             }
-            callbackToRun(userDataToRun);
+            if (!IsShuttingDown()) callbackToRun(userDataToRun);
         });
         return UEC_RESULT_OK;
     }
@@ -336,13 +351,17 @@
                 [weakRequest](const FString&, const int32, bool success)
                 {
                     TSharedPtr<FUECSaveGameRequest> current = weakRequest.Pin();
-                    if (!current.IsValid() || current->Cancelled || current->Callback == nullptr) return;
+                    if (!current.IsValid() || current->Cancelled || current->Callback == nullptr ||
+                        IsShuttingDown()) return;
                     GSaveGameRequests.Remove(current->Id);
-                    current->Callback(current->Id,
-                                      success ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR,
-                                      nullptr,
-                                      success ? UEC_TRUE : UEC_FALSE,
-                                      current->UserData);
+                    if (!IsShuttingDown())
+                    {
+                        current->Callback(current->Id,
+                                          success ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR,
+                                          nullptr,
+                                          success ? UEC_TRUE : UEC_FALSE,
+                                          current->UserData);
+                    }
                 }));
         *outRequestId = request->Id;
         return UEC_RESULT_OK;
@@ -376,7 +395,8 @@
                 [weakRequest](const FString&, const int32, USaveGame* saveGame)
                 {
                     TSharedPtr<FUECSaveGameRequest> current = weakRequest.Pin();
-                    if (!current.IsValid() || current->Cancelled || current->Callback == nullptr) return;
+                    if (!current.IsValid() || current->Cancelled || current->Callback == nullptr ||
+                        IsShuttingDown()) return;
                     uec_object* objectHandle = nullptr;
                     if (saveGame != nullptr)
                     {
@@ -385,6 +405,16 @@
                     }
                     const bool success = saveGame != nullptr && objectHandle != nullptr;
                     GSaveGameRequests.Remove(current->Id);
+                    if (IsShuttingDown())
+                    {
+                        if (FUECObject* handle = reinterpret_cast<FUECObject*>(objectHandle))
+                        {
+                            TombstoneHandle(handle->Header);
+                            handle->Value.Reset();
+                            handle->StrongValue.Reset();
+                        }
+                        return;
+                    }
                     current->Callback(current->Id,
                                       success ? UEC_RESULT_OK : UEC_RESULT_NOT_INITIALIZED,
                                       objectHandle,
