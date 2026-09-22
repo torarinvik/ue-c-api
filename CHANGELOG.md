@@ -45,6 +45,7 @@ development; they do not imply a published or runtime-verified release.
 - Enhanced Input action-value injection for synthetic input and tests.
 - Reflected enum property reads, names, and integer writes.
 - Finite-value validation for physics, collision, and spatial-audio inputs.
+- Typed hard object-reference property reads and writes.
 - Soft object-path loaded-state queries.
 - C-only gameplay example covering spawn, transforms, timer callbacks, and cleanup.
 - Input validation for oversized UTF-8 views and non-finite transform values.

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.40`.
+The current runtime slice is intentionally small and versioned as ABI `1.41`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -105,6 +105,12 @@ argument and async completion ABI is available.
 returns a weak opaque handle. The handle does not keep the UObject alive; calls
 after Unreal unloads or destroys it return `UEC_RESULT_INVALID_HANDLE`. Object
 names and `object_is_a` checks are available on valid handles.
+
+`get_actor_property_object` and `get_object_property_object` read hard reflected
+object or class references and return releasable weak object handles. The
+corresponding setters accept a valid compatible object handle or `NULL` to
+clear the property. Soft references and container properties remain outside
+this typed adapter.
 
 `request_object_load` uses Unreal's streamable asset manager and invokes the C
 callback on the game thread. The callback owns any returned object handle and
