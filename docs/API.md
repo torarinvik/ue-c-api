@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.108`.
+The current runtime slice is intentionally small and versioned as ABI `1.109`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -173,6 +173,11 @@ Unreal imports the caller's text on the game thread.
 ABI minor 108 adds indexed array element text writers for actor and UObject
 properties. The array property must be writable; callers must re-query the
 count and avoid retaining indices after any mutation.
+
+ABI minor 109 adds actor and UObject map value text writers. Keys are never
+changed by these calls, and logical indices must be re-queried after mutation;
+set element mutation remains unsupported until Unreal rehash behavior is
+covered by the contract.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

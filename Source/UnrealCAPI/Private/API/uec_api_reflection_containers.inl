@@ -640,3 +640,63 @@
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return ImportArrayElementText(object, propertyName, index, value);
     }
+
+    static uec_result ImportMapValueText(UObject* owner,
+                                         uec_string_view propertyName,
+                                         uint32_t index,
+                                         uec_string_view value)
+    {
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0 ||
+            !IsValidStringView(value)) return UEC_RESULT_INVALID_ARGUMENT;
+        FMapProperty* mapProperty = CastField<FMapProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (mapProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritableProperty(mapProperty) || mapProperty->ValueProp == nullptr) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        FScriptMapHelper helper(mapProperty, mapProperty->ContainerPtrToValuePtr<void>(owner));
+        if (helper.Num() < 0 || static_cast<uint64>(helper.Num()) > UINT32_MAX) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (index >= static_cast<uint32_t>(helper.Num())) return UEC_RESULT_INVALID_ARGUMENT;
+        int32 slot = INDEX_NONE;
+        uint32_t current = 0;
+        for (int32 candidate = 0; candidate < helper.GetMaxIndex(); ++candidate)
+        {
+            if (!helper.IsValidIndex(candidate)) continue;
+            if (current++ == index) { slot = candidate; break; }
+        }
+        if (slot == INDEX_NONE) return UEC_RESULT_INTERNAL_ERROR;
+        const FString text = ToFString(value);
+        if (mapProperty->ValueProp->ImportText_InContainer(
+                *text, helper.GetValuePtr(slot), owner, PPF_None, GWarn) == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetActorPropertyMapValueText(uec_actor* rawActor,
+                                                     uec_string_view propertyName,
+                                                     uint32_t index,
+                                                     uec_string_view value)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ImportMapValueText(actor, propertyName, index, value);
+    }
+
+    uec_result UEC_CALL SetObjectPropertyMapValueText(uec_object* rawObject,
+                                                      uec_string_view propertyName,
+                                                      uint32_t index,
+                                                      uec_string_view value)
+    {
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ImportMapValueText(object, propertyName, index, value);
+    }

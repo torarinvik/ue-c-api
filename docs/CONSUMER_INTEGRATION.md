@@ -110,6 +110,8 @@ ABI 107 adds matching nested-struct field writes, which reject read-only outer
 structs and fields before importing text.
 ABI 108 adds indexed reflected array element writes. Re-query counts after each
 mutation and treat imported text as Unreal-versioned property syntax.
+ABI 109 adds map value writes without changing keys. Set mutation remains
+unsupported; re-query map counts after writes before using later indices.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

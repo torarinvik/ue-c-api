@@ -249,6 +249,8 @@ development; they do not imply a published or runtime-verified release.
   outer and field access checks.
 - ABI minor 108 adds text writes for indexed reflected array elements on actor
   and UObject properties.
+- ABI minor 109 adds actor and UObject map value text writes while preserving
+  map keys; set mutation remains unsupported until rehash semantics are covered.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and
