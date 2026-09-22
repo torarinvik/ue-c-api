@@ -108,6 +108,8 @@ ABI 106 adds one-level nested-struct field text reads. Re-enumerate or retry
 after hot reload and treat the serialized field text as Unreal-versioned data.
 ABI 107 adds matching nested-struct field writes, which reject read-only outer
 structs and fields before importing text.
+ABI 108 adds indexed reflected array element writes. Re-query counts after each
+mutation and treat imported text as Unreal-versioned property syntax.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

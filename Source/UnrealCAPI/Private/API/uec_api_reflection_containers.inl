@@ -588,3 +588,55 @@
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return ImportStructFieldText(object, propertyName, fieldName, value);
     }
+
+    static uec_result ImportArrayElementText(UObject* owner,
+                                             uec_string_view propertyName,
+                                             uint32_t index,
+                                             uec_string_view value)
+    {
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0 ||
+            !IsValidStringView(value)) return UEC_RESULT_INVALID_ARGUMENT;
+        FArrayProperty* arrayProperty = CastField<FArrayProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (arrayProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritableProperty(arrayProperty) || arrayProperty->Inner == nullptr) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        FScriptArrayHelper helper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(owner));
+        if (helper.Num() < 0 || static_cast<uint64>(helper.Num()) > UINT32_MAX) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (index >= static_cast<uint32_t>(helper.Num())) return UEC_RESULT_INVALID_ARGUMENT;
+        const FString text = ToFString(value);
+        if (arrayProperty->Inner->ImportText_InContainer(
+                *text, helper.GetRawPtr(static_cast<int32>(index)), owner, PPF_None, GWarn) == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetActorPropertyArrayElementText(uec_actor* rawActor,
+                                                         uec_string_view propertyName,
+                                                         uint32_t index,
+                                                         uec_string_view value)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ImportArrayElementText(actor, propertyName, index, value);
+    }
+
+    uec_result UEC_CALL SetObjectPropertyArrayElementText(uec_object* rawObject,
+                                                          uec_string_view propertyName,
+                                                          uint32_t index,
+                                                          uec_string_view value)
+    {
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ImportArrayElementText(object, propertyName, index, value);
+    }

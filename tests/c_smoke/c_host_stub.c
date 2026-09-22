@@ -625,6 +625,30 @@ static uec_result UEC_CALL StubSetObjectPropertyStructFieldText(uec_object* obje
     return UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubSetActorPropertyArrayElementText(uec_actor* actor,
+                                                                uec_string_view propertyName,
+                                                                uint32_t index,
+                                                                uec_string_view value)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    (void)value;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetObjectPropertyArrayElementText(uec_object* object,
+                                                                 uec_string_view propertyName,
+                                                                 uint32_t index,
+                                                                 uec_string_view value)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    (void)value;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -691,6 +715,8 @@ static const uec_api g_api = {
     .get_object_property_struct_field_text = &StubGetObjectPropertyStructFieldText,
     .set_actor_property_struct_field_text = &StubSetActorPropertyStructFieldText,
     .set_object_property_struct_field_text = &StubSetObjectPropertyStructFieldText,
+    .set_actor_property_array_element_text = &StubSetActorPropertyArrayElementText,
+    .set_object_property_array_element_text = &StubSetObjectPropertyArrayElementText,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
