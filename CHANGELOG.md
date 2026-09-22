@@ -166,6 +166,8 @@ development; they do not imply a published or runtime-verified release.
   classes, and objects consistently.
 - World, player, timer, and streaming outputs now clear before validation,
   including required sizes for bounded world names and streaming package names.
+- Actor, component, and object handle constructors now recheck the shutdown gate
+  while registering, preventing new live handles from appearing during teardown.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

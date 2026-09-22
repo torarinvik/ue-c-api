@@ -349,6 +349,11 @@
         handle->Value = actor;
         {
             FScopeLock lock(&GHandleMutex);
+            if (GShuttingDown)
+            {
+                delete handle;
+                return nullptr;
+            }
             GActors.Add(handle);
         }
         return handle;
@@ -366,6 +371,11 @@
         handle->Value = object;
         {
             FScopeLock lock(&GHandleMutex);
+            if (GShuttingDown)
+            {
+                delete handle;
+                return nullptr;
+            }
             GObjects.Add(handle);
         }
         return handle;

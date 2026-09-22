@@ -10,6 +10,11 @@
         handle->Value = component;
         {
             FScopeLock lock(&GHandleMutex);
+            if (GShuttingDown)
+            {
+                delete handle;
+                return nullptr;
+            }
             GComponents.Add(handle);
         }
         return handle;
