@@ -113,6 +113,30 @@
             ? UEC_RESULT_OK : UEC_RESULT_UNSUPPORTED;
     }
 
+    uec_result UEC_CALL GetControllerEnhancedInputSubsystem(
+        uec_actor* rawController,
+        uec_object** outSubsystem)
+    {
+        if (outSubsystem != nullptr) *outSubsystem = nullptr;
+        if (outSubsystem == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        ULocalPlayer* localPlayer = controller->GetLocalPlayer();
+        if (localPlayer == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        UEnhancedInputLocalPlayerSubsystem* subsystem =
+            localPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+        if (subsystem == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        FUECObject* handle = MakeObjectHandle(subsystem);
+        if (handle == nullptr) {
+            return IsShuttingDown() ? UEC_RESULT_SHUTTING_DOWN : UEC_RESULT_INTERNAL_ERROR;
+        }
+        *outSubsystem = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetActorVelocity(uec_actor* rawActor, uec_vector3* outVelocity)
     {
         if (outVelocity != nullptr) *outVelocity = {};

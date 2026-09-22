@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.135`.
+The current runtime slice is intentionally small and versioned as ABI `1.136`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -713,6 +713,11 @@ from inside a callback defers native binding removal until that callback
 returns. Select one of Started, Ongoing, Triggered, Canceled, or Completed for
 each binding using `uec_input_trigger_event`. At most 1024 bindings can be
 active.
+`get_controller_enhanced_input_subsystem` returns a weak object handle to the
+local player's `UEnhancedInputLocalPlayerSubsystem`; it returns
+`UEC_RESULT_NOT_INITIALIZED` when the controller is not associated with a local
+player or the subsystem is unavailable. Release the result with `release_object`
+and retain it explicitly if it must outlive its weak UObject handle.
 
 `get_class_function_count` and `get_class_function_at` enumerate reflected
 functions, report non-return parameter counts, and identify return values and

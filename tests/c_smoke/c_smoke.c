@@ -78,6 +78,7 @@ int main(void)
         api->invoke_actor_function_latent == NULL || api->cancel_actor_function_latent == NULL ||
         api->save_versioned_application_data == NULL ||
         api->load_versioned_application_data == NULL ||
+        api->get_controller_enhanced_input_subsystem == NULL ||
         api->get_or_create_actor_event_bridge == NULL || api->destroy_actor_event_bridge == NULL ||
         api->bind_actor_event_bridge == NULL || api->unbind_actor_event_bridge == NULL ||
         api->emit_actor_event_bridge == NULL ||
@@ -111,6 +112,14 @@ int main(void)
     {
         api->release_context(context);
         return 56;
+    }
+    char input_subsystem_sentinel;
+    uec_object* input_subsystem = (uec_object*)&input_subsystem_sentinel;
+    result = api->get_controller_enhanced_input_subsystem(NULL, &input_subsystem);
+    if (result != UEC_RESULT_INVALID_HANDLE || input_subsystem != NULL)
+    {
+        api->release_context(context);
+        return 61;
     }
 
     const uint8_t expected_payload[] = {0x55u, 0x45u, 0x43u, 0x01u};

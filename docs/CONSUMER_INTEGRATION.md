@@ -244,6 +244,11 @@ schema interpretation and migration to the consumer. Both calls run on the
 game thread. A load with a short or null zero-capacity buffer returns
 `UEC_RESULT_BUFFER_TOO_SMALL`, sets the required size and stored version, and
 copies no partial payload. Retry with a sufficiently sized buffer.
+ABI minor 136 adds `get_controller_enhanced_input_subsystem`, which returns a
+weak object handle to the controller's `UEnhancedInputLocalPlayerSubsystem`.
+Check `UEC_CAPABILITY_INPUT`; release the handle with `release_object` and call
+it on the game thread. Controllers without an associated local player return
+`UEC_RESULT_NOT_INITIALIZED`.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

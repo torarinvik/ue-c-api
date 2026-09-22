@@ -9,6 +9,7 @@
 #include "Engine/StreamableManager.h"
 #include "Engine/World.h"
 #include "Engine/LevelStreaming.h"
+#include "Engine/LocalPlayer.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
@@ -372,7 +373,8 @@ namespace
         &GetOrCreateActorEventBridge, &DestroyActorEventBridge, &BindActorEventBridge,
         &UnbindActorEventBridge, &EmitActorEventBridge,
         &InvokeActorFunctionLatent, &CancelActorFunctionLatent,
-        &SaveVersionedApplicationData, &LoadVersionedApplicationData
+        &SaveVersionedApplicationData, &LoadVersionedApplicationData,
+        &GetControllerEnhancedInputSubsystem
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

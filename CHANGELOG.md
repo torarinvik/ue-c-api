@@ -321,6 +321,8 @@ development; they do not imply a published or runtime-verified release.
   opaque application data stored in a bridge-owned `USaveGame` class. Payloads
   are bounded to 16 MiB, and short load buffers return the required size without
   copying a partial result.
+- ABI minor 136 adds a controller-scoped weak handle for the associated
+  `UEnhancedInputLocalPlayerSubsystem`.
 - Mixed and latent actor-function calls reject world handles and world-bound
   object handles from a different target-actor world; callers pass world
   context handles explicitly without depending on editor-only metadata.
@@ -336,7 +338,7 @@ development; they do not imply a published or runtime-verified release.
   when another world is available, stale actor and bridge handle rejection,
   and pending-request drain counts; the portable C gate verifies the appended
   entries.
-- The portable old-consumer fixture now requests ABI 1.134 from the ABI 1.135
+- The portable old-consumer fixture now requests ABI 1.135 from the ABI 1.136
   bridge and exercises only the stable table prefix.
 - The C gameplay example now binds the event component, emits a validated
   payload on each movement tick, receives it synchronously, and cleans up the
