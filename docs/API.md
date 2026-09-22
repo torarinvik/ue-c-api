@@ -185,14 +185,17 @@ declared value or valid bitfield combination. Float properties reject finite
 doubles outside Unreal's `float` range before conversion.
 
 `invoke_actor_function` supports only reflected actor functions with no
-parameters, no return or out values, and no latent flag. The appended
+parameters, no return or out values, and no latent or network flag. The bridge
+also rejects authority-only reflected functions when their actor belongs to a
+client world. The appended
 `invoke_actor_function_text` path accepts positional arguments in Unreal's
 property text syntax and returns the function's return value, or its first out
 parameter, through a bounded UTF-8 buffer. Pure out parameters are initialized
 by Unreal before the call and do not consume an argument. It rejects latent and
-network functions; text syntax is engine-version-specific and the call remains
-game-thread-only. Multiple out parameters beyond the first are executed but
-are not returned by this convenience surface.
+network functions and applies the same authority-only client-world guard;
+text syntax is engine-version-specific and the call remains game-thread-only.
+Multiple out parameters beyond the first are executed but are not returned by
+this convenience surface.
 
 `subscribe_world_tick` registers a per-frame callback on the core Unreal
 ticker and associates it with a world handle. The callback runs on the game

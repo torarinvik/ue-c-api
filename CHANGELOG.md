@@ -157,6 +157,8 @@ development; they do not imply a published or runtime-verified release.
   caller's variables.
 - Diagnostic required-size outputs now clear before context validation, keeping
   invalid-context failures deterministic with the other bounded-output APIs.
+- Reflected actor invocation now rejects network functions and authority-only
+  functions on client worlds before entering `ProcessEvent`.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

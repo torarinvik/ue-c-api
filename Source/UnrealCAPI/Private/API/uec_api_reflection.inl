@@ -24,13 +24,11 @@
         *outClass = reinterpret_cast<uec_class*>(handle);
         return UEC_RESULT_OK;
     }
-
     static bool IsValidEnumValue(const FEnumProperty* property, int64 value)
     {
         const UEnum* enumeration = property == nullptr ? nullptr : property->GetEnum();
         return enumeration != nullptr && enumeration->IsValidEnumValueOrBitfield(value);
     }
-
     uec_result UEC_CALL IsClassPathLoaded(uec_context* rawContext,
                                           uec_string_view classPath,
                                           uec_bool* outLoaded)
@@ -561,7 +559,9 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
         if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net))
+        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net) ||
+            (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly) &&
+             actor->GetWorld() != nullptr && actor->GetWorld()->GetNetMode() == NM_Client))
         {
             return UEC_RESULT_UNSUPPORTED;
         }

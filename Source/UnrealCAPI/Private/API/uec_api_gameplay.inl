@@ -200,7 +200,12 @@
         if (!IsValidStringView(functionName) || functionName.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
         UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
         if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (function->HasAnyFunctionFlags(FUNC_Latent)) return UEC_RESULT_UNSUPPORTED;
+        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net) ||
+            (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly) &&
+             actor->GetWorld() != nullptr && actor->GetWorld()->GetNetMode() == NM_Client))
+        {
+            return UEC_RESULT_UNSUPPORTED;
+        }
         if (!function->HasAnyFunctionFlags(FUNC_BlueprintCallable | FUNC_Native | FUNC_BlueprintEvent))
         {
             return UEC_RESULT_UNSUPPORTED;
