@@ -373,17 +373,20 @@ UEC_API uec_result UEC_CALL uec_get_api(uint32_t requestedMajor,
 {
     if (outApi == nullptr || outContext == nullptr)
     {
+        SetLastErrorMessage(TEXT("API and context outputs are required"));
         return UEC_RESULT_INVALID_ARGUMENT;
     }
     *outApi = nullptr;
     *outContext = nullptr;
     if (requestedMajor != UEC_ABI_MAJOR || requestedMinor > UEC_ABI_MINOR)
     {
+        SetLastErrorMessage(TEXT("Requested ABI version is unsupported"));
         return UEC_RESULT_UNSUPPORTED;
     }
     auto* context = new FUECContext();
     if (!InitializeHandle(context->Header, EUECHandleKind::Context))
     {
+        SetLastErrorMessage(TEXT("Handle generation allocation failed"));
         delete context;
         return UEC_RESULT_INTERNAL_ERROR;
     }
@@ -391,6 +394,7 @@ UEC_API uec_result UEC_CALL uec_get_api(uint32_t requestedMajor,
         FScopeLock lock(&GHandleMutex);
         if (GShuttingDown)
         {
+            SetLastErrorMessage(TEXT("The Unreal C API is shutting down"));
             delete context;
             return UEC_RESULT_SHUTTING_DOWN;
         }

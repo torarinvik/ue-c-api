@@ -19,6 +19,36 @@
     constexpr int32 MaxQueuedObjectLoads = 1024;
     constexpr int32 MaxQueuedGameThreadRequests = 1024;
     constexpr int32 MaxSubscriptions = 1024;
+    static constexpr size_t MaxLastErrorBytes = 512;
+    static thread_local char GLastErrorMessage[MaxLastErrorBytes] = "No error";
+    static thread_local size_t GLastErrorRequiredSize = sizeof("No error");
+    static void SetLastErrorMessage(const TCHAR* message)
+    {
+        const TCHAR* source = message == nullptr ? TEXT("Unknown error") : message;
+        FTCHARToUTF8 utf8(source);
+        size_t length = static_cast<size_t>(utf8.Length());
+        if (length >= MaxLastErrorBytes) length = MaxLastErrorBytes - 1;
+        FMemory::Memcpy(GLastErrorMessage, utf8.Get(), length);
+        GLastErrorMessage[length] = '\0';
+        GLastErrorRequiredSize = length + 1;
+    }
+    static uec_result CopyLastErrorMessage(char* buffer, size_t bufferSize,
+                                           size_t* requiredSize)
+    {
+        if (requiredSize == nullptr)
+        {
+            SetLastErrorMessage(TEXT("Required-size output is null"));
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        *requiredSize = GLastErrorRequiredSize;
+        if (buffer == nullptr || bufferSize < GLastErrorRequiredSize)
+        {
+            SetLastErrorMessage(TEXT("Output buffer is null or too small"));
+            return UEC_RESULT_BUFFER_TOO_SMALL;
+        }
+        FMemory::Memcpy(buffer, GLastErrorMessage, GLastErrorRequiredSize);
+        return UEC_RESULT_OK;
+    }
     static uint64 AllocateHandleGeneration()
     {
         FScopeLock lock(&GHandleMutex);
@@ -48,45 +78,57 @@
     {
         const auto* context = reinterpret_cast<const FUECContext*>(rawContext);
         FScopeLock lock(&GHandleMutex);
-        return context != nullptr && !GShuttingDown && GContexts.Contains(context) &&
+        const bool valid = context != nullptr && !GShuttingDown && GContexts.Contains(context) &&
             context->Header.Kind == EUECHandleKind::Context &&
             context->Header.Generation != 0 && !context->Header.bReleased;
+        if (!valid) SetLastErrorMessage(TEXT("Invalid or stale context handle"));
+        return valid;
     }
     static bool IsValidWorld(const FUECWorld* world)
     {
         FScopeLock lock(&GHandleMutex);
-        return world != nullptr && !GShuttingDown && GWorlds.Contains(world) &&
+        const bool valid = world != nullptr && !GShuttingDown && GWorlds.Contains(world) &&
             world->Header.Kind == EUECHandleKind::World && world->Header.Generation != 0 &&
             !world->Header.bReleased && world->Value.IsValid();
+        if (!valid) SetLastErrorMessage(TEXT("Invalid or stale world handle"));
+        return valid;
     }
     static bool IsValidActor(const FUECActor* actor)
     {
         FScopeLock lock(&GHandleMutex);
-        return actor != nullptr && !GShuttingDown && GActors.Contains(actor) &&
+        const bool valid = actor != nullptr && !GShuttingDown && GActors.Contains(actor) &&
             actor->Header.Kind == EUECHandleKind::Actor && actor->Header.Generation != 0 &&
             !actor->Header.bReleased && actor->Value.IsValid();
+        if (!valid) SetLastErrorMessage(TEXT("Invalid or stale actor handle"));
+        return valid;
     }
     static bool IsValidComponent(const FUECSceneComponent* component)
     {
         FScopeLock lock(&GHandleMutex);
-        return component != nullptr && !GShuttingDown && GComponents.Contains(component) &&
+        const bool valid = component != nullptr && !GShuttingDown && GComponents.Contains(component) &&
             component->Header.Kind == EUECHandleKind::SceneComponent &&
             component->Header.Generation != 0 && !component->Header.bReleased &&
             component->Value.IsValid();
+        if (!valid) SetLastErrorMessage(TEXT("Invalid or stale scene-component handle"));
+        return valid;
     }
     static bool IsValidClass(const FUECClass* klass)
     {
         FScopeLock lock(&GHandleMutex);
-        return klass != nullptr && !GShuttingDown && GClasses.Contains(klass) &&
+        const bool valid = klass != nullptr && !GShuttingDown && GClasses.Contains(klass) &&
             klass->Header.Kind == EUECHandleKind::Class && klass->Header.Generation != 0 &&
             !klass->Header.bReleased && klass->Value.IsValid();
+        if (!valid) SetLastErrorMessage(TEXT("Invalid or stale class handle"));
+        return valid;
     }
     static bool IsValidObject(const FUECObject* object)
     {
         FScopeLock lock(&GHandleMutex);
-        return object != nullptr && !GShuttingDown && GObjects.Contains(object) &&
+        const bool valid = object != nullptr && !GShuttingDown && GObjects.Contains(object) &&
             object->Header.Kind == EUECHandleKind::Object && object->Header.Generation != 0 &&
             !object->Header.bReleased && object->Value.IsValid();
+        if (!valid) SetLastErrorMessage(TEXT("Invalid or stale object handle"));
+        return valid;
     }
     static uec_property_kind GetPropertyKind(const FProperty* property)
     {
@@ -164,11 +206,19 @@
     static uec_result CopyFStringToUtf8(const FString& value, char* buffer,
                                         size_t bufferSize, size_t* requiredSize)
     {
-        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (requiredSize == nullptr)
+        {
+            SetLastErrorMessage(TEXT("Required-size output is null"));
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         FTCHARToUTF8 utf8(*value);
         const size_t required = static_cast<size_t>(utf8.Length()) + 1;
         *requiredSize = required;
-        if (buffer == nullptr || bufferSize < required) return UEC_RESULT_BUFFER_TOO_SMALL;
+        if (buffer == nullptr || bufferSize < required)
+        {
+            SetLastErrorMessage(TEXT("Output buffer is null or too small"));
+            return UEC_RESULT_BUFFER_TOO_SMALL;
+        }
         FMemory::Memcpy(buffer, utf8.Get(), required - 1);
         buffer[required - 1] = '\0';
         return UEC_RESULT_OK;
@@ -231,9 +281,11 @@
     }
     static bool IsValidStringView(uec_string_view value)
     {
-        return (value.data != nullptr || value.size == 0) &&
+        const bool valid = (value.data != nullptr || value.size == 0) &&
             value.size <= static_cast<size_t>(INT32_MAX) &&
             (value.size == 0 || IsValidUtf8(value));
+        if (!valid) SetLastErrorMessage(TEXT("Invalid UTF-8 string view"));
+        return valid;
     }
     static bool IsFiniteVector(const uec_vector3& value)
     {

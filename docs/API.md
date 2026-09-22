@@ -25,8 +25,11 @@ Releasing a handle releases the bridge handle; it does not destroy an Unreal
 object. `destroy_actor` destroys the actor and tombstones its actor handle.
 
 `get_last_error` requires a valid context and a non-null required-size output;
-it returns the bounded diagnostic string using the same terminating-NUL buffer
-contract as other text APIs.
+it returns the calling thread's latest bounded diagnostic string using the same
+terminating-NUL buffer contract as other text APIs. Invalid or stale handles,
+invalid UTF-8 views, missing required-size outputs, and undersized output
+buffers update that diagnostic. Reading it does not transfer ownership or
+clear it; a later successful call may leave the previous diagnostic intact.
 
 Output pointers are cleared as soon as they are available on entry for
 diagnostics, world, player, timer, streaming, actor, component, reflection,

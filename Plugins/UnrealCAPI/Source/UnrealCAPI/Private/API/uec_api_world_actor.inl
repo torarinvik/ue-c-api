@@ -22,18 +22,14 @@
                                      size_t bufferSize,
                                      size_t* requiredSize)
     {
-        static constexpr char Message[] = "No error";
-        const size_t required = sizeof(Message); // includes the NUL terminator
         if (requiredSize != nullptr) *requiredSize = 0;
-        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
-        *requiredSize = required;
-        if (buffer == nullptr || bufferSize < required)
+        if (requiredSize == nullptr)
         {
-            return UEC_RESULT_BUFFER_TOO_SMALL;
+            SetLastErrorMessage(TEXT("Required-size output is null"));
+            return UEC_RESULT_INVALID_ARGUMENT;
         }
-        FMemory::Memcpy(buffer, Message, required);
-        return UEC_RESULT_OK;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        return CopyLastErrorMessage(buffer, bufferSize, requiredSize);
     }
 
     uec_result UEC_CALL Log(uec_context* rawContext, uec_string_view message)
