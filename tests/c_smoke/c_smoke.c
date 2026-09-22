@@ -508,6 +508,17 @@ int main(void)
         return 51;
     }
 
+    uec_property_kind container_key_kind = UEC_PROPERTY_STRING;
+    uec_property_kind container_value_kind = UEC_PROPERTY_STRING;
+    if (api->get_class_property_container_kinds(
+            NULL, 0u, &container_key_kind, &container_value_kind) !=
+            UEC_RESULT_UNSUPPORTED || container_key_kind != UEC_PROPERTY_UNKNOWN ||
+        container_value_kind != UEC_PROPERTY_UNKNOWN)
+    {
+        api->release_context(context);
+        return 52;
+    }
+
     const char message[] = "C ABI smoke test";
     const uec_string_view message_view = {message, sizeof(message) - 1u};
     result = api->log(context, message_view);

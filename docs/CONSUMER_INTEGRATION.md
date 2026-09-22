@@ -141,6 +141,10 @@ ABI 120 adds typed hard class-property reads and writes through `uec_class*`
 handles; the reflected `MetaClass` constraint is checked before mutation.
 ABI 121 adds the reflected `UStruct` path for struct properties, allowing a
 consumer to identify the field schema it is about to enumerate.
+ABI 122 adds reflected container kind metadata. Arrays and sets report their
+element kind in `out_value_kind`; maps report both key and value kinds. The
+unused output for arrays and sets is `UEC_PROPERTY_UNKNOWN`, and the call
+returns `UEC_RESULT_UNSUPPORTED` for non-container properties.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

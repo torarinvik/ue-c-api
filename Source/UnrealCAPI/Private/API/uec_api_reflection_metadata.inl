@@ -548,3 +548,42 @@
         *outKind = UEC_PROPERTY_STRUCT;
         return CopyFStringToUtf8(property->Struct->GetPathName(), buffer, bufferSize, requiredSize);
     }
+
+    uec_result UEC_CALL GetClassPropertyContainerKinds(uec_class* rawClass,
+                                                       uint32_t propertyIndex,
+                                                       uec_property_kind* outKeyKind,
+                                                       uec_property_kind* outValueKind)
+    {
+        if (outKeyKind != nullptr) *outKeyKind = UEC_PROPERTY_UNKNOWN;
+        if (outValueKind != nullptr) *outValueKind = UEC_PROPERTY_UNKNOWN;
+        if (outKeyKind == nullptr || outValueKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = handle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const FProperty* classProperty = GetClassPropertyAtIndex(klass, propertyIndex);
+        if (classProperty == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (const FArrayProperty* property = CastField<FArrayProperty>(classProperty))
+        {
+            if (property->Inner == nullptr) return UEC_RESULT_UNSUPPORTED;
+            *outValueKind = GetPropertyKind(property->Inner);
+            return UEC_RESULT_OK;
+        }
+        if (const FMapProperty* property = CastField<FMapProperty>(classProperty))
+        {
+            if (property->KeyProp == nullptr || property->ValueProp == nullptr) {
+                return UEC_RESULT_UNSUPPORTED;
+            }
+            *outKeyKind = GetPropertyKind(property->KeyProp);
+            *outValueKind = GetPropertyKind(property->ValueProp);
+            return UEC_RESULT_OK;
+        }
+        if (const FSetProperty* property = CastField<FSetProperty>(classProperty))
+        {
+            if (property->ElementProp == nullptr) return UEC_RESULT_UNSUPPORTED;
+            *outValueKind = GetPropertyKind(property->ElementProp);
+            return UEC_RESULT_OK;
+        }
+        return UEC_RESULT_UNSUPPORTED;
+    }

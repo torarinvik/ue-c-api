@@ -20,6 +20,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | World tick subscriptions | Runtime implemented / Unreal integration pending | Per-frame game-thread callbacks scoped to a world with unsubscribe tokens, teardown cleanup, and a 1024-entry bound |
 | Class/property metadata | Runtime implemented / Unreal integration pending | Class lookup, inheritance, names, and broad reflected property kinds |
 | Reflected scalar/string reads and writes | Runtime implemented / Unreal integration pending | Typed bool, integer, enum, and floating-point values plus string, name, text, hard object references, and Unreal text serialization for supported structs and containers |
+| Reflected container schema metadata | Runtime implemented / Unreal integration pending | ABI 122 reports array/set element kinds and map key/value kinds; non-container properties return unsupported |
 | Collision line traces | Runtime implemented / Unreal integration pending | Game-thread single traces with stable channel mapping and ignored-actor filtering |
 | Collision sweeps and overlaps | Runtime implemented / Unreal integration pending | World-aligned sphere, box, and capsule queries with ignored-actor filters and bounded unique-actor results |
 | Collision event callbacks | Runtime implemented / Unreal integration pending | One-shot primitive-component hit callbacks with unsubscribe tokens and shutdown cleanup |
