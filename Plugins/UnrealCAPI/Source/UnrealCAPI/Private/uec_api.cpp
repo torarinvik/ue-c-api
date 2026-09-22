@@ -236,6 +236,7 @@ namespace
     #include "API/uec_api_runtime.inl"
     #include "API/uec_api_world_actor.inl"
     #include "API/uec_api_actor_component.inl"
+    #include "API/uec_api_collision.inl"
     #include "API/uec_api_reflection.inl"
     #include "API/uec_api_reflection_containers.inl"
     #include "API/uec_api_reflection_map_set.inl"

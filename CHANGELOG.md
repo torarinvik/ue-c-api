@@ -321,6 +321,9 @@ development; they do not imply a published or runtime-verified release.
 - Private adapters are split into actor/component, presentation, gameplay,
   input, reflection, async, and world units with an enforced 400–800 line
   source budget.
+- Collision queries and primitive collision settings now live in a dedicated
+  adapter unit, while gameplay retains audio, configuration, and subscriptions;
+  both units remain within the enforced 400–800 line source budget.
 
 ### Changed
 
