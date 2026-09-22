@@ -1,0 +1,23 @@
+/IMPLEMENTATION_PLAN.md
+
+# Unreal Engine generated output
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+.vs/
+.idea/
+*.sln
+*.suo
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
+
+# Local engine/project configuration
+Config/DefaultEditorPerProjectUserSettings.ini
+*.user
+*.userprefs
+
+# Build artifacts from the standalone C smoke consumer
+tests/c_smoke/c_smoke

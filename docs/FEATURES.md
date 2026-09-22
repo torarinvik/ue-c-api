@@ -1,0 +1,27 @@
+# Feature matrix
+
+This matrix describes the current implementation against the roadmap. “Runtime
+implemented” means code exists in the plugin; “verified” is limited to checks
+that can run without the Unreal Engine 5.8 toolchain in this repository.
+
+| Area | Status | Current boundary |
+| --- | --- | --- |
+| ABI bootstrap and version negotiation | Runtime implemented / header verified | `uec_get_api`, versioned function table, capability bits |
+| C and C++ public-header compatibility | Verified | C11 and C++17 syntax checks pass |
+| Diagnostics and logging | Runtime implemented | Bounded `get_last_error`; game log output |
+| Context/world/actor handles | Runtime implemented / Unreal integration pending | Typed active registries and weak UObject references |
+| World selection | Runtime implemented / Unreal integration pending | Indexed active Game/PIE enumeration, world kind, and first-world convenience |
+| Actor spawn and destruction | Runtime implemented / Unreal integration pending | Loadable actor class paths; game thread only |
+| Actor identity and tags | Runtime implemented / Unreal integration pending | UTF-8 name output and tag lookup; game thread only |
+| Actor transforms | Runtime implemented / Unreal integration pending | Double-precision C POD transform; game thread only |
+| Scene components | Runtime implemented / Unreal integration pending | Root-component handle, world transforms, visibility, activation |
+| Timers | Runtime implemented / Unreal integration pending | One-shot and looping game-thread callbacks with cancellation |
+| Class/property metadata | Runtime implemented / Unreal integration pending | Class lookup, inheritance, names, and broad reflected property kinds |
+| Reflection and Blueprint calls | Planned | Property values and function invocation remain unsupported |
+| Input, collision, movement, camera, UI, audio, save data | Planned | No public functions yet |
+| Async loading, travel, streaming | Planned | No public functions yet |
+| Multiplayer and replication | Planned | No public functions yet |
+| Editor tooling and generated bindings | Planned | Separate editor module not yet created |
+
+The Unreal-dependent statuses require an actual UE 5.8 build, PIE run, and
+packaged Development run before they can become verified release features.
