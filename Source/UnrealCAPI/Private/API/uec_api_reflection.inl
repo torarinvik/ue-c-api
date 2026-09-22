@@ -257,7 +257,8 @@
         {
             if (numericProperty->IsFloatingPoint())
             {
-                if (value->kind != UEC_PROPERTY_FLOAT && value->kind != UEC_PROPERTY_DOUBLE) return UEC_RESULT_INVALID_ARGUMENT;
+                if ((value->kind != UEC_PROPERTY_FLOAT && value->kind != UEC_PROPERTY_DOUBLE) ||
+                    !FMath::IsFinite(value->real_value)) return UEC_RESULT_INVALID_ARGUMENT;
                 numericProperty->SetFloatingPointPropertyValue(
                     numericProperty->ContainerPtrToValuePtr<void>(actor), value->real_value);
                 return UEC_RESULT_OK;
@@ -446,7 +447,8 @@
         {
             if (numericProperty->IsFloatingPoint())
             {
-                if (value->kind != UEC_PROPERTY_FLOAT && value->kind != UEC_PROPERTY_DOUBLE) return UEC_RESULT_INVALID_ARGUMENT;
+                if ((value->kind != UEC_PROPERTY_FLOAT && value->kind != UEC_PROPERTY_DOUBLE) ||
+                    !FMath::IsFinite(value->real_value)) return UEC_RESULT_INVALID_ARGUMENT;
                 numericProperty->SetFloatingPointPropertyValue(
                     numericProperty->ContainerPtrToValuePtr<void>(object), value->real_value);
                 return UEC_RESULT_OK;

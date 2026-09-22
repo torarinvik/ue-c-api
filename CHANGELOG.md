@@ -117,6 +117,8 @@ development; they do not imply a published or runtime-verified release.
   float-backed timer rate.
 - Reflected property writes now reject Unreal read-only and parameter flags,
   while read access remains available for those properties.
+- Reflected floating-point property writes reject non-finite values before
+  entering Unreal's property storage.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Embedded NUL rejection for all public UTF-8 string views, including reflected,
   input, save-game, and configuration adapters.
