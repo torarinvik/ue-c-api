@@ -25,6 +25,8 @@ for changes in development.
 Consumer startup, table compatibility, threading, callback ownership, handle
 lifetime, and shutdown rules are collected in
 [docs/CONSUMER_INTEGRATION.md](docs/CONSUMER_INTEGRATION.md).
+The append-only ABI, deprecation, and migration rules are in
+[docs/ABI_COMPATIBILITY.md](docs/ABI_COMPATIBILITY.md).
 
 The plugin must be built against a specific Unreal Engine 5.x version and
 toolchain. The host project targets the current UE 5.8 release; use the latest
