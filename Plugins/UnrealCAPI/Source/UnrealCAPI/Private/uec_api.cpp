@@ -38,6 +38,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "UECEventBridgeComponent.h"
+#include "UECVersionedDataSaveGame.h"
 #include "UECLatentCallProxy.h"
 #include "Engine/LatentActionManager.h"
 #include "LatentActions.h"
@@ -370,7 +371,8 @@ namespace
         &GetActorPropertyMapKey, &GetObjectPropertyMapKey, &InvokeActorFunctionArguments,
         &GetOrCreateActorEventBridge, &DestroyActorEventBridge, &BindActorEventBridge,
         &UnbindActorEventBridge, &EmitActorEventBridge,
-        &InvokeActorFunctionLatent, &CancelActorFunctionLatent
+        &InvokeActorFunctionLatent, &CancelActorFunctionLatent,
+        &SaveVersionedApplicationData, &LoadVersionedApplicationData
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

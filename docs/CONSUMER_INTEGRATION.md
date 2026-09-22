@@ -237,6 +237,13 @@ desired kind on an output to request a typed result. `UEC_FUNCTION_STRUCT_NONE`
 keeps the existing text-backed behavior. The new fields extend the ABI 1.133
 prefix, so old record sizes remain supported. Vector/transform components
 must be finite and quaternion values nonzero.
+ABI minor 135 adds `save_versioned_application_data` and
+`load_versioned_application_data`. Supply a nonzero schema version and at most
+16 MiB of opaque bytes; the bridge stores and returns the version but leaves
+schema interpretation and migration to the consumer. Both calls run on the
+game thread. A load with a short or null zero-capacity buffer returns
+`UEC_RESULT_BUFFER_TOO_SMALL`, sets the required size and stored version, and
+copies no partial payload. Retry with a sufficiently sized buffer.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

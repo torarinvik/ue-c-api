@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.134`.
+The current runtime slice is intentionally small and versioned as ABI `1.135`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -348,6 +348,10 @@ behavior. The fields are appended after the ABI 1.133 record prefix, so older
 record sizes keep their prior text-backed behavior. Typed inputs reject
 non-finite components, and quaternion values must be nonzero.
 
+ABI minor 135 appends versioned application-data save/load calls to the function
+table. Their schema version is owned by the consumer, and the bridge preserves
+the opaque bytes without attempting schema migration.
+
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
 returns `UEC_RESULT_WRONG_THREAD` for calls made from another thread. Queued
@@ -639,6 +643,15 @@ Save-game helpers create a `USaveGame` subclass by class path, save or delete a
 named slot synchronously, and load a slot only when its object is compatible
 with the requested class. Save failures are returned through the `out_saved` or
 `out_deleted` boolean; a missing load slot returns `UEC_RESULT_NOT_INITIALIZED`.
+`save_versioned_application_data` and `load_versioned_application_data` store
+opaque application bytes in a bridge-owned `USaveGame` subclass alongside a
+nonzero, caller-managed schema version. They run on the game thread and accept
+payloads up to 16 MiB. The bridge returns the stored version without migrating
+the bytes; consumers choose how to interpret or migrate their own schema.
+Loading reports the required byte count and stored schema version, returns
+`UEC_RESULT_BUFFER_TOO_SMALL` without a partial copy when the destination is
+short, and accepts a null buffer with zero capacity for a size query. The slot
+must contain this bridge-owned format; a different save-game class is rejected.
 
 `async_save_game_to_slot` and `async_load_game_from_slot` use Unreal's platform
 save delegates and invoke `uec_save_game_callback` on the game thread. Pending

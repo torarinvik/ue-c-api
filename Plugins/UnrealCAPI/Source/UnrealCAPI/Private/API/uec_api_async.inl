@@ -302,6 +302,73 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL SaveVersionedApplicationData(uec_context* rawContext,
+                                                       uec_string_view slotName,
+                                                       int32_t userIndex,
+                                                       uint32_t schemaVersion,
+                                                       const uint8_t* data,
+                                                       size_t dataSize,
+                                                       uec_bool* outSaved)
+    {
+        constexpr size_t kMaxPayloadSize = 16u * 1024u * 1024u;
+        if (outSaved != nullptr) *outSaved = UEC_FALSE;
+        if (outSaved == nullptr || schemaVersion == 0 || dataSize > kMaxPayloadSize ||
+            (data == nullptr && dataSize != 0)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(slotName) || slotName.size == 0 || userIndex < 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+
+        auto* saveGame = Cast<UECVersionedDataSaveGame>(
+            UGameplayStatics::CreateSaveGameObject(UECVersionedDataSaveGame::StaticClass()));
+        if (saveGame == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        saveGame->SchemaVersion = schemaVersion;
+        saveGame->Payload.SetNumUninitialized(static_cast<int32>(dataSize));
+        if (dataSize != 0) FMemory::Memcpy(saveGame->Payload.GetData(), data, dataSize);
+        *outSaved = UGameplayStatics::SaveGameToSlot(
+            saveGame, ToFString(slotName), userIndex) ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL LoadVersionedApplicationData(uec_context* rawContext,
+                                                       uec_string_view slotName,
+                                                       int32_t userIndex,
+                                                       uint32_t* outSchemaVersion,
+                                                       uint8_t* buffer,
+                                                       size_t bufferCapacity,
+                                                       size_t* outRequiredSize)
+    {
+        constexpr size_t kMaxPayloadSize = 16u * 1024u * 1024u;
+        if (outSchemaVersion != nullptr) *outSchemaVersion = 0;
+        if (outRequiredSize != nullptr) *outRequiredSize = 0;
+        if (outSchemaVersion == nullptr || outRequiredSize == nullptr ||
+            (buffer == nullptr && bufferCapacity != 0)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(slotName) || slotName.size == 0 || userIndex < 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+
+        USaveGame* loaded = UGameplayStatics::LoadGameFromSlot(ToFString(slotName), userIndex);
+        if (loaded == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        UECVersionedDataSaveGame* saveGame = Cast<UECVersionedDataSaveGame>(loaded);
+        if (saveGame == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const size_t payloadSize = static_cast<size_t>(saveGame->Payload.Num());
+        if (saveGame->SchemaVersion == 0 || payloadSize > kMaxPayloadSize) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        *outSchemaVersion = saveGame->SchemaVersion;
+        *outRequiredSize = payloadSize;
+        if (bufferCapacity < payloadSize) return UEC_RESULT_BUFFER_TOO_SMALL;
+        if (payloadSize != 0) FMemory::Memcpy(buffer, saveGame->Payload.GetData(), payloadSize);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL RunOnGameThread(uec_context* rawContext,
                                         uec_game_thread_callback callback,
                                         void* userData,

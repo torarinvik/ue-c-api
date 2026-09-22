@@ -317,6 +317,10 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 134 adds typed `FVector`, `FQuat`, and `FTransform` values to the
   size-tagged mixed actor-function argument and output records. Older record
   sizes retain the ABI 1.133 text-backed struct behavior.
+- ABI minor 135 adds game-thread save/load operations for caller-versioned,
+  opaque application data stored in a bridge-owned `USaveGame` class. Payloads
+  are bounded to 16 MiB, and short load buffers return the required size without
+  copying a partial result.
 - Mixed and latent actor-function calls reject world handles and world-bound
   object handles from a different target-actor world; callers pass world
   context handles explicitly without depending on editor-only metadata.
@@ -332,7 +336,7 @@ development; they do not imply a published or runtime-verified release.
   when another world is available, stale actor and bridge handle rejection,
   and pending-request drain counts; the portable C gate verifies the appended
   entries.
-- The portable old-consumer fixture now requests ABI 1.133 from the ABI 1.134
+- The portable old-consumer fixture now requests ABI 1.133 from the ABI 1.135
   bridge and exercises only the stable table prefix.
 - The C gameplay example now binds the event component, emits a validated
   payload on each movement tick, receives it synchronously, and cleans up the

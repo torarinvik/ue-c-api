@@ -25,6 +25,7 @@ static uec_result UEC_CALL StubGetCapabilities(uec_context* context,
     *outCapabilities = UEC_CAPABILITY_BOOTSTRAP | UEC_CAPABILITY_ACTORS |
         UEC_CAPABILITY_REFLECTION | UEC_CAPABILITY_CLASS_METADATA |
         UEC_CAPABILITY_CONFIGURATION | UEC_CAPABILITY_STREAMING |
+        UEC_CAPABILITY_SAVE_DATA |
         UEC_CAPABILITY_REFLECTION_CONTAINERS | UEC_CAPABILITY_COLLISION_DETAILS |
         UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_EVENT_BRIDGE |
         UEC_CAPABILITY_ASYNC_LATENT_FUNCTIONS;
@@ -295,6 +296,41 @@ static uec_result UEC_CALL StubCancelActorFunctionLatent(uec_context* context,
                                                          uint64_t requestId)
 {
     (void)requestId;
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+}
+
+static uec_result UEC_CALL StubSaveVersionedApplicationData(
+    uec_context* context,
+    uec_string_view slotName,
+    int32_t userIndex,
+    uint32_t schemaVersion,
+    const uint8_t* data,
+    size_t dataSize,
+    uec_bool* outSaved)
+{
+    if (outSaved != NULL) *outSaved = UEC_FALSE;
+    if (outSaved == NULL || slotName.data == NULL || slotName.size == 0u || userIndex < 0 ||
+        schemaVersion == 0u || (data == NULL && dataSize != 0u)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+}
+
+static uec_result UEC_CALL StubLoadVersionedApplicationData(
+    uec_context* context,
+    uec_string_view slotName,
+    int32_t userIndex,
+    uint32_t* outSchemaVersion,
+    uint8_t* buffer,
+    size_t bufferCapacity,
+    size_t* outRequiredSize)
+{
+    if (outSchemaVersion != NULL) *outSchemaVersion = 0u;
+    if (outRequiredSize != NULL) *outRequiredSize = 0u;
+    if (outSchemaVersion == NULL || outRequiredSize == NULL || slotName.data == NULL ||
+        slotName.size == 0u || userIndex < 0 || (buffer == NULL && bufferCapacity != 0u)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
     return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
 }
 

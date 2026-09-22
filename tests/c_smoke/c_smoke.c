@@ -62,6 +62,7 @@ int main(void)
         (capabilities & UEC_CAPABILITY_ACTORS) == 0 ||
         (capabilities & UEC_CAPABILITY_REFLECTION) == 0 ||
         (capabilities & UEC_CAPABILITY_CLASS_METADATA) == 0 ||
+        (capabilities & UEC_CAPABILITY_SAVE_DATA) == 0 ||
         (capabilities & UEC_CAPABILITY_CONFIGURATION) == 0 ||
         (capabilities & UEC_CAPABILITY_STREAMING) == 0 ||
         (capabilities & UEC_CAPABILITY_REFLECTION_CONTAINERS) == 0 ||
@@ -75,6 +76,8 @@ int main(void)
         api->get_actor_property_map_key == NULL || api->get_object_property_map_key == NULL ||
         api->invoke_actor_function_arguments == NULL ||
         api->invoke_actor_function_latent == NULL || api->cancel_actor_function_latent == NULL ||
+        api->save_versioned_application_data == NULL ||
+        api->load_versioned_application_data == NULL ||
         api->get_or_create_actor_event_bridge == NULL || api->destroy_actor_event_bridge == NULL ||
         api->bind_actor_event_bridge == NULL || api->unbind_actor_event_bridge == NULL ||
         api->emit_actor_event_bridge == NULL ||
@@ -87,6 +90,27 @@ int main(void)
     {
         api->release_context(context);
         return 5;
+    }
+
+    const char versioned_slot_name[] = "versioned-smoke";
+    const uec_string_view versioned_slot = {versioned_slot_name, sizeof(versioned_slot_name) - 1u};
+    uec_bool versioned_saved = UEC_TRUE;
+    result = api->save_versioned_application_data(NULL, versioned_slot, 0, 1u, NULL, 0u,
+                                                   &versioned_saved);
+    if (result != UEC_RESULT_INVALID_HANDLE || versioned_saved != UEC_FALSE)
+    {
+        api->release_context(context);
+        return 55;
+    }
+    uint32_t stored_schema_version = 42u;
+    size_t stored_data_size = 42u;
+    result = api->load_versioned_application_data(NULL, versioned_slot, 0,
+        &stored_schema_version, NULL, 0u, &stored_data_size);
+    if (result != UEC_RESULT_INVALID_HANDLE || stored_schema_version != 0u ||
+        stored_data_size != 0u)
+    {
+        api->release_context(context);
+        return 56;
     }
 
     uec_hit_result_details details;
