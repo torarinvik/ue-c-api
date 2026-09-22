@@ -171,6 +171,8 @@ development; they do not imply a published or runtime-verified release.
 - Class lookup now applies the same shutdown gate while registering class handles,
   and reflected class, property, and function outputs are initialized before
   validation so failed calls cannot preserve stale caller data.
+- Enhanced Input action-value polling now clears its tagged payload before
+  validating controller and action handles.
 - Asynchronous object-load completions now use the shared gated object-handle
   constructor instead of maintaining a separate registry insertion path.
 - Default and indexed world lookup now share one gated world-handle constructor,

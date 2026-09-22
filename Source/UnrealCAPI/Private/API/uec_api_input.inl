@@ -92,6 +92,10 @@
         if (outValue == nullptr || outValue->struct_size < sizeof(uec_input_action_value)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
+        outValue->kind = UEC_INPUT_ACTION_VALUE_BOOLEAN;
+        outValue->bool_value = UEC_FALSE;
+        outValue->reserved[0] = outValue->reserved[1] = outValue->reserved[2] = 0;
+        outValue->axis = {};
         auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
         auto* actionHandle = reinterpret_cast<FUECObject*>(rawAction);
         if (!IsValidActor(controllerHandle) || !IsValidObject(actionHandle)) {

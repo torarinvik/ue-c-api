@@ -105,7 +105,8 @@ Input polling accepts Unreal key names such as `SpaceBar` or `Gamepad_LeftX`.
 `get_input_key_value` returns the controller's analog value. Both require a
 player-controller handle and run on the game thread. `get_input_action_value`
 reads a loaded `UInputAction` through `UEnhancedPlayerInput` and returns its
-current boolean, 1D, 2D, or 3D value. An action that is not currently
+current boolean, 1D, 2D, or 3D value. Failed reads clear the value payload
+after validating the caller's size tag. An action that is not currently
 triggering returns zero in its configured value type; action events and
 bindings remain outside this polling API. `inject_input_action_value` submits
 a boolean or axis value through the same enhanced player-input path for
