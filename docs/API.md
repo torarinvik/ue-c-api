@@ -253,7 +253,8 @@ before choosing between synchronous and asynchronous loading.
 `spawn_sound_attached` creates a non-auto-destroying `UAudioComponent` attached
 to a scene component and returns it as a weak object handle. The caller can
 stop it with `stop_audio_component`, destroy it with
-`destroy_audio_component`, and then release the handle. The sound and
+`destroy_audio_component`; destruction immediately invalidates the returned
+handle, including a retained copy. The sound and
 attach-component handles are borrowed for the duration of the call.
 
 `line_trace` maps a small stable C channel enum to Unreal collision channels and
