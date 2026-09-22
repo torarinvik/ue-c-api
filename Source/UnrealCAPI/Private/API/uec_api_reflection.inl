@@ -25,6 +25,12 @@
         return UEC_RESULT_OK;
     }
 
+    static bool IsValidEnumValue(const FEnumProperty* property, int64 value)
+    {
+        const UEnum* enumeration = property == nullptr ? nullptr : property->GetEnum();
+        return enumeration != nullptr && enumeration->IsValidEnumValueOrBitfield(value);
+    }
+
     uec_result UEC_CALL IsClassPathLoaded(uec_context* rawContext,
                                           uec_string_view classPath,
                                           uec_bool* outLoaded)
@@ -249,7 +255,8 @@
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
-            if (!IsIntegerValueInRange(underlying, value->integer_value)) {
+            if (!IsIntegerValueInRange(underlying, value->integer_value) ||
+                !IsValidEnumValue(enumProperty, value->integer_value)) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             const FString text = LexToString(value->integer_value);
@@ -445,7 +452,8 @@
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
-            if (!IsIntegerValueInRange(underlying, value->integer_value)) {
+            if (!IsIntegerValueInRange(underlying, value->integer_value) ||
+                !IsValidEnumValue(enumProperty, value->integer_value)) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             const FString text = LexToString(value->integer_value);

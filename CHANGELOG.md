@@ -149,6 +149,8 @@ development; they do not imply a published or runtime-verified release.
 - Cooked-asset guidance covering runtime paths, Asset Manager rules, Primary
   Asset Labels, and path preflight checks.
 - Authority-gated actor tag add/remove support appended as ABI minor 81.
+- Reflected enum writes now require a declared enum value or valid bitfield
+  combination in addition to the underlying integer range.
 - Private adapters are split into actor/component, presentation, gameplay,
   input, reflection, async, and world units with an enforced 400–800 line
   source budget.

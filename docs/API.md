@@ -171,7 +171,8 @@ reflected `EditConst`, `BlueprintReadOnly`, const-parameter, and return-value
 flags. Text writes create
 culture-neutral `FText` values for text properties; they do not create
 localization tables. Integer and enum writes also reject values outside the
-underlying property's representable range.
+underlying property's representable range; enum writes additionally require a
+declared value or valid bitfield combination.
 
 `invoke_actor_function` supports only reflected actor functions with no
 parameters, no return or out values, and no latent flag. The appended
