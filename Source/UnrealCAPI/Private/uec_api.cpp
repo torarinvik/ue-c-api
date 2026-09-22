@@ -6,6 +6,7 @@
 #include "Engine/StreamableManager.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 #include "Components/SceneComponent.h"
 #include "HAL/CriticalSection.h"
 #include "Modules/ModuleManager.h"
@@ -191,6 +192,7 @@ namespace
             UEC_CAPABILITY_WORLD | UEC_CAPABILITY_ACTORS | UEC_CAPABILITY_COMPONENTS |
             UEC_CAPABILITY_TIMERS | UEC_CAPABILITY_CLASS_METADATA | UEC_CAPABILITY_REFLECTION |
             UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS | UEC_CAPABILITY_ASYNC_ASSETS;
+        *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL;
         return UEC_RESULT_OK;
     }
 
@@ -321,6 +323,31 @@ namespace
         auto* world = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(world)) return UEC_RESULT_INVALID_HANDLE;
         *outKind = world->Kind;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetWorldName(uec_world* rawWorld,
+                                     char* buffer,
+                                     size_t bufferSize,
+                                     size_t* requiredSize)
+    {
+        auto* handle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(handle)) return UEC_RESULT_INVALID_HANDLE;
+        UWorld* world = handle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return CopyFStringToUtf8(world->GetMapName(), buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL TravelWorld(uec_world* rawWorld, uec_string_view levelPath)
+    {
+        auto* handle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = handle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const FString path = ToFString(levelPath);
+        if (path.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
+        UGameplayStatics::OpenLevel(world, FName(*path));
         return UEC_RESULT_OK;
     }
 
@@ -1135,7 +1162,8 @@ namespace
     const uec_api GApi = {
         sizeof(uec_api), UEC_ABI_MAJOR, UEC_ABI_MINOR,
         &GetCapabilities, &GetLastError, &Log, &ReleaseContext,
-        &GetWorldCount, &GetWorldAt, &GetWorldKind, &GetDefaultWorld,
+        &GetWorldCount, &GetWorldAt, &GetWorldKind, &GetWorldName, &TravelWorld,
+        &GetDefaultWorld,
         &ReleaseWorld, &SpawnActor, &ReleaseActor, &DestroyActor,
         &GetActorTransform, &SetActorTransform, &GetActorName, &ActorHasTag,
         &GetActorRootComponent, &GetActorComponentCount, &GetActorComponentAt,

@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 14u
+#define UEC_ABI_MINOR 15u
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,7 +64,8 @@ enum {
     UEC_CAPABILITY_CLASS_METADATA = UINT64_C(1) << 7,
     UEC_CAPABILITY_COLLISION = UINT64_C(1) << 8,
     UEC_CAPABILITY_ASSETS = UINT64_C(1) << 9,
-    UEC_CAPABILITY_ASYNC_ASSETS = UINT64_C(1) << 10
+    UEC_CAPABILITY_ASYNC_ASSETS = UINT64_C(1) << 10,
+    UEC_CAPABILITY_LEVEL_TRAVEL = UINT64_C(1) << 11
 };
 
 typedef struct uec_context uec_context;
@@ -173,6 +174,12 @@ typedef struct uec_api {
                                         uec_world** out_world);
     uec_result (UEC_CALL *get_world_kind)(uec_world* world,
                                           uec_world_kind* out_kind);
+    uec_result (UEC_CALL *get_world_name)(uec_world* world,
+                                          char* buffer,
+                                          size_t buffer_size,
+                                          size_t* required_size);
+    uec_result (UEC_CALL *travel_world)(uec_world* world,
+                                        uec_string_view level_path);
     uec_result (UEC_CALL *get_default_world)(uec_context* context, uec_world** out_world);
     uec_result (UEC_CALL *release_world)(uec_world* world);
     uec_result (UEC_CALL *spawn_actor)(uec_world* world,

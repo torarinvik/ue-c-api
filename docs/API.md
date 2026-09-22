@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.14`.
+The current runtime slice is intentionally small and versioned as ABI `1.15`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -32,6 +32,12 @@ World enumeration reports active Game and PIE worlds by index and labels each
 handle with its world kind. `get_default_world` remains a convenience operation
 that selects the first active world; consumers needing deterministic selection
 should enumerate and retain the desired world handle.
+
+`get_world_name` returns Unreal's current map name using the same bounded UTF-8
+output convention as other names. `travel_world` submits a game-thread level
+travel request through `UGameplayStatics::OpenLevel`; the call returning `OK`
+means the request was submitted, not that loading has completed. Existing world
+and object handles may become invalid during travel.
 
 The actor class path passed to `spawn_actor` is an Unreal object/class path that
 must be loadable in the current runtime build. A missing or non-actor class is
