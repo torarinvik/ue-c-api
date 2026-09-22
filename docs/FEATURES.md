@@ -45,7 +45,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries and game-thread `OpenLevel` requests |
 | Player flow | Runtime implemented / Unreal integration pending | Indexed local controller lookup, world game-instance access, possession, and view-target selection |
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |
-| Basic physics | Runtime implemented / Unreal integration pending | Finite-validated velocity, impulses, and forces on simulating primitive roots |
+| Basic physics | Runtime implemented / Unreal integration pending | Finite-validated actor and primitive-component velocity reads, impulses, and forces on simulating primitive roots |
 | Reflection and Blueprint calls | Partial | Property writes, zero-argument calls, and bounded text-marshaled calls with one return/first out value are available; typed ABI calls remain |
 | Input | Planned | No public functions yet beyond the input, movement, audio, UI, camera, save-data, and dispatch slices above |
 | Async loading, travel, streaming | Partial | Async object requests, cancellation, loaded-state queries, and level-travel submission are available; streaming and completion events remain |

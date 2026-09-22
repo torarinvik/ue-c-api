@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.61`.
+The current runtime slice is intentionally small and versioned as ABI `1.62`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -70,7 +70,8 @@ a boolean or axis value through the same enhanced player-input path for
 synthetic input and tests; it does not install persistent bindings.
 
 Physics helpers read actor velocity and operate on a simulating primitive root
-component. Velocity replacement/addition, impulses, and forces return
+component. `get_component_velocity` also reads the current velocity of any
+primitive scene component. Velocity replacement/addition, impulses, and forces return
 `UEC_RESULT_UNSUPPORTED` when the actor has no simulating primitive root. Values
 use Unreal world units and the API's double-precision vector type.
 

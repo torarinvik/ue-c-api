@@ -341,6 +341,20 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetComponentVelocity(uec_scene_component* rawComponent,
+                                             uec_vector3* outVelocity)
+    {
+        if (outVelocity == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const FVector velocity = component->GetComponentVelocity();
+        *outVelocity = {velocity.X, velocity.Y, velocity.Z};
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL InvokeActorFunction(uec_actor* rawActor, uec_string_view functionName)
     {
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);

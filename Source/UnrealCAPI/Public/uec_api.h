@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 61u
+#define UEC_ABI_MINOR 62u
 
 #ifdef __cplusplus
 extern "C" {
@@ -629,6 +629,8 @@ typedef struct uec_api {
                                                uint64_t* out_subscription_id);
     uec_result (UEC_CALL *unbind_button_clicked)(uec_context* context,
                                                  uint64_t subscription_id);
+    uec_result (UEC_CALL *get_component_velocity)(uec_scene_component* component,
+                                                  uec_vector3* out_velocity);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

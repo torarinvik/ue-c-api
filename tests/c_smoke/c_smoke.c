@@ -52,6 +52,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, set_widget_visibility) >
 UEC_TEST_ASSERT(offsetof(uec_api, bind_button_clicked) >
                    offsetof(uec_api, set_text_block_text),
                "widget subscriptions must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_component_velocity) >
+                   offsetof(uec_api, unbind_button_clicked),
+               "component physics queries must append to uec_api");
 
 int main(void)
 {

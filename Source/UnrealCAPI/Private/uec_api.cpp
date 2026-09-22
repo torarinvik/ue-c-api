@@ -457,7 +457,8 @@ namespace
         &BindAudioFinished, &UnbindAudioFinished,
         &GetObjectPath, &GetObjectClassName,
         &SetWidgetVisibility, &SetTextBlockText,
-        &BindButtonClicked, &UnbindButtonClicked
+        &BindButtonClicked, &UnbindButtonClicked,
+        &GetComponentVelocity
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
