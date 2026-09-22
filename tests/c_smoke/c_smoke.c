@@ -55,6 +55,7 @@ int main(void)
         (capabilities & UEC_CAPABILITY_STREAMING) == 0 ||
         (capabilities & UEC_CAPABILITY_REFLECTION_CONTAINERS) == 0 ||
         (capabilities & UEC_CAPABILITY_COLLISION_DETAILS) == 0 ||
+        (capabilities & UEC_CAPABILITY_PHYSICS) == 0 ||
         api->trace_detailed == NULL || api->trace_detailed_filtered == NULL ||
         api->set_component_physics_velocity == NULL || api->apply_component_impulse == NULL ||
         api->apply_component_force == NULL)
