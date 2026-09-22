@@ -193,7 +193,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = actorHandle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if (functionName.data == nullptr && functionName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(functionName) || functionName.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
         UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
         if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (function->HasAnyFunctionFlags(FUNC_Latent)) return UEC_RESULT_UNSUPPORTED;
@@ -248,7 +248,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         USceneComponent* component = componentHandle->Value.Get();
         if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if (classPath.data == nullptr && classPath.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(classPath) || classPath.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
         UClass* klass = LoadClass<USceneComponent>(nullptr, *ToFString(classPath));
         if (klass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         *outIsA = component->IsA(klass) ? UEC_TRUE : UEC_FALSE;
@@ -265,7 +265,7 @@
         auto* parentHandle = reinterpret_cast<FUECSceneComponent*>(rawParent);
         if (!IsValidComponent(childHandle) || !IsValidComponent(parentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if (socketName.data == nullptr && socketName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(socketName)) return UEC_RESULT_INVALID_ARGUMENT;
         USceneComponent* child = childHandle->Value.Get();
         USceneComponent* parent = parentHandle->Value.Get();
         if (child == nullptr || parent == nullptr) return UEC_RESULT_INVALID_HANDLE;
@@ -316,7 +316,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = actorHandle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if (classPath.data == nullptr && classPath.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(classPath) || classPath.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
         UClass* klass = LoadClass<AActor>(nullptr, *ToFString(classPath));
         if (klass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         *outIsA = actor->IsA(klass) ? UEC_TRUE : UEC_FALSE;

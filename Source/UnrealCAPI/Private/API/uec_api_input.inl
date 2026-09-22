@@ -51,7 +51,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
         if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (keyName.data == nullptr && keyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(keyName)) return UEC_RESULT_INVALID_ARGUMENT;
         const FString name = ToFString(keyName);
         if (name.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
         const FKey key{FName(*name)};
@@ -69,7 +69,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
         if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (keyName.data == nullptr && keyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(keyName)) return UEC_RESULT_INVALID_ARGUMENT;
         const FString name = ToFString(keyName);
         if (name.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
         const FKey key{FName(*name)};
@@ -228,7 +228,7 @@
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if ((parameterName.data == nullptr && parameterName.size != 0) ||
+        if (!IsValidStringView(parameterName) ||
             parameterName.size == 0 || !FMath::IsFinite(value)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -246,7 +246,7 @@
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if ((parameterName.data == nullptr && parameterName.size != 0) ||
+        if (!IsValidStringView(parameterName) ||
             parameterName.size == 0 || !FMath::IsFinite(value.x) ||
             !FMath::IsFinite(value.y) || !FMath::IsFinite(value.z)) {
             return UEC_RESULT_INVALID_ARGUMENT;

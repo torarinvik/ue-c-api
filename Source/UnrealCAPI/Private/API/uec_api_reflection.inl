@@ -114,7 +114,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = actorHandle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
 
@@ -166,7 +166,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = actorHandle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         FString value;
@@ -211,7 +211,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = actorHandle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
@@ -261,8 +261,9 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = actorHandle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if ((propertyName.data == nullptr && propertyName.size != 0) ||
-            (value.data == nullptr && value.size != 0)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(propertyName) || !IsValidStringView(value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         const FString text = ToFString(value);
@@ -300,7 +301,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UObject* object = objectHandle->Value.Get();
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
 
@@ -352,7 +353,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UObject* object = objectHandle->Value.Get();
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         FString value;
@@ -397,7 +398,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UObject* object = objectHandle->Value.Get();
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
@@ -447,8 +448,9 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UObject* object = objectHandle->Value.Get();
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if ((propertyName.data == nullptr && propertyName.size != 0) ||
-            (value.data == nullptr && value.size != 0)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(propertyName) || !IsValidStringView(value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         const FString text = ToFString(value);

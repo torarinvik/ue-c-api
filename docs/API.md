@@ -35,8 +35,8 @@ suppressed.
 
 Strings are UTF-8 views with an explicit byte length. The caller owns the bytes
 for the duration of a call; the bridge does not retain them. Malformed UTF-8,
-null pointers paired with nonzero lengths, and lengths that cannot fit Unreal's
-`int32` conversion are rejected as invalid arguments. Transforms use
+embedded NUL bytes, null pointers paired with nonzero lengths, and lengths that
+cannot fit Unreal's `int32` conversion are rejected as invalid arguments. Transforms use
 double-precision values in Unreal's world units and the Unreal quaternion
 component order `(x, y, z, w)`. Null pointers paired with nonzero lengths,
 non-finite transform, physics, collision, audio, and movement values are also

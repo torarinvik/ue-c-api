@@ -156,7 +156,7 @@
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         *outSaveGame = nullptr;
-        if (classPath.data == nullptr && classPath.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(classPath) || classPath.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
         UClass* saveClass = LoadClass<USaveGame>(nullptr, *ToFString(classPath));
         if (saveClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         USaveGame* saveGame = UGameplayStatics::CreateSaveGameObject(saveClass);
@@ -175,7 +175,7 @@
         auto* saveHandle = reinterpret_cast<FUECObject*>(rawSaveGame);
         if (!IsValidObject(saveHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if ((slotName.data == nullptr && slotName.size != 0) || userIndex < 0) {
+        if (!IsValidStringView(slotName) || userIndex < 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         USaveGame* saveGame = Cast<USaveGame>(saveHandle->Value.Get());
@@ -195,8 +195,7 @@
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         *outSaveGame = nullptr;
-        if ((classPath.data == nullptr && classPath.size != 0) ||
-            (slotName.data == nullptr && slotName.size != 0) ||
+        if (!IsValidStringView(classPath) || !IsValidStringView(slotName) ||
             classPath.size == 0 || slotName.size == 0 || userIndex < 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -219,7 +218,7 @@
         if (outDeleted == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if ((slotName.data == nullptr && slotName.size != 0) || slotName.size == 0 || userIndex < 0) {
+        if (!IsValidStringView(slotName) || slotName.size == 0 || userIndex < 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         *outDeleted = UGameplayStatics::DeleteGameInSlot(ToFString(slotName), userIndex)

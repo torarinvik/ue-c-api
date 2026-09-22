@@ -355,6 +355,7 @@ namespace
         while (index < value.size)
         {
             const uint8_t first = bytes[index++];
+            if (first == 0u) return false;
             if (first <= 0x7Fu) continue;
             uint32 codePoint = 0;
             size_t continuationCount = 0;

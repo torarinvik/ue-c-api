@@ -89,6 +89,8 @@ development; they do not imply a published or runtime-verified release.
 - Indexed world streaming-level inspection and game-thread load/visibility state
   requests using Unreal package names.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
+- Embedded NUL rejection for all public UTF-8 string views, including reflected,
+  input, save-game, and configuration adapters.
 - Explicit overflow checks on world, component, class-property, and reflected-function enumeration counts.
 - Strict 0/1 validation for boolean inputs across transforms, collision,
   attachment, timer, physics, movement, animation, input, and property writes.
