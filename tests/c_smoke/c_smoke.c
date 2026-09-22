@@ -14,6 +14,7 @@ UEC_TEST_ASSERT(sizeof(uec_quaternion) == 32, "uec_quaternion ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_transform) == 80, "uec_transform ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_property_value) == 32, "uec_property_value ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI changed");
+UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
