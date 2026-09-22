@@ -470,6 +470,88 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL BindAudioFinished(uec_object* rawAudioComponent,
+                                          uec_audio_finished_callback callback,
+                                          void* userData,
+                                          uint64_t* outSubscriptionId)
+    {
+        if (callback == nullptr || outSubscriptionId == nullptr)
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* audioHandle = reinterpret_cast<FUECObject*>(rawAudioComponent);
+        if (!IsValidObject(audioHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UAudioComponent* audio = Cast<UAudioComponent>(audioHandle->Value.Get());
+        if (audio == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+
+        const uint64 subscriptionId = GNextAudioSubscriptionId++;
+        auto subscription = MakeShared<FUECAudioSubscription>();
+        subscription->Id = subscriptionId;
+        subscription->Component = audio;
+        subscription->Callback = callback;
+        subscription->UserData = userData;
+        TWeakPtr<FUECAudioSubscription> weakSubscription = subscription;
+        subscription->Handle = audio->OnAudioFinishedNative.AddLambda(
+            [weakSubscription](UAudioComponent*)
+            {
+                TSharedPtr<FUECAudioSubscription> current = weakSubscription.Pin();
+                if (!current.IsValid() || current->Cancelled || IsShuttingDown()) return;
+                current->InCallback = true;
+                current->Callback(current->Id, current->UserData);
+                current->InCallback = false;
+                current->Cancelled = true;
+                GAudioSubscriptions.Remove(current->Id);
+            });
+        GAudioSubscriptions.Add(subscriptionId, subscription);
+        *outSubscriptionId = subscriptionId;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL UnbindAudioFinished(uec_context* rawContext,
+                                            uint64_t subscriptionId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        TSharedPtr<FUECAudioSubscription>* subscriptionPtr = GAudioSubscriptions.Find(subscriptionId);
+        if (subscriptionPtr == nullptr || !subscriptionPtr->IsValid())
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        TSharedPtr<FUECAudioSubscription> subscription = *subscriptionPtr;
+        subscription->Cancelled = true;
+        if (!subscription->InCallback)
+        {
+            if (UAudioComponent* audio = subscription->Component.Get())
+            {
+                audio->OnAudioFinishedNative.Remove(subscription->Handle);
+            }
+        }
+        GAudioSubscriptions.Remove(subscriptionId);
+        return UEC_RESULT_OK;
+    }
+
+    static void CancelAudioSubscriptionsFor(UAudioComponent* audio)
+    {
+        if (audio == nullptr) return;
+        TArray<uint64> subscriptionIds;
+        for (const TPair<uint64, TSharedPtr<FUECAudioSubscription>>& pair : GAudioSubscriptions)
+        {
+            if (pair.Value.IsValid() && pair.Value->Component.Get() == audio)
+            {
+                subscriptionIds.Add(pair.Key);
+            }
+        }
+        for (uint64 subscriptionId : subscriptionIds)
+        {
+            TSharedPtr<FUECAudioSubscription>* subscriptionPtr = GAudioSubscriptions.Find(subscriptionId);
+            if (subscriptionPtr == nullptr || !subscriptionPtr->IsValid()) continue;
+            (*subscriptionPtr)->Cancelled = true;
+            audio->OnAudioFinishedNative.Remove((*subscriptionPtr)->Handle);
+            GAudioSubscriptions.Remove(subscriptionId);
+        }
+    }
+
     uec_result UEC_CALL DestroyAudioComponent(uec_object* rawAudioComponent)
     {
         auto* audioHandle = reinterpret_cast<FUECObject*>(rawAudioComponent);
@@ -477,9 +559,24 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UAudioComponent* audio = Cast<UAudioComponent>(audioHandle->Value.Get());
         if (audio == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        CancelAudioSubscriptionsFor(audio);
         audio->Stop();
         audio->DestroyComponent();
         return UEC_RESULT_OK;
+    }
+
+    static void ClearAllAudioSubscriptions()
+    {
+        for (const TPair<uint64, TSharedPtr<FUECAudioSubscription>>& pair : GAudioSubscriptions)
+        {
+            if (!pair.Value.IsValid()) continue;
+            pair.Value->Cancelled = true;
+            if (UAudioComponent* audio = pair.Value->Component.Get())
+            {
+                audio->OnAudioFinishedNative.Remove(pair.Value->Handle);
+            }
+        }
+        GAudioSubscriptions.Empty();
     }
 
     uec_result UEC_CALL LineTraceFiltered(uec_world* rawWorld,
@@ -535,5 +632,4 @@
         }
         return UEC_RESULT_OK;
     }
-
 

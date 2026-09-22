@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.54`.
+The current runtime slice is intentionally small and versioned as ABI `1.55`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -126,6 +126,12 @@ thread with the frame delta in seconds; it is suppressed automatically when
 the world is destroyed or the module begins shutdown. `unsubscribe_world_tick`
 is game-thread-only and accepts the returned subscription token. Callback
 `user_data` is borrowed until the subscription is removed.
+
+`bind_audio_finished` subscribes to a spawned audio component's native finished
+delegate and returns a token. The callback fires when playback completes or is
+stopped, then the one-shot subscription is removed. `unbind_audio_finished`
+removes it early; both operations run on the game thread and borrow their
+`user_data` until unbinding or callback delivery.
 
 `load_object` synchronously loads an object from a runtime object path and
 returns a weak opaque handle. The handle does not keep the UObject alive; calls

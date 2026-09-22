@@ -78,6 +78,16 @@ namespace
         bool Cancelled = false;
         bool InCallback = false;
     };
+    struct FUECAudioSubscription final
+    {
+        uint64 Id = 0;
+        TWeakObjectPtr<UAudioComponent> Component;
+        FDelegateHandle Handle;
+        uec_audio_finished_callback Callback = nullptr;
+        void* UserData = nullptr;
+        bool Cancelled = false;
+        bool InCallback = false;
+    };
     struct FUECClass final { TWeakObjectPtr<UClass> Value; };
     struct FUECObject final
     {
@@ -125,6 +135,7 @@ namespace
     TSet<const FUECSceneComponent*> GComponents;
     TMap<uint64, TSharedPtr<FUECTimerState>> GTimers;
     TMap<uint64, TSharedPtr<FUECTickSubscription>> GTickSubscriptions;
+    TMap<uint64, TSharedPtr<FUECAudioSubscription>> GAudioSubscriptions;
     TSet<const FUECClass*> GClasses;
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
@@ -135,6 +146,7 @@ namespace
     uint64 GNextGameThreadRequestId = 1;
     uint64 GNextTimerId = 1;
     uint64 GNextTickSubscriptionId = 1;
+    uint64 GNextAudioSubscriptionId = 1;
     uint64 GNextSaveGameRequestId = 1;
     uint64 GNextInputBindingId = 1;
     constexpr int32 MaxQueuedObjectLoads = 1024;
@@ -427,7 +439,8 @@ namespace
         &BindInputAction, &UnbindInputAction,
         &GetPlayerController, &GetWorldGameInstance,
         &InvokeActorFunctionText,
-        &SubscribeWorldTick, &UnsubscribeWorldTick
+        &SubscribeWorldTick, &UnsubscribeWorldTick,
+        &BindAudioFinished, &UnbindAudioFinished
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
@@ -451,6 +464,7 @@ public:
         }
         ClearAllTimers();
         ClearAllTickSubscriptions();
+        ClearAllAudioSubscriptions();
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
         CancelAllSaveGameRequests();

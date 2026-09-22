@@ -64,6 +64,8 @@ development; they do not imply a published or runtime-verified release.
   and suppresses late work while teardown cancels pending operations.
 - World tick subscriptions with per-frame game-thread callbacks, unsubscribe
   tokens, world-destruction invalidation, and shutdown cleanup.
+- One-shot audio-finished subscriptions for attached audio components, with
+  unsubscribe tokens and cleanup when playback stops or components are destroyed.
 - C consumer source and public math-type layout assertions.
 - GitHub Actions checks for C11/C++17 headers and descriptor JSON on Linux
   (GCC and Clang) and macOS (Clang), on pushes and pull requests.

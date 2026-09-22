@@ -40,6 +40,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_text) >
 UEC_TEST_ASSERT(offsetof(uec_api, subscribe_world_tick) >
                    offsetof(uec_api, invoke_actor_function_text),
                "tick subscriptions must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, bind_audio_finished) >
+                   offsetof(uec_api, unsubscribe_world_tick),
+               "audio subscriptions must append to uec_api");
 
 int main(void)
 {
