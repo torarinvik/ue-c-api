@@ -320,10 +320,10 @@ development; they do not imply a published or runtime-verified release.
 - Mixed reflected calls reject handle or text fields supplied for unrelated
   argument kinds instead of silently ignoring them on scalar parameters.
 - The host Game/PIE probe now spawns a native latent-test actor, checks
-  unsupported signatures, an explicit world context, real completion, canceled
-  callback suppression, cross-world context rejection when another world is
-  available, and pending-request drain counts; the portable C gate verifies the
-  appended entries.
+  unsupported signatures, valid scalar and text-backed mixed calls, an explicit
+  world context, real completion, canceled callback suppression, cross-world
+  context rejection when another world is available, and pending-request drain
+  counts; the portable C gate verifies the appended entries.
 - The portable old-consumer fixture now requests ABI 1.132 from the ABI 1.133
   bridge and exercises only the stable table prefix.
 - The C gameplay example now binds the event component, emits a validated

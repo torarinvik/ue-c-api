@@ -24,6 +24,9 @@ public:
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke")
     void ScalarSmokeCall(float Value);
 
+    UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke")
+    bool ValidateSmokeText(FString Value);
+
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke",
               meta=(WorldContext="WorldContextObject"))
     void WorldContextSmokeCall(UObject* WorldContextObject);

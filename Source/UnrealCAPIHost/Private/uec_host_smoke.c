@@ -295,6 +295,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     static const char functionName[] = "WaitForSmokeDuration";
     static const char nonLatentFunctionName[] = "NoOpSmokeCall";
     static const char scalarFunctionName[] = "ScalarSmokeCall";
+    static const char textFunctionName[] = "ValidateSmokeText";
     static const char worldContextFunctionName[] = "WorldContextSmokeCall";
     static const char missingFunctionName[] = "MissingLatentSmokeFunction";
     uec_latent_smoke_state* state = &g_latent_smoke_state;
@@ -406,6 +407,32 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, scalarName, &scalarWithText, 1u,
         NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, scalarName, &duration, 1u, NULL, 0u, &noOutputs);
+    if (result != UEC_RESULT_OK || noOutputs != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    static const char quotedSmokeText[] = "\"mixed-smoke\"";
+    uec_function_argument textArgument = {0};
+    textArgument.struct_size = sizeof(textArgument);
+    textArgument.kind = UEC_PROPERTY_STRING;
+    textArgument.text_value.data = quotedSmokeText;
+    textArgument.text_value.size = sizeof(quotedSmokeText) - 1;
+    uec_function_output textOutput = {0};
+    textOutput.struct_size = sizeof(textOutput);
+    uec_string_view textFunction = {
+        textFunctionName, sizeof(textFunctionName) - 1};
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, textFunction, &textArgument, 1u,
+        &textOutput, 1u, &noOutputs);
+    if (result != UEC_RESULT_OK || noOutputs != 1u ||
+        textOutput.kind != UEC_PROPERTY_BOOL || textOutput.bool_value != UEC_TRUE) {
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
         return UEC_RESULT_INTERNAL_ERROR;
     }
