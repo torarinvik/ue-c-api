@@ -2,9 +2,9 @@
 
 #include <stddef.h>
 
-/* This fixture models a consumer compiled before the append-only extensions.
- * It requests the bootstrap prefix and never dereferences newer fields. */
-enum { UEC_COMPAT_MINOR = 0u };
+/* Model a 1.131 consumer checking compatibility with the 1.132 bridge. It
+ * requests the last published minor and never dereferences newer fields. */
+enum { UEC_COMPAT_MINOR = 131u };
 
 /* Keep this prefix deliberately independent from the current uec_api layout.
  * It represents the fields an old consumer needs to bootstrap and release a

@@ -310,6 +310,8 @@ development; they do not imply a published or runtime-verified release.
   callback subscriptions, event emission from C, and teardown cleanup. The host
   runtime smoke path exercises payload validation, explicit and in-callback
   unbinding, component teardown cleanup, and stale-handle rejection in Game/PIE.
+- The portable old-consumer fixture now requests ABI 1.131 from the ABI 1.132
+  bridge and exercises only the stable table prefix.
 - Adds `UEC_CAPABILITY_REFLECTION_CONTAINERS` so consumers can gate container metadata and set mutation explicitly.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
