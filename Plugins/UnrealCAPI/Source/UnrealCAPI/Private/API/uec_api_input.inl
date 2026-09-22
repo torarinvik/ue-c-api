@@ -551,6 +551,20 @@
         return UEC_RESULT_OK;
     }
 
+    static bool IsValidInputActionValue(const uec_input_action_value& value)
+    {
+        if (!IsRepresentableFloat(value.axis.x) || !IsRepresentableFloat(value.axis.y) ||
+            !IsRepresentableFloat(value.axis.z) || !IsValidBool(value.bool_value)) return false;
+        switch (value.kind)
+        {
+        case UEC_INPUT_ACTION_VALUE_BOOLEAN:
+        case UEC_INPUT_ACTION_VALUE_AXIS_1D:
+        case UEC_INPUT_ACTION_VALUE_AXIS_2D:
+        case UEC_INPUT_ACTION_VALUE_AXIS_3D: return true;
+        default: return false;
+        }
+    }
+
     uec_result UEC_CALL InjectInputActionValue(uec_actor* rawController,
                                                uec_object* rawAction,
                                                const uec_input_action_value* value)
@@ -558,6 +572,7 @@
         if (value == nullptr || value->struct_size < sizeof(uec_input_action_value)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
+        if (!IsValidInputActionValue(*value)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
         auto* actionHandle = reinterpret_cast<FUECObject*>(rawAction);
         if (!IsValidActor(controllerHandle) || !IsValidObject(actionHandle)) {
@@ -569,12 +584,6 @@
         if (controller == nullptr || action == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         UEnhancedPlayerInput* playerInput = Cast<UEnhancedPlayerInput>(controller->PlayerInput);
         if (playerInput == nullptr) return UEC_RESULT_NOT_INITIALIZED;
-        if (!IsRepresentableFloat(value->axis.x) ||
-            !IsRepresentableFloat(value->axis.y) ||
-            !IsRepresentableFloat(value->axis.z) || !IsValidBool(value->bool_value)) {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-
         FInputActionValue inputValue;
         switch (value->kind)
         {

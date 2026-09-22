@@ -463,7 +463,10 @@ after validating the caller's size tag. An action that is not currently
 triggering returns zero in its configured value type; action events and
 bindings remain outside this polling API. `inject_input_action_value` submits
 a boolean or axis value through the same enhanced player-input path for
-synthetic input and tests; it does not install persistent bindings.
+synthetic input and tests; it does not install persistent bindings. It validates
+the tagged value and its numeric fields before resolving handles, returning
+`UEC_RESULT_INVALID_ARGUMENT` for undeclared kinds, non-finite or out-of-range
+axes, and noncanonical booleans.
 
 Physics helpers read actor velocity and operate on a simulating primitive root
 component. `get_component_velocity` also reads the current velocity of any

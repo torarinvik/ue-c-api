@@ -25,4 +25,15 @@ static uec_result UEC_CALL StubBindInputAction(
     return UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubInjectInputActionValue(
+    uec_actor* controller, uec_object* action, const uec_input_action_value* value)
+{
+    (void)controller; (void)action;
+    if (value == NULL || value->struct_size < sizeof(uec_input_action_value))
+        return UEC_RESULT_INVALID_ARGUMENT;
+    if (value->kind < UEC_INPUT_ACTION_VALUE_BOOLEAN ||
+        value->kind > UEC_INPUT_ACTION_VALUE_AXIS_3D) return UEC_RESULT_INVALID_ARGUMENT;
+    return UEC_RESULT_INVALID_HANDLE;
+}
+
 #include "c_host_stub_reflection.inl"
