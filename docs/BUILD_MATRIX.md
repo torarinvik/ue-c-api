@@ -21,9 +21,10 @@ scalar-kind rejection, typed FVector/FQuat/FTransform round trips and mismatch
 rejection, short text-output sizing and retry, invalid world-kind handling,
 completion, cancellation, signature rejection, explicit and cross-world
 context handling, stale actor and bridge handle rejection, and pending request
-counts, so
-Unreal Build Tool does not need to synthesize temporary targets before
-compiling the plugin and its first C consumer.
+counts, so Unreal Build Tool does not need to synthesize temporary targets
+before compiling the plugin and its first C consumer. `Config/DefaultEngine.ini`
+selects Unreal's OpenWorld template for editor, game, and server startup so the
+packaged host enters a runtime world and can execute its world-scoped C smoke.
 The portable gate is `sh tests/run_checks.sh`. It validates the public header
 as C11 and C++17, links and runs the current and old-minor C consumers against
 an explicit host stub, including the tracked Unreal host's C bootstrap
@@ -37,13 +38,18 @@ run PIE.
 
 With an installed engine, run `UE_ROOT=/path/to/UnrealEngine
 sh tests/run_unreal_build.sh` to compile, cook, stage, and package the minimal
-host project for the current platform. Set `UEC_UNREAL_CONFIGURATION=Shipping`
-to repeat the build in Shipping mode. Set `UEC_UNREAL_PLATFORM=Win64` (or
+host project for the current platform. A same-platform Development build then
+launches the packaged host with NullRHI and waits for successful bootstrap,
+event-bridge, and latent-call C smoke messages; failures and timeouts fail the
+gate with recent host output. Set `UEC_UNREAL_CONFIGURATION=Shipping` to repeat
+the build in Shipping mode; runtime smoke is limited to Development builds.
+Set `UEC_UNREAL_PLATFORM=Win64` (or
 another platform supplied by the engine installation) to validate a target
 different from the host platform; cross-platform requests skip rebuilding the
-local Editor target. The script runs the portable gate first, reads the exact
-patch from `Engine/Build/Build.version`, and rejects an engine whose major/minor
-version does not match the host descriptor's `EngineAssociation`.
+local Editor target and skip runtime launch. The script runs the portable gate
+first, reads the exact patch from `Engine/Build/Build.version`, and rejects an
+engine whose major/minor version does not match the host descriptor's
+`EngineAssociation`.
 `UE_TARGET_VERSION` records the minimum supported patch (`5.8.3`); later 5.8.x
 hotfixes are accepted, while older patches are rejected. Use
 `UEC_ALLOW_ENGINE_MISMATCH=1` only for an explicit compatibility probe. The

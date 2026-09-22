@@ -71,4 +71,10 @@ trap 'rm -rf "$build_dir"' EXIT HUP INT TERM
     -archivedirectory="$build_dir/archive" \
     $skip_editor_args
 
-printf 'Unreal %s %s build and cook completed.\n' "$platform" "$configuration"
+printf 'Unreal %s %s build, cook, stage, and package completed.\n' "$platform" "$configuration"
+if [ "$platform" = "$host_platform" ] && [ "$configuration" = Development ]; then
+    python3 "$repo_dir/tests/unreal_runtime.py" "$build_dir/archive"
+else
+    printf 'Packaged runtime smoke skipped for %s %s target on %s host.\n' \
+        "$platform" "$configuration" "$host_platform"
+fi

@@ -19,6 +19,9 @@ development; they do not imply a published or runtime-verified release.
   UTF-8 views, missing required-size outputs, and undersized buffers.
 - Cross-platform Unreal build requests now skip rebuilding the local Editor
   target while preserving the host-platform default.
+- The Unreal build gate now launches same-platform Development packages and
+  requires the host C bootstrap, event-bridge, and latent-call smoke checks to
+  complete; Shipping and cross-platform runs remain package-only.
 - The portable C smoke consumer now verifies that an invalid handle produces a
   bounded readable diagnostic through `get_last_error`.
 - The portable gate links and executes the Unreal host's tracked C bootstrap

@@ -44,7 +44,15 @@ fi
 "$stub_build_dir/c_compat_cpp" >/dev/null
 python3 -m json.tool "$plugin_dir/UnrealCAPI.uplugin" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPIHost.uproject" >/dev/null
+for map_setting in EditorStartupMap GameDefaultMap ServerDefaultMap; do
+    if ! rg -q "^$map_setting=/Engine/Maps/Templates/OpenWorld$" \
+        "$repo_dir/Config/DefaultEngine.ini"; then
+        printf 'The host project must configure %s.\n' "$map_setting" >&2
+        exit 1
+    fi
+done
 python3 "$repo_dir/tests/test_unreal_version.py" >/dev/null
+python3 "$repo_dir/tests/test_unreal_runtime.py" >/dev/null
 sh -n "$repo_dir/tests/run_unreal_build.sh"
 if [ ! -x "$repo_dir/tests/run_unreal_build.sh" ]; then
     printf '%s\n' 'The Unreal build gate must remain executable.' >&2
