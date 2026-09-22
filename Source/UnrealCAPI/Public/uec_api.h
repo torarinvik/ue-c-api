@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 35u
+#define UEC_ABI_MINOR 36u
 
 #ifdef __cplusplus
 extern "C" {
@@ -476,6 +476,13 @@ typedef struct uec_api {
     uec_result (UEC_CALL *is_object_path_loaded)(uec_context* context,
                                                  uec_string_view object_path,
                                                  uec_bool* out_loaded);
+    uec_result (UEC_CALL *spawn_sound_attached)(uec_scene_component* attach_to,
+                                                uec_object* sound,
+                                                uec_string_view socket_name,
+                                                double volume_multiplier,
+                                                double pitch_multiplier,
+                                                uec_object** out_audio_component);
+    uec_result (UEC_CALL *stop_audio_component)(uec_object* audio_component);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

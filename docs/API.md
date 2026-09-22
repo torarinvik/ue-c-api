@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.35`.
+The current runtime slice is intentionally small and versioned as ABI `1.36`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -107,6 +107,11 @@ before completion. Outstanding requests are cancelled during module shutdown.
 `is_object_path_loaded` checks whether a valid soft object path currently
 resolves in memory. It does not load or retain the object and is safe to use
 before choosing between synchronous and asynchronous loading.
+
+`spawn_sound_attached` creates a non-auto-destroying `UAudioComponent` attached
+to a scene component and returns it as a weak object handle. The caller can
+stop it with `stop_audio_component` and then release the handle. The sound and
+attach-component handles are borrowed for the duration of the call.
 
 `line_trace` maps a small stable C channel enum to Unreal collision channels and
 returns a POD hit record. A hit actor, when present, is returned as an owned

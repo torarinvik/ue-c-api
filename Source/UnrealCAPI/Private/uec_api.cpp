@@ -20,6 +20,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/AudioComponent.h"
 #include "Animation/AnimationAsset.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
@@ -2299,6 +2300,57 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL SpawnSoundAttached(uec_scene_component* rawAttachTo,
+                                           uec_object* rawSound,
+                                           uec_string_view socketName,
+                                           double volumeMultiplier,
+                                           double pitchMultiplier,
+                                           uec_object** outAudioComponent)
+    {
+        if (outAudioComponent == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawAttachTo);
+        auto* soundHandle = reinterpret_cast<FUECObject*>(rawSound);
+        if (!IsValidComponent(componentHandle) || !IsValidObject(soundHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(socketName) ||
+            !FMath::IsFinite(volumeMultiplier) || !FMath::IsFinite(pitchMultiplier) ||
+            volumeMultiplier < 0.0 || pitchMultiplier <= 0.0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        *outAudioComponent = nullptr;
+        USceneComponent* attachTo = componentHandle->Value.Get();
+        USoundBase* sound = Cast<USoundBase>(soundHandle->Value.Get());
+        if (attachTo == nullptr || sound == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        UAudioComponent* audio = UGameplayStatics::SpawnSoundAttached(
+            sound,
+            attachTo,
+            FName(*ToFString(socketName)),
+            FVector::ZeroVector,
+            EAttachLocation::KeepRelativeOffset,
+            true,
+            static_cast<float>(volumeMultiplier),
+            static_cast<float>(pitchMultiplier),
+            0.0f,
+            nullptr,
+            nullptr,
+            false);
+        FUECObject* handle = MakeObjectHandle(audio);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outAudioComponent = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL StopAudioComponent(uec_object* rawAudioComponent)
+    {
+        auto* audioHandle = reinterpret_cast<FUECObject*>(rawAudioComponent);
+        if (!IsValidObject(audioHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UAudioComponent* audio = Cast<UAudioComponent>(audioHandle->Value.Get());
+        if (audio == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        audio->Stop();
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2358,7 +2410,7 @@ namespace
         &AddInputMappingContext, &RemoveInputMappingContext,
         &GetClassFunctionCount, &GetClassFunctionAt,
         &SetComponentCollisionEnabled, &SetComponentCollisionResponse,
-        &IsObjectPathLoaded
+        &IsObjectPathLoaded, &SpawnSoundAttached, &StopAudioComponent
     };
 }
 
