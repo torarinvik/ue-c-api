@@ -778,7 +778,7 @@ static const uec_api g_api = {
     .get_actor_property_map_key = &StubGetActorPropertyMapKey,
     .get_object_property_map_key = &StubGetObjectPropertyMapKey,
     .run_on_game_thread = &StubRunOnGameThread,
-    .set_component_collision_channel_response = &StubSetComponentCollisionChannelResponse,
+    .set_component_collision_enabled = &StubSetComponentCollisionEnabled, .set_component_collision_channel_response = &StubSetComponentCollisionChannelResponse,
     .get_progress_bar_percent = &StubGetProgressBarPercent,
     .set_progress_bar_percent = &StubSetProgressBarPercent, .get_widget_enabled = &StubGetWidgetEnabled, .set_widget_enabled = &StubSetWidgetEnabled
 };

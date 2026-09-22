@@ -755,8 +755,9 @@ may change after hot reload or reinstancing; callers should re-enumerate before
 invocation.
 
 `set_component_collision_enabled` maps the stable C collision mode enum to a
-primitive component's query/physics setting. `set_component_collision_response`
-sets one supported trace channel to block or ignore.
+primitive component's query/physics setting and rejects undeclared values with
+`UEC_RESULT_INVALID_ARGUMENT`. `set_component_collision_response` sets one
+supported trace channel to block or ignore.
 `set_component_collision_channel_response` accepts the three-way
 `uec_collision_response` enum to set Ignore, Overlap, or Block and rejects
 undeclared values with `UEC_RESULT_INVALID_ARGUMENT`. These operations require

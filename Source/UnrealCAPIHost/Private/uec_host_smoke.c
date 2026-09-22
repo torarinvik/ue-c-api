@@ -18,10 +18,8 @@ typedef struct uec_latent_smoke_state {
     uec_context* context;
     uec_world* world;
     uec_actor* actor;
-    uint64_t request_id;
-    uint64_t cancelled_request_id;
-    uint32_t cancelled_callback_count;
-    uint32_t baseline_pending_requests;
+    uint64_t request_id, cancelled_request_id;
+    uint32_t cancelled_callback_count, baseline_pending_requests;
     uec_result result;
     uec_bool callback_received;
     uec_bool started;
@@ -159,7 +157,9 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
              (uec_collision_response)99) != UEC_RESULT_INVALID_ARGUMENT ||
          api->set_component_collision_channel_response(NULL, (uec_trace_channel)99,
              UEC_COLLISION_RESPONSE_IGNORE) != UEC_RESULT_INVALID_ARGUMENT ||
-         api->set_widget_visibility(NULL, (uec_widget_visibility)99) != UEC_RESULT_INVALID_ARGUMENT)) {
+         api->set_widget_visibility(NULL, (uec_widget_visibility)99) != UEC_RESULT_INVALID_ARGUMENT ||
+         api->set_component_collision_enabled(NULL, (uec_collision_enabled)99) !=
+             UEC_RESULT_INVALID_ARGUMENT)) {
         result = UEC_RESULT_INTERNAL_ERROR;
     }
     if (result == UEC_RESULT_OK) {
