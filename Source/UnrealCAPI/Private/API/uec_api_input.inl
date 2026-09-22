@@ -213,63 +213,6 @@
         return UEC_RESULT_OK;
     }
 
-    uec_result UEC_CALL SetStaticMesh(uec_scene_component* rawComponent, uec_object* rawMesh)
-    {
-        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        auto* meshHandle = reinterpret_cast<FUECObject*>(rawMesh);
-        if (!IsValidComponent(componentHandle) || !IsValidObject(meshHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        UStaticMeshComponent* component = Cast<UStaticMeshComponent>(componentHandle->Value.Get());
-        UStaticMesh* mesh = Cast<UStaticMesh>(meshHandle->Value.Get());
-        if (component == nullptr || mesh == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        return component->SetStaticMesh(mesh) ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;
-    }
-
-    uec_result UEC_CALL SetSkeletalMesh(uec_scene_component* rawComponent,
-                                        uec_object* rawMesh,
-                                        uec_bool reinitializePose)
-    {
-        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        auto* meshHandle = reinterpret_cast<FUECObject*>(rawMesh);
-        if (!IsValidComponent(componentHandle) || !IsValidObject(meshHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(componentHandle->Value.Get());
-        USkeletalMesh* mesh = Cast<USkeletalMesh>(meshHandle->Value.Get());
-        if (component == nullptr || mesh == nullptr || !IsValidBool(reinitializePose)) {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        component->SetSkeletalMesh(mesh, reinitializePose != UEC_FALSE);
-        return UEC_RESULT_OK;
-    }
-
-    uec_result UEC_CALL PlaySkeletalAnimation(uec_scene_component* rawComponent,
-                                              uec_object* rawAnimation,
-                                              uec_bool looping)
-    {
-        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        auto* animationHandle = reinterpret_cast<FUECObject*>(rawAnimation);
-        if (!IsValidComponent(componentHandle) || !IsValidObject(animationHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(componentHandle->Value.Get());
-        UAnimationAsset* animation = Cast<UAnimationAsset>(animationHandle->Value.Get());
-        if (component == nullptr || animation == nullptr || !IsValidBool(looping)) {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        component->PlayAnimation(animation, looping != UEC_FALSE);
-        return UEC_RESULT_OK;
-    }
-
-    uec_result UEC_CALL StopSkeletalAnimation(uec_scene_component* rawComponent)
-    {
-        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(componentHandle->Value.Get());
-        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        component->Stop();
-        return UEC_RESULT_OK;
-    }
-
     uec_result UEC_CALL SetComponentMaterialScalar(uec_scene_component* rawComponent,
                                                     uec_string_view parameterName,
                                                     double value)

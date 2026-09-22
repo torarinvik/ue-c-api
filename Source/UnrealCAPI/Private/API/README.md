@@ -10,7 +10,10 @@ headers and are not compiled as independent translation units.
 - `uec_api_actor_component.inl` owns actor/component lifetime, transforms,
   component enumeration, actor queries, and cross-subsystem handle cleanup.
 - `uec_api_reflection.inl` owns class metadata, reflected properties, and object references.
-- `uec_api_gameplay.inl` owns collision, audio (including completion subscriptions), UI, camera, presentation, and component configuration.
+- `uec_api_presentation.inl` owns UMG, camera, audio (including completion
+  subscriptions), mesh assignment, and transient animation playback.
+- `uec_api_gameplay.inl` owns collision, spatial sound, reflection invocation,
+  attachment, component configuration, and physics queries.
 - `uec_api_input.inl` owns controller input, movement, Enhanced Input mappings, and action bindings.
 - `uec_api_async.inl` owns object loading, save-game operations, game-thread dispatch, and shutdown cancellation.
 
