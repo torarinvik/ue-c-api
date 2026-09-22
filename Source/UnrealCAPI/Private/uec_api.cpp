@@ -13,6 +13,7 @@
 #include "CollisionShape.h"
 #include "Components/SceneComponent.h"
 #include "Components/PrimitiveComponent.h"
+#include "Sound/SoundBase.h"
 #include "HAL/CriticalSection.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/ScopeLock.h"
@@ -251,7 +252,8 @@ namespace
             UEC_CAPABILITY_TIMERS | UEC_CAPABILITY_CLASS_METADATA | UEC_CAPABILITY_REFLECTION |
             UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS | UEC_CAPABILITY_ASYNC_ASSETS;
         *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW |
-            UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_COLLISION_QUERIES;
+            UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_COLLISION_QUERIES |
+            UEC_CAPABILITY_AUDIO;
         return UEC_RESULT_OK;
     }
 
@@ -1317,6 +1319,36 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL PlaySoundAtLocation(uec_world* rawWorld,
+                                            uec_object* rawSound,
+                                            uec_vector3 location,
+                                            double volumeMultiplier,
+                                            double pitchMultiplier)
+    {
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        auto* soundHandle = reinterpret_cast<FUECObject*>(rawSound);
+        if (!IsValidWorld(worldHandle) || !IsValidObject(soundHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!FMath::IsFinite(volumeMultiplier) || !FMath::IsFinite(pitchMultiplier) ||
+            volumeMultiplier < 0.0 || pitchMultiplier <= 0.0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        UWorld* world = worldHandle->Value.Get();
+        USoundBase* sound = Cast<USoundBase>(soundHandle->Value.Get());
+        if (world == nullptr || sound == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        UGameplayStatics::PlaySoundAtLocation(
+            world,
+            sound,
+            FVector(location.x, location.y, location.z),
+            static_cast<float>(volumeMultiplier),
+            static_cast<float>(pitchMultiplier),
+            0.0f,
+            nullptr,
+            nullptr,
+            nullptr);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL InvokeActorFunction(uec_actor* rawActor, uec_string_view functionName)
     {
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
@@ -1494,7 +1526,7 @@ namespace
         &SetActorPropertyValue, &SetActorPropertyString, &LineTrace,
         &InvokeActorFunction, &LoadObjectHandle, &ReleaseObject,
         &GetObjectName, &ObjectIsA, &RequestObjectLoad, &CancelObjectLoad,
-        &SweepTrace, &OverlapShape
+        &SweepTrace, &OverlapShape, &PlaySoundAtLocation
     };
 }
 

@@ -1,14 +1,14 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.19`.
+The current runtime slice is intentionally small and versioned as ABI `1.20`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
 
 `get_capabilities` reports the feature bits present in the loaded bridge. The
 current implementation reports bootstrap, logging, world, actor, component,
-timer, reflection, collision, asset loading, player flow, input, physics, and
-collision-query adapters.
+timer, reflection, collision, asset loading, player flow, input, physics,
+collision-query, and audio adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed active
 handle registries. A world or actor handle is a bridge-owned reference to an
@@ -111,6 +111,10 @@ rules as `line_trace`. `overlap_shape` tests one of those shapes at a point and
 returns the total number of unique actors found, copying at most `max_hits`
 handles into the caller's array. Set `max_hits` to zero to query the count only;
 overlap ordering is unspecified and every copied handle must be released.
+
+`play_sound_at_location` is a game-thread, fire-and-forget adapter for a loaded
+`USoundBase` object handle. It accepts volume and pitch multipliers, does not
+retain the sound handle, and does not expose playback completion or replication.
 
 ## Verification
 

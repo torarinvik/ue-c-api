@@ -22,6 +22,7 @@ development; they do not imply a published or runtime-verified release.
 - Actor velocity reads plus physics velocity, impulse, and force adapters for
   simulating primitive roots.
 - World-aligned sphere, box, and capsule sweeps and bounded overlap queries.
+- Fire-and-forget spatial playback for loaded `USoundBase` objects.
 - Reflected actor property writes and reads for supported scalar, string, name,
   and text types.
 - C consumer source and public math-type layout assertions.

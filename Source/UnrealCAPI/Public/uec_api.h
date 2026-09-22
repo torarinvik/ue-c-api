@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 19u
+#define UEC_ABI_MINOR 20u
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,7 +69,8 @@ enum {
     UEC_CAPABILITY_PLAYER_FLOW = UINT64_C(1) << 12,
     UEC_CAPABILITY_INPUT = UINT64_C(1) << 13,
     UEC_CAPABILITY_PHYSICS = UINT64_C(1) << 14,
-    UEC_CAPABILITY_COLLISION_QUERIES = UINT64_C(1) << 15
+    UEC_CAPABILITY_COLLISION_QUERIES = UINT64_C(1) << 15,
+    UEC_CAPABILITY_AUDIO = UINT64_C(1) << 16
 };
 
 typedef struct uec_context uec_context;
@@ -342,6 +343,11 @@ typedef struct uec_api {
                                          uint32_t max_hits,
                                          uec_actor** out_actors,
                                          uint32_t* out_count);
+    uec_result (UEC_CALL *play_sound_at_location)(uec_world* world,
+                                                  uec_object* sound,
+                                                  uec_vector3 location,
+                                                  double volume_multiplier,
+                                                  double pitch_multiplier);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the
