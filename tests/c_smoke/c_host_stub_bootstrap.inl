@@ -26,7 +26,8 @@ static uec_result UEC_CALL StubGetCapabilities(uec_context* context,
         UEC_CAPABILITY_REFLECTION | UEC_CAPABILITY_CLASS_METADATA |
         UEC_CAPABILITY_CONFIGURATION | UEC_CAPABILITY_STREAMING |
         UEC_CAPABILITY_REFLECTION_CONTAINERS | UEC_CAPABILITY_COLLISION_DETAILS |
-        UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_EVENT_BRIDGE;
+        UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_EVENT_BRIDGE |
+        UEC_CAPABILITY_ASYNC_LATENT_FUNCTIONS;
     return UEC_RESULT_OK;
 }
 
@@ -268,6 +269,33 @@ static uec_result UEC_CALL StubEmitActorEventBridge(uec_object* bridge,
     (void)realValue;
     (void)textValue;
     return bridge == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubInvokeActorFunctionLatent(
+    uec_actor* actor,
+    uec_string_view functionName,
+    const uec_function_argument* arguments,
+    uint32_t argumentCount,
+    uec_latent_function_callback callback,
+    void* userData,
+    uint64_t* outRequestId)
+{
+    (void)actor;
+    (void)userData;
+    if (outRequestId != NULL) *outRequestId = 0u;
+    if (outRequestId == NULL || callback == NULL ||
+        (argumentCount != 0u && arguments == NULL) ||
+        functionName.data == NULL || functionName.size == 0u) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubCancelActorFunctionLatent(uec_context* context,
+                                                         uint64_t requestId)
+{
+    (void)requestId;
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
 }
 
 static uec_result UEC_CALL StubInvokeActorFunctionValue(

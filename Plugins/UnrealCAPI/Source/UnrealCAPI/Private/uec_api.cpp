@@ -38,6 +38,9 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "UECEventBridgeComponent.h"
+#include "UECLatentCallProxy.h"
+#include "Engine/LatentActionManager.h"
+#include "LatentActions.h"
 #include "HAL/CriticalSection.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/ScopeLock.h"
@@ -165,6 +168,7 @@ namespace
         bool Cancelled = false;
         bool InCallback = false;
     };
+    struct FUECLatentFunctionRequest;
     struct FUECClass final
     {
         FUECHandleHeader Header;
@@ -232,6 +236,7 @@ namespace
     TMap<uint64, TSharedPtr<FUECAnimationSubscription>> GAnimationSubscriptions;
     TMap<uint64, TSharedPtr<FUECCollisionSubscription>> GCollisionSubscriptions;
     TMap<uint64, TSharedPtr<FUECEventBridgeSubscription>> GEventBridgeSubscriptions;
+    TMap<uint64, TSharedPtr<FUECLatentFunctionRequest>> GLatentFunctionRequests;
     TSet<const FUECClass*> GClasses;
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
@@ -250,6 +255,7 @@ namespace
     uint64 GNextAnimationSubscriptionId = 1;
     uint64 GNextCollisionSubscriptionId = 1;
     uint64 GNextEventBridgeSubscriptionId = 1;
+    uint64 GNextLatentFunctionRequestId = 1;
     uint64 GNextSaveGameRequestId = 1;
     uint64 GNextInputBindingId = 1;
     #include "API/uec_api_runtime.inl"
@@ -257,6 +263,9 @@ namespace
     static void CancelEventBridgeSubscriptions(AActor* actor);
     static void CancelEventBridgeSubscriptionsForWorld(UWorld* world);
     static void ClearAllEventBridgeSubscriptions();
+    static void CancelLatentFunctionRequestsForActor(AActor* actor);
+    static void CancelLatentFunctionRequestsForWorld(UWorld* world);
+    static void CancelAllLatentFunctionRequests();
     #include "API/uec_api_actor_component.inl"
     #include "API/uec_api_event_bridge.inl"
     #include "API/uec_api_collision.inl"
@@ -265,6 +274,7 @@ namespace
     #include "API/uec_api_reflection_map_set.inl"
     #include "API/uec_api_reflection_invoke.inl"
     #include "API/uec_api_reflection_invoke_typed.inl"
+    #include "API/uec_api_reflection_latent.inl"
     #include "API/uec_api_presentation.inl"
     #include "API/uec_api_gameplay.inl"
     #include "API/uec_api_input.inl"
@@ -359,7 +369,8 @@ namespace
         &SetActorPropertySoftValue, &SetObjectPropertySoftValue,
         &GetActorPropertyMapKey, &GetObjectPropertyMapKey, &InvokeActorFunctionArguments,
         &GetOrCreateActorEventBridge, &DestroyActorEventBridge, &BindActorEventBridge,
-        &UnbindActorEventBridge, &EmitActorEventBridge
+        &UnbindActorEventBridge, &EmitActorEventBridge,
+        &InvokeActorFunctionLatent, &CancelActorFunctionLatent
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
@@ -392,6 +403,7 @@ public:
         ClearAllAnimationSubscriptions();
         ClearAllCollisionSubscriptions();
         ClearAllEventBridgeSubscriptions();
+        CancelAllLatentFunctionRequests();
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
         CancelAllTravelRequests(); CancelAllStreamingRequests();

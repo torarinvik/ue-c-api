@@ -11,6 +11,71 @@ typedef struct uec_event_bridge_smoke_state {
     uec_result self_unbind_result;
 } uec_event_bridge_smoke_state;
 
+typedef struct uec_latent_smoke_state {
+    const uec_api* api;
+    uec_context* context;
+    uec_world* world;
+    uec_actor* actor;
+    uint64_t request_id;
+    uint64_t cancelled_request_id;
+    uint32_t cancelled_callback_count;
+    uec_result result;
+    uec_bool callback_received;
+    uec_bool started;
+    uec_bool complete;
+} uec_latent_smoke_state;
+
+static uec_latent_smoke_state g_latent_smoke_state;
+
+static void FinishLatentSmoke(uec_latent_smoke_state* state,
+                              uec_result result,
+                              uec_bool cancel_request)
+{
+    if (state == NULL || state->complete == UEC_TRUE) return;
+    if (cancel_request == UEC_TRUE && state->request_id != 0 &&
+        state->callback_received != UEC_TRUE && state->api != NULL &&
+        state->context != NULL) {
+        const uec_result cancel_result = state->api->cancel_actor_function_latent(
+            state->context, state->request_id);
+        if (result == UEC_RESULT_OK && cancel_result != UEC_RESULT_OK) result = cancel_result;
+    }
+    state->request_id = 0;
+    if (state->actor != NULL && state->api != NULL) {
+        const uec_result destroy_result = state->api->destroy_actor(state->actor);
+        if (destroy_result != UEC_RESULT_OK) (void)state->api->release_actor(state->actor);
+        if (result == UEC_RESULT_OK && destroy_result != UEC_RESULT_OK) result = destroy_result;
+        state->actor = NULL;
+    }
+    if (state->world != NULL && state->api != NULL) {
+        const uec_result release_result = state->api->release_world(state->world);
+        if (result == UEC_RESULT_OK && release_result != UEC_RESULT_OK) result = release_result;
+        state->world = NULL;
+    }
+    if (state->context != NULL && state->api != NULL) {
+        const uec_result release_result = state->api->release_context(state->context);
+        if (result == UEC_RESULT_OK && release_result != UEC_RESULT_OK) result = release_result;
+        state->context = NULL;
+    }
+    state->result = result;
+    state->complete = UEC_TRUE;
+}
+
+static void UEC_CALL CompleteLatentSmoke(uint64_t requestId,
+                                         uec_result result,
+                                         void* userData)
+{
+    uec_latent_smoke_state* state = (uec_latent_smoke_state*)userData;
+    if (state == NULL) return;
+    if (requestId == state->cancelled_request_id) {
+        ++state->cancelled_callback_count;
+        return;
+    }
+    if (state->complete == UEC_TRUE || state->callback_received == UEC_TRUE) return;
+    if (requestId != state->request_id) result = UEC_RESULT_INTERNAL_ERROR;
+    state->result = result;
+    state->callback_received = UEC_TRUE;
+}
+
 static void UEC_CALL VerifyEventBridgeCallback(uint64_t subscriptionId,
                                                int64_t eventId,
                                                int64_t integerValue,
@@ -220,4 +285,93 @@ cleanup:
         if (result == UEC_RESULT_OK) result = cleanupResult;
     }
     return result;
+}
+
+uec_result UEC_CALL uec_host_latent_smoke_start(void)
+{
+    static const char actorClassPath[] =
+        "/Script/UnrealCAPIHost.UECAPIHostLatentSmokeActor";
+    static const char functionName[] = "WaitForSmokeDuration";
+    uec_latent_smoke_state* state = &g_latent_smoke_state;
+    if (state->started == UEC_TRUE) return UEC_RESULT_INVALID_ARGUMENT;
+    *state = (uec_latent_smoke_state){0};
+    state->started = UEC_TRUE;
+
+    const uec_string_view classPath = {actorClassPath, sizeof(actorClassPath) - 1};
+    const uec_string_view latentName = {functionName, sizeof(functionName) - 1};
+    const uec_transform initialTransform = {
+        {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
+    uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR,
+                                    &state->api, &state->context);
+    if (result != UEC_RESULT_OK) {
+        FinishLatentSmoke(state, result, UEC_FALSE);
+        return result;
+    }
+    if (state->api == NULL || state->context == NULL ||
+        state->api->get_capabilities == NULL ||
+        state->api->get_default_world == NULL || state->api->release_world == NULL ||
+        state->api->spawn_actor == NULL || state->api->destroy_actor == NULL ||
+        state->api->release_actor == NULL ||
+        state->api->invoke_actor_function_latent == NULL ||
+        state->api->cancel_actor_function_latent == NULL ||
+        state->api->release_context == NULL) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    uec_capabilities capabilities = 0;
+    result = state->api->get_capabilities(state->context, &capabilities);
+    if (result != UEC_RESULT_OK ||
+        (capabilities & UEC_CAPABILITY_ASYNC_LATENT_FUNCTIONS) == 0) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_UNSUPPORTED;
+        FinishLatentSmoke(state, result, UEC_FALSE);
+        return result;
+    }
+    result = state->api->get_default_world(state->context, &state->world);
+    if (result == UEC_RESULT_OK) {
+        result = state->api->spawn_actor(state->world, classPath,
+                                         &initialTransform, &state->actor);
+    }
+    if (result != UEC_RESULT_OK) {
+        FinishLatentSmoke(state, result, UEC_FALSE);
+        return result;
+    }
+
+    uec_function_argument duration = {0};
+    duration.struct_size = sizeof(duration);
+    duration.kind = UEC_PROPERTY_FLOAT;
+    duration.real_value = 0.05;
+    result = state->api->invoke_actor_function_latent(
+        state->actor, latentName, &duration, 1u, &CompleteLatentSmoke,
+        state, &state->request_id);
+    if (result != UEC_RESULT_OK) {
+        FinishLatentSmoke(state, result, UEC_TRUE);
+        return result;
+    }
+    result = state->api->invoke_actor_function_latent(
+        state->actor, latentName, &duration, 1u, &CompleteLatentSmoke,
+        state, &state->cancelled_request_id);
+    if (result == UEC_RESULT_OK) {
+        result = state->api->cancel_actor_function_latent(
+            state->context, state->cancelled_request_id);
+    }
+    if (result != UEC_RESULT_OK) FinishLatentSmoke(state, result, UEC_TRUE);
+    return result;
+}
+
+uec_bool UEC_CALL uec_host_latent_smoke_poll(uec_result* outResult)
+{
+    if (outResult == NULL) return UEC_FALSE;
+    uec_latent_smoke_state* state = &g_latent_smoke_state;
+    if (state->complete != UEC_TRUE && state->callback_received == UEC_TRUE) {
+        if (state->cancelled_callback_count != 0) state->result = UEC_RESULT_INTERNAL_ERROR;
+        FinishLatentSmoke(state, state->result, UEC_FALSE);
+    }
+    *outResult = state->complete == UEC_TRUE ? state->result : UEC_RESULT_NOT_INITIALIZED;
+    return state->complete;
+}
+
+void UEC_CALL uec_host_latent_smoke_cancel(void)
+{
+    FinishLatentSmoke(&g_latent_smoke_state, UEC_RESULT_OK, UEC_TRUE);
 }

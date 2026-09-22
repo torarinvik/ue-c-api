@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.132`.
+The current runtime slice is intentionally small and versioned as ABI `1.133`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -10,8 +10,8 @@ current implementation reports bootstrap, logging, world, actor, component,
 timer, reflection, reflection containers, collision, asset loading, player
 flow, input, physics, collision-query, audio, UI, camera, save-data,
 game-thread dispatch, movement, presentation, retained-object,
-component-introspection, configuration, streaming, and Blueprint event bridge
-adapters.
+component-introspection, configuration, streaming, Blueprint event bridge, and
+asynchronous latent-function invocation adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed
 registries. Each handle receives a monotonic generation and kind tag; released
@@ -306,6 +306,20 @@ is local and non-replicated. Creating or explicitly destroying it requires
 world authority, while an existing component can be retrieved on a client.
 Destroying it invalidates its object handles. At most 1024 C subscriptions can
 be active.
+
+ABI minor 133 adds `invoke_actor_function_latent` and
+`cancel_actor_function_latent`, gated by `UEC_CAPABILITY_ASYNC_LATENT_FUNCTIONS`.
+The target must be a callable latent actor function with exactly one reflected
+`FLatentActionInfo` parameter. Supply every other input in the ABI 131 tagged
+argument format; functions with return values, out parameters, or reference
+parameters are rejected because their storage does not survive the initial
+`ProcessEvent` call. The completion callback runs on the game thread after the
+latent continuation and receives the request id plus `UEC_RESULT_OK`. It borrows
+`user_data` until it returns. Requests are bounded at 1024. Cancellation
+suppresses the C callback and asks Unreal's world latent-action manager to
+remove work for that request's unique callback target; an action already being
+processed may still execute. Actor destruction, world cleanup, travel, and
+module shutdown cancel requests and suppress their callbacks.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

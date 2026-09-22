@@ -363,6 +363,7 @@
     static void CancelActorSubscriptions(AActor* actor)
     {
         if (actor == nullptr) return;
+        CancelLatentFunctionRequestsForActor(actor);
         TArray<uint64> collisionIds;
         for (const TPair<uint64, TSharedPtr<FUECCollisionSubscription>>& pair : GCollisionSubscriptions)
         {
@@ -415,6 +416,7 @@
     static void CancelActorSubscriptionsForWorld(UWorld* world)
     {
         if (world == nullptr) return;
+        CancelLatentFunctionRequestsForWorld(world);
         TSet<AActor*> actors;
         for (const TPair<uint64, TSharedPtr<FUECCollisionSubscription>>& pair : GCollisionSubscriptions)
         {

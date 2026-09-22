@@ -684,7 +684,7 @@ static const uec_api g_api = {
     .get_class_function_parameter_at = &StubGetClassFunctionParameterAt,
     .invoke_actor_function_value = &StubInvokeActorFunctionValue,
     .invoke_actor_function_values = &StubInvokeActorFunctionValues,
-    .invoke_actor_function_text_values = &StubInvokeActorFunctionTextValues, .invoke_actor_function_arguments = &StubInvokeActorFunctionArguments, .get_or_create_actor_event_bridge = &StubGetOrCreateActorEventBridge, .destroy_actor_event_bridge = &StubDestroyActorEventBridge, .bind_actor_event_bridge = &StubBindActorEventBridge, .unbind_actor_event_bridge = &StubUnbindActorEventBridge, .emit_actor_event_bridge = &StubEmitActorEventBridge,
+    .invoke_actor_function_text_values = &StubInvokeActorFunctionTextValues, .invoke_actor_function_arguments = &StubInvokeActorFunctionArguments, .get_or_create_actor_event_bridge = &StubGetOrCreateActorEventBridge, .destroy_actor_event_bridge = &StubDestroyActorEventBridge, .bind_actor_event_bridge = &StubBindActorEventBridge, .unbind_actor_event_bridge = &StubUnbindActorEventBridge, .emit_actor_event_bridge = &StubEmitActorEventBridge, .invoke_actor_function_latent = &StubInvokeActorFunctionLatent, .cancel_actor_function_latent = &StubCancelActorFunctionLatent,
     .find_object = &StubFindObject,
     .travel_world_async = &StubTravelWorldAsync,
     .cancel_travel_request = &StubCancelTravelRequest,

@@ -395,7 +395,8 @@
             static_cast<uint64>(GGameThreadRequests.Num()) +
             static_cast<uint64>(GTravelRequests.Num()) +
             static_cast<uint64>(GSaveGameRequests.Num()) +
-            static_cast<uint64>(GStreamingRequests.Num());
+            static_cast<uint64>(GStreamingRequests.Num()) +
+            static_cast<uint64>(GLatentFunctionRequests.Num());
         if (subscriptions > UINT32_MAX || requests > UINT32_MAX || GActiveCallbacks < 0) {
             return UEC_RESULT_INTERNAL_ERROR;
         }

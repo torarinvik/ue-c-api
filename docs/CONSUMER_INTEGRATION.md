@@ -14,10 +14,11 @@ if (result != UEC_RESULT_OK) {
 ```
 
 The minimal host project also contains a tracked C translation unit at
-`Source/UnrealCAPIHost/Private/uec_host_smoke.c`. It performs the bootstrap,
-capability, logging, and context-release calls from C and the host module logs
-whether that probe succeeds during startup. A packaged or PIE run is still
-required to verify the complete runtime path on an installed target engine.
+`Source/UnrealCAPIHost/Private/uec_host_smoke.c`. It performs bootstrap,
+capability, logging, and context-release calls from C, then runs event-bridge
+and latent completion/cancellation probes after a Game or PIE world becomes
+available. A packaged or PIE run is still required to verify those paths on an
+installed target engine.
 
 The returned table is owned by the plugin and remains valid until the module
 is unloaded. The context is a bridge handle and must be released through
@@ -197,6 +198,15 @@ component, world, travel, and module teardown cancel them. Component creation
 and explicit destruction require authority. The component does not replicate;
 an already-present component can be retrieved without authority.
 Check `UEC_CAPABILITY_EVENT_BRIDGE` before depending on these entries.
+ABI minor 133 adds `invoke_actor_function_latent` and
+`cancel_actor_function_latent`; check `UEC_CAPABILITY_ASYNC_LATENT_FUNCTIONS`.
+Pass a size-initialized mixed argument array for every non-latent input
+parameter. The function must expose one `FLatentActionInfo`; return, out, and
+reference parameters are unsupported. Completion runs on the game thread and
+borrows `user_data`. Cancellation suppresses the callback and requests removal
+from the world's latent-action manager, but Unreal may finish an action already
+being processed. Actor/world teardown, travel, and plugin shutdown cancel
+pending requests.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

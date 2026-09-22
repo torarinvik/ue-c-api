@@ -10,6 +10,15 @@ static void UEC_CALL NoopGameThreadCallback(void* user_data)
     (void)user_data;
 }
 
+static void UEC_CALL NoopLatentFunctionCallback(uint64_t request_id,
+                                                uec_result result,
+                                                void* user_data)
+{
+    (void)request_id;
+    (void)result;
+    (void)user_data;
+}
+
 int main(void)
 {
     const uec_api* api = NULL;
@@ -58,12 +67,14 @@ int main(void)
         (capabilities & UEC_CAPABILITY_REFLECTION_CONTAINERS) == 0 ||
         (capabilities & UEC_CAPABILITY_COLLISION_DETAILS) == 0 ||
         (capabilities & UEC_CAPABILITY_EVENT_BRIDGE) == 0 ||
+        (capabilities & UEC_CAPABILITY_ASYNC_LATENT_FUNCTIONS) == 0 ||
         (capabilities & UEC_CAPABILITY_PHYSICS) == 0 ||
         api->trace_detailed == NULL || api->trace_detailed_filtered == NULL ||
         api->get_actor_property_soft_value == NULL || api->get_object_property_soft_value == NULL ||
         api->set_actor_property_soft_value == NULL || api->set_object_property_soft_value == NULL ||
         api->get_actor_property_map_key == NULL || api->get_object_property_map_key == NULL ||
         api->invoke_actor_function_arguments == NULL ||
+        api->invoke_actor_function_latent == NULL || api->cancel_actor_function_latent == NULL ||
         api->get_or_create_actor_event_bridge == NULL || api->destroy_actor_event_bridge == NULL ||
         api->bind_actor_event_bridge == NULL || api->unbind_actor_event_bridge == NULL ||
         api->emit_actor_event_bridge == NULL ||
@@ -221,6 +232,20 @@ int main(void)
     {
         api->release_context(context);
         return 56;
+    }
+
+    const char latent_function_name[] = "Latent";
+    const uec_string_view latent_function = {latent_function_name,
+                                              sizeof(latent_function_name) - 1};
+    uint64_t latent_request_id = 42u;
+    if (api->invoke_actor_function_latent(NULL, latent_function, NULL, 0u,
+            &NoopLatentFunctionCallback, NULL, &latent_request_id) != UEC_RESULT_UNSUPPORTED ||
+        latent_request_id != 0u ||
+        api->cancel_actor_function_latent(context, 1u) != UEC_RESULT_UNSUPPORTED ||
+        api->invoke_actor_function_latent(NULL, latent_function, NULL, 0u,
+            NULL, NULL, &latent_request_id) != UEC_RESULT_INVALID_ARGUMENT) {
+        api->release_context(context);
+        return 58;
     }
 
     uec_object* found_object = (uec_object*)1;

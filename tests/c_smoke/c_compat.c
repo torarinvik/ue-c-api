@@ -2,9 +2,9 @@
 
 #include <stddef.h>
 
-/* Model a 1.131 consumer checking compatibility with the 1.132 bridge. It
+/* Model a 1.132 consumer checking compatibility with the 1.133 bridge. It
  * requests the last published minor and never dereferences newer fields. */
-enum { UEC_COMPAT_MINOR = 131u };
+enum { UEC_COMPAT_MINOR = 132u };
 
 /* Keep this prefix deliberately independent from the current uec_api layout.
  * It represents the fields an old consumer needs to bootstrap and release a
