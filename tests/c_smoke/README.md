@@ -1,4 +1,4 @@
-# C ABI smoke consumer
+# C ABI smoke consumers
 
 This is an engine-independent compile check for the public header. From the repository root, run the complete local checks with:
 
@@ -12,4 +12,4 @@ To run only the C11 syntax check:
 cc -std=c11 -I../../Source/UnrealCAPI/Public -fsyntax-only c_smoke.c
 ```
 
-The executable is intentionally not linked here: `uec_get_api` is exported by the Unreal plugin when it is loaded into an Unreal host. The program documents the expected bootstrap and function-table usage for a real C consumer.
+The executable is intentionally not linked here: `uec_get_api` is exported by the Unreal plugin when it is loaded into an Unreal host. The program documents the expected bootstrap and function-table usage for a real C consumer. `c_compat.c` models an older minor-version consumer that only uses the stable table prefix; a linked Unreal-host compatibility run remains part of the engine-dependent release gate.
