@@ -18,7 +18,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 86u, "ABI minor must include parameter metadata");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 87u, "ABI minor must include handle diagnostics");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -204,10 +204,12 @@ int main(void)
         return 5;
     }
 
-    uec_runtime_stats stats = {sizeof(stats), 0u, 0u, 0u};
+    uec_runtime_stats stats = {sizeof(stats), 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
     result = api->get_runtime_stats(context, &stats);
     if (result != UEC_RESULT_OK || stats.active_subscriptions != 0u ||
-        stats.pending_requests != 0u || stats.active_callbacks != 0u)
+        stats.pending_requests != 0u || stats.active_callbacks != 0u ||
+        stats.live_contexts != 1u || stats.live_worlds != 0u || stats.live_actors != 0u ||
+        stats.live_components != 0u || stats.live_classes != 0u || stats.live_objects != 0u)
     {
         api->release_context(context);
         return 10;

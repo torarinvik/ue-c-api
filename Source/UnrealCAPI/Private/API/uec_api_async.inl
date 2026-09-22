@@ -346,12 +346,21 @@
     uec_result UEC_CALL GetRuntimeStats(uec_context* rawContext,
                                         uec_runtime_stats* outStats)
     {
-        if (outStats == nullptr || outStats->struct_size < sizeof(uec_runtime_stats)) {
+        constexpr size_t baseSize = offsetof(uec_runtime_stats, live_contexts);
+        if (outStats == nullptr || outStats->struct_size < baseSize) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         outStats->active_subscriptions = 0;
         outStats->pending_requests = 0;
         outStats->active_callbacks = 0;
+        if (outStats->struct_size >= sizeof(uec_runtime_stats)) {
+            outStats->live_contexts = 0;
+            outStats->live_worlds = 0;
+            outStats->live_actors = 0;
+            outStats->live_components = 0;
+            outStats->live_classes = 0;
+            outStats->live_objects = 0;
+        }
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         FScopeLock lock(&GHandleMutex);
@@ -371,6 +380,14 @@
         outStats->active_subscriptions = static_cast<uint32>(subscriptions);
         outStats->pending_requests = static_cast<uint32>(requests);
         outStats->active_callbacks = static_cast<uint32>(GActiveCallbacks);
+        if (outStats->struct_size >= sizeof(uec_runtime_stats)) {
+            outStats->live_contexts = static_cast<uint32>(GContexts.Num());
+            outStats->live_worlds = static_cast<uint32>(GWorlds.Num());
+            outStats->live_actors = static_cast<uint32>(GActors.Num());
+            outStats->live_components = static_cast<uint32>(GComponents.Num());
+            outStats->live_classes = static_cast<uint32>(GClasses.Num());
+            outStats->live_objects = static_cast<uint32>(GObjects.Num());
+        }
         return UEC_RESULT_OK;
     }
 

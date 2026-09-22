@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.86`.
+The current runtime slice is intentionally small and versioned as ABI `1.87`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -37,9 +37,10 @@ A failed call with a non-null output pointer therefore leaves a null handle,
 
 `get_runtime_stats` is a game-thread-only drain diagnostic. It reports the
 number of registered subscriptions, pending asynchronous or game-thread
-requests, and consumer callbacks currently executing. Before unloading code
-that owns callback functions, stop submitting work, cancel or unsubscribe
-everything, and wait for all three counts to reach zero.
+requests, consumer callbacks currently executing, and live bridge handles by
+kind. Before unloading code that owns callback functions, stop submitting
+work, cancel or unsubscribe everything, and wait for the first three counts to
+reach zero; use the handle counts to find unreleased bridge ownership.
 Each subscription category is bounded at 1024 active entries; a bind that
 would exceed its category returns `UEC_RESULT_QUEUE_FULL`.
 
@@ -65,6 +66,11 @@ property kind, and input/output/return/reference flags for one reflected
 parameter in Unreal's function-property order, including the return property
 when present. The metadata is descriptive; unsupported property kinds remain
 unsupported by typed invocation.
+
+ABI minor 87 extends `uec_runtime_stats` with live context, world, actor,
+component, class, and object counts. The original four-field prefix remains
+valid for older consumers; newer callers should set `struct_size` to the full
+size before reading the appended fields.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

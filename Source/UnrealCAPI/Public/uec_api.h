@@ -20,7 +20,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 86u
+#define UEC_ABI_MINOR 87u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -172,7 +172,6 @@ typedef enum uec_input_action_value_kind {
     UEC_INPUT_ACTION_VALUE_AXIS_2D = 2,
     UEC_INPUT_ACTION_VALUE_AXIS_3D = 3
 } uec_input_action_value_kind;
-
 typedef enum uec_input_trigger_event {
     UEC_INPUT_TRIGGER_STARTED = 1,
     UEC_INPUT_TRIGGER_ONGOING = 2,
@@ -180,7 +179,6 @@ typedef enum uec_input_trigger_event {
     UEC_INPUT_TRIGGER_CANCELED = 4,
     UEC_INPUT_TRIGGER_COMPLETED = 5
 } uec_input_trigger_event;
-
 typedef struct uec_input_action_value {
     uint32_t struct_size;
     uec_input_action_value_kind kind;
@@ -188,18 +186,21 @@ typedef struct uec_input_action_value {
     uint8_t reserved[3];
     uec_vector3 axis;
 } uec_input_action_value;
-
 typedef struct uec_runtime_stats {
     uint32_t struct_size;
     uint32_t active_subscriptions;
     uint32_t pending_requests;
     uint32_t active_callbacks;
+    uint32_t live_contexts;
+    uint32_t live_worlds;
+    uint32_t live_actors;
+    uint32_t live_components;
+    uint32_t live_classes;
+    uint32_t live_objects;
 } uec_runtime_stats;
-
 typedef void (UEC_CALL *uec_input_action_callback)(uint64_t binding_id,
                                                    uec_input_action_value value,
                                                    void* user_data);
-
 typedef struct uec_collision_shape {
     uint32_t struct_size;
     uec_collision_shape_kind kind;
@@ -208,7 +209,6 @@ typedef struct uec_collision_shape {
     uec_vector3 half_extents;
     double half_height;
 } uec_collision_shape;
-
 typedef struct uec_hit_result {
     uec_bool blocking_hit;
     uint8_t reserved[7];

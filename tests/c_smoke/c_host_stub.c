@@ -49,12 +49,20 @@ static uec_result UEC_CALL StubReleaseContext(uec_context* context)
 static uec_result UEC_CALL StubGetRuntimeStats(uec_context* context,
                                                uec_runtime_stats* outStats)
 {
-    if (outStats == NULL || outStats->struct_size < sizeof(*outStats)) {
+    if (outStats == NULL || outStats->struct_size < offsetof(uec_runtime_stats, live_contexts)) {
         return UEC_RESULT_INVALID_ARGUMENT;
     }
     outStats->active_subscriptions = 0u;
     outStats->pending_requests = 0u;
     outStats->active_callbacks = 0u;
+    if (outStats->struct_size >= sizeof(*outStats)) {
+        outStats->live_contexts = 1u;
+        outStats->live_worlds = 0u;
+        outStats->live_actors = 0u;
+        outStats->live_components = 0u;
+        outStats->live_classes = 0u;
+        outStats->live_objects = 0u;
+    }
     return context == &g_context ? UEC_RESULT_OK : UEC_RESULT_INVALID_HANDLE;
 }
 

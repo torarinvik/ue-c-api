@@ -34,7 +34,10 @@ The appended `get_runtime_stats` entry is available in ABI minor 82. It is a
 game-thread drain check for consumers that may unload callback code: after
 stopping new work and canceling requests or subscriptions, poll its
 `active_subscriptions`, `pending_requests`, and `active_callbacks` fields until
-all are zero.
+all are zero. ABI 87 appends `live_contexts`, `live_worlds`, `live_actors`,
+`live_components`, `live_classes`, and `live_objects`; initialize the full
+`struct_size` to read them and use the original prefix when targeting older
+bridges.
 
 The ABI 83 `get_world_count_by_kind` and `get_world_at_by_kind` entries expose
 explicit editor, PIE, game-preview, inactive, and game-world selection. The
