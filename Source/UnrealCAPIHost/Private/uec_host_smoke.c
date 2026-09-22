@@ -444,6 +444,13 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
         return UEC_RESULT_INTERNAL_ERROR;
     }
+    uint32_t invalidWorldCount = UINT32_MAX;
+    result = state->api->get_world_count_by_kind(
+        state->context, (uec_world_kind)99, &invalidWorldCount);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || invalidWorldCount != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
     uint32_t editorWorldCount = 0;
     result = state->api->get_world_count_by_kind(
         state->context, UEC_WORLD_KIND_EDITOR, &editorWorldCount);
