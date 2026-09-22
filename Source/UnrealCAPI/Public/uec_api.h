@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 33u
+#define UEC_ABI_MINOR 34u
 
 #ifdef __cplusplus
 extern "C" {
@@ -157,6 +157,13 @@ typedef enum uec_collision_shape_kind {
     UEC_COLLISION_SHAPE_BOX = 1,
     UEC_COLLISION_SHAPE_CAPSULE = 2
 } uec_collision_shape_kind;
+
+typedef enum uec_collision_enabled {
+    UEC_COLLISION_DISABLED = 0,
+    UEC_COLLISION_QUERY_ONLY = 1,
+    UEC_COLLISION_PHYSICS_ONLY = 2,
+    UEC_COLLISION_QUERY_AND_PHYSICS = 3
+} uec_collision_enabled;
 
 typedef struct uec_collision_shape {
     uint32_t struct_size;
@@ -461,6 +468,11 @@ typedef struct uec_api {
                                                  uint32_t* out_parameter_count,
                                                  uec_bool* out_has_return_value,
                                                  uec_bool* out_is_latent);
+    uec_result (UEC_CALL *set_component_collision_enabled)(uec_scene_component* component,
+                                                           uec_collision_enabled enabled);
+    uec_result (UEC_CALL *set_component_collision_response)(uec_scene_component* component,
+                                                            uec_trace_channel channel,
+                                                            uec_bool block);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

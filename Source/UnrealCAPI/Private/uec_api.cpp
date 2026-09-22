@@ -2249,6 +2249,43 @@ namespace
         return UEC_RESULT_INVALID_ARGUMENT;
     }
 
+    uec_result UEC_CALL SetComponentCollisionEnabled(uec_scene_component* rawComponent,
+                                                     uec_collision_enabled enabled)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        ECollisionEnabled::Type collisionEnabled;
+        switch (enabled)
+        {
+        case UEC_COLLISION_DISABLED: collisionEnabled = ECollisionEnabled::NoCollision; break;
+        case UEC_COLLISION_QUERY_ONLY: collisionEnabled = ECollisionEnabled::QueryOnly; break;
+        case UEC_COLLISION_PHYSICS_ONLY: collisionEnabled = ECollisionEnabled::PhysicsOnly; break;
+        case UEC_COLLISION_QUERY_AND_PHYSICS: collisionEnabled = ECollisionEnabled::QueryAndPhysics; break;
+        default: return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        component->SetCollisionEnabled(collisionEnabled);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetComponentCollisionResponse(uec_scene_component* rawComponent,
+                                                      uec_trace_channel channel,
+                                                      uec_bool block)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        ECollisionChannel collisionChannel;
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
+        component->SetCollisionResponseToChannel(
+            collisionChannel, block != UEC_FALSE ? ECR_Block : ECR_Ignore);
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2306,7 +2343,8 @@ namespace
         &AttachSceneComponent, &DetachSceneComponent,
         &GetActorClassName, &ActorIsA,
         &AddInputMappingContext, &RemoveInputMappingContext,
-        &GetClassFunctionCount, &GetClassFunctionAt
+        &GetClassFunctionCount, &GetClassFunctionAt,
+        &SetComponentCollisionEnabled, &SetComponentCollisionResponse
     };
 }
 
