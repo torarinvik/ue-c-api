@@ -24,7 +24,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Basic UMG widgets | Runtime implemented / Unreal integration pending | Create a `UUserWidget` class and add or remove it from the viewport |
 | Camera field of view | Runtime implemented / Unreal integration pending | Read and write perspective FOV on camera scene components |
 | Save-game slots and object properties | Runtime implemented / Unreal integration pending | Create, load, save, delete, and edit supported reflected save-object fields |
-| Game-thread dispatch | Runtime implemented / Unreal integration pending | Queue and cancel borrowed callbacks from worker threads |
+| Game-thread dispatch | Runtime implemented / Unreal integration pending | Queue and cancel borrowed callbacks from worker threads; bounded at 1024 pending requests |
 | Pawn and character movement | Runtime implemented / Unreal integration pending | Add world-space pawn input and character jump state |
 | Mesh presentation | Runtime implemented / Unreal integration pending | Assign loaded static or skeletal meshes to compatible components |
 | Animation and material parameters | Runtime implemented / Unreal integration pending | Play/stop skeletal assets and update scalar/vector material parameters |
@@ -39,7 +39,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Attached audio playback | Runtime implemented / Unreal integration pending | Spawn and stop non-auto-destroying audio components on scene components |
 | C gameplay example | Source and header verified | Spawn, timer-driven movement, callback, and cleanup flow |
 | Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, and type checks |
-| Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, and game-thread callbacks |
+| Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, game-thread callbacks, and a 1024-request bound |
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries and game-thread `OpenLevel` requests |
 | Player flow | Runtime implemented / Unreal integration pending | Local controller/pawn lookup, possession, and view-target selection |
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |

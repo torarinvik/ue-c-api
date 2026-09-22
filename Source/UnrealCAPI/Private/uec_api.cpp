@@ -98,6 +98,8 @@ namespace
     uint64 GNextObjectLoadRequestId = 1;
     uint64 GNextGameThreadRequestId = 1;
     uint64 GNextTimerId = 1;
+    constexpr int32 MaxQueuedObjectLoads = 1024;
+    constexpr int32 MaxQueuedGameThreadRequests = 1024;
 
     static bool IsValidContext(uec_context* rawContext)
     {
@@ -1731,6 +1733,7 @@ namespace
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         const FString pathString = ToFString(objectPath);
         if (pathString.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
+        if (GObjectLoadRequests.Num() >= MaxQueuedObjectLoads) return UEC_RESULT_QUEUE_FULL;
         const FSoftObjectPath path(pathString);
         if (!path.IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
 
@@ -1872,6 +1875,10 @@ namespace
         request->UserData = userData;
         {
             FScopeLock lock(&GHandleMutex);
+            if (GGameThreadRequests.Num() >= MaxQueuedGameThreadRequests)
+            {
+                return UEC_RESULT_QUEUE_FULL;
+            }
             request->Id = GNextGameThreadRequestId++;
             GGameThreadRequests.Add(request->Id, request);
         }

@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 36u
+#define UEC_ABI_MINOR 37u
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +40,8 @@ typedef enum uec_result {
     UEC_RESULT_WRONG_THREAD = 5,
     UEC_RESULT_UNSUPPORTED = 6,
     UEC_RESULT_SHUTTING_DOWN = 7,
-    UEC_RESULT_INTERNAL_ERROR = 8
+    UEC_RESULT_INTERNAL_ERROR = 8,
+    UEC_RESULT_QUEUE_FULL = 9
 } uec_result;
 
 typedef enum uec_world_kind {

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.36`.
+The current runtime slice is intentionally small and versioned as ABI `1.37`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -102,7 +102,9 @@ names and `object_is_a` checks are available on valid handles.
 callback on the game thread. The callback owns any returned object handle and
 must release it. `user_data` is borrowed until completion or cancellation;
 `cancel_object_load` prevents the callback from being delivered when called
-before completion. Outstanding requests are cancelled during module shutdown.
+before completion. At most 1024 object-load requests can be pending; callers
+should cancel or await requests after `UEC_RESULT_QUEUE_FULL`. Outstanding
+requests are cancelled during module shutdown.
 
 `is_object_path_loaded` checks whether a valid soft object path currently
 resolves in memory. It does not load or retain the object and is safe to use
@@ -127,6 +129,12 @@ overlap ordering is unspecified and every copied handle must be released.
 `play_sound_at_location` is a game-thread, fire-and-forget adapter for a loaded
 `USoundBase` object handle. It accepts volume and pitch multipliers, does not
 retain the sound handle, and does not expose playback completion or replication.
+
+`run_on_game_thread` accepts worker-thread callers and invokes the borrowed
+callback on the game thread. At most 1024 callbacks can be queued at once;
+submissions beyond that bound return `UEC_RESULT_QUEUE_FULL`. Cancellation
+removes a pending callback before it runs, and module shutdown cancels all
+remaining callbacks.
 
 `create_widget` loads a `UUserWidget` class path and creates a weak object handle
 owned by the caller. `add_widget_to_viewport` and `remove_widget_from_parent`
