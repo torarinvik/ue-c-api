@@ -505,6 +505,12 @@
             }
         });
         world->GetTimerManager().SetTimer(state->Handle, delegate, intervalSeconds, state->Looping);
+        if (IsShuttingDown())
+        {
+            world->GetTimerManager().ClearTimer(state->Handle);
+            state->Cancelled = true;
+            return UEC_RESULT_SHUTTING_DOWN;
+        }
         GTimers.Add(timerId, state);
         *outTimerId = timerId;
         return UEC_RESULT_OK;
@@ -578,6 +584,12 @@
                 return true;
             }),
             0.0f);
+        if (IsShuttingDown())
+        {
+            FTSTicker::RemoveTicker(subscription->Handle);
+            subscription->Cancelled = true;
+            return UEC_RESULT_SHUTTING_DOWN;
+        }
         GTickSubscriptions.Add(subscriptionId, subscription);
         *outSubscriptionId = subscriptionId;
         return UEC_RESULT_OK;

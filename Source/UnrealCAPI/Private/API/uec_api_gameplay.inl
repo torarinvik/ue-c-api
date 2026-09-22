@@ -640,6 +640,12 @@
                 }
                 GCollisionSubscriptions.Remove(current->Id);
             });
+        if (IsShuttingDown())
+        {
+            component->OnComponentHit().Remove(subscription->Handle);
+            subscription->Cancelled = true;
+            return UEC_RESULT_SHUTTING_DOWN;
+        }
         GCollisionSubscriptions.Add(subscriptionId, subscription);
         *outSubscriptionId = subscriptionId;
         return UEC_RESULT_OK;

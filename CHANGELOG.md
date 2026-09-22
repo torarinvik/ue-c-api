@@ -175,6 +175,9 @@ development; they do not imply a published or runtime-verified release.
   validation so failed calls cannot preserve stale caller data.
 - Enhanced Input action-value polling now clears its tagged payload before
   validating controller and action handles.
+- Timer, world-tick, input, audio, widget, animation, and component-hit
+  registration now rolls back the native engine binding if shutdown begins
+  before the bridge records the subscription.
 - Asynchronous object-load completions now use the shared gated object-handle
   constructor instead of maintaining a separate registry insertion path.
 - Default and indexed world lookup now share one gated world-handle constructor,

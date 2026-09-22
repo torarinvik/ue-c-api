@@ -434,6 +434,12 @@
             inputComponent->RemoveBindingByHandle(engineBinding.GetHandle());
             return UEC_RESULT_INTERNAL_ERROR;
         }
+        if (IsShuttingDown())
+        {
+            inputComponent->RemoveBindingByHandle(binding->EngineHandle);
+            binding->Cancelled = true;
+            return UEC_RESULT_SHUTTING_DOWN;
+        }
         GInputBindings.Add(binding->Id, binding);
         *outBindingId = binding->Id;
         return UEC_RESULT_OK;

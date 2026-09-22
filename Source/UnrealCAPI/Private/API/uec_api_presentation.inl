@@ -120,6 +120,12 @@
                 }
                 GWidgetSubscriptions.Remove(current->Id);
             });
+        if (IsShuttingDown())
+        {
+            button->OnClicked.Remove(subscription->Handle);
+            subscription->Cancelled = true;
+            return UEC_RESULT_SHUTTING_DOWN;
+        }
         GWidgetSubscriptions.Add(subscriptionId, subscription);
         *outSubscriptionId = subscriptionId;
         return UEC_RESULT_OK;
@@ -276,6 +282,12 @@
                 }
                 GAudioSubscriptions.Remove(current->Id);
             });
+        if (IsShuttingDown())
+        {
+            audio->OnAudioFinishedNative.Remove(subscription->Handle);
+            subscription->Cancelled = true;
+            return UEC_RESULT_SHUTTING_DOWN;
+        }
         GAudioSubscriptions.Add(subscriptionId, subscription);
         *outSubscriptionId = subscriptionId;
         return UEC_RESULT_OK;
@@ -478,6 +490,12 @@
                 return true;
             }),
             0.0f);
+        if (IsShuttingDown())
+        {
+            FTSTicker::RemoveTicker(subscription->Handle);
+            subscription->Cancelled = true;
+            return UEC_RESULT_SHUTTING_DOWN;
+        }
         GAnimationSubscriptions.Add(subscriptionId, subscription);
         *outSubscriptionId = subscriptionId;
         return UEC_RESULT_OK;
