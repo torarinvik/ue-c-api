@@ -17,11 +17,15 @@ git -C "$repo_dir" diff --check
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$gameplay_example"
 stub_build_dir=$(mktemp -d)
 trap 'rm -rf "$stub_build_dir"' EXIT HUP INT TERM
+sanitizer_flags=
+if [ "${UEC_SANITIZE:-0}" = 1 ]; then
+    sanitizer_flags='-fsanitize=address,undefined -fno-omit-frame-pointer'
+fi
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
-    "$consumer" "$host_stub" -o "$stub_build_dir/c_smoke"
+    ${sanitizer_flags} "$consumer" "$host_stub" -o "$stub_build_dir/c_smoke"
 "$stub_build_dir/c_smoke" >/dev/null
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
-    "$compat_consumer" "$host_stub" -o "$stub_build_dir/c_compat"
+    ${sanitizer_flags} "$compat_consumer" "$host_stub" -o "$stub_build_dir/c_compat"
 "$stub_build_dir/c_compat" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPI.uplugin" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPIHost.uproject" >/dev/null

@@ -144,6 +144,8 @@ development; they do not imply a published or runtime-verified release.
   bootstrap and table-call coverage.
 - The portable fixture now links and runs the independent old-minor consumer
   against the same stub to exercise the append-only compatibility prefix.
+- CI repeats the linked consumers with AddressSanitizer and
+  UndefinedBehaviorSanitizer coverage.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

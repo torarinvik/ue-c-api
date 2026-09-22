@@ -15,7 +15,9 @@ as C11 and C++17, links and runs the current and old-minor C consumers against
 an explicit host stub, checks the C gameplay example and Unreal descriptor JSON,
 and enforces the 400–800 line budget for private implementation units. The host
 stub proves consumer-side bootstrap, table calls, and the append-only prefix;
-it does not compile the Unreal module or run PIE.
+the CI matrix also repeats those linked consumers with AddressSanitizer and
+UndefinedBehaviorSanitizer. These checks do not compile the Unreal module or
+run PIE.
 
 When an engine installation is available, record the exact UE patch, host OS,
 architecture, compiler version, build configuration, and whether the check ran

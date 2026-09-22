@@ -40,3 +40,9 @@ jobs:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
         run: sh tests/run_checks.sh
+      - name: Run sanitized linked C consumers
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+          UEC_SANITIZE: "1"
+        run: sh tests/run_checks.sh
