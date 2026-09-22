@@ -461,7 +461,8 @@
         delegate.BindLambda([weakState]()
         {
             TSharedPtr<FUECTimerState> current = weakState.Pin();
-            if (!current.IsValid() || current->Cancelled || current->Callback == nullptr) return;
+            if (!current.IsValid() || current->Cancelled || current->Callback == nullptr ||
+                IsShuttingDown()) return;
             current->Callback(current->Id, current->UserData);
             if (!current->Looping)
             {
