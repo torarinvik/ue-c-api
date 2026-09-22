@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 78u
+#define UEC_ABI_MINOR 80u
 
 #ifdef __cplusplus
 extern "C" {
@@ -743,6 +743,26 @@ typedef struct uec_api {
                                               uint64_t* out_subscription_id);
     uec_result (UEC_CALL *unbind_component_hit)(uec_context* context,
                                                 uint64_t subscription_id);
+    uec_result (UEC_CALL *sweep_trace_filtered)(
+        uec_world* world,
+        uec_vector3 start,
+        uec_vector3 end,
+        const uec_collision_shape* shape,
+        uec_trace_channel channel,
+        uec_bool trace_complex,
+        const uec_actor* const* ignored_actors,
+        uint32_t ignored_actor_count,
+        uec_hit_result* out_hit);
+    uec_result (UEC_CALL *overlap_shape_filtered)(
+        uec_world* world,
+        uec_vector3 center,
+        const uec_collision_shape* shape,
+        uec_trace_channel channel,
+        uint32_t max_hits,
+        const uec_actor* const* ignored_actors,
+        uint32_t ignored_actor_count,
+        uec_actor** out_actors,
+        uint32_t* out_count);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

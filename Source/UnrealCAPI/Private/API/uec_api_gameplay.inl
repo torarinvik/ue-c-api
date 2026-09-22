@@ -132,13 +132,13 @@
         {
             if (AActor* actor = overlap.GetActor()) actors.Add(actor);
         }
-        *outCount = static_cast<uint32_t>(actors.Num());
         uint32_t copied = 0;
         for (AActor* actor : actors)
         {
             if (copied == maxHits) break;
             outActors[copied++] = reinterpret_cast<uec_actor*>(MakeActorHandle(actor));
         }
+        *outCount = copied;
         return UEC_RESULT_OK;
     }
 
@@ -412,6 +412,127 @@
             if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
             outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
         }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SweepTraceFiltered(uec_world* rawWorld,
+                                           uec_vector3 start,
+                                           uec_vector3 end,
+                                           const uec_collision_shape* descriptor,
+                                           uec_trace_channel channel,
+                                           uec_bool traceComplex,
+                                           const uec_actor* const* ignoredActors,
+                                           uint32_t ignoredActorCount,
+                                           uec_hit_result* outHit)
+    {
+        if (outHit == nullptr || (ignoredActorCount != 0 && ignoredActors == nullptr) ||
+            !IsFiniteVector(start) || !IsFiniteVector(end) || !IsValidBool(traceComplex)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FCollisionShape collisionShape;
+        const uec_result shapeResult = MakeCollisionShape(descriptor, collisionShape);
+        if (shapeResult != UEC_RESULT_OK) return shapeResult;
+        ECollisionChannel collisionChannel;
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
+        FCollisionQueryParams queryParams;
+        queryParams.bTraceComplex = traceComplex != UEC_FALSE;
+        for (uint32_t index = 0; index < ignoredActorCount; ++index)
+        {
+            const auto* actorHandle = reinterpret_cast<const FUECActor*>(ignoredActors[index]);
+            if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+            AActor* actor = actorHandle->Value.Get();
+            if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+            queryParams.AddIgnoredActor(actor);
+        }
+        *outHit = {};
+        FHitResult hit;
+        const bool didHit = world->SweepSingleByChannel(
+            hit,
+            FVector(start.x, start.y, start.z),
+            FVector(end.x, end.y, end.z),
+            FQuat::Identity,
+            collisionChannel,
+            collisionShape,
+            queryParams,
+            FCollisionResponseParams::DefaultResponseParam);
+        if (!didHit) return UEC_RESULT_OK;
+        outHit->blocking_hit = hit.bBlockingHit ? UEC_TRUE : UEC_FALSE;
+        outHit->location = {hit.Location.X, hit.Location.Y, hit.Location.Z};
+        outHit->normal = {hit.Normal.X, hit.Normal.Y, hit.Normal.Z};
+        outHit->distance = hit.Distance;
+        if (AActor* actor = hit.GetActor())
+        {
+            FUECActor* actorHandle = MakeActorHandle(actor);
+            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL OverlapShapeFiltered(uec_world* rawWorld,
+                                             uec_vector3 center,
+                                             const uec_collision_shape* descriptor,
+                                             uec_trace_channel channel,
+                                             uint32_t maxHits,
+                                             const uec_actor* const* ignoredActors,
+                                             uint32_t ignoredActorCount,
+                                             uec_actor** outActors,
+                                             uint32_t* outCount)
+    {
+        if (outCount == nullptr || (maxHits != 0 && outActors == nullptr) ||
+            (ignoredActorCount != 0 && ignoredActors == nullptr) || !IsFiniteVector(center)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FCollisionShape collisionShape;
+        const uec_result shapeResult = MakeCollisionShape(descriptor, collisionShape);
+        if (shapeResult != UEC_RESULT_OK) return shapeResult;
+        ECollisionChannel collisionChannel;
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
+        FCollisionQueryParams queryParams;
+        for (uint32_t index = 0; index < ignoredActorCount; ++index)
+        {
+            const auto* actorHandle = reinterpret_cast<const FUECActor*>(ignoredActors[index]);
+            if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+            AActor* actor = actorHandle->Value.Get();
+            if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+            queryParams.AddIgnoredActor(actor);
+        }
+        *outCount = 0;
+        for (uint32_t index = 0; index < maxHits; ++index) outActors[index] = nullptr;
+        TArray<FOverlapResult> overlaps;
+        const bool hasOverlap = world->OverlapMultiByChannel(
+            overlaps,
+            FVector(center.x, center.y, center.z),
+            FQuat::Identity,
+            collisionChannel,
+            collisionShape,
+            queryParams,
+            FCollisionResponseParams::DefaultResponseParam);
+        if (!hasOverlap) return UEC_RESULT_OK;
+        TSet<AActor*> actors;
+        for (const FOverlapResult& overlap : overlaps)
+        {
+            if (AActor* actor = overlap.GetActor()) actors.Add(actor);
+        }
+        uint32_t copied = 0;
+        for (AActor* actor : actors)
+        {
+            if (copied == maxHits) break;
+            FUECActor* actorHandle = MakeActorHandle(actor);
+            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            outActors[copied++] = reinterpret_cast<uec_actor*>(actorHandle);
+        }
+        *outCount = copied;
         return UEC_RESULT_OK;
     }
 

@@ -645,7 +645,9 @@ namespace
         &SetStreamingLevelState,
         &IsClassPathLoaded,
         &BindComponentHit,
-        &UnbindComponentHit
+        &UnbindComponentHit,
+        &SweepTraceFiltered,
+        &OverlapShapeFiltered
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

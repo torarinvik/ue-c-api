@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.78`.
+The current runtime slice is intentionally small and versioned as ABI `1.80`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -228,10 +228,14 @@ submitting the query.
 
 `sweep_trace` applies a world-aligned sphere, box, or capsule shape between two
 points and returns the first blocking hit using the same channel and hit-record
-rules as `line_trace`. `overlap_shape` tests one of those shapes at a point and
-returns the total number of unique actors found, copying at most `max_hits`
-handles into the caller's array. Set `max_hits` to zero to query the count only;
-overlap ordering is unspecified and every copied handle must be released.
+rules as `line_trace`. `sweep_trace_filtered` has the same behavior while
+ignoring a borrowed array of valid actor handles. `overlap_shape` tests one of
+those shapes at a point, deduplicates actors, and copies at most `max_hits`
+handles into the caller's array. `out_count` is the number of handles written,
+so it is always no greater than `max_hits`; passing zero leaves the count at
+zero. `overlap_shape_filtered` applies the same bounded result contract while
+ignoring a borrowed actor array. Overlap ordering is unspecified and every
+copied handle must be released.
 
 `play_sound_at_location` is a game-thread, fire-and-forget adapter for a loaded
 `USoundBase` object handle. It accepts volume and pitch multipliers, does not
