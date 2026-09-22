@@ -40,6 +40,24 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL FindObjectHandle(uec_context* rawContext,
+                                         uec_string_view objectPath,
+                                         uec_object** outObject)
+    {
+        if (outObject != nullptr) *outObject = nullptr;
+        if (outObject == nullptr || !IsValidStringView(objectPath) || objectPath.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = FindObject<UObject>(nullptr, *ToFString(objectPath));
+        if (object == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        auto* handle = MakeObjectHandle(object);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outObject = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL ReleaseObject(uec_object* rawObject)
     {
         auto* handle = reinterpret_cast<FUECObject*>(rawObject);

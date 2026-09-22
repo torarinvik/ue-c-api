@@ -718,7 +718,7 @@ namespace
         &GetWorldAtByKind,
         &InvokeActorFunctionValue,
         &InvokeActorFunctionValues, &GetClassFunctionParameterAt,
-        &InvokeActorFunctionTextValues
+        &InvokeActorFunctionTextValues, &FindObjectHandle
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

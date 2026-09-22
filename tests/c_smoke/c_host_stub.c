@@ -167,6 +167,16 @@ static uec_result UEC_CALL StubInvokeActorFunctionTextValues(
     return UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubFindObject(uec_context* context,
+                                          uec_string_view objectPath,
+                                          uec_object** outObject)
+{
+    (void)objectPath;
+    if (outObject != NULL) *outObject = NULL;
+    if (outObject == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return context == &g_context ? UEC_RESULT_NOT_INITIALIZED : UEC_RESULT_INVALID_HANDLE;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -195,6 +205,7 @@ static const uec_api g_api = {
     .invoke_actor_function_value = &StubInvokeActorFunctionValue,
     .invoke_actor_function_values = &StubInvokeActorFunctionValues,
     .invoke_actor_function_text_values = &StubInvokeActorFunctionTextValues,
+    .find_object = &StubFindObject,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

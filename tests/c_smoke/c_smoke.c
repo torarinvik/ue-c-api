@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 88u, "ABI minor must include text outputs");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 89u, "ABI minor must include loaded-object lookup");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -152,6 +152,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_class_function_parameter_at) >
 UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_text_values) >
                    offsetof(uec_api, get_class_function_parameter_at),
                "text outputs must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, find_object) >
+                   offsetof(uec_api, invoke_actor_function_text_values),
+               "loaded-object lookup must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -267,6 +270,14 @@ int main(void)
     {
         api->release_context(context);
         return 15;
+    }
+
+    uec_object* found_object = (uec_object*)1;
+    result = api->find_object(context, empty_function_name, &found_object);
+    if (result != UEC_RESULT_NOT_INITIALIZED || found_object != NULL)
+    {
+        api->release_context(context);
+        return 16;
     }
 
     const char message[] = "C ABI smoke test";

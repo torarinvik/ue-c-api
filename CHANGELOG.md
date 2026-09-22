@@ -212,6 +212,8 @@ development; they do not imply a published or runtime-verified release.
   context, world, actor, component, class, and object kind.
 - ABI minor 88 adds reflected text invocation with caller-owned output buffers
   for the return value and every out parameter.
+- ABI minor 89 adds non-loading full-path object lookup with an explicit
+  `UEC_RESULT_NOT_INITIALIZED` cache-miss result.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

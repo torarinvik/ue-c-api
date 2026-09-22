@@ -57,6 +57,10 @@ ABI 88 adds `invoke_actor_function_text_values`; initialize each
 zero capacity for a required-size probe), and inspect `required_size` and
 `kind` after the call. Outputs are ordered as the return value first, followed
 by reflected out parameters.
+ABI 89 adds `find_object`; it performs a game-thread-only lookup against loaded
+full object paths and never loads or retains an object. Treat
+`UEC_RESULT_NOT_INITIALIZED` as a cache miss, then choose `load_object` or an
+async request explicitly when loading is intended.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

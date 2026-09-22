@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.88`.
+The current runtime slice is intentionally small and versioned as ABI `1.89`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -79,6 +79,11 @@ Each output reports its required size and reflected property kind, so strings,
 names, localized text, structs, arrays, maps, and sets can use the same
 bounded-buffer contract; unsupported signatures still return an explicit
 unsupported result.
+
+ABI minor 89 adds `find_object`. It resolves a full Unreal object path without
+loading or retaining the object and returns `UEC_RESULT_NOT_INITIALIZED` when
+the path is not currently loaded. A successful lookup returns a normal weak
+object handle that the caller must release.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

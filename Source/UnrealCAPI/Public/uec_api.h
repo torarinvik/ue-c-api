@@ -20,7 +20,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 88u
+#define UEC_ABI_MINOR 89u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -494,7 +494,6 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_component_material_vector)(uec_scene_component* component,
                                                          uec_string_view parameter_name,
                                                          uec_vector3 value);
-
     /* Retained objects, component/actor identity, and input mappings. */
     uec_result (UEC_CALL *retain_object)(uec_object* object,
                                          uec_object** out_retained_object);
@@ -523,7 +522,6 @@ typedef struct uec_api {
                                                      int32_t priority);
     uec_result (UEC_CALL *remove_input_mapping_context)(uec_actor* controller,
                                                         uec_object* mapping_context);
-
     /* Reflected functions, collision settings, and attached audio. */
     uec_result (UEC_CALL *get_class_function_count)(uec_class* klass,
                                                     uint32_t* out_count);
@@ -785,6 +783,9 @@ typedef struct uec_api {
         uec_actor* actor, uec_string_view function_name,
         const uec_string_view* argument_values, uint32_t argument_count,
         uec_text_output* out_values, uint32_t out_capacity, uint32_t* out_count);
+    uec_result (UEC_CALL *find_object)(uec_context* context,
+                                       uec_string_view object_path,
+                                       uec_object** out_object);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the
