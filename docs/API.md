@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.95`.
+The current runtime slice is intentionally small and versioned as ABI `1.96`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -114,6 +114,10 @@ level's target state and invokes its callback on the game thread when the
 loaded and visible state reaches that target. Requests are bounded, cancellable,
 and removed automatically when their world is cleaned up or the module shuts
 down.
+
+ABI minor 96 adds `get_component_collision_response`, which reports the
+primitive component's response to a declared trace channel as ignore, overlap,
+or block.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

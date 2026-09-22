@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 95u
+#define UEC_ABI_MINOR 96u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -165,6 +165,7 @@ typedef enum uec_collision_enabled {
     UEC_COLLISION_PHYSICS_ONLY = 2,
     UEC_COLLISION_QUERY_AND_PHYSICS = 3
 } uec_collision_enabled;
+typedef enum uec_collision_response { UEC_COLLISION_RESPONSE_IGNORE = 0, UEC_COLLISION_RESPONSE_OVERLAP = 1, UEC_COLLISION_RESPONSE_BLOCK = 2 } uec_collision_response;
 typedef enum uec_widget_visibility {
     UEC_WIDGET_VISIBLE = 0,
     UEC_WIDGET_COLLAPSED = 1,
@@ -700,12 +701,8 @@ typedef struct uec_api {
                                              char* buffer,
                                              size_t buffer_size,
                                              size_t* required_size);
-    uec_result (UEC_CALL *set_config_string)(uec_context* context,
-                                             uec_string_view section,
-                                             uec_string_view key,
-                                             uec_string_view value);
-    uec_result (UEC_CALL *get_streaming_level_count)(uec_world* world,
-                                                     uint32_t* out_count);
+    uec_result (UEC_CALL *set_config_string)(uec_context* context, uec_string_view section, uec_string_view key, uec_string_view value);
+    uec_result (UEC_CALL *get_streaming_level_count)(uec_world* world, uint32_t* out_count);
     uec_result (UEC_CALL *get_streaming_level_at)(uec_world* world,
                                                   uint32_t index,
                                                   char* package_buffer,
@@ -786,6 +783,7 @@ typedef struct uec_api {
     uec_result (UEC_CALL *get_widget_visibility)(uec_object* widget, uec_widget_visibility* out_visibility); uec_result (UEC_CALL *get_text_block_text)(uec_object* widget, char* buffer, size_t buffer_size, size_t* required_size);
     uec_result (UEC_CALL *get_component_collision_enabled)(uec_scene_component* component, uec_collision_enabled* out_enabled); uec_result (UEC_CALL *get_audio_component_playing)(uec_object* audio_component, uec_bool* out_playing);
     uec_result (UEC_CALL *set_streaming_level_state_async)(uec_world* world, uec_string_view package_path, uec_bool should_be_loaded, uec_bool should_be_visible, uec_streaming_callback callback, void* user_data, uint64_t* out_request_id); uec_result (UEC_CALL *cancel_streaming_level_request)(uec_context* context, uint64_t request_id);
+    uec_result (UEC_CALL *get_component_collision_response)(uec_scene_component* component, uec_trace_channel channel, uec_collision_response* out_response);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

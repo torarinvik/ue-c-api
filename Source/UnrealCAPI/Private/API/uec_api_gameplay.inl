@@ -398,6 +398,29 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetComponentCollisionResponse(uec_scene_component* rawComponent,
+                                                      uec_trace_channel channel,
+                                                      uec_collision_response* outResponse)
+    {
+        if (outResponse != nullptr) *outResponse = UEC_COLLISION_RESPONSE_IGNORE;
+        if (outResponse == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        ECollisionChannel collisionChannel;
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
+        switch (component->GetCollisionResponseToChannel(collisionChannel))
+        {
+        case ECR_Ignore: *outResponse = UEC_COLLISION_RESPONSE_IGNORE; break;
+        case ECR_Overlap: *outResponse = UEC_COLLISION_RESPONSE_OVERLAP; break;
+        case ECR_Block: *outResponse = UEC_COLLISION_RESPONSE_BLOCK; break;
+        default: return UEC_RESULT_UNSUPPORTED;
+        }
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL LineTraceFiltered(uec_world* rawWorld,
                                           uec_vector3 start,
                                           uec_vector3 end,

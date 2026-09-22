@@ -225,6 +225,8 @@ development; they do not imply a published or runtime-verified release.
   state readback.
 - ABI minor 95 adds bounded, cancellable streaming-level state completion
   requests with game-thread callbacks and world/shutdown cleanup.
+- ABI minor 96 adds per-channel collision response readback for ignore, overlap,
+  and block modes.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

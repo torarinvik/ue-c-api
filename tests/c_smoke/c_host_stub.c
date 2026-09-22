@@ -285,6 +285,17 @@ static uec_result UEC_CALL StubCancelStreamingLevelRequest(uec_context* context,
     return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubGetComponentCollisionResponse(
+    uec_scene_component* component,
+    uec_trace_channel channel,
+    uec_collision_response* outResponse)
+{
+    (void)component;
+    (void)channel;
+    if (outResponse != NULL) *outResponse = UEC_COLLISION_RESPONSE_IGNORE;
+    return outResponse == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -325,6 +336,7 @@ static const uec_api g_api = {
     .get_audio_component_playing = &StubGetAudioComponentPlaying,
     .set_streaming_level_state_async = &StubSetStreamingLevelStateAsync,
     .cancel_streaming_level_request = &StubCancelStreamingLevelRequest,
+    .get_component_collision_response = &StubGetComponentCollisionResponse,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
