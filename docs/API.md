@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.137`.
+The current runtime slice is intentionally small and versioned as ABI `1.138`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -352,6 +352,14 @@ ABI minor 135 appends versioned application-data save/load calls to the function
 table. Their schema version is owned by the consumer, and the bridge preserves
 the opaque bytes without attempting schema migration.
 
+ABI minor 136 adds `get_controller_enhanced_input_subsystem`, which returns a
+weak object handle for the controller's local-player Enhanced Input subsystem.
+ABI minor 137 adds `set_component_collision_channel_response` for per-channel
+Ignore, Overlap, and Block responses. ABI minor 138 appends
+`get_progress_bar_percent` and `set_progress_bar_percent`; they operate on a
+`UProgressBar`, return values as `double`, and accept finite writes in the
+inclusive range `[0, 1]`.
+
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
 returns `UEC_RESULT_WRONG_THREAD` for calls made from another thread. Queued
@@ -627,6 +635,10 @@ being added to a viewport or another Unreal owner; releasing the bridge handle
 does not destroy the widget. `set_widget_visibility` supports visible,
 collapsed, and hidden states for any `UWidget`; `set_text_block_text` updates
 the text of a `UTextBlock` using a culture-neutral `FText`.
+`get_progress_bar_percent` and `set_progress_bar_percent` read and write a
+`UProgressBar`'s normalized percentage on the game thread. Writes outside
+`[0, 1]` or values that cannot be represented as an Unreal `float` return
+`UEC_RESULT_INVALID_ARGUMENT`.
 `bind_button_clicked` subscribes to a `UButton` click event and returns a
 one-shot token; `unbind_button_clicked` removes it early. Click callbacks run
 on the game thread and borrow their `user_data` until delivery or unbinding.

@@ -1,5 +1,6 @@
 #include "uec_api.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -80,6 +81,7 @@ int main(void)
         api->load_versioned_application_data == NULL ||
         api->get_controller_enhanced_input_subsystem == NULL ||
         api->set_component_collision_channel_response == NULL ||
+        api->get_progress_bar_percent == NULL || api->set_progress_bar_percent == NULL ||
         api->get_or_create_actor_event_bridge == NULL || api->destroy_actor_event_bridge == NULL ||
         api->bind_actor_event_bridge == NULL || api->unbind_actor_event_bridge == NULL ||
         api->emit_actor_event_bridge == NULL ||
@@ -121,6 +123,17 @@ int main(void)
     {
         api->release_context(context);
         return 61;
+    }
+    double invalid_progress_percent = 42.0;
+    result = api->get_progress_bar_percent(NULL, &invalid_progress_percent);
+    if (result != UEC_RESULT_INVALID_HANDLE || invalid_progress_percent != 0.0 ||
+        api->get_progress_bar_percent(NULL, NULL) != UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_progress_bar_percent(NULL, -0.01) != UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_progress_bar_percent(NULL, NAN) != UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_progress_bar_percent(NULL, 0.5) != UEC_RESULT_INVALID_HANDLE)
+    {
+        api->release_context(context);
+        return 62;
     }
 
     const uint8_t expected_payload[] = {0x55u, 0x45u, 0x43u, 0x01u};
@@ -184,7 +197,6 @@ int main(void)
         api->release_context(context);
         return 54;
     }
-
     const uec_vector3 physics_value = {0.0, 0.0, 0.0};
     if (api->set_component_physics_velocity(NULL, physics_value, UEC_FALSE) !=
             UEC_RESULT_INVALID_HANDLE ||
@@ -195,7 +207,6 @@ int main(void)
         api->release_context(context);
         return 55;
     }
-
     uec_vector3 angular_velocity = {42.0, 42.0, 42.0};
     if (api->get_component_physics_angular_velocity(NULL, &angular_velocity) !=
             UEC_RESULT_INVALID_HANDLE ||
@@ -210,7 +221,6 @@ int main(void)
         api->release_context(context);
         return 56;
     }
-
     uec_vector3 actor_angular_velocity = {42.0, 42.0, 42.0};
     if (api->get_actor_physics_angular_velocity(NULL, &actor_angular_velocity) !=
             UEC_RESULT_INVALID_HANDLE ||
@@ -224,7 +234,6 @@ int main(void)
         api->release_context(context);
         return 57;
     }
-
     uec_runtime_stats stats = {sizeof(stats), 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
     result = api->get_runtime_stats(context, &stats);
     if (result != UEC_RESULT_OK || stats.active_subscriptions != 0u ||
@@ -235,7 +244,6 @@ int main(void)
         api->release_context(context);
         return 10;
     }
-
     uint32_t world_count = 42u;
     result = api->get_world_count_by_kind(context, UEC_WORLD_KIND_GAME, &world_count);
     if (result != UEC_RESULT_UNSUPPORTED || world_count != 0u)
@@ -243,7 +251,6 @@ int main(void)
         api->release_context(context);
         return 11;
     }
-
     uec_property_value invocation_result = {sizeof(invocation_result), UEC_PROPERTY_UNKNOWN,
                                             UEC_FALSE, {0u, 0u, 0u}, 0, 0.0};
     const uec_string_view empty_function_name = {NULL, 0u};
@@ -254,7 +261,6 @@ int main(void)
         api->release_context(context);
         return 12;
     }
-
     uint32_t invocation_count = 42u;
     result = api->invoke_actor_function_values(NULL, empty_function_name, NULL, 0, NULL, 0,
                                                &invocation_count);
@@ -263,7 +269,6 @@ int main(void)
         api->release_context(context);
         return 13;
     }
-
     size_t parameter_name_size = 99u;
     uec_property_kind parameter_kind = UEC_PROPERTY_BOOL;
     uint32_t parameter_flags = 99u;
@@ -276,7 +281,6 @@ int main(void)
         api->release_context(context);
         return 14;
     }
-
     uint32_t text_output_count = 42u;
     result = api->invoke_actor_function_text_values(NULL, empty_function_name, NULL, 0u,
                                                     NULL, 0u, &text_output_count);
@@ -285,7 +289,6 @@ int main(void)
         api->release_context(context);
         return 15;
     }
-
     uint32_t mixed_output_count = 42u;
     result = api->invoke_actor_function_arguments(NULL, empty_function_name, NULL, 0u,
                                                   NULL, 0u, &mixed_output_count);
@@ -296,7 +299,6 @@ int main(void)
         api->release_context(context);
         return 55;
     }
-
     uec_object* event_bridge = (uec_object*)1;
     uint64_t event_subscription_id = 42u;
     if (api->get_or_create_actor_event_bridge(NULL, &event_bridge) != UEC_RESULT_UNSUPPORTED ||
@@ -309,7 +311,6 @@ int main(void)
         api->release_context(context);
         return 56;
     }
-
     const char latent_function_name[] = "Latent";
     const uec_string_view latent_function = {latent_function_name,
                                               sizeof(latent_function_name) - 1};
@@ -323,7 +324,6 @@ int main(void)
         api->release_context(context);
         return 58;
     }
-
     uec_object* found_object = (uec_object*)1;
     result = api->find_object(context, empty_function_name, &found_object);
     if (result != UEC_RESULT_NOT_INITIALIZED || found_object != NULL)

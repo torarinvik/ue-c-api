@@ -38,6 +38,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
+#include "Components/ProgressBar.h"
 #include "UECEventBridgeComponent.h"
 #include "UECVersionedDataSaveGame.h"
 #include "UECLatentCallProxy.h"
@@ -374,7 +375,8 @@ namespace
         &UnbindActorEventBridge, &EmitActorEventBridge,
         &InvokeActorFunctionLatent, &CancelActorFunctionLatent,
         &SaveVersionedApplicationData, &LoadVersionedApplicationData,
-        &GetControllerEnhancedInputSubsystem, &SetComponentCollisionChannelResponse
+        &GetControllerEnhancedInputSubsystem, &SetComponentCollisionChannelResponse,
+        &GetProgressBarPercent, &SetProgressBarPercent
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

@@ -532,6 +532,21 @@ static uec_result UEC_CALL StubGetTextBlockText(uec_object* widget,
     return requiredSize == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetProgressBarPercent(uec_object* progressBar,
+                                                     double* outPercent)
+{
+    if (outPercent != NULL) *outPercent = 0.0;
+    if (outPercent == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return progressBar == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetProgressBarPercent(uec_object* progressBar,
+                                                     double percent)
+{
+    if (!(percent >= 0.0 && percent <= 1.0)) return UEC_RESULT_INVALID_ARGUMENT;
+    return progressBar == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetComponentCollisionEnabled(uec_scene_component* component,
                                                             uec_collision_enabled* outEnabled)
 {

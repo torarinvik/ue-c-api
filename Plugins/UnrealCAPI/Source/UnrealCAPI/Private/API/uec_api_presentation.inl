@@ -113,6 +113,37 @@
         return CopyFStringToUtf8(textBlock->GetText().ToString(), buffer, bufferSize, requiredSize);
     }
 
+    uec_result UEC_CALL GetProgressBarPercent(uec_object* rawProgressBar,
+                                              double* outPercent)
+    {
+        if (outPercent != nullptr) *outPercent = 0.0;
+        if (outPercent == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECObject*>(rawProgressBar);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UProgressBar* progressBar = Cast<UProgressBar>(handle->Value.Get());
+        if (progressBar == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const float percent = progressBar->GetPercent();
+        if (!FMath::IsFinite(percent)) return UEC_RESULT_INTERNAL_ERROR;
+        *outPercent = static_cast<double>(percent);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetProgressBarPercent(uec_object* rawProgressBar,
+                                              double percent)
+    {
+        if (!IsRepresentableFloat(percent) || percent < 0.0 || percent > 1.0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* handle = reinterpret_cast<FUECObject*>(rawProgressBar);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UProgressBar* progressBar = Cast<UProgressBar>(handle->Value.Get());
+        if (progressBar == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        progressBar->SetPercent(static_cast<float>(percent));
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL BindButtonClicked(uec_object* rawButton,
                                           uec_widget_event_callback callback,
                                           void* userData,

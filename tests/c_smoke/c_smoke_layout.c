@@ -55,7 +55,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details A
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 137u, "ABI minor must include three-way collision responses");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 138u, "ABI minor must include UMG progress-bar adapters");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
@@ -508,3 +508,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_controller_enhanced_input_subsystem) >
 UEC_TEST_ASSERT(offsetof(uec_api, set_component_collision_channel_response) >
                    offsetof(uec_api, get_controller_enhanced_input_subsystem),
                "three-way collision response setter must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_progress_bar_percent) >
+                   offsetof(uec_api, set_component_collision_channel_response),
+               "progress-bar readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_progress_bar_percent) >
+                   offsetof(uec_api, get_progress_bar_percent),
+               "progress-bar write must append to uec_api");

@@ -253,6 +253,9 @@ ABI minor 137 adds `set_component_collision_channel_response` so consumers can
 set a primitive component's channel response to Ignore, Overlap, or Block. It
 uses the existing `uec_collision_response` values and rejects undeclared enum
 values.
+ABI minor 138 adds `get_progress_bar_percent` and `set_progress_bar_percent`
+for normalized UMG progress values. Setter inputs must be finite and in
+`[0, 1]`; both calls require the game thread and a valid `UProgressBar` handle.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

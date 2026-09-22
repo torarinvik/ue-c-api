@@ -325,6 +325,8 @@ development; they do not imply a published or runtime-verified release.
   `UEnhancedInputLocalPlayerSubsystem`.
 - ABI minor 137 adds a typed collision-response setter for per-channel Ignore,
   Overlap, and Block values.
+- ABI minor 138 adds game-thread getters and setters for normalized
+  `UProgressBar` percentages, with finite `[0, 1]` write validation.
 - Mixed and latent actor-function calls reject world handles and world-bound
   object handles from a different target-actor world; callers pass world
   context handles explicitly without depending on editor-only metadata.
@@ -340,7 +342,7 @@ development; they do not imply a published or runtime-verified release.
   when another world is available, stale actor and bridge handle rejection,
   and pending-request drain counts; the portable C gate verifies the appended
   entries.
-- A separately compiled ABI 1.135 header consumer links against the ABI 1.137
+- A separately compiled ABI 1.135 header consumer links against the ABI 1.138
   bridge and exercises the stable prefix plus versioned application-data calls.
 - The C gameplay example now binds the event component, emits a validated
   payload on each movement tick, receives it synchronously, and cleans up the
