@@ -2,8 +2,8 @@
 
 This project is an Unreal Engine C API: an in-process runtime plugin that exposes selected Unreal Engine functionality through a versioned C ABI. It is intended for C programs and other languages that can call C functions through an FFI. The public API is under `Plugins/UnrealCAPI/Source/UnrealCAPI/Public`; engine-dependent code remains private to the module.
 
-The project currently targets Unreal Engine 5.8.2, the latest 5.8 hotfix
-available as of September 2026. See [Epic's release notice](https://forums.unrealengine.com/t/5-8-2-hotfix-released/2746335).
+The project currently targets Unreal Engine 5.8.3, the latest 5.8 hotfix
+available as of September 23, 2026. See [Epic's release notice](https://forums.unrealengine.com/t/5-8-3-hotfix-released/2833315).
 It will be updated and verified as newer Unreal Engine versions are released,
 so the API stays compatible with the state of the art.
 
