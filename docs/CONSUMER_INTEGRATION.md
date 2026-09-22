@@ -71,6 +71,8 @@ thread.
 ABI 92 adds `get_class_function_flags`; inspect its bit flags together with
 parameter metadata before invoking a reflected function. Latent, network, and
 authority-only flags identify paths that the scalar and text adapters reject.
+ABI 93 adds UMG visibility and `UTextBlock` text readback; query the required
+text size first, then provide a caller-owned UTF-8 buffer.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

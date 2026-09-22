@@ -24,7 +24,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Collision sweeps and overlaps | Runtime implemented / Unreal integration pending | World-aligned sphere, box, and capsule queries with ignored-actor filters and bounded unique-actor results |
 | Collision event callbacks | Runtime implemented / Unreal integration pending | One-shot primitive-component hit callbacks with unsubscribe tokens and shutdown cleanup |
 | One-shot spatial audio | Runtime implemented / Unreal integration pending | Fire-and-forget `USoundBase` playback at a world location |
-| Basic UMG widgets | Runtime implemented / Unreal integration pending | Create a `UUserWidget` class, add or remove it from the viewport, set visibility, update `UTextBlock` text, and receive one-shot button clicks |
+| Basic UMG widgets | Runtime implemented / Unreal integration pending | Create a `UUserWidget` class, add or remove it from the viewport, set/read visibility, update/read `UTextBlock` text, and receive one-shot button clicks |
 | Camera field of view | Runtime implemented / Unreal integration pending | Read and write perspective FOV on camera scene components |
 | Save-game slots and object properties | Runtime implemented / Unreal integration pending | Create, load, save, delete, edit supported reflected save-object fields, bounded async completion, and game-INI configuration access |
 | Game-thread dispatch | Runtime implemented / Unreal integration pending | Queue and cancel borrowed callbacks from worker threads; bounded at 1024 pending requests |

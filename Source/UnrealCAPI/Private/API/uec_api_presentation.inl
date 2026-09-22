@@ -79,6 +79,40 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetWidgetVisibility(uec_object* rawWidget,
+                                            uec_widget_visibility* outVisibility)
+    {
+        if (outVisibility != nullptr) *outVisibility = UEC_WIDGET_VISIBLE;
+        if (outVisibility == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* widgetHandle = reinterpret_cast<FUECObject*>(rawWidget);
+        if (!IsValidObject(widgetHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWidget* widget = Cast<UWidget>(widgetHandle->Value.Get());
+        if (widget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        switch (widget->GetVisibility())
+        {
+        case ESlateVisibility::Visible: *outVisibility = UEC_WIDGET_VISIBLE; return UEC_RESULT_OK;
+        case ESlateVisibility::Collapsed: *outVisibility = UEC_WIDGET_COLLAPSED; return UEC_RESULT_OK;
+        case ESlateVisibility::Hidden: *outVisibility = UEC_WIDGET_HIDDEN; return UEC_RESULT_OK;
+        default: return UEC_RESULT_UNSUPPORTED;
+        }
+    }
+
+    uec_result UEC_CALL GetTextBlockText(uec_object* rawWidget,
+                                         char* buffer,
+                                         size_t bufferSize,
+                                         size_t* requiredSize)
+    {
+        if (requiredSize != nullptr) *requiredSize = 0;
+        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* widgetHandle = reinterpret_cast<FUECObject*>(rawWidget);
+        if (!IsValidObject(widgetHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UTextBlock* textBlock = Cast<UTextBlock>(widgetHandle->Value.Get());
+        if (textBlock == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        return CopyFStringToUtf8(textBlock->GetText().ToString(), buffer, bufferSize, requiredSize);
+    }
+
     uec_result UEC_CALL BindButtonClicked(uec_object* rawButton,
                                           uec_widget_event_callback callback,
                                           void* userData,

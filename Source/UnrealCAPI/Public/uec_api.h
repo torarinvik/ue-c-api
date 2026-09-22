@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 92u
+#define UEC_ABI_MINOR 93u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -748,11 +748,8 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_actor_tag)(uec_actor* actor,
                                          uec_string_view tag,
                                          uec_bool enabled);
-    uec_result (UEC_CALL *get_runtime_stats)(uec_context* context,
-                                             uec_runtime_stats* out_stats);
-    uec_result (UEC_CALL *get_world_count_by_kind)(uec_context* context,
-                                                   uec_world_kind kind,
-                                                   uint32_t* out_count);
+    uec_result (UEC_CALL *get_runtime_stats)(uec_context* context, uec_runtime_stats* out_stats);
+    uec_result (UEC_CALL *get_world_count_by_kind)(uec_context* context, uec_world_kind kind, uint32_t* out_count);
     uec_result (UEC_CALL *get_world_at_by_kind)(uec_context* context,
                                                 uec_world_kind kind,
                                                 uint32_t index,
@@ -786,6 +783,7 @@ typedef struct uec_api {
     uec_result (UEC_CALL *cancel_travel_request)(uec_context* context, uint64_t request_id);
     uec_result (UEC_CALL *get_component_visible)(uec_scene_component* component, uec_bool* out_visible); uec_result (UEC_CALL *get_component_active)(uec_scene_component* component, uec_bool* out_active);
     uec_result (UEC_CALL *get_class_function_flags)(uec_class* klass, uint32_t index, uint32_t* out_flags);
+    uec_result (UEC_CALL *get_widget_visibility)(uec_object* widget, uec_widget_visibility* out_visibility); uec_result (UEC_CALL *get_text_block_text)(uec_object* widget, char* buffer, size_t buffer_size, size_t* required_size);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

@@ -719,7 +719,7 @@ namespace
         &InvokeActorFunctionValue,
         &InvokeActorFunctionValues, &GetClassFunctionParameterAt,
         &InvokeActorFunctionTextValues, &FindObjectHandle,
-        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags
+        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

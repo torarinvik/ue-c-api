@@ -223,6 +223,26 @@ static uec_result UEC_CALL StubGetClassFunctionFlags(uec_class* klass,
     return outFlags == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetWidgetVisibility(uec_object* widget,
+                                                   uec_widget_visibility* outVisibility)
+{
+    (void)widget;
+    if (outVisibility != NULL) *outVisibility = UEC_WIDGET_VISIBLE;
+    return outVisibility == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetTextBlockText(uec_object* widget,
+                                                char* buffer,
+                                                size_t bufferSize,
+                                                size_t* requiredSize)
+{
+    (void)widget;
+    (void)buffer;
+    (void)bufferSize;
+    if (requiredSize != NULL) *requiredSize = 0u;
+    return requiredSize == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -257,6 +277,8 @@ static const uec_api g_api = {
     .get_component_visible = &StubGetComponentVisible,
     .get_component_active = &StubGetComponentActive,
     .get_class_function_flags = &StubGetClassFunctionFlags,
+    .get_widget_visibility = &StubGetWidgetVisibility,
+    .get_text_block_text = &StubGetTextBlockText,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
