@@ -119,6 +119,9 @@ ABI 111 adds typed scalar reads for reflected array elements. Boolean, integer,
 enum, float, and double elements use `uec_property_value`; compound elements
 remain on the text accessor, and array indices must still be re-queried after
 mutation.
+ABI 112 adds typed scalar reads for reflected map values and set elements. Map
+and set indices are logical enumeration positions; re-query counts after any
+mutation before using a later index.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

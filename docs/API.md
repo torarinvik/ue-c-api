@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.111`.
+The current runtime slice is intentionally small and versioned as ABI `1.112`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -189,6 +189,10 @@ ABI minor 111 adds typed scalar reads for reflected array elements on actors and
 UObjects. Boolean, integer, enum, float, and double elements use
 `uec_property_value`; compound elements remain available through the existing
 text accessor.
+
+ABI minor 112 adds the same typed scalar reads for reflected map values and set
+elements. Map and set indices are logical enumeration positions and must be
+re-queried after any mutation.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

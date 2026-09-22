@@ -705,6 +705,46 @@ static uec_result UEC_CALL StubGetObjectPropertyArrayElementValue(
     return StubGetArrayElementValue(outValue);
 }
 
+static uec_result UEC_CALL StubGetActorPropertyMapValue(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    uec_property_value* outValue)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubGetArrayElementValue(outValue);
+}
+
+static uec_result UEC_CALL StubGetObjectPropertyMapValue(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    uec_property_value* outValue)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    return StubGetArrayElementValue(outValue);
+}
+
+static uec_result UEC_CALL StubGetActorPropertySetElementValue(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    uec_property_value* outValue)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubGetArrayElementValue(outValue);
+}
+
+static uec_result UEC_CALL StubGetObjectPropertySetElementValue(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    uec_property_value* outValue)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    return StubGetArrayElementValue(outValue);
+}
+
 static uec_result UEC_CALL StubGetClassPropertyFlags(uec_class* klass,
                                                      uint32_t index,
                                                      uint32_t* outFlags)
@@ -788,6 +828,10 @@ static const uec_api g_api = {
     .get_class_property_flags = &StubGetClassPropertyFlags,
     .get_actor_property_array_element_value = &StubGetActorPropertyArrayElementValue,
     .get_object_property_array_element_value = &StubGetObjectPropertyArrayElementValue,
+    .get_actor_property_map_value = &StubGetActorPropertyMapValue,
+    .get_object_property_map_value = &StubGetObjectPropertyMapValue,
+    .get_actor_property_set_element_value = &StubGetActorPropertySetElementValue,
+    .get_object_property_set_element_value = &StubGetObjectPropertySetElementValue,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
