@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 96u, "ABI minor must include collision response");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 97u, "ABI minor must include config integers");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -190,6 +190,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, cancel_streaming_level_request) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_component_collision_response) >
                    offsetof(uec_api, cancel_streaming_level_request),
                "collision response must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_config_integer) >
+                   offsetof(uec_api, get_component_collision_response),
+               "config integer readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_config_integer) >
+                   offsetof(uec_api, get_config_integer),
+               "config integer write must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -384,6 +390,17 @@ int main(void)
     {
         api->release_context(context);
         return 23;
+    }
+
+    int64_t config_value = 42;
+    if (api->get_config_integer(context, streaming_package, streaming_package,
+                                &config_value) != UEC_RESULT_UNSUPPORTED ||
+        config_value != 0 ||
+        api->set_config_integer(context, streaming_package, streaming_package, 1) !=
+            UEC_RESULT_UNSUPPORTED)
+    {
+        api->release_context(context);
+        return 24;
     }
 
     const char message[] = "C ABI smoke test";

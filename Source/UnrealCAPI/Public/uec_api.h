@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 96u
+#define UEC_ABI_MINOR 97u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -784,6 +784,7 @@ typedef struct uec_api {
     uec_result (UEC_CALL *get_component_collision_enabled)(uec_scene_component* component, uec_collision_enabled* out_enabled); uec_result (UEC_CALL *get_audio_component_playing)(uec_object* audio_component, uec_bool* out_playing);
     uec_result (UEC_CALL *set_streaming_level_state_async)(uec_world* world, uec_string_view package_path, uec_bool should_be_loaded, uec_bool should_be_visible, uec_streaming_callback callback, void* user_data, uint64_t* out_request_id); uec_result (UEC_CALL *cancel_streaming_level_request)(uec_context* context, uint64_t request_id);
     uec_result (UEC_CALL *get_component_collision_response)(uec_scene_component* component, uec_trace_channel channel, uec_collision_response* out_response);
+    uec_result (UEC_CALL *get_config_integer)(uec_context* context, uec_string_view section, uec_string_view key, int64_t* out_value); uec_result (UEC_CALL *set_config_integer)(uec_context* context, uec_string_view section, uec_string_view key, int64_t value);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

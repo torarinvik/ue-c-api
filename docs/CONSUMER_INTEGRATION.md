@@ -80,6 +80,8 @@ until the callback or explicit cancellation; callbacks report the observed
 loaded and visible state and run on the game thread.
 ABI 96 adds per-channel collision response readback, including overlap values
 that the boolean setter cannot express.
+ABI 97 adds game-INI integer get/set helpers; values outside Unreal's signed
+32-bit configuration range are rejected before writing.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

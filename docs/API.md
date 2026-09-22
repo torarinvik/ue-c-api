@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.96`.
+The current runtime slice is intentionally small and versioned as ABI `1.97`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -118,6 +118,10 @@ down.
 ABI minor 96 adds `get_component_collision_response`, which reports the
 primitive component's response to a declared trace channel as ignore, overlap,
 or block.
+
+ABI minor 97 adds `get_config_integer` and `set_config_integer`. They use the
+game INI, run on the game thread, and accept the signed 32-bit range exposed by
+Unreal's integer configuration API.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

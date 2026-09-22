@@ -296,6 +296,29 @@ static uec_result UEC_CALL StubGetComponentCollisionResponse(
     return outResponse == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetConfigInteger(uec_context* context,
+                                                uec_string_view section,
+                                                uec_string_view key,
+                                                int64_t* outValue)
+{
+    (void)section;
+    (void)key;
+    if (outValue != NULL) *outValue = 0;
+    return context == &g_context && outValue != NULL ? UEC_RESULT_UNSUPPORTED :
+        (context != &g_context ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_INVALID_ARGUMENT);
+}
+
+static uec_result UEC_CALL StubSetConfigInteger(uec_context* context,
+                                                uec_string_view section,
+                                                uec_string_view key,
+                                                int64_t value)
+{
+    (void)section;
+    (void)key;
+    (void)value;
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -337,6 +360,8 @@ static const uec_api g_api = {
     .set_streaming_level_state_async = &StubSetStreamingLevelStateAsync,
     .cancel_streaming_level_request = &StubCancelStreamingLevelRequest,
     .get_component_collision_response = &StubGetComponentCollisionResponse,
+    .get_config_integer = &StubGetConfigInteger,
+    .set_config_integer = &StubSetConfigInteger,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

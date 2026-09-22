@@ -635,6 +635,43 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetConfigInteger(uec_context* rawContext,
+                                         uec_string_view section,
+                                         uec_string_view key,
+                                         int64_t* outValue)
+    {
+        if (outValue != nullptr) *outValue = 0;
+        if (outValue == nullptr || !IsValidStringView(section) || section.size == 0 ||
+            !IsValidStringView(key) || key.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (GConfig == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        int32 value = 0;
+        if (!GConfig->GetInt(*ToFString(section), *ToFString(key), value, GGameIni)) {
+            return UEC_RESULT_NOT_INITIALIZED;
+        }
+        *outValue = static_cast<int64_t>(value);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetConfigInteger(uec_context* rawContext,
+                                         uec_string_view section,
+                                         uec_string_view key,
+                                         int64_t value)
+    {
+        if (!IsValidStringView(section) || section.size == 0 ||
+            !IsValidStringView(key) || key.size == 0 ||
+            value < TNumericLimits<int32>::Lowest() || value > TNumericLimits<int32>::Max()) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (GConfig == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        GConfig->SetInt(*ToFString(section), *ToFString(key), static_cast<int32>(value), GGameIni);
+        GConfig->Flush(false, GGameIni);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL BindComponentHit(uec_scene_component* rawComponent,
                                          uec_component_hit_callback callback,
                                          void* userData,
