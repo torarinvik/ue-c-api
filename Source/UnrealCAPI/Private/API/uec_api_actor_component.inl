@@ -391,7 +391,9 @@
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         APlayerController* controller = UGameplayStatics::GetPlayerController(
             world, static_cast<int32>(playerIndex));
-        AActor* start = UGameplayStatics::FindPlayerStart(world, controller);
+        AGameModeBase* gameMode = world->GetAuthGameMode();
+        if (gameMode == nullptr) return UEC_RESULT_UNSUPPORTED;
+        AActor* start = gameMode->FindPlayerStart(controller, FString());
         if (start == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         FUECActor* handle = MakeActorHandle(start);
         if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
