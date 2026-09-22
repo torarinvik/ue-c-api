@@ -415,6 +415,23 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     }
     noOutputs = UINT32_MAX;
     result = state->api->invoke_actor_function_arguments(
+        state->actor, scalarName, NULL, 0u, NULL, 0u, &noOutputs);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uec_function_argument wrongScalarKind = duration;
+    wrongScalarKind.kind = UEC_PROPERTY_INTEGER;
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, scalarName, &wrongScalarKind, 1u,
+        NULL, 0u, &noOutputs);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
         state->actor, scalarName, &duration, 1u, NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_OK || noOutputs != 0) {
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);

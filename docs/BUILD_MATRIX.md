@@ -16,9 +16,10 @@ project-plugin layout Unreal uses to discover the descriptor and module source.
 The host project includes tracked Game and Editor target files plus a minimal
 primary module, a C bootstrap probe, and a native latent-test actor fixture
 that exercises scalar and text-backed mixed invocation, output-capacity
-preflight, pure out-parameter ordering, short text-output sizing and retry,
-invalid world-kind handling, completion, cancellation, signature rejection,
-explicit and cross-world context handling, and pending request counts, so
+preflight, pure out-parameter ordering, mixed-call argument-count and
+scalar-kind rejection, short text-output sizing and retry, invalid world-kind
+handling, completion, cancellation, signature rejection, explicit and
+cross-world context handling, and pending request counts, so
 Unreal Build Tool does not need to synthesize temporary targets before
 compiling the plugin and its first C consumer.
 The portable gate is `sh tests/run_checks.sh`. It validates the public header
