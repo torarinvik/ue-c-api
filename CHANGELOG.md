@@ -172,6 +172,8 @@ development; they do not imply a published or runtime-verified release.
   constructor instead of maintaining a separate registry insertion path.
 - Default and indexed world lookup now share one gated world-handle constructor,
   removing duplicate registry insertion behavior.
+- Actor and scene-component queries now clear handles, counts, booleans,
+  transforms, bounds, and bounded-name sizes before validation.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

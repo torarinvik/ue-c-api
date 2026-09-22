@@ -83,12 +83,12 @@
     uec_result UEC_CALL SpawnActor(uec_world* rawWorld, uec_string_view classPath,
                                    const uec_transform* transform, uec_actor** outActor)
     {
+        if (outActor != nullptr) *outActor = nullptr;
         if (outActor == nullptr || transform == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidStringView(classPath) || !IsFiniteTransform(*transform)) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outActor = nullptr;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         const uec_result authorityResult = RequireWorldAuthority(world);
@@ -134,6 +134,7 @@
 
     uec_result UEC_CALL GetActorTransform(uec_actor* rawActor, uec_transform* outTransform)
     {
+        if (outTransform != nullptr) *outTransform = {};
         if (outTransform == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
@@ -162,6 +163,7 @@
 
     uec_result UEC_CALL GetActorName(uec_actor* rawActor, char* buffer, size_t bufferSize, size_t* requiredSize)
     {
+        if (requiredSize != nullptr) *requiredSize = 0;
         if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
@@ -181,6 +183,7 @@
 
     uec_result UEC_CALL ActorHasTag(uec_actor* rawActor, uec_string_view tag, uec_bool* outHasTag)
     {
+        if (outHasTag != nullptr) *outHasTag = UEC_FALSE;
         if (outHasTag == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
@@ -221,11 +224,11 @@
     /* Component handles and component state. */
     uec_result UEC_CALL GetActorRootComponent(uec_actor* rawActor, uec_scene_component** outComponent)
     {
+        if (outComponent != nullptr) *outComponent = nullptr;
         if (outComponent == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outComponent = nullptr;
         AActor* actor = actorHandle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         USceneComponent* component = actor->GetRootComponent();
@@ -238,11 +241,11 @@
 
     uec_result UEC_CALL GetActorComponentCount(uec_actor* rawActor, uint32_t* outCount)
     {
+        if (outCount != nullptr) *outCount = 0;
         if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outCount = 0;
         AActor* actor = actorHandle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         TArray<USceneComponent*> components;
@@ -256,11 +259,11 @@
                                             uint32_t index,
                                             uec_scene_component** outComponent)
     {
+        if (outComponent != nullptr) *outComponent = nullptr;
         if (outComponent == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outComponent = nullptr;
         AActor* actor = actorHandle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         TArray<USceneComponent*> components;
@@ -278,11 +281,11 @@
                                                        uec_string_view classPath,
                                                        uint32_t* outCount)
     {
+        if (outCount != nullptr) *outCount = 0;
         if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outCount = 0;
         UClass* componentClass = LoadSceneComponentClass(classPath);
         if (componentClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         AActor* actor = actorHandle->Value.Get();
@@ -305,11 +308,11 @@
                                                     uint32_t index,
                                                     uec_scene_component** outComponent)
     {
+        if (outComponent != nullptr) *outComponent = nullptr;
         if (outComponent == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outComponent = nullptr;
         UClass* componentClass = LoadSceneComponentClass(classPath);
         if (componentClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         AActor* actor = actorHandle->Value.Get();
@@ -341,6 +344,7 @@
 
     uec_result UEC_CALL GetComponentTransform(uec_scene_component* rawComponent, uec_transform* outTransform)
     {
+        if (outTransform != nullptr) *outTransform = {};
         if (outTransform == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
@@ -427,6 +431,7 @@
                                              uec_string_view classPath,
                                              uint32_t* outCount)
     {
+        if (outCount != nullptr) *outCount = 0;
         if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -436,7 +441,6 @@
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         UClass* actorClass = LoadClass<AActor>(nullptr, *ToFString(classPath));
         if (actorClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        *outCount = 0;
         for (TActorIterator<AActor> iterator(world); iterator; ++iterator)
         {
             if (iterator->IsA(actorClass))
@@ -453,8 +457,8 @@
                                           uint32_t index,
                                           uec_actor** outActor)
     {
+        if (outActor != nullptr) *outActor = nullptr;
         if (outActor == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        *outActor = nullptr;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -480,6 +484,7 @@
     /* Tag enumeration preserves Unreal's reflected tag order for the call. */
     uec_result UEC_CALL GetActorTagCount(uec_actor* rawActor, uint32_t* outCount)
     {
+        if (outCount != nullptr) *outCount = 0;
         if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
@@ -497,6 +502,7 @@
                                       size_t bufferSize,
                                       size_t* requiredSize)
     {
+        if (requiredSize != nullptr) *requiredSize = 0;
         if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
@@ -514,6 +520,8 @@
                                        uec_vector3* outOrigin,
                                        uec_vector3* outExtent)
     {
+        if (outOrigin != nullptr) *outOrigin = {};
+        if (outExtent != nullptr) *outExtent = {};
         if (outOrigin == nullptr || outExtent == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
@@ -532,13 +540,13 @@
                                         uint32_t playerIndex,
                                         uec_actor** outStart)
     {
+        if (outStart != nullptr) *outStart = nullptr;
         if (outStart == nullptr || playerIndex > static_cast<uint32_t>(INT32_MAX)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outStart = nullptr;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         APlayerController* controller = UGameplayStatics::GetPlayerController(
