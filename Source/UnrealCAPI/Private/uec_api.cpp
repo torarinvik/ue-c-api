@@ -282,7 +282,7 @@ namespace
         FScopeLock lock(&GHandleMutex);
         return world != nullptr && !GShuttingDown && GWorlds.Contains(world) &&
             world->Header.Kind == EUECHandleKind::World && world->Header.Generation != 0 &&
-            !world->Header.bReleased;
+            !world->Header.bReleased && world->Value.IsValid();
     }
 
     static bool IsValidActor(const FUECActor* actor)
@@ -290,7 +290,7 @@ namespace
         FScopeLock lock(&GHandleMutex);
         return actor != nullptr && !GShuttingDown && GActors.Contains(actor) &&
             actor->Header.Kind == EUECHandleKind::Actor && actor->Header.Generation != 0 &&
-            !actor->Header.bReleased;
+            !actor->Header.bReleased && actor->Value.IsValid();
     }
 
     static bool IsValidComponent(const FUECSceneComponent* component)
@@ -298,7 +298,8 @@ namespace
         FScopeLock lock(&GHandleMutex);
         return component != nullptr && !GShuttingDown && GComponents.Contains(component) &&
             component->Header.Kind == EUECHandleKind::SceneComponent &&
-            component->Header.Generation != 0 && !component->Header.bReleased;
+            component->Header.Generation != 0 && !component->Header.bReleased &&
+            component->Value.IsValid();
     }
 
     static bool IsValidClass(const FUECClass* klass)
@@ -306,7 +307,7 @@ namespace
         FScopeLock lock(&GHandleMutex);
         return klass != nullptr && !GShuttingDown && GClasses.Contains(klass) &&
             klass->Header.Kind == EUECHandleKind::Class && klass->Header.Generation != 0 &&
-            !klass->Header.bReleased;
+            !klass->Header.bReleased && klass->Value.IsValid();
     }
 
     static bool IsValidObject(const FUECObject* object)
@@ -314,7 +315,7 @@ namespace
         FScopeLock lock(&GHandleMutex);
         return object != nullptr && !GShuttingDown && GObjects.Contains(object) &&
             object->Header.Kind == EUECHandleKind::Object && object->Header.Generation != 0 &&
-            !object->Header.bReleased;
+            !object->Header.bReleased && object->Value.IsValid();
     }
 
     static uec_property_kind GetPropertyKind(const FProperty* property)

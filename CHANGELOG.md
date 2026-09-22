@@ -161,6 +161,9 @@ development; they do not imply a published or runtime-verified release.
   functions on client worlds before entering `ProcessEvent`.
 - Possession and view-target changes now reject actor handles from different
   worlds or PIE instances before calling Unreal.
+- Typed handle validation now checks the underlying weak object reference, so
+  metadata queries reject destroyed or unloaded worlds, actors, components,
+  classes, and objects consistently.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

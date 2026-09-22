@@ -17,8 +17,10 @@ registries. Each handle receives a monotonic generation and kind tag; released
 handles are tombstoned until module shutdown so a stale pointer cannot be
 accepted after allocator address reuse. A world or actor handle is a
 bridge-owned reference to an Unreal object that may become invalid when Unreal
-destroys or unloads that object. Every operation reports
-`UEC_RESULT_INVALID_HANDLE` when the referenced object is no longer valid.
+destroys or unloads that object. Typed validation checks the underlying weak
+object reference before every operation, including metadata-only queries, and
+reports `UEC_RESULT_INVALID_HANDLE` when the referenced object is no longer
+valid.
 Releasing a handle releases the bridge handle; it does not destroy an Unreal
 object. `destroy_actor` destroys the actor and tombstones its actor handle.
 
