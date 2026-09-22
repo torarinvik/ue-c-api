@@ -745,6 +745,26 @@ static uec_result UEC_CALL StubGetObjectPropertySetElementValue(
     return StubGetArrayElementValue(outValue);
 }
 
+static uec_result UEC_CALL StubGetActorPropertyStructFieldValue(
+    uec_actor* actor, uec_string_view propertyName, uec_string_view fieldName,
+    uec_property_value* outValue)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)fieldName;
+    return StubGetArrayElementValue(outValue);
+}
+
+static uec_result UEC_CALL StubGetObjectPropertyStructFieldValue(
+    uec_object* object, uec_string_view propertyName, uec_string_view fieldName,
+    uec_property_value* outValue)
+{
+    (void)object;
+    (void)propertyName;
+    (void)fieldName;
+    return StubGetArrayElementValue(outValue);
+}
+
 static uec_result UEC_CALL StubGetClassPropertyFlags(uec_class* klass,
                                                      uint32_t index,
                                                      uint32_t* outFlags)
@@ -832,6 +852,8 @@ static const uec_api g_api = {
     .get_object_property_map_value = &StubGetObjectPropertyMapValue,
     .get_actor_property_set_element_value = &StubGetActorPropertySetElementValue,
     .get_object_property_set_element_value = &StubGetObjectPropertySetElementValue,
+    .get_actor_property_struct_field_value = &StubGetActorPropertyStructFieldValue,
+    .get_object_property_struct_field_value = &StubGetObjectPropertyStructFieldValue,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

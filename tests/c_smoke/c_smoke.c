@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 112u, "ABI minor must include typed map/set values");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 113u, "ABI minor must include typed struct fields");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
@@ -120,6 +120,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_set_element_value) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_set_element_value) >
                    offsetof(uec_api, get_actor_property_set_element_value),
                "object typed set values must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_struct_field_value) >
+                   offsetof(uec_api, get_object_property_set_element_value),
+               "typed struct fields must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_struct_field_value) >
+                   offsetof(uec_api, get_actor_property_struct_field_value),
+               "object typed struct fields must append to uec_api");
 UEC_TEST_ASSERT(offsetof(uec_api, get_config_string) >
                    offsetof(uec_api, get_actor_component_at_by_class),
                "configuration reads must append to uec_api");
@@ -695,6 +701,19 @@ int main(void)
     {
         api->release_context(context);
         return 39;
+    }
+
+    if (api->get_actor_property_struct_field_value(NULL, streaming_package, streaming_package,
+                                                   &array_value) != UEC_RESULT_UNSUPPORTED ||
+        array_value.kind != UEC_PROPERTY_UNKNOWN || array_value.bool_value != UEC_FALSE ||
+        array_value.integer_value != 0 || array_value.real_value != 0.0 ||
+        api->get_object_property_struct_field_value(NULL, streaming_package, streaming_package,
+                                                    &array_value) != UEC_RESULT_UNSUPPORTED ||
+        array_value.kind != UEC_PROPERTY_UNKNOWN || array_value.bool_value != UEC_FALSE ||
+        array_value.integer_value != 0 || array_value.real_value != 0.0)
+    {
+        api->release_context(context);
+        return 40;
     }
 
     const char message[] = "C ABI smoke test";
