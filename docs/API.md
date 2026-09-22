@@ -1,14 +1,14 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.8`.
+The current runtime slice is intentionally small and versioned as ABI `1.13`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
 
 `get_capabilities` reports the feature bits present in the loaded bridge. The
 current implementation reports bootstrap, logging, world, actor, component,
-timer, and class-metadata support. Property values and reflected function calls
-are reserved for a later phase and are not reported as capabilities.
+timer, class-metadata, and reflected scalar/string reads and writes. Reflected
+function calls are reserved for a later phase and are not exposed.
 
 Contexts, worlds, and actors are opaque handles validated against typed active
 handle registries. A world or actor handle is a bridge-owned reference to an
@@ -57,8 +57,26 @@ Class metadata is read through an opaque class handle obtained from a loadable
 Unreal class path. The current metadata surface reports the class name,
 inheritance checks, and reflected property names and broad property kinds. A
 property index is only meaningful for the class state at the time of the call;
-consumers should re-enumerate after hot reload or class reinstancing. Property
-values and reflected function invocation are not exposed yet.
+consumers should re-enumerate after hot reload or class reinstancing. Scalar,
+name, string, and text actor properties can be read through the typed
+property functions. Arrays, maps, sets, structs, object references, and
+reflected function invocation remain unsupported and return an explicit
+unsupported result. Text writes create culture-neutral `FText` values from the
+provided UTF-8 text; they do not create localization tables.
+
+`invoke_actor_function` supports only reflected actor functions with no
+parameters, no return or out values, and no latent flag. Functions with any
+parameters or latent behavior return `UEC_RESULT_UNSUPPORTED` until a typed
+argument and async completion ABI is available.
+
+`load_object` synchronously loads an object from a runtime object path and
+returns a weak opaque handle. The handle does not keep the UObject alive; calls
+after Unreal unloads or destroys it return `UEC_RESULT_INVALID_HANDLE`. Object
+names and `object_is_a` checks are available on valid handles.
+
+`line_trace` maps a small stable C channel enum to Unreal collision channels and
+returns a POD hit record. A hit actor, when present, is returned as an owned
+weak actor handle and must be released with `release_actor`.
 
 ## Verification
 

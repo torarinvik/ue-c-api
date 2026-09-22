@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 8u
+#define UEC_ABI_MINOR 13u
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +61,9 @@ enum {
     UEC_CAPABILITY_REFLECTION = UINT64_C(1) << 4,
     UEC_CAPABILITY_COMPONENTS = UINT64_C(1) << 5,
     UEC_CAPABILITY_TIMERS = UINT64_C(1) << 6,
-    UEC_CAPABILITY_CLASS_METADATA = UINT64_C(1) << 7
+    UEC_CAPABILITY_CLASS_METADATA = UINT64_C(1) << 7,
+    UEC_CAPABILITY_COLLISION = UINT64_C(1) << 8,
+    UEC_CAPABILITY_ASSETS = UINT64_C(1) << 9
 };
 
 typedef struct uec_context uec_context;
@@ -69,6 +71,7 @@ typedef struct uec_world uec_world;
 typedef struct uec_actor uec_actor;
 typedef struct uec_scene_component uec_scene_component;
 typedef struct uec_class uec_class;
+typedef struct uec_object uec_object;
 typedef struct uec_api_version {
     uint32_t major;
     uint32_t minor;
@@ -116,6 +119,33 @@ typedef enum uec_property_kind {
     UEC_PROPERTY_MAP = 13,
     UEC_PROPERTY_SET = 14
 } uec_property_kind;
+
+typedef struct uec_property_value {
+    uint32_t struct_size;
+    uec_property_kind kind;
+    uec_bool bool_value;
+    uint8_t reserved[3];
+    int64_t integer_value;
+    double real_value;
+} uec_property_value;
+
+typedef enum uec_trace_channel {
+    UEC_TRACE_VISIBILITY = 0,
+    UEC_TRACE_CAMERA = 1,
+    UEC_TRACE_WORLD_STATIC = 2,
+    UEC_TRACE_WORLD_DYNAMIC = 3,
+    UEC_TRACE_PAWN = 4,
+    UEC_TRACE_PHYSICS_BODY = 5
+} uec_trace_channel;
+
+typedef struct uec_hit_result {
+    uec_bool blocking_hit;
+    uint8_t reserved[7];
+    uec_vector3 location;
+    uec_vector3 normal;
+    double distance;
+    uec_actor* actor;
+} uec_hit_result;
 
 typedef void (UEC_CALL *uec_timer_callback)(uint64_t timer_id, void* user_data);
 
@@ -202,6 +232,40 @@ typedef struct uec_api {
                                                  size_t name_buffer_size,
                                                  size_t* name_required_size,
                                                  uec_property_kind* out_kind);
+    uec_result (UEC_CALL *get_actor_property_value)(uec_actor* actor,
+                                                    uec_string_view property_name,
+                                                    uec_property_value* out_value);
+    uec_result (UEC_CALL *get_actor_property_string)(uec_actor* actor,
+                                                     uec_string_view property_name,
+                                                     char* buffer,
+                                                     size_t buffer_size,
+                                                     size_t* required_size,
+                                                     uec_property_kind* out_kind);
+    uec_result (UEC_CALL *set_actor_property_value)(uec_actor* actor,
+                                                    uec_string_view property_name,
+                                                    const uec_property_value* value);
+    uec_result (UEC_CALL *set_actor_property_string)(uec_actor* actor,
+                                                     uec_string_view property_name,
+                                                     uec_string_view value);
+    uec_result (UEC_CALL *line_trace)(uec_world* world,
+                                      uec_vector3 start,
+                                      uec_vector3 end,
+                                      uec_trace_channel channel,
+                                      uec_bool trace_complex,
+                                      uec_hit_result* out_hit);
+    uec_result (UEC_CALL *invoke_actor_function)(uec_actor* actor,
+                                                 uec_string_view function_name);
+    uec_result (UEC_CALL *load_object)(uec_context* context,
+                                       uec_string_view object_path,
+                                       uec_object** out_object);
+    uec_result (UEC_CALL *release_object)(uec_object* object);
+    uec_result (UEC_CALL *get_object_name)(uec_object* object,
+                                           char* buffer,
+                                           size_t buffer_size,
+                                           size_t* required_size);
+    uec_result (UEC_CALL *object_is_a)(uec_object* object,
+                                       uec_string_view class_path,
+                                       uec_bool* out_is_a);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

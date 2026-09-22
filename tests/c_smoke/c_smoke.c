@@ -3,10 +3,17 @@
 #include <stdio.h>
 #include <stddef.h>
 
-_Static_assert(sizeof(uec_vector3) == 24, "uec_vector3 ABI changed");
-_Static_assert(sizeof(uec_quaternion) == 32, "uec_quaternion ABI changed");
-_Static_assert(sizeof(uec_transform) == 80, "uec_transform ABI changed");
-_Static_assert(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
+#ifdef __cplusplus
+#define UEC_TEST_ASSERT static_assert
+#else
+#define UEC_TEST_ASSERT _Static_assert
+#endif
+
+UEC_TEST_ASSERT(sizeof(uec_vector3) == 24, "uec_vector3 ABI changed");
+UEC_TEST_ASSERT(sizeof(uec_quaternion) == 32, "uec_quaternion ABI changed");
+UEC_TEST_ASSERT(sizeof(uec_transform) == 80, "uec_transform ABI changed");
+UEC_TEST_ASSERT(sizeof(uec_property_value) == 32, "uec_property_value ABI changed");
+UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 
 int main(void)
@@ -23,14 +30,16 @@ int main(void)
     result = api->get_capabilities(context, &capabilities);
     if (result != UEC_RESULT_OK || (capabilities & UEC_CAPABILITY_BOOTSTRAP) == 0 ||
         (capabilities & UEC_CAPABILITY_ACTORS) == 0 ||
-        (capabilities & UEC_CAPABILITY_REFLECTION) != 0)
+        (capabilities & UEC_CAPABILITY_REFLECTION) == 0 ||
+        (capabilities & UEC_CAPABILITY_CLASS_METADATA) == 0)
     {
         api->release_context(context);
         return 5;
     }
 
     const char message[] = "C ABI smoke test";
-    result = api->log(context, (uec_string_view){message, sizeof(message) - 1u});
+    const uec_string_view message_view = {message, sizeof(message) - 1u};
+    result = api->log(context, message_view);
     if (result != UEC_RESULT_OK)
     {
         api->release_context(context);

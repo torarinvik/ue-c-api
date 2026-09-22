@@ -6,9 +6,15 @@ The project currently targets the latest Unreal Engine 5.8 release. It will be u
 
 The first runtime slice establishes ABI negotiation, an opaque context, bounded diagnostics, logging, and explicit context release. The standalone C smoke consumer checks that the public header remains valid C11 without requiring Unreal headers.
 
-The initial runtime API also provides game-thread world lookup plus opaque actor handles for spawning, destroying, reading, and setting transforms. See [docs/API.md](docs/API.md) for ownership and threading rules.
+The initial runtime API also provides game-thread world lookup plus opaque actor handles for spawning, destroying, reading, and setting transforms. It includes bounded class/property metadata and scalar/string property reads. See [docs/API.md](docs/API.md) for ownership and threading rules.
 
 Run `sh tests/run_checks.sh` to validate the public C/C++ ABI headers and Unreal descriptors without an engine installation. The current feature boundary is tracked in [docs/FEATURES.md](docs/FEATURES.md).
+
+GitHub Actions runs these checks on Linux and macOS for pushes and pull requests.
+They check header syntax, selected layouts, and descriptor JSON; Unreal module
+compilation and runtime tests still need an engine installation. See
+[CONTRIBUTING.md](CONTRIBUTING.md) to participate and [CHANGELOG.md](CHANGELOG.md)
+for changes in development.
 
 The plugin must be built against a specific Unreal Engine 5.x version and toolchain. The host project is set to UE 5.8; record the exact engine patch and toolchain used for each build.
 

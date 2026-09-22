@@ -40,6 +40,7 @@ namespace
         bool Cancelled = false;
     };
     struct FUECClass final { TWeakObjectPtr<UClass> Value; };
+    struct FUECObject final { TWeakObjectPtr<UObject> Value; };
 
     FCriticalSection GHandleMutex;
     TSet<const FUECContext*> GContexts;
@@ -48,6 +49,7 @@ namespace
     TSet<const FUECSceneComponent*> GComponents;
     TMap<uint64, TSharedPtr<FUECTimerState>> GTimers;
     TSet<const FUECClass*> GClasses;
+    TSet<const FUECObject*> GObjects;
     uint64 GNextTimerId = 1;
 
     static bool IsValidContext(uec_context* rawContext)
@@ -81,6 +83,12 @@ namespace
         return klass != nullptr && GClasses.Contains(klass);
     }
 
+    static bool IsValidObject(const FUECObject* object)
+    {
+        FScopeLock lock(&GHandleMutex);
+        return object != nullptr && GObjects.Contains(object);
+    }
+
     static uec_property_kind GetPropertyKind(const FProperty* property)
     {
         if (CastField<FBoolProperty>(property)) return UEC_PROPERTY_BOOL;
@@ -102,6 +110,13 @@ namespace
         if (CastField<FMapProperty>(property)) return UEC_PROPERTY_MAP;
         if (CastField<FSetProperty>(property)) return UEC_PROPERTY_SET;
         return UEC_PROPERTY_UNKNOWN;
+    }
+
+    static bool IsUnsignedIntegerProperty(const FProperty* property)
+    {
+        return CastField<FByteProperty>(property) || CastField<FUInt8Property>(property) ||
+            CastField<FUInt16Property>(property) || CastField<FUInt32Property>(property) ||
+            CastField<FUInt64Property>(property);
     }
 
     static uec_result CopyFStringToUtf8(const FString& value, char* buffer,
@@ -161,7 +176,8 @@ namespace
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         *outCapabilities = UEC_CAPABILITY_BOOTSTRAP | UEC_CAPABILITY_LOGGING |
             UEC_CAPABILITY_WORLD | UEC_CAPABILITY_ACTORS | UEC_CAPABILITY_COMPONENTS |
-            UEC_CAPABILITY_TIMERS | UEC_CAPABILITY_CLASS_METADATA;
+            UEC_CAPABILITY_TIMERS | UEC_CAPABILITY_CLASS_METADATA | UEC_CAPABILITY_REFLECTION |
+            UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS;
         return UEC_RESULT_OK;
     }
 
@@ -636,6 +652,8 @@ namespace
         GActors.Empty();
         GComponents.Empty();
         GClasses.Empty();
+        for (const FUECObject* handle : GObjects) delete const_cast<FUECObject*>(handle);
+        GObjects.Empty();
     }
 
     uec_result UEC_CALL FindClass(uec_context* rawContext,
@@ -738,6 +756,295 @@ namespace
         return UEC_RESULT_INVALID_ARGUMENT;
     }
 
+    uec_result UEC_CALL GetActorPropertyValue(uec_actor* rawActor,
+                                              uec_string_view propertyName,
+                                              uec_property_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(uec_property_value))
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+
+        outValue->kind = GetPropertyKind(property);
+        outValue->bool_value = UEC_FALSE;
+        outValue->integer_value = 0;
+        outValue->real_value = 0.0;
+        if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
+        {
+            outValue->bool_value = boolProperty->GetPropertyValue_InContainer(actor) ? UEC_TRUE : UEC_FALSE;
+            return UEC_RESULT_OK;
+        }
+        if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
+        {
+            if (numericProperty->IsFloatingPoint())
+            {
+                outValue->real_value = numericProperty->GetFloatingPointPropertyValue_InContainer(actor);
+                return UEC_RESULT_OK;
+            }
+            if (numericProperty->IsInteger())
+            {
+                outValue->integer_value = IsUnsignedIntegerProperty(property)
+                    ? static_cast<int64>(numericProperty->GetUnsignedIntPropertyValue_InContainer(actor))
+                    : numericProperty->GetSignedIntPropertyValue_InContainer(actor);
+                return UEC_RESULT_OK;
+            }
+        }
+        return UEC_RESULT_UNSUPPORTED;
+    }
+
+    uec_result UEC_CALL GetActorPropertyString(uec_actor* rawActor,
+                                               uec_string_view propertyName,
+                                               char* buffer,
+                                               size_t bufferSize,
+                                               size_t* requiredSize,
+                                               uec_property_kind* outKind)
+    {
+        if (requiredSize == nullptr || outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        FString value;
+        *outKind = GetPropertyKind(property);
+        if (const FStrProperty* stringProperty = CastField<FStrProperty>(property))
+        {
+            value = stringProperty->GetPropertyValue_InContainer(actor);
+        }
+        else if (const FNameProperty* nameProperty = CastField<FNameProperty>(property))
+        {
+            value = nameProperty->GetPropertyValue_InContainer(actor).ToString();
+        }
+        else if (const FTextProperty* textProperty = CastField<FTextProperty>(property))
+        {
+            value = textProperty->GetPropertyValue_InContainer(actor).ToString();
+        }
+        else
+        {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        return CopyFStringToUtf8(value, buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL SetActorPropertyValue(uec_actor* rawActor,
+                                              uec_string_view propertyName,
+                                              const uec_property_value* value)
+    {
+        if (value == nullptr || value->struct_size < sizeof(uec_property_value)) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (propertyName.data == nullptr && propertyName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
+        {
+            if (value->kind != UEC_PROPERTY_BOOL) return UEC_RESULT_INVALID_ARGUMENT;
+            boolProperty->SetPropertyValue_InContainer(actor, value->bool_value != UEC_FALSE);
+            return UEC_RESULT_OK;
+        }
+        if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
+        {
+            if (numericProperty->IsFloatingPoint())
+            {
+                if (value->kind != UEC_PROPERTY_FLOAT && value->kind != UEC_PROPERTY_DOUBLE) return UEC_RESULT_INVALID_ARGUMENT;
+                numericProperty->SetFloatingPointPropertyValue(
+                    numericProperty->ContainerPtrToValuePtr<void>(actor), value->real_value);
+                return UEC_RESULT_OK;
+            }
+            if (numericProperty->IsInteger())
+            {
+                if (value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) return UEC_RESULT_INVALID_ARGUMENT;
+                const FString text = LexToString(value->integer_value);
+                numericProperty->SetNumericPropertyValueFromString_InContainer(actor, *text);
+                return UEC_RESULT_OK;
+            }
+        }
+        return UEC_RESULT_UNSUPPORTED;
+    }
+
+    uec_result UEC_CALL SetActorPropertyString(uec_actor* rawActor,
+                                               uec_string_view propertyName,
+                                               uec_string_view value)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if ((propertyName.data == nullptr && propertyName.size != 0) ||
+            (value.data == nullptr && value.size != 0)) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const FString text = ToFString(value);
+        if (const FStrProperty* stringProperty = CastField<FStrProperty>(property))
+        {
+            stringProperty->SetPropertyValue_InContainer(actor, text);
+            return UEC_RESULT_OK;
+        }
+        if (const FNameProperty* nameProperty = CastField<FNameProperty>(property))
+        {
+            nameProperty->SetPropertyValue_InContainer(actor, FName(*text));
+            return UEC_RESULT_OK;
+        }
+        if (const FTextProperty* textProperty = CastField<FTextProperty>(property))
+        {
+            textProperty->SetPropertyValue_InContainer(actor, FText::FromString(text));
+            return UEC_RESULT_OK;
+        }
+        return UEC_RESULT_UNSUPPORTED;
+    }
+
+    uec_result UEC_CALL LineTrace(uec_world* rawWorld,
+                                  uec_vector3 start,
+                                  uec_vector3 end,
+                                  uec_trace_channel channel,
+                                  uec_bool traceComplex,
+                                  uec_hit_result* outHit)
+    {
+        if (outHit == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        ECollisionChannel collisionChannel;
+        switch (channel)
+        {
+        case UEC_TRACE_VISIBILITY: collisionChannel = ECC_Visibility; break;
+        case UEC_TRACE_CAMERA: collisionChannel = ECC_Camera; break;
+        case UEC_TRACE_WORLD_STATIC: collisionChannel = ECC_WorldStatic; break;
+        case UEC_TRACE_WORLD_DYNAMIC: collisionChannel = ECC_WorldDynamic; break;
+        case UEC_TRACE_PAWN: collisionChannel = ECC_Pawn; break;
+        case UEC_TRACE_PHYSICS_BODY: collisionChannel = ECC_PhysicsBody; break;
+        default: return UEC_RESULT_INVALID_ARGUMENT;
+        }
+
+        *outHit = {};
+        FHitResult hit;
+        FCollisionQueryParams queryParams;
+        queryParams.bTraceComplex = traceComplex != UEC_FALSE;
+        const bool didHit = world->LineTraceSingleByChannel(
+            hit,
+            FVector(start.x, start.y, start.z),
+            FVector(end.x, end.y, end.z),
+            collisionChannel,
+            queryParams);
+        if (!didHit) return UEC_RESULT_OK;
+        outHit->blocking_hit = hit.bBlockingHit ? UEC_TRUE : UEC_FALSE;
+        outHit->location = {hit.Location.X, hit.Location.Y, hit.Location.Z};
+        outHit->normal = {hit.Normal.X, hit.Normal.Y, hit.Normal.Z};
+        outHit->distance = hit.Distance;
+        if (AActor* actor = hit.GetActor())
+        {
+            auto* actorHandle = new FUECActor();
+            actorHandle->Value = actor;
+            {
+                FScopeLock lock(&GHandleMutex);
+                GActors.Add(actorHandle);
+            }
+            outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL InvokeActorFunction(uec_actor* rawActor, uec_string_view functionName)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (functionName.data == nullptr && functionName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
+        if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (function->HasAnyFunctionFlags(FUNC_Latent)) return UEC_RESULT_UNSUPPORTED;
+        if (!function->HasAnyFunctionFlags(FUNC_BlueprintCallable | FUNC_Native | FUNC_BlueprintEvent))
+        {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        for (TFieldIterator<FProperty> iterator(function); iterator; ++iterator)
+        {
+            const FProperty* parameter = *iterator;
+            if (parameter->HasAnyPropertyFlags(CPF_Parm)) return UEC_RESULT_UNSUPPORTED;
+        }
+        actor->ProcessEvent(function, nullptr);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL LoadObjectHandle(uec_context* rawContext,
+                                         uec_string_view objectPath,
+                                         uec_object** outObject)
+    {
+        if (outObject == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outObject = nullptr;
+        UObject* object = LoadObject<UObject>(nullptr, *ToFString(objectPath));
+        if (object == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = new FUECObject();
+        handle->Value = object;
+        {
+            FScopeLock lock(&GHandleMutex);
+            GObjects.Add(handle);
+        }
+        *outObject = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL ReleaseObject(uec_object* rawObject)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        {
+            FScopeLock lock(&GHandleMutex);
+            GObjects.Remove(handle);
+        }
+        delete handle;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetObjectName(uec_object* rawObject,
+                                      char* buffer,
+                                      size_t bufferSize,
+                                      size_t* requiredSize)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        UObject* object = handle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return CopyFStringToUtf8(object->GetName(), buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL ObjectIsA(uec_object* rawObject,
+                                  uec_string_view classPath,
+                                  uec_bool* outIsA)
+    {
+        if (outIsA == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        UClass* klass = LoadClass<UObject>(nullptr, *ToFString(classPath));
+        if (klass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outIsA = object->IsA(klass) ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
     const uec_api GApi = {
         sizeof(uec_api), UEC_ABI_MAJOR, UEC_ABI_MINOR,
         &GetCapabilities, &GetLastError, &Log, &ReleaseContext,
@@ -748,7 +1055,11 @@ namespace
         &ReleaseSceneComponent, &GetComponentTransform,
         &SetComponentTransform, &SetComponentVisible, &SetComponentActive,
         &SetTimer, &ClearTimer, &FindClass, &ReleaseClass, &GetClassName,
-        &ClassIsA, &GetClassPropertyCount, &GetClassPropertyAt
+        &ClassIsA, &GetClassPropertyCount, &GetClassPropertyAt,
+        &GetActorPropertyValue, &GetActorPropertyString,
+        &SetActorPropertyValue, &SetActorPropertyString, &LineTrace,
+        &InvokeActorFunction, &LoadObjectHandle, &ReleaseObject,
+        &GetObjectName, &ObjectIsA
     };
 }
 
