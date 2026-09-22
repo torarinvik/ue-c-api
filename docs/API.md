@@ -46,9 +46,9 @@ asset requests, save requests, and input bindings. New `uec_get_api` calls
 return `UEC_RESULT_SHUTTING_DOWN`, and existing handles are rejected while the
 gate is active. Consumers must stop submitting work and release their context
 before unloading the plugin; callbacks already pending at teardown are
-suppressed. Handle constructors also recheck the gate while registering actor,
-component, and object handles, so late callbacks cannot publish new live handles
-during teardown.
+suppressed. Handle constructors also recheck the gate while registering world,
+actor, component, class, and object handles, so late callbacks cannot publish
+new live handles during teardown.
 
 Strings are UTF-8 views with an explicit byte length. The caller owns the bytes
 for the duration of a call; the bridge does not retain them. Malformed UTF-8,
