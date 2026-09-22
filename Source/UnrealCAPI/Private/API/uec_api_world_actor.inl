@@ -62,6 +62,32 @@
         return UEC_RESULT_OK;
     }
 
+    static FUECWorld* MakeWorldHandle(UWorld* world,
+                                      EWorldType::Type worldType,
+                                      int32 pieInstance)
+    {
+        if (world == nullptr) return nullptr;
+        auto* handle = new FUECWorld();
+        if (!InitializeHandle(handle->Header, EUECHandleKind::World))
+        {
+            delete handle;
+            return nullptr;
+        }
+        handle->Value = world;
+        handle->Kind = ToWorldKind(worldType);
+        handle->PIEInstance = pieInstance;
+        {
+            FScopeLock lock(&GHandleMutex);
+            if (GShuttingDown)
+            {
+                delete handle;
+                return nullptr;
+            }
+            GWorlds.Add(handle);
+        }
+        return handle;
+    }
+
     uec_result UEC_CALL GetDefaultWorld(uec_context* rawContext, uec_world** outWorld)
     {
         if (outWorld != nullptr) *outWorld = nullptr;
@@ -74,19 +100,9 @@
             UWorld* world = worldContext.World();
             if (world != nullptr && (worldContext.WorldType == EWorldType::Game || worldContext.WorldType == EWorldType::PIE))
             {
-                auto* handle = new FUECWorld();
-                if (!InitializeHandle(handle->Header, EUECHandleKind::World))
-                {
-                    delete handle;
-                    return UEC_RESULT_INTERNAL_ERROR;
-                }
-                handle->Value = world;
-                handle->Kind = ToWorldKind(worldContext.WorldType);
-                handle->PIEInstance = worldContext.PIEInstance;
-                {
-                    FScopeLock lock(&GHandleMutex);
-                    GWorlds.Add(handle);
-                }
+                FUECWorld* handle = MakeWorldHandle(
+                    world, worldContext.WorldType, worldContext.PIEInstance);
+                if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
                 *outWorld = reinterpret_cast<uec_world*>(handle);
                 return UEC_RESULT_OK;
             }
@@ -129,19 +145,9 @@
                 continue;
             }
             if (current++ != index) continue;
-            auto* handle = new FUECWorld();
-            if (!InitializeHandle(handle->Header, EUECHandleKind::World))
-            {
-                delete handle;
-                return UEC_RESULT_INTERNAL_ERROR;
-            }
-            handle->Value = world;
-            handle->Kind = ToWorldKind(worldContext.WorldType);
-            handle->PIEInstance = worldContext.PIEInstance;
-            {
-                FScopeLock lock(&GHandleMutex);
-                GWorlds.Add(handle);
-            }
+            FUECWorld* handle = MakeWorldHandle(
+                world, worldContext.WorldType, worldContext.PIEInstance);
+            if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
             *outWorld = reinterpret_cast<uec_world*>(handle);
             return UEC_RESULT_OK;
         }

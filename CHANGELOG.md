@@ -170,6 +170,8 @@ development; they do not imply a published or runtime-verified release.
   while registering, preventing new live handles from appearing during teardown.
 - Asynchronous object-load completions now use the shared gated object-handle
   constructor instead of maintaining a separate registry insertion path.
+- Default and indexed world lookup now share one gated world-handle constructor,
+  removing duplicate registry insertion behavior.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,
