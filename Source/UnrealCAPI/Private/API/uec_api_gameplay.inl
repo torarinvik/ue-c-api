@@ -141,8 +141,8 @@
             FUECActor* actorHandle = MakeActorHandle(actor);
             if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
             outActors[copied++] = reinterpret_cast<uec_actor*>(actorHandle);
+            *outCount = copied;
         }
-        *outCount = copied;
         return UEC_RESULT_OK;
     }
 
@@ -535,8 +535,8 @@
             FUECActor* actorHandle = MakeActorHandle(actor);
             if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
             outActors[copied++] = reinterpret_cast<uec_actor*>(actorHandle);
+            *outCount = copied;
         }
-        *outCount = copied;
         return UEC_RESULT_OK;
     }
 
