@@ -328,6 +328,59 @@
         return CopyFStringToUtf8(world->GetMapName(), buffer, bufferSize, requiredSize);
     }
 
+    static void CancelTimersFor(UWorld* world)
+    {
+        if (world == nullptr) return;
+        TArray<uint64> timerIds;
+        for (const TPair<uint64, TSharedPtr<FUECTimerState>>& pair : GTimers)
+        {
+            if (pair.Value.IsValid() && pair.Value->World.Get() == world) timerIds.Add(pair.Key);
+        }
+        for (uint64 timerId : timerIds)
+        {
+            TSharedPtr<FUECTimerState>* statePtr = GTimers.Find(timerId);
+            if (statePtr == nullptr || !statePtr->IsValid()) continue;
+            TSharedPtr<FUECTimerState> state = *statePtr;
+            world->GetTimerManager().ClearTimer(state->Handle);
+            state->Cancelled = true;
+            GTimers.Remove(timerId);
+        }
+    }
+
+    static void CancelTickSubscriptionsFor(UWorld* world)
+    {
+        if (world == nullptr) return;
+        TArray<uint64> subscriptionIds;
+        for (const TPair<uint64, TSharedPtr<FUECTickSubscription>>& pair : GTickSubscriptions)
+        {
+            if (pair.Value.IsValid() && pair.Value->World.Get() == world) {
+                subscriptionIds.Add(pair.Key);
+            }
+        }
+        for (uint64 subscriptionId : subscriptionIds)
+        {
+            TSharedPtr<FUECTickSubscription>* subscriptionPtr =
+                GTickSubscriptions.Find(subscriptionId);
+            if (subscriptionPtr == nullptr || !subscriptionPtr->IsValid()) continue;
+            TSharedPtr<FUECTickSubscription> subscription = *subscriptionPtr;
+            subscription->Cancelled = true;
+            if (!subscription->InCallback) FTSTicker::RemoveTicker(subscription->Handle);
+            GTickSubscriptions.Remove(subscriptionId);
+        }
+    }
+
+    static void InvalidateWorldHandles(UWorld* world)
+    {
+        if (world == nullptr) return;
+        for (const FUECWorld* candidate : GWorlds)
+        {
+            if (candidate == nullptr || candidate->Value.Get() != world) continue;
+            auto* mutableCandidate = const_cast<FUECWorld*>(candidate);
+            TombstoneHandle(mutableCandidate->Header);
+            mutableCandidate->Value.Reset();
+        }
+    }
+
     uec_result UEC_CALL TravelWorld(uec_world* rawWorld, uec_string_view levelPath)
     {
         if (!IsValidStringView(levelPath) || levelPath.size == 0) {
@@ -340,7 +393,10 @@
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         const FString path = ToFString(levelPath);
         if (path.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
+        CancelTimersFor(world);
+        CancelTickSubscriptionsFor(world);
         UGameplayStatics::OpenLevel(world, FName(*path));
+        InvalidateWorldHandles(world);
         return UEC_RESULT_OK;
     }
 
