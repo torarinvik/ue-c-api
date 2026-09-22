@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 99u
+#define UEC_ABI_MINOR 100u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -223,9 +223,7 @@ typedef struct uec_hit_result {
     uec_actor* actor;
 } uec_hit_result;
 typedef void (UEC_CALL *uec_timer_callback)(uint64_t timer_id, void* user_data);
-typedef void (UEC_CALL *uec_tick_callback)(uint64_t subscription_id,
-                                           double delta_seconds,
-                                           void* user_data);
+typedef void (UEC_CALL *uec_tick_callback)(uint64_t subscription_id, double delta_seconds, void* user_data);
 typedef void (UEC_CALL *uec_audio_finished_callback)(uint64_t subscription_id, void* user_data);
 typedef void (UEC_CALL *uec_animation_finished_callback)(uint64_t subscription_id,
                                                          void* user_data);
@@ -786,6 +784,7 @@ typedef struct uec_api {
     uec_result (UEC_CALL *get_config_integer)(uec_context* context, uec_string_view section, uec_string_view key, int64_t* out_value); uec_result (UEC_CALL *set_config_integer)(uec_context* context, uec_string_view section, uec_string_view key, int64_t value);
     uec_result (UEC_CALL *bind_actor_destroyed)(uec_actor* actor, uec_actor_destroyed_callback callback, void* user_data, uint64_t* out_subscription_id); uec_result (UEC_CALL *unbind_actor_destroyed)(uec_context* context, uint64_t subscription_id);
     uec_result (UEC_CALL *get_config_bool)(uec_context* context, uec_string_view section, uec_string_view key, uec_bool* out_value);
+    uec_result (UEC_CALL *get_actor_property_array_count)(uec_actor* actor, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_actor_property_array_element_text)(uec_actor* actor, uec_string_view property_name, uint32_t index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

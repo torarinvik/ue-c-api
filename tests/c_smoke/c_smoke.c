@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 99u, "ABI minor must include config booleans");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 100u, "ABI minor must include array readback");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -205,6 +205,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, unbind_actor_destroyed) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_config_bool) >
                    offsetof(uec_api, unbind_actor_destroyed),
                "config boolean readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_array_count) >
+                   offsetof(uec_api, get_config_bool),
+               "array count must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_array_element_text) >
+                   offsetof(uec_api, get_actor_property_array_count),
+               "array element readback must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -427,6 +433,19 @@ int main(void)
     {
         api->release_context(context);
         return 26;
+    }
+
+    uint32_t array_count = 42u;
+    size_t array_required = 42u;
+    uec_property_kind array_kind = UEC_PROPERTY_STRING;
+    if (api->get_actor_property_array_count(NULL, streaming_package, &array_count) != UEC_RESULT_UNSUPPORTED ||
+        array_count != 0u ||
+        api->get_actor_property_array_element_text(NULL, streaming_package, 0u, NULL, 0u,
+                                                   &array_required, &array_kind) != UEC_RESULT_UNSUPPORTED ||
+        array_required != 0u || array_kind != UEC_PROPERTY_UNKNOWN)
+    {
+        api->release_context(context);
+        return 27;
     }
 
     const char message[] = "C ABI smoke test";

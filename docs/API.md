@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.99`.
+The current runtime slice is intentionally small and versioned as ABI `1.100`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -129,6 +129,11 @@ it cannot accidentally retain or use a destroyed actor handle.
 
 ABI minor 99 adds `get_config_bool`, which reads a boolean from the game INI on
 the game thread and clears its output before validation.
+
+ABI minor 100 adds `get_actor_property_array_count` and
+`get_actor_property_array_element_text`. They expose reflected dynamic arrays
+through a count and caller-owned text values; the returned element text follows
+Unreal's reflection serialization and remains valid only in the caller buffer.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

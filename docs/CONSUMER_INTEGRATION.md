@@ -87,6 +87,9 @@ alive when possible; world cleanup and module shutdown remove remaining
 subscriptions without invoking consumer code.
 ABI 99 adds boolean game-INI readback alongside the existing string and
 integer configuration helpers.
+ABI 100 adds reflected actor-array count and text-element readback. Treat the
+array as invalidated after any mutation and query the count again before using
+later indices.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.
