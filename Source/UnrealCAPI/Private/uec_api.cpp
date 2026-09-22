@@ -71,6 +71,7 @@ namespace
 
     static uint64 AllocateHandleGeneration();
     static bool InitializeHandle(FUECHandleHeader& header, EUECHandleKind kind);
+    static void CancelActorSubscriptions(AActor* actor);
 
     static bool AllocateMonotonicId(uint64& nextId, uint64& outId)
     {
@@ -340,7 +341,6 @@ namespace
             !property->HasAnyPropertyFlags(
                 CPF_EditConst | CPF_BlueprintReadOnly | CPF_ConstParm | CPF_ReturnParm);
     }
-
     static bool IsUnsignedIntegerProperty(const FProperty* property)
     {
         return CastField<FByteProperty>(property) || CastField<FUInt8Property>(property) ||

@@ -195,8 +195,8 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 82 adds `get_runtime_stats`, a game-thread drain diagnostic for
   subscriptions, pending requests, and callbacks before consumer unload.
 - Level travel now cancels world-owned timers and tick subscriptions and
-  invalidates world, actor, and component bridge handles immediately before
-  submitting the request.
+  actor-scoped collision/input subscriptions, then invalidates world, actor,
+  and component bridge handles immediately before submitting the request.
 - One-shot widget, audio, and component-hit callbacks now avoid touching a raw
   Unreal delegate after cancellation or destruction from inside the callback.
 - Asynchronous object-load completions now use the shared gated object-handle

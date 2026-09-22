@@ -97,9 +97,10 @@ should enumerate and retain the desired world handle.
 output convention as other names. `travel_world` submits a game-thread level
 travel request through `UGameplayStatics::OpenLevel`; the call returning `OK`
 means the request was submitted, not that loading has completed. The bridge
-cancels timers and world-tick subscriptions owned by that world and immediately
-invalidates its world, actor, and component handles; reacquire a world after
-travel and treat object handles from the old world as potentially invalid.
+cancels timers, world-tick subscriptions, and actor-scoped collision/input
+subscriptions owned by that world and immediately invalidates its world, actor,
+and component handles; reacquire a world after travel and treat object handles
+from the old world as potentially invalid.
 
 Player-flow helpers use actor handles for controllers, pawns, and view targets;
 the controller and target handles must belong to the same world, including the

@@ -383,6 +383,7 @@
         {
             AActor* actor = candidate == nullptr ? nullptr : candidate->Value.Get();
             if (actor == nullptr || actor->GetWorld() != world) continue;
+            CancelActorSubscriptions(actor);
             auto* mutableCandidate = const_cast<FUECActor*>(candidate);
             TombstoneHandle(mutableCandidate->Header);
             mutableCandidate->Value.Reset();
