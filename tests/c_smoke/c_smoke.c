@@ -141,6 +141,16 @@ int main(void)
         return 1;
     }
 
+    const uec_api* rejected_api = api;
+    uec_context* rejected_context = context;
+    result = uec_get_api(UEC_ABI_MAJOR + 1u, UEC_ABI_MINOR + 1u,
+                         &rejected_api, &rejected_context);
+    if (result != UEC_RESULT_UNSUPPORTED || rejected_api != NULL || rejected_context != NULL)
+    {
+        api->release_context(context);
+        return 7;
+    }
+
     uec_capabilities capabilities = 0;
     result = api->get_capabilities(context, &capabilities);
     if (result != UEC_RESULT_OK || (capabilities & UEC_CAPABILITY_BOOTSTRAP) == 0 ||

@@ -146,6 +146,8 @@ development; they do not imply a published or runtime-verified release.
   against the same stub to exercise the append-only compatibility prefix.
 - CI repeats the linked consumers with AddressSanitizer and
   UndefinedBehaviorSanitizer coverage.
+- The C smoke consumer now verifies unsupported ABI requests clear output
+  pointers before returning.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,
