@@ -69,6 +69,21 @@ FString AUECAPIHostLatentSmokeActor::EchoSmokeText(FString Value)
     return Value;
 }
 
+FVector AUECAPIHostLatentSmokeActor::VectorSmokeCall(FVector Value)
+{
+    return Value;
+}
+
+FQuat AUECAPIHostLatentSmokeActor::QuaternionSmokeCall(FQuat Value)
+{
+    return Value;
+}
+
+FTransform AUECAPIHostLatentSmokeActor::TransformSmokeCall(FTransform Value)
+{
+    return Value;
+}
+
 void AUECAPIHostLatentSmokeActor::BuildSmokeOutputs(
     bool& OutFlag,
     int32& OutNumber,

@@ -22,6 +22,11 @@ capability bits, result codes, or fields at the end of an existing structure.
 Existing result-code numeric values and enum values remain stable. New enum
 values are handled as unknown by older consumers.
 
+When a size-tagged structure grows, the new bridge must continue accepting the
+previous structure prefix. It may read an appended input field or write an
+appended output field only when `struct_size` reaches that field; otherwise it
+must preserve the prior behavior for the older prefix.
+
 Every new function must document its valid thread, handle ownership, callback
 thread, cancellation behavior, output-clearing behavior, and unsupported
 engine contexts. New callbacks borrow `user_data` unless the function

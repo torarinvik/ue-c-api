@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 133u
+#define UEC_ABI_MINOR 134u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -147,8 +147,7 @@ typedef struct uec_text_output {
     size_t buffer_size;
     size_t required_size;
 } uec_text_output;
-typedef struct uec_function_argument { uint32_t struct_size; uec_property_kind kind; uec_bool bool_value; uint8_t reserved[3]; int64_t integer_value; double real_value; uec_object* object_value; uec_class* class_value; uec_world* world_value; uec_string_view text_value; } uec_function_argument;
-typedef struct uec_function_output { uint32_t struct_size; uec_property_kind kind; uec_bool bool_value; uint8_t reserved[3]; int64_t integer_value; double real_value; uec_object* object_value; uec_class* class_value; char* text_buffer; size_t text_buffer_size; size_t text_required_size; } uec_function_output; typedef void (UEC_CALL *uec_event_bridge_callback)(uint64_t subscription_id, int64_t event_id, int64_t integer_value, double real_value, uec_string_view text_value, void* user_data); typedef void (UEC_CALL *uec_latent_function_callback)(uint64_t request_id, uec_result result, void* user_data);
+#include "uec_api_function_values.h"
 typedef enum uec_trace_channel {
     UEC_TRACE_VISIBILITY = 0,
     UEC_TRACE_CAMERA = 1,

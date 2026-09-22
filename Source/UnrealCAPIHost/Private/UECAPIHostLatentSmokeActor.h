@@ -31,6 +31,15 @@ public:
     FString EchoSmokeText(FString Value);
 
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke")
+    FVector VectorSmokeCall(FVector Value);
+
+    UFUNCTION()
+    FQuat QuaternionSmokeCall(FQuat Value);
+
+    UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke")
+    FTransform TransformSmokeCall(FTransform Value);
+
+    UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke")
     void BuildSmokeOutputs(bool& OutFlag, int32& OutNumber, FString& OutText);
 
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke",

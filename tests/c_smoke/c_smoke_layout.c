@@ -8,6 +8,33 @@
 #define UEC_TEST_ASSERT _Static_assert
 #endif
 
+typedef struct uec_function_argument_abi_133 {
+    uint32_t struct_size;
+    uec_property_kind kind;
+    uec_bool bool_value;
+    uint8_t reserved[3];
+    int64_t integer_value;
+    double real_value;
+    uec_object* object_value;
+    uec_class* class_value;
+    uec_world* world_value;
+    uec_string_view text_value;
+} uec_function_argument_abi_133;
+
+typedef struct uec_function_output_abi_133 {
+    uint32_t struct_size;
+    uec_property_kind kind;
+    uec_bool bool_value;
+    uint8_t reserved[3];
+    int64_t integer_value;
+    double real_value;
+    uec_object* object_value;
+    uec_class* class_value;
+    char* text_buffer;
+    size_t text_buffer_size;
+    size_t text_required_size;
+} uec_function_output_abi_133;
+
 UEC_TEST_ASSERT(sizeof(uec_vector3) == 24, "uec_vector3 ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_quaternion) == 32, "uec_quaternion ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_transform) == 80, "uec_transform ABI changed");
@@ -17,13 +44,18 @@ UEC_TEST_ASSERT(offsetof(uec_function_argument, integer_value) > offsetof(uec_fu
 UEC_TEST_ASSERT(offsetof(uec_function_argument, text_value) > offsetof(uec_function_argument, world_value), "mixed invocation argument handle layout changed");
 UEC_TEST_ASSERT(offsetof(uec_function_output, text_buffer) > offsetof(uec_function_output, class_value), "mixed invocation output handle layout changed");
 UEC_TEST_ASSERT(offsetof(uec_function_output, text_required_size) > offsetof(uec_function_output, text_buffer_size), "mixed invocation output buffer layout changed");
+UEC_TEST_ASSERT(offsetof(uec_function_argument, struct_value) == sizeof(uec_function_argument_abi_133), "function argument 1.133 prefix changed");
+UEC_TEST_ASSERT(offsetof(uec_function_output, struct_value) == sizeof(uec_function_output_abi_133), "function output 1.133 prefix changed");
+UEC_TEST_ASSERT(UEC_FUNCTION_STRUCT_NONE == 0 &&
+                   UEC_FUNCTION_STRUCT_TRANSFORM == 3,
+               "typed function struct tags changed");
 UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 133u, "ABI minor must include async latent invocation");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 134u, "ABI minor must include typed reflected struct values");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,

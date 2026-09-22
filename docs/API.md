@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.133`.
+The current runtime slice is intentionally small and versioned as ABI `1.134`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -282,8 +282,8 @@ text, and other keys without scalar representations. Map iteration indices are
 invalid after mutation and should be queried again.
 
 ABI minor 131 adds `invoke_actor_function_arguments` for positional mixed-type
-calls. Initialize every `uec_function_argument` and `uec_function_output` with
-its full `struct_size`. Set each argument's `kind`, then use the matching
+calls. Zero-initialize every `uec_function_argument` and `uec_function_output`,
+then set its full `struct_size`. Set each argument's `kind`, then use the matching
 scalar fields, an object/world handle, a class handle, or `text_value`. Object
 and world handles are mutually exclusive; either may be null to pass a null
 object reference. Class references use `class_value`, which may also be null.
@@ -336,6 +336,17 @@ suppresses the C callback and asks Unreal's world latent-action manager to
 remove work for that request's unique callback target; an action already being
 processed may still execute. Actor destruction, world cleanup, travel, and
 module shutdown cancel requests and suppress their callbacks.
+
+ABI minor 134 extends the size-tagged mixed-call records with typed `FVector`,
+`FQuat`, and `FTransform` values. Set an argument's `kind` to
+`UEC_PROPERTY_STRUCT` and select its `struct_value.kind`; request a typed output
+the same way before invocation. Use `struct_value.value.vector3`,
+`struct_value.value.quaternion`, or `struct_value.value.transform` for the
+selected kind. Set `struct_value.kind` to
+`UEC_FUNCTION_STRUCT_NONE` to keep the existing Unreal text import/export
+behavior. The fields are appended after the ABI 1.133 record prefix, so older
+record sizes keep their prior text-backed behavior. Typed inputs reject
+non-finite components, and quaternion values must be nonzero.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

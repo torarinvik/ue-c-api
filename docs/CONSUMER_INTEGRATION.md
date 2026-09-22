@@ -193,8 +193,8 @@ or soft-class properties.
 ABI 130 adds typed scalar map-key reads for actor and UObject properties. Use
 the existing text-entry calls for map keys whose kinds do not fit
 `uec_property_value`, and re-query map indices after mutations.
-ABI 131 adds `invoke_actor_function_arguments` for mixed signatures. Initialize
-each argument and output record with `struct_size`; use scalar fields, a hard
+ABI 131 adds `invoke_actor_function_arguments` for mixed signatures. Zero-
+initialize each argument and output record, then set `struct_size`; use scalar fields, a hard
 object/world handle, a class handle, or Unreal property text according to the
 reflected kind. Non-null handle or text fields that do not match the selected
 kind are rejected. A null object, world, or class handle passes a null
@@ -229,6 +229,14 @@ suppresses the callback and requests removal
 from the world's latent-action manager, but Unreal may finish an action already
 being processed. Actor/world teardown, travel, and plugin shutdown cancel
 pending requests.
+ABI minor 134 adds typed `FVector`, `FQuat`, and `FTransform` values to the
+size-tagged mixed-call records. Set `kind` to `UEC_PROPERTY_STRUCT` and select
+`struct_value.kind` on arguments; write the matching
+`struct_value.value.vector3`, `.quaternion`, or `.transform` member. Set the
+desired kind on an output to request a typed result. `UEC_FUNCTION_STRUCT_NONE`
+keeps the existing text-backed behavior. The new fields extend the ABI 1.133
+prefix, so old record sizes remain supported. Vector/transform components
+must be finite and quaternion values nonzero.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

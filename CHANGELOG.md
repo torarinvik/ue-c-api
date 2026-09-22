@@ -314,6 +314,9 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 133 adds asynchronous latent actor-function invocation with mixed
   inputs, completion callbacks, cancellation, and actor/world/shutdown cleanup.
   The new path rejects latent returns, out parameters, and reference inputs.
+- ABI minor 134 adds typed `FVector`, `FQuat`, and `FTransform` values to the
+  size-tagged mixed actor-function argument and output records. Older record
+  sizes retain the ABI 1.133 text-backed struct behavior.
 - Mixed and latent actor-function calls reject world handles and world-bound
   object handles from a different target-actor world; callers pass world
   context handles explicitly without depending on editor-only metadata.
@@ -322,13 +325,14 @@ development; they do not imply a published or runtime-verified release.
 - The host Game/PIE probe now spawns a native latent-test actor, checks
   unsupported signatures, valid scalar and text-backed mixed calls, output
   capacity preflight and pure out-parameter ordering, mixed-call argument
-  count and scalar-kind rejection, short text-output sizing and retry, invalid
+  count and scalar-kind rejection, typed FVector/FQuat/FTransform round trips
+  and mismatch rejection, short text-output sizing and retry, invalid
   world-kind handling, an explicit world context, real
   completion, canceled callback suppression, cross-world context rejection
   when another world is available, stale actor and bridge handle rejection,
   and pending-request drain counts; the portable C gate verifies the appended
   entries.
-- The portable old-consumer fixture now requests ABI 1.132 from the ABI 1.133
+- The portable old-consumer fixture now requests ABI 1.133 from the ABI 1.134
   bridge and exercises only the stable table prefix.
 - The C gameplay example now binds the event component, emits a validated
   payload on each movement tick, receives it synchronously, and cleans up the

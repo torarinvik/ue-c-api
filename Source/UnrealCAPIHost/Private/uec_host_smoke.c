@@ -1,5 +1,6 @@
 #include "uec_api.h"
 
+#include <math.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -306,6 +307,9 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     static const char scalarFunctionName[] = "ScalarSmokeCall";
     static const char textFunctionName[] = "ValidateSmokeText";
     static const char echoTextFunctionName[] = "EchoSmokeText";
+    static const char vectorFunctionName[] = "VectorSmokeCall";
+    static const char quaternionFunctionName[] = "QuaternionSmokeCall";
+    static const char transformFunctionName[] = "TransformSmokeCall";
     static const char outputFunctionName[] = "BuildSmokeOutputs";
     static const char worldContextFunctionName[] = "WorldContextSmokeCall";
     static const char missingFunctionName[] = "MissingLatentSmokeFunction";
@@ -445,9 +449,102 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
         return UEC_RESULT_INTERNAL_ERROR;
     }
+    uec_function_argument structArgument = {0};
+    structArgument.struct_size = sizeof(structArgument);
+    structArgument.kind = UEC_PROPERTY_STRUCT;
+    structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR3;
+    structArgument.struct_value.value.vector3 = (uec_vector3){1.25, -2.5, 9.0};
+    uec_function_output structOutput = {0};
+    structOutput.struct_size = sizeof(structOutput);
+    structOutput.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR3;
+    uec_string_view vectorFunction = {
+        vectorFunctionName, sizeof(vectorFunctionName) - 1};
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, vectorFunction, &structArgument, 1u,
+        &structOutput, 1u, &noOutputs);
+    if (result != UEC_RESULT_OK || noOutputs != 1u ||
+        structOutput.kind != UEC_PROPERTY_STRUCT ||
+        structOutput.struct_value.kind != UEC_FUNCTION_STRUCT_VECTOR3 ||
+        structOutput.struct_value.value.vector3.x != 1.25 ||
+        structOutput.struct_value.value.vector3.y != -2.5 ||
+        structOutput.struct_value.value.vector3.z != 9.0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    structArgument.struct_value.value.vector3.x = NAN;
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, vectorFunction, &structArgument, 1u,
+        &structOutput, 1u, &noOutputs);
+    if (result != UEC_RESULT_INVALID_ARGUMENT) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_QUATERNION;
+    structArgument.struct_value.value.quaternion = (uec_quaternion){
+        0.0, 0.0, 0.7071067811865476, 0.7071067811865476};
+    structOutput.struct_value.kind = UEC_FUNCTION_STRUCT_QUATERNION;
+    uec_string_view quaternionFunction = {
+        quaternionFunctionName, sizeof(quaternionFunctionName) - 1};
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, quaternionFunction, &structArgument, 1u,
+        &structOutput, 1u, &noOutputs);
+    if (result != UEC_RESULT_OK || noOutputs != 1u ||
+        structOutput.kind != UEC_PROPERTY_STRUCT ||
+        structOutput.struct_value.kind != UEC_FUNCTION_STRUCT_QUATERNION ||
+        structOutput.struct_value.value.quaternion.z != 0.7071067811865476 ||
+        structOutput.struct_value.value.quaternion.w != 0.7071067811865476) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_TRANSFORM;
+    structArgument.struct_value.value.transform = (uec_transform){
+        {1.0, 2.0, 3.0}, {0.0, 0.0, 0.0, 1.0}, {2.0, 3.0, 4.0}};
+    structOutput.struct_value.kind = UEC_FUNCTION_STRUCT_TRANSFORM;
+    uec_string_view transformFunction = {
+        transformFunctionName, sizeof(transformFunctionName) - 1};
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, transformFunction, &structArgument, 1u,
+        &structOutput, 1u, &noOutputs);
+    if (result != UEC_RESULT_OK || noOutputs != 1u ||
+        structOutput.kind != UEC_PROPERTY_STRUCT ||
+        structOutput.struct_value.kind != UEC_FUNCTION_STRUCT_TRANSFORM ||
+        structOutput.struct_value.value.transform.translation.x != 1.0 ||
+        structOutput.struct_value.value.transform.translation.y != 2.0 ||
+        structOutput.struct_value.value.transform.translation.z != 3.0 ||
+        structOutput.struct_value.value.transform.scale.x != 2.0 ||
+        structOutput.struct_value.value.transform.scale.y != 3.0 ||
+        structOutput.struct_value.value.transform.scale.z != 4.0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR3;
+    structArgument.struct_value.value.vector3 = (uec_vector3){0.0, 0.0, 0.0};
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, transformFunction, &structArgument, 1u,
+        &structOutput, 1u, &noOutputs);
+    if (result != UEC_RESULT_INVALID_ARGUMENT) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_QUATERNION;
+    structArgument.struct_value.value.quaternion = (uec_quaternion){0.0, 0.0, 0.0, 0.0};
+    structOutput.struct_value.kind = UEC_FUNCTION_STRUCT_QUATERNION;
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, quaternionFunction, &structArgument, 1u,
+        &structOutput, 1u, &noOutputs);
+    if (result != UEC_RESULT_INVALID_ARGUMENT) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
     static const char quotedSmokeText[] = "\"mixed-smoke\"";
     uec_function_argument textArgument = {0};
-    textArgument.struct_size = sizeof(textArgument);
+    textArgument.struct_size = (uint32_t)offsetof(uec_function_argument, struct_value);
     textArgument.kind = UEC_PROPERTY_STRING;
     textArgument.text_value.data = quotedSmokeText;
     textArgument.text_value.size = sizeof(quotedSmokeText) - 1;
@@ -474,7 +571,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     }
     char echoedText[64] = {0};
     uec_function_output echoOutput = {0};
-    echoOutput.struct_size = sizeof(echoOutput);
+    echoOutput.struct_size = (uint32_t)offsetof(uec_function_output, struct_value);
     echoOutput.text_buffer = echoedText;
     echoOutput.text_buffer_size = 4u;
     uec_string_view echoTextFunction = {
