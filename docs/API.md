@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.27`.
+The current runtime slice is intentionally small and versioned as ABI `1.28`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -9,7 +9,7 @@ Unreal headers and C++ types stay inside the plugin.
 current implementation reports bootstrap, logging, world, actor, component,
 timer, reflection, collision, asset loading, player flow, input, physics,
 collision-query, audio, UI, camera, save-data, game-thread dispatch, and
-movement and presentation adapters.
+movement, presentation, and retained-object adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed active
 handle registries. A world or actor handle is a bridge-owned reference to an
@@ -152,6 +152,11 @@ handles to compatible scene components. Static mesh assignment reports engine
 failure through `UEC_RESULT_INTERNAL_ERROR`; skeletal mesh assignment can
 optionally reinitialize the animation pose. Both operations run on the game
 thread and do not retain the asset handle.
+
+`retain_object` creates a separate strong object handle backed by Unreal's
+`TStrongObjectPtr`. Ordinary loaded and callback-returned object handles remain
+weak; callers that need an asset or save object to survive garbage collection
+must retain it and later release the retained handle with `release_object`.
 
 `play_skeletal_animation` and `stop_skeletal_animation` control the transient
 animation state of skeletal mesh components using a loaded animation asset.

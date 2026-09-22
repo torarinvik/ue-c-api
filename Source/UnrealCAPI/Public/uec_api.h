@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 27u
+#define UEC_ABI_MINOR 28u
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,7 +76,8 @@ enum {
     UEC_CAPABILITY_SAVE_DATA = UINT64_C(1) << 19,
     UEC_CAPABILITY_THREADING = UINT64_C(1) << 20,
     UEC_CAPABILITY_MOVEMENT = UINT64_C(1) << 21,
-    UEC_CAPABILITY_PRESENTATION = UINT64_C(1) << 22
+    UEC_CAPABILITY_PRESENTATION = UINT64_C(1) << 22,
+    UEC_CAPABILITY_RETAINED_OBJECTS = UINT64_C(1) << 23
 };
 
 typedef struct uec_context uec_context;
@@ -423,6 +424,8 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_component_material_vector)(uec_scene_component* component,
                                                          uec_string_view parameter_name,
                                                          uec_vector3 value);
+    uec_result (UEC_CALL *retain_object)(uec_object* object,
+                                         uec_object** out_retained_object);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

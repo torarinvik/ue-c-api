@@ -30,6 +30,7 @@
 #include "TimerManager.h"
 #include "UObject/UnrealType.h"
 #include "UObject/UObjectGlobals.h"
+#include "UObject/StrongObjectPtrTemplates.h"
 
 namespace
 {
@@ -59,7 +60,11 @@ namespace
         bool Cancelled = false;
     };
     struct FUECClass final { TWeakObjectPtr<UClass> Value; };
-    struct FUECObject final { TWeakObjectPtr<UObject> Value; };
+    struct FUECObject final
+    {
+        TWeakObjectPtr<UObject> Value;
+        TStrongObjectPtr<UObject> StrongValue;
+    };
     struct FUECObjectLoadRequest final
     {
         uint64 Id = 0;
@@ -274,7 +279,7 @@ namespace
             UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_COLLISION_QUERIES |
             UEC_CAPABILITY_AUDIO | UEC_CAPABILITY_UI | UEC_CAPABILITY_CAMERA |
             UEC_CAPABILITY_SAVE_DATA | UEC_CAPABILITY_THREADING | UEC_CAPABILITY_MOVEMENT |
-            UEC_CAPABILITY_PRESENTATION;
+            UEC_CAPABILITY_PRESENTATION | UEC_CAPABILITY_RETAINED_OBJECTS;
         return UEC_RESULT_OK;
     }
 
@@ -454,6 +459,13 @@ namespace
             FScopeLock lock(&GHandleMutex);
             GObjects.Add(handle);
         }
+        return handle;
+    }
+
+    static FUECObject* MakeRetainedObjectHandle(UObject* object)
+    {
+        FUECObject* handle = MakeObjectHandle(object);
+        if (handle != nullptr) handle->StrongValue = TStrongObjectPtr<UObject>(object);
         return handle;
     }
 
@@ -2007,6 +2019,21 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL RetainObject(uec_object* rawObject, uec_object** outRetainedObject)
+    {
+        if (outRetainedObject == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outRetainedObject = nullptr;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        FUECObject* retained = MakeRetainedObjectHandle(object);
+        if (retained == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outRetainedObject = reinterpret_cast<uec_object*>(retained);
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2059,7 +2086,8 @@ namespace
         &AddPawnMovementInput, &JumpCharacter, &StopCharacterJumping,
         &SetStaticMesh, &SetSkeletalMesh,
         &PlaySkeletalAnimation, &StopSkeletalAnimation,
-        &SetComponentMaterialScalar, &SetComponentMaterialVector
+        &SetComponentMaterialScalar, &SetComponentMaterialVector,
+        &RetainObject
     };
 }
 
