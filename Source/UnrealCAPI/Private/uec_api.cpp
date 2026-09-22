@@ -406,7 +406,6 @@ namespace
         FUTF8ToTCHAR converter(value.data, static_cast<int32>(value.size));
         return FString(converter.Length(), converter.Get());
     }
-
     static bool IsValidUtf8(uec_string_view value)
     {
         const uint8_t* bytes = reinterpret_cast<const uint8_t*>(value.data);
@@ -469,7 +468,6 @@ namespace
             FMath::IsFinite(value.y) && FMath::Abs(value.y) <= maximum &&
             FMath::IsFinite(value.z) && FMath::Abs(value.z) <= maximum;
     }
-
     static bool IsRepresentableFloat(double value)
     {
         return FMath::IsFinite(value) &&
@@ -718,7 +716,9 @@ namespace
         &SweepTraceFiltered,
         &OverlapShapeFiltered,
         &SetActorTag,
-        &GetRuntimeStats
+        &GetRuntimeStats,
+        &GetWorldCountByKind,
+        &GetWorldAtByKind
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

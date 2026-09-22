@@ -154,6 +154,56 @@
         return UEC_RESULT_INVALID_ARGUMENT;
     }
 
+    static bool IsSupportedWorldKind(uec_world_kind kind)
+    {
+        return kind >= UEC_WORLD_KIND_GAME && kind <= UEC_WORLD_KIND_INACTIVE;
+    }
+
+    uec_result UEC_CALL GetWorldCountByKind(uec_context* rawContext,
+                                            uec_world_kind kind,
+                                            uint32_t* outCount)
+    {
+        if (outCount != nullptr) *outCount = 0;
+        if (outCount == nullptr || !IsSupportedWorldKind(kind)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (GEngine == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        for (const FWorldContext& worldContext : GEngine->GetWorldContexts())
+        {
+            if (worldContext.World() != nullptr && ToWorldKind(worldContext.WorldType) == kind)
+            {
+                if (*outCount == UINT32_MAX) return UEC_RESULT_INTERNAL_ERROR;
+                ++(*outCount);
+            }
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetWorldAtByKind(uec_context* rawContext,
+                                         uec_world_kind kind,
+                                         uint32_t index,
+                                         uec_world** outWorld)
+    {
+        if (outWorld != nullptr) *outWorld = nullptr;
+        if (outWorld == nullptr || !IsSupportedWorldKind(kind)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (GEngine == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        uint32_t current = 0;
+        for (const FWorldContext& worldContext : GEngine->GetWorldContexts())
+        {
+            UWorld* world = worldContext.World();
+            if (world == nullptr || ToWorldKind(worldContext.WorldType) != kind) continue;
+            if (current++ != index) continue;
+            FUECWorld* handle = MakeWorldHandle(
+                world, worldContext.WorldType, worldContext.PIEInstance);
+            if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            *outWorld = reinterpret_cast<uec_world*>(handle);
+            return UEC_RESULT_OK;
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+
     uec_result UEC_CALL GetWorldKind(uec_world* rawWorld, uec_world_kind* outKind)
     {
         if (outKind != nullptr) *outKind = UEC_WORLD_KIND_UNKNOWN;

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.82`.
+The current runtime slice is intentionally small and versioned as ABI `1.83`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -40,6 +40,10 @@ number of registered subscriptions, pending asynchronous or game-thread
 requests, and consumer callbacks currently executing. Before unloading code
 that owns callback functions, stop submitting work, cancel or unsubscribe
 everything, and wait for all three counts to reach zero.
+
+ABI minor 83 adds `get_world_count_by_kind` and `get_world_at_by_kind`. These
+explicit context queries enumerate editor, PIE, game-preview, inactive, and
+game world contexts without changing the active Game/PIE convenience lookup.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

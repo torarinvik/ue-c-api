@@ -18,7 +18,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 82u, "ABI minor must include runtime stats");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 83u, "ABI minor must include world-kind enumeration");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -133,6 +133,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, set_actor_tag) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_runtime_stats) >
                    offsetof(uec_api, set_actor_tag),
                "runtime stats must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_world_count_by_kind) >
+                   offsetof(uec_api, get_runtime_stats),
+               "world-kind count must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_world_at_by_kind) >
+                   offsetof(uec_api, get_world_count_by_kind),
+               "world-kind lookup must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -196,6 +202,14 @@ int main(void)
     {
         api->release_context(context);
         return 10;
+    }
+
+    uint32_t world_count = 42u;
+    result = api->get_world_count_by_kind(context, UEC_WORLD_KIND_GAME, &world_count);
+    if (result != UEC_RESULT_UNSUPPORTED || world_count != 0u)
+    {
+        api->release_context(context);
+        return 11;
     }
 
     const char message[] = "C ABI smoke test";

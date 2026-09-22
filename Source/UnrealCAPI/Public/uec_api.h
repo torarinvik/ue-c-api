@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 82u
+#define UEC_ABI_MINOR 83u
 
 #ifdef __cplusplus
 extern "C" {
@@ -775,6 +775,13 @@ typedef struct uec_api {
                                          uec_bool enabled);
     uec_result (UEC_CALL *get_runtime_stats)(uec_context* context,
                                              uec_runtime_stats* out_stats);
+    uec_result (UEC_CALL *get_world_count_by_kind)(uec_context* context,
+                                                   uec_world_kind kind,
+                                                   uint32_t* out_count);
+    uec_result (UEC_CALL *get_world_at_by_kind)(uec_context* context,
+                                                uec_world_kind kind,
+                                                uint32_t index,
+                                                uec_world** out_world);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

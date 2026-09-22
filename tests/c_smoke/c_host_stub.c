@@ -58,6 +58,28 @@ static uec_result UEC_CALL StubGetRuntimeStats(uec_context* context,
     return context == &g_context ? UEC_RESULT_OK : UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubGetWorldCountByKind(uec_context* context,
+                                                   uec_world_kind kind,
+                                                   uint32_t* outCount)
+{
+    (void)kind;
+    if (outCount != NULL) *outCount = 0u;
+    if (outCount == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+}
+
+static uec_result UEC_CALL StubGetWorldAtByKind(uec_context* context,
+                                                uec_world_kind kind,
+                                                uint32_t index,
+                                                uec_world** outWorld)
+{
+    (void)kind;
+    (void)index;
+    if (outWorld != NULL) *outWorld = NULL;
+    if (outWorld == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -80,6 +102,8 @@ static const uec_api g_api = {
     .log = &StubLog,
     .release_context = &StubReleaseContext,
     .get_runtime_stats = &StubGetRuntimeStats,
+    .get_world_count_by_kind = &StubGetWorldCountByKind,
+    .get_world_at_by_kind = &StubGetWorldAtByKind,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

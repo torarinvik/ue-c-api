@@ -36,6 +36,10 @@ stopping new work and canceling requests or subscriptions, poll its
 `active_subscriptions`, `pending_requests`, and `active_callbacks` fields until
 all are zero.
 
+The ABI 83 `get_world_count_by_kind` and `get_world_at_by_kind` entries expose
+explicit editor, PIE, game-preview, inactive, and game-world selection. The
+original Game/PIE lookup remains the convenience path for active gameplay.
+
 The public header is C11-compatible and the table contains only fixed-width
 integers, opaque handles, callbacks, and POD values. Keep the header in the
 consumer's build without adding Unreal include paths.

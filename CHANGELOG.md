@@ -200,6 +200,8 @@ development; they do not imply a published or runtime-verified release.
   streamable handles, remaining safe if cancellation completes immediately.
 - ABI minor 82 adds `get_runtime_stats`, a game-thread drain diagnostic for
   subscriptions, pending requests, and callbacks before consumer unload.
+- ABI minor 83 adds explicit world-kind enumeration for editor, PIE,
+  game-preview, inactive, and game contexts.
 - Level travel now cancels world-owned timers and tick subscriptions and
   actor-scoped collision/input subscriptions, then invalidates world, actor,
   component, and world-bound object bridge handles immediately before
