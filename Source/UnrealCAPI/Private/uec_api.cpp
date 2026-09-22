@@ -15,6 +15,7 @@
 #include "InputCoreTypes.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedPlayerInput.h"
+#include "EnhancedInputComponent.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
 #include "Kismet/GameplayStatics.h"
@@ -94,6 +95,15 @@ namespace
         void* UserData = nullptr;
         bool Cancelled = false;
     };
+    struct FUECInputBinding final
+    {
+        uint64 Id = 0;
+        TWeakObjectPtr<UEnhancedInputComponent> Component;
+        uint32 EngineHandle = 0;
+        uec_input_action_callback Callback = nullptr;
+        void* UserData = nullptr;
+        bool Cancelled = false;
+    };
 
     FCriticalSection GHandleMutex;
     TSet<const FUECContext*> GContexts;
@@ -106,10 +116,12 @@ namespace
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
     TMap<uint64, TSharedPtr<FUECGameThreadRequest>> GGameThreadRequests;
     TMap<uint64, TSharedPtr<FUECSaveGameRequest>> GSaveGameRequests;
+    TMap<uint64, TSharedPtr<FUECInputBinding>> GInputBindings;
     uint64 GNextObjectLoadRequestId = 1;
     uint64 GNextGameThreadRequestId = 1;
     uint64 GNextTimerId = 1;
     uint64 GNextSaveGameRequestId = 1;
+    uint64 GNextInputBindingId = 1;
     constexpr int32 MaxQueuedObjectLoads = 1024;
     constexpr int32 MaxQueuedGameThreadRequests = 1024;
 
@@ -215,6 +227,47 @@ namespace
         return IsFiniteVector(value.translation) && IsFiniteVector(value.scale) &&
             FMath::IsFinite(value.rotation.x) && FMath::IsFinite(value.rotation.y) &&
             FMath::IsFinite(value.rotation.z) && FMath::IsFinite(value.rotation.w);
+    }
+
+    static bool WriteInputActionValue(const FInputActionValue& value,
+                                      uec_input_action_value& outValue)
+    {
+        outValue.struct_size = sizeof(uec_input_action_value);
+        outValue.kind = UEC_INPUT_ACTION_VALUE_BOOLEAN;
+        outValue.bool_value = UEC_FALSE;
+        outValue.reserved[0] = 0;
+        outValue.reserved[1] = 0;
+        outValue.reserved[2] = 0;
+        outValue.axis = {0.0, 0.0, 0.0};
+        switch (value.GetValueType())
+        {
+        case EInputActionValueType::Boolean:
+            outValue.bool_value = value.Get<bool>() ? UEC_TRUE : UEC_FALSE;
+            return true;
+        case EInputActionValueType::Axis1D:
+            outValue.kind = UEC_INPUT_ACTION_VALUE_AXIS_1D;
+            outValue.axis.x = static_cast<double>(value.Get<float>());
+            return true;
+        case EInputActionValueType::Axis2D:
+        {
+            outValue.kind = UEC_INPUT_ACTION_VALUE_AXIS_2D;
+            const FVector2D axis = value.Get<FVector2D>();
+            outValue.axis.x = axis.X;
+            outValue.axis.y = axis.Y;
+            return true;
+        }
+        case EInputActionValueType::Axis3D:
+        {
+            outValue.kind = UEC_INPUT_ACTION_VALUE_AXIS_3D;
+            const FVector axis = value.Get<FVector>();
+            outValue.axis.x = axis.X;
+            outValue.axis.y = axis.Y;
+            outValue.axis.z = axis.Z;
+            return true;
+        }
+        default:
+            return false;
+        }
     }
 
     static FTransform ToFTransform(const uec_transform& value)
@@ -616,43 +669,8 @@ namespace
         if (playerInput == nullptr) return UEC_RESULT_NOT_INITIALIZED;
 
         const FInputActionValue value = playerInput->GetActionValue(action);
-        outValue->kind = UEC_INPUT_ACTION_VALUE_BOOLEAN;
-        outValue->bool_value = UEC_FALSE;
-        outValue->reserved[0] = 0;
-        outValue->reserved[1] = 0;
-        outValue->reserved[2] = 0;
-        outValue->axis = {0.0, 0.0, 0.0};
-        switch (value.GetValueType())
-        {
-        case EInputActionValueType::Boolean:
-            outValue->kind = UEC_INPUT_ACTION_VALUE_BOOLEAN;
-            outValue->bool_value = value.Get<bool>() ? UEC_TRUE : UEC_FALSE;
-            break;
-        case EInputActionValueType::Axis1D:
-            outValue->kind = UEC_INPUT_ACTION_VALUE_AXIS_1D;
-            outValue->axis.x = static_cast<double>(value.Get<float>());
-            break;
-        case EInputActionValueType::Axis2D:
-        {
-            outValue->kind = UEC_INPUT_ACTION_VALUE_AXIS_2D;
-            const FVector2D axis = value.Get<FVector2D>();
-            outValue->axis.x = axis.X;
-            outValue->axis.y = axis.Y;
-            break;
-        }
-        case EInputActionValueType::Axis3D:
-        {
-            outValue->kind = UEC_INPUT_ACTION_VALUE_AXIS_3D;
-            const FVector axis = value.Get<FVector>();
-            outValue->axis.x = axis.X;
-            outValue->axis.y = axis.Y;
-            outValue->axis.z = axis.Z;
-            break;
-        }
-        default:
-            return UEC_RESULT_UNSUPPORTED;
-        }
-        return UEC_RESULT_OK;
+        return WriteInputActionValue(value, *outValue)
+            ? UEC_RESULT_OK : UEC_RESULT_UNSUPPORTED;
     }
 
     uec_result UEC_CALL GetActorVelocity(uec_actor* rawActor, uec_vector3* outVelocity)
@@ -2858,6 +2876,82 @@ namespace
         return UEC_RESULT_INVALID_ARGUMENT;
     }
 
+    static bool ToInputTriggerEvent(uec_input_trigger_event event, ETriggerEvent& outEvent)
+    {
+        switch (event)
+        {
+        case UEC_INPUT_TRIGGER_STARTED: outEvent = ETriggerEvent::Started; return true;
+        case UEC_INPUT_TRIGGER_ONGOING: outEvent = ETriggerEvent::Ongoing; return true;
+        case UEC_INPUT_TRIGGER_TRIGGERED: outEvent = ETriggerEvent::Triggered; return true;
+        case UEC_INPUT_TRIGGER_CANCELED: outEvent = ETriggerEvent::Canceled; return true;
+        case UEC_INPUT_TRIGGER_COMPLETED: outEvent = ETriggerEvent::Completed; return true;
+        default: return false;
+        }
+    }
+
+    uec_result UEC_CALL BindInputAction(uec_actor* rawActor,
+                                         uec_object* rawAction,
+                                         uec_input_trigger_event triggerEvent,
+                                         uec_input_action_callback callback,
+                                         void* userData,
+                                         uint64_t* outBindingId)
+    {
+        if (callback == nullptr || outBindingId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        auto* actionHandle = reinterpret_cast<FUECObject*>(rawAction);
+        if (!IsValidActor(actorHandle) || !IsValidObject(actionHandle)) {
+            return UEC_RESULT_INVALID_HANDLE;
+        }
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        ETriggerEvent engineEvent;
+        if (!ToInputTriggerEvent(triggerEvent, engineEvent)) return UEC_RESULT_INVALID_ARGUMENT;
+        AActor* actor = actorHandle->Value.Get();
+        UInputAction* action = Cast<UInputAction>(actionHandle->Value.Get());
+        if (actor == nullptr || action == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        UEnhancedInputComponent* inputComponent = Cast<UEnhancedInputComponent>(actor->InputComponent);
+        if (inputComponent == nullptr) return UEC_RESULT_UNSUPPORTED;
+        if (GInputBindings.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
+
+        auto binding = MakeShared<FUECInputBinding>();
+        binding->Id = GNextInputBindingId++;
+        binding->Component = inputComponent;
+        binding->Callback = callback;
+        binding->UserData = userData;
+        TWeakPtr<FUECInputBinding> weakBinding = binding;
+        FEnhancedInputActionEventBinding& engineBinding = inputComponent->BindActionValueLambda(
+            action,
+            engineEvent,
+            [weakBinding](const FInputActionValue& inputValue)
+            {
+                TSharedPtr<FUECInputBinding> current = weakBinding.Pin();
+                if (!current.IsValid() || current->Cancelled || current->Callback == nullptr) return;
+                uec_input_action_value value{};
+                if (!WriteInputActionValue(inputValue, value)) return;
+                current->Callback(current->Id, value, current->UserData);
+            });
+        binding->EngineHandle = engineBinding.GetHandle();
+        if (binding->EngineHandle == 0) return UEC_RESULT_INTERNAL_ERROR;
+        GInputBindings.Add(binding->Id, binding);
+        *outBindingId = binding->Id;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL UnbindInputAction(uec_context* rawContext, uint64_t bindingId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        TSharedPtr<FUECInputBinding>* bindingPtr = GInputBindings.Find(bindingId);
+        if (bindingPtr == nullptr || !bindingPtr->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
+        TSharedPtr<FUECInputBinding> binding = *bindingPtr;
+        binding->Cancelled = true;
+        if (UEnhancedInputComponent* component = binding->Component.Get())
+        {
+            component->RemoveBindingByHandle(binding->EngineHandle);
+        }
+        GInputBindings.Remove(bindingId);
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2888,6 +2982,20 @@ namespace
             if (pair.Value.IsValid()) pair.Value->Cancelled = true;
         }
         GSaveGameRequests.Empty();
+    }
+
+    static void CancelAllInputBindings()
+    {
+        for (const TPair<uint64, TSharedPtr<FUECInputBinding>>& pair : GInputBindings)
+        {
+            if (!pair.Value.IsValid()) continue;
+            pair.Value->Cancelled = true;
+            if (UEnhancedInputComponent* component = pair.Value->Component.Get())
+            {
+                component->RemoveBindingByHandle(pair.Value->EngineHandle);
+            }
+        }
+        GInputBindings.Empty();
     }
 
     const uec_api GApi = {
@@ -2931,7 +3039,8 @@ namespace
         &GetActorPropertyObject, &SetActorPropertyObject,
         &GetObjectPropertyObject, &SetObjectPropertyObject,
         &AsyncSaveGameToSlot, &AsyncLoadGameFromSlot, &CancelSaveGameRequest,
-        &GetActorCountByClass, &GetActorAtByClass, &DestroyAudioComponent
+        &GetActorCountByClass, &GetActorAtByClass, &DestroyAudioComponent,
+        &BindInputAction, &UnbindInputAction
     };
 }
 
@@ -2950,6 +3059,7 @@ public:
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
         CancelAllSaveGameRequests();
+        CancelAllInputBindings();
         ClearAllHandles();
         UE_LOG(LogTemp, Log, TEXT("%s runtime module stopped"), UTF8_TO_TCHAR(kModuleName));
     }

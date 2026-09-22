@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 47u
+#define UEC_ABI_MINOR 49u
 
 #ifdef __cplusplus
 extern "C" {
@@ -173,6 +173,14 @@ typedef enum uec_input_action_value_kind {
     UEC_INPUT_ACTION_VALUE_AXIS_3D = 3
 } uec_input_action_value_kind;
 
+typedef enum uec_input_trigger_event {
+    UEC_INPUT_TRIGGER_STARTED = 1,
+    UEC_INPUT_TRIGGER_ONGOING = 2,
+    UEC_INPUT_TRIGGER_TRIGGERED = 3,
+    UEC_INPUT_TRIGGER_CANCELED = 4,
+    UEC_INPUT_TRIGGER_COMPLETED = 5
+} uec_input_trigger_event;
+
 typedef struct uec_input_action_value {
     uint32_t struct_size;
     uec_input_action_value_kind kind;
@@ -180,6 +188,10 @@ typedef struct uec_input_action_value {
     uint8_t reserved[3];
     uec_vector3 axis;
 } uec_input_action_value;
+
+typedef void (UEC_CALL *uec_input_action_callback)(uint64_t binding_id,
+                                                   uec_input_action_value value,
+                                                   void* user_data);
 
 typedef struct uec_collision_shape {
     uint32_t struct_size;
@@ -552,6 +564,14 @@ typedef struct uec_api {
                                                  uint32_t index,
                                                  uec_actor** out_actor);
     uec_result (UEC_CALL *destroy_audio_component)(uec_object* audio_component);
+    uec_result (UEC_CALL *bind_input_action)(uec_actor* actor,
+                                             uec_object* action,
+                                             uec_input_trigger_event trigger_event,
+                                             uec_input_action_callback callback,
+                                             void* user_data,
+                                             uint64_t* out_binding_id);
+    uec_result (UEC_CALL *unbind_input_action)(uec_context* context,
+                                               uint64_t binding_id);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

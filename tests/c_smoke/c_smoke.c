@@ -28,6 +28,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, async_save_game_to_slot) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_actor_count_by_class) >
                    offsetof(uec_api, cancel_save_game_request),
                "actor query functions must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, bind_input_action) >
+                   offsetof(uec_api, destroy_audio_component),
+               "input binding functions must append to uec_api");
 
 int main(void)
 {

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.47`.
+The current runtime slice is intentionally small and versioned as ABI `1.49`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -226,8 +226,11 @@ owned and must be released.
 `add_input_mapping_context` and `remove_input_mapping_context` apply loaded
 `UInputMappingContext` objects to a local player controller's Enhanced Input
 subsystem. Adding accepts an integer priority; removing is idempotent at the
-engine level. Action value polling, event callbacks, and binding tokens remain
-outside this slice.
+engine level. `bind_input_action` binds a typed value callback to an actor's
+`UEnhancedInputComponent` and returns a bridge binding id; unbind it with
+`unbind_input_action`. Binding callbacks run on the game thread, borrow the
+user pointer, and are suppressed after unbinding or module shutdown. At most
+1024 bindings can be active.
 
 `get_class_function_count` and `get_class_function_at` enumerate reflected
 functions, report non-return parameter counts, and identify return values and
