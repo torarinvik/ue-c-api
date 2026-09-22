@@ -2,13 +2,14 @@
 set -eu
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-public_dir="$repo_dir/Source/UnrealCAPI/Public"
+plugin_dir="$repo_dir/Plugins/UnrealCAPI"
+public_dir="$plugin_dir/Source/UnrealCAPI/Public"
 consumer="$repo_dir/tests/c_smoke/c_smoke.c"
 layout_consumer="$repo_dir/tests/c_smoke/c_smoke_layout.c"
 compat_consumer="$repo_dir/tests/c_smoke/c_compat.c"
 host_stub="$repo_dir/tests/c_smoke/c_host_stub.c"
 gameplay_example="$repo_dir/examples/c_gameplay/c_gameplay.c"
-private_dir="$repo_dir/Source/UnrealCAPI/Private"
+private_dir="$plugin_dir/Source/UnrealCAPI/Private"
 
 git -C "$repo_dir" diff --check
 
@@ -30,7 +31,7 @@ fi
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     ${sanitizer_flags} "$compat_consumer" "$host_stub" -o "$stub_build_dir/c_compat"
 "$stub_build_dir/c_compat" >/dev/null
-python3 -m json.tool "$repo_dir/UnrealCAPI.uplugin" >/dev/null
+python3 -m json.tool "$plugin_dir/UnrealCAPI.uplugin" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPIHost.uproject" >/dev/null
 sh -n "$repo_dir/tests/run_unreal_build.sh"
 if [ ! -x "$repo_dir/tests/run_unreal_build.sh" ]; then
@@ -38,7 +39,7 @@ if [ ! -x "$repo_dir/tests/run_unreal_build.sh" ]; then
     exit 1
 fi
 
-if ! rg -q 'bEnableExceptions\s*=\s*false' "$repo_dir/Source/UnrealCAPI/UnrealCAPI.Build.cs"; then
+if ! rg -q 'bEnableExceptions\s*=\s*false' "$plugin_dir/Source/UnrealCAPI/UnrealCAPI.Build.cs"; then
     printf '%s\n' 'The Unreal module must keep C++ exceptions disabled at the ABI boundary.' >&2
     exit 1
 fi

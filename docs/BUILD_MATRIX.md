@@ -6,10 +6,16 @@ build, launch, and exercise the C smoke path.
 
 | Engine | Host platform | Compiler/toolchain | C consumer | Plugin/host status |
 | --- | --- | --- | --- | --- |
+| UE 5.7.4 installed distribution | macOS arm64 local workstation | Unreal Build Tool target discovery | C11/C++17 linked host-stub smoke verified | Plugin discovery and tracked host targets verified; build unavailable because the distribution does not support the requested Mac/Win64 target platforms |
 | UE 5.8.2 target (engine unavailable) | macOS 27 arm64 local workstation | Apple Clang 21.0.0; Python 3.9.6 | C11/C++17 linked host-stub smoke verified | Unreal build pending (`UE_ROOT` unavailable) |
 | UE 5.8.2 (latest 5.8.x hotfix; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 | UE 5.8.2 (latest 5.8.x hotfix; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 
+The project plugin lives under `Plugins/UnrealCAPI/`, which is the standard
+project-plugin layout Unreal uses to discover the descriptor and module source.
+The host project includes tracked Game and Editor target files plus a minimal
+primary module, so Unreal Build Tool does not need to synthesize temporary
+targets before compiling the plugin.
 The portable gate is `sh tests/run_checks.sh`. It validates the public header
 as C11 and C++17, links and runs the current and old-minor C consumers against
 an explicit host stub, checks the C gameplay example and Unreal descriptor JSON,
@@ -22,9 +28,11 @@ run PIE.
 With an installed engine, run `UE_ROOT=/path/to/UnrealEngine
 sh tests/run_unreal_build.sh` to compile, cook, stage, and package the minimal
 host project for the current platform. Set `UEC_UNREAL_CONFIGURATION=Shipping`
-to repeat the build in Shipping mode. The script exits with status 2 when the
-engine path is unavailable, so the portable gate remains usable on contributors'
-machines without Unreal installed.
+to repeat the build in Shipping mode. Set `UEC_UNREAL_PLATFORM=Win64` (or
+another platform supplied by the engine installation) to validate a target
+different from the host platform. The script exits with status 2 when the
+engine path or requested platform is unavailable, so the portable gate remains
+usable on contributors' machines without Unreal installed.
 
 The minimum consumer language standard is C11. The plugin implementation uses
 C++17 through Unreal Build Tool; consumers may compile the public header as C11

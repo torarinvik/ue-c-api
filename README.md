@@ -1,6 +1,6 @@
 # Unreal Engine C API
 
-This project is an Unreal Engine C API: an in-process runtime plugin that exposes selected Unreal Engine functionality through a versioned C ABI. It is intended for C programs and other languages that can call C functions through an FFI. The public API is under `Source/UnrealCAPI/Public`; engine-dependent code remains private to the module.
+This project is an Unreal Engine C API: an in-process runtime plugin that exposes selected Unreal Engine functionality through a versioned C ABI. It is intended for C programs and other languages that can call C functions through an FFI. The public API is under `Plugins/UnrealCAPI/Source/UnrealCAPI/Public`; engine-dependent code remains private to the module.
 
 The project currently targets the latest Unreal Engine 5.8 release (5.8.2 at
 the time of writing). It will be updated as newer Unreal Engine versions are

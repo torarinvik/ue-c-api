@@ -1,7 +1,7 @@
 # C consumer integration
 
 Unreal loads `UnrealCAPI` as an in-process runtime module. A consumer includes
-`Source/UnrealCAPI/Public/uec_api.h` and receives the function table from the
+`Plugins/UnrealCAPI/Source/UnrealCAPI/Public/uec_api.h` and receives the function table from the
 exported bootstrap entry point after the host has initialized the engine:
 
 ```c

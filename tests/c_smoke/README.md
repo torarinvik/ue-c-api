@@ -9,7 +9,7 @@ sh tests/run_checks.sh
 To run only the C11 syntax check:
 
 ```sh
-cc -std=c11 -I../../Source/UnrealCAPI/Public -fsyntax-only c_smoke.c
+cc -std=c11 -I../../Plugins/UnrealCAPI/Source/UnrealCAPI/Public -fsyntax-only c_smoke.c
 ```
 
 The local gate links the runtime consumer and its layout assertions against

@@ -4,6 +4,7 @@ set -eu
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 engine_root=${UE_ROOT:-}
 configuration=${UEC_UNREAL_CONFIGURATION:-Development}
+requested_platform=${UEC_UNREAL_PLATFORM:-}
 
 if [ -z "$engine_root" ]; then
     printf '%s\n' 'UE_ROOT must point to an Unreal Engine installation.' >&2
@@ -20,6 +21,15 @@ case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*) platform=Win64; uat="$engine_root/Engine/Build/BatchFiles/RunUAT.bat" ;;
     *) printf 'Unsupported host platform: %s\n' "$(uname -s)" >&2; exit 2 ;;
 esac
+if [ -n "$requested_platform" ]; then
+    case "$requested_platform" in
+        *[!A-Za-z0-9]*)
+            printf 'UEC_UNREAL_PLATFORM contains unsupported characters: %s\n' "$requested_platform" >&2
+            exit 2
+            ;;
+        *) platform=$requested_platform ;;
+    esac
+fi
 if [ ! -f "$uat" ]; then
     printf 'Unreal Automation Tool was not found: %s\n' "$uat" >&2
     exit 2

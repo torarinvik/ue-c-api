@@ -3,7 +3,13 @@
   "EngineAssociation": "5.8",
   "Category": "",
   "Description": "Minimal host project for developing and testing the Unreal Engine C API plugin.",
-  "Modules": [],
+  "Modules": [
+    {
+      "Name": "UnrealCAPIHost",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ],
   "Plugins": [
     {
       "Name": "UnrealCAPI",
