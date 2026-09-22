@@ -22,7 +22,7 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
     if (api->release_context == NULL) return UEC_RESULT_INTERNAL_ERROR;
     if (api->abi_major != UEC_ABI_MAJOR || api->abi_minor < UEC_ABI_MINOR ||
         api->get_capabilities == NULL || api->get_world_count_by_kind == NULL ||
-        api->log == NULL || api->set_widget_visibility == NULL ||
+        api->get_world_at_by_kind == NULL || api->log == NULL || api->set_widget_visibility == NULL ||
         api->set_component_collision_enabled == NULL ||
         api->set_component_collision_channel_response == NULL || api->bind_input_action == NULL ||
         api->inject_input_action_value == NULL) {
@@ -35,6 +35,7 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
         result = UEC_RESULT_INTERNAL_ERROR;
 
     uint32_t invalidWorldKindCount = 1u;
+    uec_world* invalidWorldOutput = (uec_world*)context;
     uint64_t invalidInputBindingId = 1u;
     uec_input_action_value invalidInputValue = {0};
     invalidInputValue.struct_size = sizeof(invalidInputValue);
@@ -42,6 +43,8 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
     if (result == UEC_RESULT_OK &&
         (api->get_world_count_by_kind(context, (uec_world_kind)99, &invalidWorldKindCount) !=
              UEC_RESULT_INVALID_ARGUMENT || invalidWorldKindCount != 0u ||
+         api->get_world_at_by_kind(context, (uec_world_kind)99, 0u, &invalidWorldOutput) !=
+             UEC_RESULT_INVALID_ARGUMENT || invalidWorldOutput != NULL ||
          api->set_component_collision_channel_response(NULL, UEC_TRACE_VISIBILITY,
              (uec_collision_response)99) != UEC_RESULT_INVALID_ARGUMENT ||
          api->set_component_collision_channel_response(NULL, (uec_trace_channel)99,

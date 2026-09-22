@@ -26,7 +26,8 @@ development; they do not imply a published or runtime-verified release.
   so a single correctly sized retry returns the original message.
 - The Unreal-host C ABI smoke checks early rejection of undeclared collision-
   enabled, input-trigger, and injected input-value kinds; input-trigger
-  failures clear the binding id.
+  failures clear the binding id. It also verifies world-kind lookup clears its
+  output handle on invalid input.
 - The portable C smoke consumer now verifies that an invalid handle produces a
   bounded readable diagnostic through `get_last_error`.
 - The portable gate links and executes the Unreal host's tracked C bootstrap
