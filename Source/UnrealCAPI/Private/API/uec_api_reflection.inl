@@ -255,6 +255,40 @@
         return UEC_RESULT_INVALID_ARGUMENT;
     }
 
+    uec_result UEC_CALL GetClassPropertyDefaultText(uec_class* rawClass,
+                                                    uint32_t index,
+                                                    char* buffer,
+                                                    size_t bufferSize,
+                                                    size_t* requiredSize,
+                                                    uec_property_kind* outKind)
+    {
+        if (requiredSize == nullptr || outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *requiredSize = 0;
+        *outKind = UEC_PROPERTY_UNKNOWN;
+        auto* handle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = handle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        UObject* defaults = klass->GetDefaultObject();
+        if (defaults == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        uint32_t current = 0;
+        for (TFieldIterator<FProperty> iterator(klass, EFieldIteratorFlags::IncludeSuper);
+             iterator; ++iterator)
+        {
+            if (current++ != index) continue;
+            FProperty* property = *iterator;
+            *outKind = GetPropertyKind(property);
+            FString text;
+            if (!property->ExportText_InContainer(0, text, defaults, nullptr, defaults,
+                                                   PPF_None, defaults)) {
+                return UEC_RESULT_UNSUPPORTED;
+            }
+            return CopyFStringToUtf8(text, buffer, bufferSize, requiredSize);
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+
     uec_result UEC_CALL GetClassFunctionFlags(uec_class* rawClass,
                                               uint32_t index,
                                               uint32_t* outFlags)
