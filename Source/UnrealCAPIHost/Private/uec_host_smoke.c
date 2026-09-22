@@ -199,7 +199,8 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         api->destroy_actor_event_bridge == NULL || api->bind_actor_event_bridge == NULL ||
         api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL ||
         api->get_runtime_stats == NULL || api->get_capabilities == NULL ||
-        api->line_trace == NULL || api->sweep_trace == NULL) {
+        api->line_trace == NULL || api->sweep_trace == NULL ||
+        api->get_component_transform == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -236,6 +237,15 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     }
     result = api->spawn_actor(world, classPath, &initialTransform, &actor);
     if (result != UEC_RESULT_OK) goto cleanup;
+    uec_transform zeroTransform = {0};
+    uec_transform wrongKindTransform = {
+        {41.0, 42.0, 43.0}, {44.0, 45.0, 46.0, 47.0}, {48.0, 49.0, 50.0}};
+    if (api->get_component_transform((uec_scene_component*)actor, &wrongKindTransform) !=
+            UEC_RESULT_INVALID_HANDLE ||
+        memcmp(&wrongKindTransform, &zeroTransform, sizeof(zeroTransform)) != 0) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
     result = api->get_or_create_actor_event_bridge(actor, &bridge);
     if (result != UEC_RESULT_OK) goto cleanup;
     result = api->bind_actor_event_bridge(bridge, &VerifyEventBridgeCallback,
@@ -423,18 +433,15 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     result = state->api->invoke_actor_function_latent(
         state->actor, nonLatentName, NULL, 0u, &CompleteLatentSmoke,
         state, &rejectedRequestId);
-    if (result != UEC_RESULT_UNSUPPORTED || rejectedRequestId != 0) {
+    if (result != UEC_RESULT_UNSUPPORTED || rejectedRequestId != 0)
         return FailLatentSmoke(state);
-    }
     uec_string_view worldContextName = {
         worldContextFunctionName, sizeof(worldContextFunctionName) - 1};
     uint32_t noOutputs = UINT32_MAX;
     result = state->api->invoke_actor_function_arguments(
         state->actor, worldContextName, &latentArguments[0], 1u,
         NULL, 0u, &noOutputs);
-    if (result != UEC_RESULT_OK || noOutputs != 0) {
-        return FailLatentSmoke(state);
-    }
+    if (result != UEC_RESULT_OK || noOutputs != 0) return FailLatentSmoke(state);
     uec_function_argument malformedScalarArgument = duration;
     malformedScalarArgument.world_value = state->world;
     uec_string_view scalarName = {
@@ -443,9 +450,8 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     result = state->api->invoke_actor_function_arguments(
         state->actor, scalarName, &malformedScalarArgument, 1u,
         NULL, 0u, &noOutputs);
-    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
+    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0)
         return FailLatentSmoke(state);
-    }
     uec_function_argument scalarWithText = duration;
     scalarWithText.text_value.data = scalarFunctionName;
     scalarWithText.text_value.size = sizeof(scalarFunctionName) - 1;
@@ -453,15 +459,13 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     result = state->api->invoke_actor_function_arguments(
         state->actor, scalarName, &scalarWithText, 1u,
         NULL, 0u, &noOutputs);
-    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
+    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0)
         return FailLatentSmoke(state);
-    }
     noOutputs = UINT32_MAX;
     result = state->api->invoke_actor_function_arguments(
         state->actor, scalarName, NULL, 0u, NULL, 0u, &noOutputs);
-    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
+    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0)
         return FailLatentSmoke(state);
-    }
     uec_function_argument wrongScalarKind = duration;
     wrongScalarKind.kind = (uec_property_kind)99;
     noOutputs = UINT32_MAX;
@@ -474,9 +478,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     noOutputs = UINT32_MAX;
     result = state->api->invoke_actor_function_arguments(
         state->actor, scalarName, &duration, 1u, NULL, 0u, &noOutputs);
-    if (result != UEC_RESULT_OK || noOutputs != 0) {
-        return FailLatentSmoke(state);
-    }
+    if (result != UEC_RESULT_OK || noOutputs != 0) return FailLatentSmoke(state);
     uec_function_argument structArgument = {0};
     structArgument.struct_size = sizeof(structArgument);
     structArgument.kind = UEC_PROPERTY_STRUCT;
@@ -693,9 +695,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     scalarOutput.struct_size = sizeof(scalarOutput);
     result = state->api->invoke_actor_function_value(
         state->actor, latentName, NULL, 0u, &scalarOutput);
-    if (result != UEC_RESULT_UNSUPPORTED) {
-        return FailLatentSmoke(state);
-    }
+    if (result != UEC_RESULT_UNSUPPORTED) return FailLatentSmoke(state);
     size_t requiredSize = 99u;
     uec_property_kind returnKind = UEC_PROPERTY_INTEGER;
     result = state->api->invoke_actor_function_text(
