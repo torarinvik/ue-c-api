@@ -90,6 +90,9 @@ shutdown, preventing stale pointer acceptance after address reuse. Releasing a
 handle does not destroy the Unreal object. Weak object handles become invalid
 when Unreal destroys or unloads the object; use `retain_object` when a GC-tracked
 strong reference is needed and release that retained handle when finished.
+World cleanup, including PIE restart and engine-managed travel, proactively
+invalidates handles associated with the old world; reacquire them after the
+new world is initialized.
 
 Stop submitting work before unloading the module. Shutdown first rejects new
 API entry points, then cancels timers, subscriptions, queued callbacks, asset
