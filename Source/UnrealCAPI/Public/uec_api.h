@@ -249,6 +249,7 @@ typedef struct uec_api {
     uint32_t abi_major;
     uint32_t abi_minor;
 
+    /* Bootstrap, diagnostics, and context ownership. */
     uec_result (UEC_CALL *get_capabilities)(uec_context* context,
                                              uec_capabilities* out_capabilities);
     uec_result (UEC_CALL *get_last_error)(uec_context* context,
@@ -257,6 +258,8 @@ typedef struct uec_api {
                                            size_t* required_size);
     uec_result (UEC_CALL *log)(uec_context* context, uec_string_view message);
     uec_result (UEC_CALL *release_context)(uec_context* context);
+
+    /* World selection and player flow. */
     uec_result (UEC_CALL *get_world_count)(uec_context* context, uint32_t* out_count);
     uec_result (UEC_CALL *get_world_at)(uec_context* context,
                                         uint32_t index,
@@ -277,6 +280,8 @@ typedef struct uec_api {
                                         uec_actor* pawn);
     uec_result (UEC_CALL *set_controller_view_target)(uec_actor* controller,
                                                       uec_actor* view_target);
+
+    /* Input polling, physics, and the default-world convenience path. */
     uec_result (UEC_CALL *get_input_key_down)(uec_actor* controller,
                                               uec_string_view key_name,
                                               uec_bool* out_down);
@@ -295,6 +300,8 @@ typedef struct uec_api {
                                              uec_vector3 force);
     uec_result (UEC_CALL *get_default_world)(uec_context* context, uec_world** out_world);
     uec_result (UEC_CALL *release_world)(uec_world* world);
+
+    /* Actor and scene-component lifetime, transforms, tags, and timers. */
     uec_result (UEC_CALL *spawn_actor)(uec_world* world,
                                        uec_string_view class_path,
                                        const uec_transform* transform,
@@ -338,6 +345,8 @@ typedef struct uec_api {
                                      void* user_data,
                                      uint64_t* out_timer_id);
     uec_result (UEC_CALL *clear_timer)(uec_world* world, uint64_t timer_id);
+
+    /* Class and reflected-property metadata and access. */
     uec_result (UEC_CALL *find_class)(uec_context* context,
                                       uec_string_view class_path,
                                       uec_class** out_class);
@@ -372,6 +381,8 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_actor_property_string)(uec_actor* actor,
                                                      uec_string_view property_name,
                                                      uec_string_view value);
+
+    /* Collision, object loading, and initial presentation adapters. */
     uec_result (UEC_CALL *line_trace)(uec_world* world,
                                       uec_vector3 start,
                                       uec_vector3 end,
@@ -427,6 +438,8 @@ typedef struct uec_api {
                                                     double* out_degrees);
     uec_result (UEC_CALL *set_camera_field_of_view)(uec_scene_component* component,
                                                     double degrees);
+
+    /* Generic object properties and save-game persistence. */
     uec_result (UEC_CALL *get_object_property_value)(uec_object* object,
                                                      uec_string_view property_name,
                                                      uec_property_value* out_value);
@@ -458,6 +471,8 @@ typedef struct uec_api {
                                             uec_string_view slot_name,
                                             int32_t user_index,
                                             uec_bool* out_deleted);
+
+    /* Queued game-thread work, movement, meshes, animation, and materials. */
     uec_result (UEC_CALL *run_on_game_thread)(uec_context* context,
                                               uec_game_thread_callback callback,
                                               void* user_data,
@@ -485,6 +500,8 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_component_material_vector)(uec_scene_component* component,
                                                          uec_string_view parameter_name,
                                                          uec_vector3 value);
+
+    /* Retained objects, component/actor identity, and input mappings. */
     uec_result (UEC_CALL *retain_object)(uec_object* object,
                                          uec_object** out_retained_object);
     uec_result (UEC_CALL *get_component_class_name)(uec_scene_component* component,
@@ -512,6 +529,8 @@ typedef struct uec_api {
                                                      int32_t priority);
     uec_result (UEC_CALL *remove_input_mapping_context)(uec_actor* controller,
                                                         uec_object* mapping_context);
+
+    /* Reflected functions, collision settings, and attached audio. */
     uec_result (UEC_CALL *get_class_function_count)(uec_class* klass,
                                                     uint32_t* out_count);
     uec_result (UEC_CALL *get_class_function_at)(uec_class* klass,
@@ -563,6 +582,8 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_object_property_object)(uec_object* object,
                                                       uec_string_view property_name,
                                                       uec_object* value);
+
+    /* Asynchronous save operations and indexed actor queries. */
     uec_result (UEC_CALL *async_save_game_to_slot)(uec_object* save_game,
                                                    uec_string_view slot_name,
                                                    int32_t user_index,
@@ -585,6 +606,8 @@ typedef struct uec_api {
                                                  uint32_t index,
                                                  uec_actor** out_actor);
     uec_result (UEC_CALL *destroy_audio_component)(uec_object* audio_component);
+
+    /* Tokenized input bindings and explicit world-context access. */
     uec_result (UEC_CALL *bind_input_action)(uec_actor* actor,
                                              uec_object* action,
                                              uec_input_trigger_event trigger_event,
@@ -598,6 +621,9 @@ typedef struct uec_api {
                                                  uec_actor** out_controller);
     uec_result (UEC_CALL *get_world_game_instance)(uec_world* world,
                                                    uec_object** out_game_instance);
+
+    /* Append-only ABI extensions: reflected calls, subscriptions, identity,
+     * UMG, component velocity, and network context. */
     uec_result (UEC_CALL *invoke_actor_function_text)(
         uec_actor* actor,
         uec_string_view function_name,
