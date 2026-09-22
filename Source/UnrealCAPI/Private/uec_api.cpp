@@ -13,6 +13,7 @@
 #include "CollisionShape.h"
 #include "Components/SceneComponent.h"
 #include "Components/PrimitiveComponent.h"
+#include "Camera/CameraComponent.h"
 #include "Sound/SoundBase.h"
 #include "Blueprint/UserWidget.h"
 #include "HAL/CriticalSection.h"
@@ -254,7 +255,7 @@ namespace
             UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS | UEC_CAPABILITY_ASYNC_ASSETS;
         *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW |
             UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_COLLISION_QUERIES |
-            UEC_CAPABILITY_AUDIO | UEC_CAPABILITY_UI;
+            UEC_CAPABILITY_AUDIO | UEC_CAPABILITY_UI | UEC_CAPABILITY_CAMERA;
         return UEC_RESULT_OK;
     }
 
@@ -1409,6 +1410,34 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetCameraFieldOfView(uec_scene_component* rawComponent,
+                                             double* outDegrees)
+    {
+        if (outDegrees == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UCameraComponent* camera = Cast<UCameraComponent>(componentHandle->Value.Get());
+        if (camera == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outDegrees = static_cast<double>(camera->FieldOfView);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetCameraFieldOfView(uec_scene_component* rawComponent,
+                                             double degrees)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!FMath::IsFinite(degrees) || degrees <= 0.0 || degrees >= 360.0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        UCameraComponent* camera = Cast<UCameraComponent>(componentHandle->Value.Get());
+        if (camera == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        camera->SetFieldOfView(static_cast<float>(degrees));
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL InvokeActorFunction(uec_actor* rawActor, uec_string_view functionName)
     {
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
@@ -1582,7 +1611,8 @@ namespace
         &InvokeActorFunction, &LoadObjectHandle, &ReleaseObject,
         &GetObjectName, &ObjectIsA, &RequestObjectLoad, &CancelObjectLoad,
         &SweepTrace, &OverlapShape, &PlaySoundAtLocation,
-        &CreateWidget, &AddWidgetToViewport, &RemoveWidgetFromParent
+        &CreateWidget, &AddWidgetToViewport, &RemoveWidgetFromParent,
+        &GetCameraFieldOfView, &SetCameraFieldOfView
     };
 }
 

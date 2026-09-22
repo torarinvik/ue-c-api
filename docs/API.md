@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.21`.
+The current runtime slice is intentionally small and versioned as ABI `1.22`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -8,7 +8,7 @@ Unreal headers and C++ types stay inside the plugin.
 `get_capabilities` reports the feature bits present in the loaded bridge. The
 current implementation reports bootstrap, logging, world, actor, component,
 timer, reflection, collision, asset loading, player flow, input, physics,
-collision-query, audio, and UI adapters.
+collision-query, audio, UI, and camera adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed active
 handle registries. A world or actor handle is a bridge-owned reference to an
@@ -121,6 +121,10 @@ owned by the caller. `add_widget_to_viewport` and `remove_widget_from_parent`
 operate on that handle on the game thread. The widget must be kept alive by
 being added to a viewport or another Unreal owner; releasing the bridge handle
 does not destroy the widget.
+
+`get_camera_field_of_view` and `set_camera_field_of_view` accept scene-component
+handles that refer to `UCameraComponent` instances. Field of view is expressed
+in degrees and writes are restricted to the open interval `(0, 360)`.
 
 ## Verification
 
