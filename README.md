@@ -2,9 +2,10 @@
 
 This project is an Unreal Engine C API: an in-process runtime plugin that exposes selected Unreal Engine functionality through a versioned C ABI. It is intended for C programs and other languages that can call C functions through an FFI. The public API is under `Plugins/UnrealCAPI/Source/UnrealCAPI/Public`; engine-dependent code remains private to the module.
 
-The project currently targets the latest Unreal Engine 5.8 release (5.8.2 at
-the time of writing). It will be updated as newer Unreal Engine versions are
-released so the API remains compatible with the state of the art.
+The project currently targets Unreal Engine 5.8.2, the latest 5.8 hotfix
+available as of September 2026. See [Epic's release notice](https://forums.unrealengine.com/t/5-8-2-hotfix-released/2746335).
+It will be updated and verified as newer Unreal Engine versions are released,
+so the API stays compatible with the state of the art.
 
 The runtime API provides ABI negotiation, bounded diagnostics and logging,
 explicit opaque handles, world and actor operations, reflection, collision and
@@ -33,11 +34,9 @@ lifetime, and shutdown rules are collected in
 The append-only ABI, deprecation, and migration rules are in
 [docs/ABI_COMPATIBILITY.md](docs/ABI_COMPATIBILITY.md).
 
-The plugin must be built against a specific Unreal Engine 5.x version and
-toolchain. The host project targets the current UE 5.8 release; use the latest
-5.8.x hotfix available for a build and record the exact engine patch and
-toolchain used. The project will track newer Unreal releases when they become
-the state-of-the-art supported target.
+The plugin must be built against a specific Unreal Engine version and
+toolchain. Record the exact engine patch and toolchain used in
+[`docs/BUILD_MATRIX.md`](docs/BUILD_MATRIX.md) when adding a verified build.
 
 `UnrealCAPIHost.uproject` is the minimal host project for opening the plugin in Unreal Editor and running integration tests.
 
