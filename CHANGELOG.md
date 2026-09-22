@@ -89,6 +89,8 @@ development; they do not imply a published or runtime-verified release.
 - Indexed world streaming-level inspection and game-thread load/visibility state
   requests using Unreal package names.
 - Non-loading class-path availability queries for cook and dependency preflight.
+- One-shot primitive-component hit callbacks with tokenized unbinding and
+  shutdown cleanup.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Embedded NUL rejection for all public UTF-8 string views, including reflected,
   input, save-game, and configuration adapters.

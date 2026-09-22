@@ -452,3 +452,90 @@
         GConfig->Flush(false, GGameIni);
         return UEC_RESULT_OK;
     }
+
+    uec_result UEC_CALL BindComponentHit(uec_scene_component* rawComponent,
+                                         uec_component_hit_callback callback,
+                                         void* userData,
+                                         uint64_t* outSubscriptionId)
+    {
+        if (callback == nullptr || outSubscriptionId == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+
+        const uint64 subscriptionId = GNextCollisionSubscriptionId++;
+        auto subscription = MakeShared<FUECCollisionSubscription>();
+        subscription->Id = subscriptionId;
+        subscription->Component = component;
+        subscription->Callback = callback;
+        subscription->UserData = userData;
+        TWeakPtr<FUECCollisionSubscription> weakSubscription = subscription;
+        subscription->Handle = component->OnComponentHit().AddLambda(
+            [weakSubscription](UPrimitiveComponent*, AActor* otherActor,
+                               UPrimitiveComponent*, FVector normalImpulse, const FHitResult&)
+            {
+                TSharedPtr<FUECCollisionSubscription> current = weakSubscription.Pin();
+                if (!current.IsValid() || current->Cancelled || IsShuttingDown()) return;
+                current->InCallback = true;
+                uec_actor* otherHandle = nullptr;
+                if (otherActor != nullptr)
+                {
+                    if (FUECActor* handle = MakeActorHandle(otherActor)) {
+                        otherHandle = reinterpret_cast<uec_actor*>(handle);
+                    }
+                }
+                current->Callback(current->Id,
+                                  otherHandle,
+                                  {normalImpulse.X, normalImpulse.Y, normalImpulse.Z},
+                                  current->UserData);
+                current->InCallback = false;
+                current->Cancelled = true;
+                GCollisionSubscriptions.Remove(current->Id);
+            });
+        GCollisionSubscriptions.Add(subscriptionId, subscription);
+        *outSubscriptionId = subscriptionId;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL UnbindComponentHit(uec_context* rawContext,
+                                           uint64_t subscriptionId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        TSharedPtr<FUECCollisionSubscription>* subscriptionPtr =
+            GCollisionSubscriptions.Find(subscriptionId);
+        if (subscriptionPtr == nullptr || !subscriptionPtr->IsValid()) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        TSharedPtr<FUECCollisionSubscription> subscription = *subscriptionPtr;
+        subscription->Cancelled = true;
+        if (!subscription->InCallback)
+        {
+            if (UPrimitiveComponent* component = subscription->Component.Get())
+            {
+                component->OnComponentHit().Remove(subscription->Handle);
+            }
+        }
+        GCollisionSubscriptions.Remove(subscriptionId);
+        return UEC_RESULT_OK;
+    }
+
+    static void ClearAllCollisionSubscriptions()
+    {
+        for (const TPair<uint64, TSharedPtr<FUECCollisionSubscription>>& pair : GCollisionSubscriptions)
+        {
+            if (pair.Value.IsValid())
+            {
+                if (UPrimitiveComponent* component = pair.Value->Component.Get())
+                {
+                    component->OnComponentHit().Remove(pair.Value->Handle);
+                }
+                pair.Value->Cancelled = true;
+            }
+        }
+        GCollisionSubscriptions.Empty();
+    }

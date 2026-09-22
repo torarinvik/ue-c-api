@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.76`.
+The current runtime slice is intentionally small and versioned as ABI `1.78`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -124,6 +124,12 @@ changes streaming intent and does not wait for asynchronous loading to finish.
 
 `is_class_path_loaded` checks whether a class object already exists in memory;
 it never loads the class and therefore is safe for cook/dependency preflight.
+
+`bind_component_hit` subscribes to the primitive component's one-shot hit event.
+The callback receives a borrowed event token, an optional caller-owned weak actor
+handle for the other actor, and the normal impulse. Unbind explicitly or the
+subscription removes itself after the first hit; module shutdown removes all
+remaining native delegates.
 
 `get_actor_bounds` reports a caller-owned world-space origin and box extent for
 an actor. `find_player_start` selects the start actor for an explicit local

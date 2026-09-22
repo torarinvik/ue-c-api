@@ -144,6 +144,16 @@ namespace
         bool InCallback = false;
         bool WasPlaying = false;
     };
+    struct FUECCollisionSubscription final
+    {
+        uint64 Id = 0;
+        TWeakObjectPtr<UPrimitiveComponent> Component;
+        FDelegateHandle Handle;
+        uec_component_hit_callback Callback = nullptr;
+        void* UserData = nullptr;
+        bool Cancelled = false;
+        bool InCallback = false;
+    };
     struct FUECClass final
     {
         FUECHandleHeader Header;
@@ -200,6 +210,7 @@ namespace
     TMap<uint64, TSharedPtr<FUECAudioSubscription>> GAudioSubscriptions;
     TMap<uint64, TSharedPtr<FUECWidgetSubscription>> GWidgetSubscriptions;
     TMap<uint64, TSharedPtr<FUECAnimationSubscription>> GAnimationSubscriptions;
+    TMap<uint64, TSharedPtr<FUECCollisionSubscription>> GCollisionSubscriptions;
     TSet<const FUECClass*> GClasses;
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
@@ -213,6 +224,7 @@ namespace
     uint64 GNextAudioSubscriptionId = 1;
     uint64 GNextWidgetSubscriptionId = 1;
     uint64 GNextAnimationSubscriptionId = 1;
+    uint64 GNextCollisionSubscriptionId = 1;
     uint64 GNextSaveGameRequestId = 1;
     uint64 GNextInputBindingId = 1;
     constexpr int32 MaxQueuedObjectLoads = 1024;
@@ -631,7 +643,9 @@ namespace
         &GetStreamingLevelCount,
         &GetStreamingLevelAt,
         &SetStreamingLevelState,
-        &IsClassPathLoaded
+        &IsClassPathLoaded,
+        &BindComponentHit,
+        &UnbindComponentHit
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
@@ -658,6 +672,7 @@ public:
         ClearAllAudioSubscriptions();
         ClearAllWidgetSubscriptions();
         ClearAllAnimationSubscriptions();
+        ClearAllCollisionSubscriptions();
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
         CancelAllSaveGameRequests();

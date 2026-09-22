@@ -17,7 +17,7 @@ UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI chan
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 77u, "ABI minor must include class load queries");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 78u, "ABI minor must include collision callbacks");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -114,6 +114,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, set_streaming_level_state) >
 UEC_TEST_ASSERT(offsetof(uec_api, is_class_path_loaded) >
                    offsetof(uec_api, set_streaming_level_state),
                "class load queries must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, bind_component_hit) >
+                   offsetof(uec_api, is_class_path_loaded),
+               "collision callbacks must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, unbind_component_hit) >
+                   offsetof(uec_api, bind_component_hit),
+               "collision unbinding must append to uec_api");
 
 int main(void)
 {

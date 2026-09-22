@@ -21,6 +21,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Reflected scalar/string reads and writes | Runtime implemented / Unreal integration pending | Typed bool, integer, enum, and floating-point values plus string, name, text, hard object references, and Unreal text serialization for supported structs and containers |
 | Collision line traces | Runtime implemented / Unreal integration pending | Game-thread single traces with stable channel mapping and ignored-actor filtering |
 | Collision sweeps and overlaps | Runtime implemented / Unreal integration pending | World-aligned sphere, box, and capsule queries with bounded actor results |
+| Collision event callbacks | Runtime implemented / Unreal integration pending | One-shot primitive-component hit callbacks with unsubscribe tokens and shutdown cleanup |
 | One-shot spatial audio | Runtime implemented / Unreal integration pending | Fire-and-forget `USoundBase` playback at a world location |
 | Basic UMG widgets | Runtime implemented / Unreal integration pending | Create a `UUserWidget` class, add or remove it from the viewport, set visibility, update `UTextBlock` text, and receive one-shot button clicks |
 | Camera field of view | Runtime implemented / Unreal integration pending | Read and write perspective FOV on camera scene components |
