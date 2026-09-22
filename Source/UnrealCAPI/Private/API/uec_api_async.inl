@@ -109,6 +109,7 @@
         request->Path = path;
         request->Callback = callback;
         request->UserData = userData;
+        GObjectLoadRequests.Add(requestId, request);
         TWeakPtr<FUECObjectLoadRequest> weakRequest = request;
         FStreamableDelegate completed = FStreamableDelegate::CreateLambda([weakRequest]()
         {
@@ -138,8 +139,11 @@
             current->Callback(current->Id, result, objectHandle, current->UserData);
         });
         request->Handle = UAssetManager::Get().GetStreamableManager().RequestAsyncLoad(path, completed);
-        if (!request->Handle.IsValid()) return UEC_RESULT_INTERNAL_ERROR;
-        GObjectLoadRequests.Add(requestId, request);
+        if (!request->Handle.IsValid())
+        {
+            GObjectLoadRequests.Remove(requestId);
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         *outRequestId = requestId;
         return UEC_RESULT_OK;
     }
