@@ -19,6 +19,10 @@ compilation and runtime tests still need an engine installation. See
 [CONTRIBUTING.md](CONTRIBUTING.md) to participate and [CHANGELOG.md](CHANGELOG.md)
 for changes in development.
 
+Consumer startup, table compatibility, threading, callback ownership, handle
+lifetime, and shutdown rules are collected in
+[docs/CONSUMER_INTEGRATION.md](docs/CONSUMER_INTEGRATION.md).
+
 The plugin must be built against a specific Unreal Engine 5.x version and
 toolchain. The host project targets the current UE 5.8 release; record the
 exact engine patch and toolchain used for each build. The project will track

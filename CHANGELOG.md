@@ -78,6 +78,8 @@ development; they do not imply a published or runtime-verified release.
 - GitHub Actions checks for C11/C++17 headers and descriptor JSON on Linux
   (GCC and Clang) and macOS (Clang), on pushes and pull requests.
 - Public-domain license, contribution guide, and API/feature documentation.
+- C consumer integration guide covering bootstrap, compatibility, threading,
+  callbacks, handles, and shutdown.
 
 ### Changed
 
