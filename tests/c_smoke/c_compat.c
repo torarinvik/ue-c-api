@@ -1,54 +1,60 @@
-#include "uec_api.h"
+#include "legacy/uec_api_abi_135.h"
 
-#include <stddef.h>
+#include <string.h>
 
-/* Model a 1.135 consumer checking compatibility with the 1.136 bridge. It
- * requests the last published minor and never dereferences newer fields. */
-enum { UEC_COMPAT_MINOR = 135u };
-
-/* Keep this prefix deliberately independent from the current uec_api layout.
- * It represents the fields an old consumer needs to bootstrap and release a
- * context without naming any later extension. */
-typedef struct uec_api_compat_prefix {
-    uint32_t struct_size;
-    uint32_t abi_major;
-    uint32_t abi_minor;
-    uec_result (UEC_CALL *get_capabilities)(uec_context* context,
-                                             uec_capabilities* out_capabilities);
-    uec_result (UEC_CALL *get_last_error)(uec_context* context,
-                                           char* buffer,
-                                           size_t buffer_size,
-                                           size_t* required_size);
-    uec_result (UEC_CALL *log)(uec_context* context, uec_string_view message);
-    uec_result (UEC_CALL *release_context)(uec_context* context);
-} uec_api_compat_prefix;
-
-_Static_assert(offsetof(uec_api_compat_prefix, get_capabilities) >
-                   offsetof(uec_api_compat_prefix, abi_minor),
-               "compatibility prefix must contain bootstrap fields");
+_Static_assert(UEC_ABI_MINOR == 135u, "legacy fixture must remain ABI 1.135");
 
 int main(void)
 {
     const uec_api* api = NULL;
     uec_context* context = NULL;
-    if (uec_get_api(UEC_ABI_MAJOR, UEC_COMPAT_MINOR, &api, &context) != UEC_RESULT_OK) {
-        return 1;
-    }
-    if (api == NULL || context == NULL) {
+    uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
+    if (result != UEC_RESULT_OK) return 1;
+    if (api == NULL || context == NULL || api->struct_size < sizeof(*api) ||
+        api->abi_major != UEC_ABI_MAJOR || api->abi_minor < UEC_ABI_MINOR ||
+        api->get_capabilities == NULL || api->release_context == NULL ||
+        api->save_versioned_application_data == NULL ||
+        api->load_versioned_application_data == NULL) {
         return 2;
     }
-    const uec_api_compat_prefix* prefix = (const uec_api_compat_prefix*)api;
-    if (prefix->abi_major != UEC_ABI_MAJOR || prefix->abi_minor < UEC_COMPAT_MINOR ||
-        prefix->struct_size < offsetof(uec_api_compat_prefix, get_capabilities) +
-            sizeof(prefix->get_capabilities) || prefix->get_capabilities == NULL ||
-        prefix->release_context == NULL) {
-        return 3;
-    }
+
+    int status = 0;
     uec_capabilities capabilities = 0;
-    if (prefix->get_capabilities(context, &capabilities) != UEC_RESULT_OK ||
-        (capabilities & UEC_CAPABILITY_BOOTSTRAP) == 0) {
-        prefix->release_context(context);
-        return 4;
+    if (api->get_capabilities(context, &capabilities) != UEC_RESULT_OK ||
+        (capabilities & UEC_CAPABILITY_BOOTSTRAP) == 0 ||
+        (capabilities & UEC_CAPABILITY_SAVE_DATA) == 0) {
+        status = 3;
+        goto cleanup;
     }
-    return prefix->release_context(context) == UEC_RESULT_OK ? 0 : 5;
+
+    const char slotName[] = "legacy-abi-135";
+    const uec_string_view slot = {slotName, sizeof(slotName) - 1u};
+    const uint8_t expected[] = {0x31u, 0x33u, 0x35u};
+    uint8_t actual[sizeof(expected)] = {0u};
+    uec_bool saved = UEC_FALSE;
+    if (api->save_versioned_application_data(context, slot, 0, 135u,
+            expected, sizeof(expected), &saved) != UEC_RESULT_OK || saved != UEC_TRUE) {
+        status = 4;
+        goto cleanup;
+    }
+
+    uint32_t schemaVersion = 0u;
+    size_t requiredSize = 0u;
+    result = api->load_versioned_application_data(context, slot, 0,
+        &schemaVersion, NULL, 0u, &requiredSize);
+    if (result != UEC_RESULT_BUFFER_TOO_SMALL || schemaVersion != 135u ||
+        requiredSize != sizeof(expected)) {
+        status = 5;
+        goto cleanup;
+    }
+    result = api->load_versioned_application_data(context, slot, 0,
+        &schemaVersion, actual, sizeof(actual), &requiredSize);
+    if (result != UEC_RESULT_OK || schemaVersion != 135u ||
+        requiredSize != sizeof(expected) || memcmp(actual, expected, sizeof(expected)) != 0) {
+        status = 6;
+    }
+
+cleanup:
+    api->release_context(context);
+    return status;
 }

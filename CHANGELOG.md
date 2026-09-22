@@ -338,8 +338,8 @@ development; they do not imply a published or runtime-verified release.
   when another world is available, stale actor and bridge handle rejection,
   and pending-request drain counts; the portable C gate verifies the appended
   entries.
-- The portable old-consumer fixture now requests ABI 1.135 from the ABI 1.136
-  bridge and exercises only the stable table prefix.
+- A separately compiled ABI 1.135 header consumer links against the ABI 1.136
+  bridge and exercises the stable prefix plus versioned application-data calls.
 - The C gameplay example now binds the event component, emits a validated
   payload on each movement tick, receives it synchronously, and cleans up the
   actor, component, timer, subscription, world, and handles.
