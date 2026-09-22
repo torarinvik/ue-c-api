@@ -470,13 +470,16 @@
 
     static void CancelAllObjectLoads()
     {
+        TArray<TSharedPtr<FUECObjectLoadRequest>> requests;
+        requests.Reserve(GObjectLoadRequests.Num());
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
         {
-            if (pair.Value.IsValid())
-            {
-                pair.Value->Cancelled = true;
-                if (pair.Value->Handle.IsValid()) pair.Value->Handle->CancelHandle();
-            }
+            if (pair.Value.IsValid()) requests.Add(pair.Value);
+        }
+        for (const TSharedPtr<FUECObjectLoadRequest>& request : requests)
+        {
+            request->Cancelled = true;
+            if (request->Handle.IsValid()) request->Handle->CancelHandle();
         }
         GObjectLoadRequests.Empty();
     }

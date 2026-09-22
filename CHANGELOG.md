@@ -190,6 +190,8 @@ development; they do not imply a published or runtime-verified release.
 - Explicit audio-component destruction now tombstones and clears the bridge
   handle, including any retained strong reference, before destroying the
   Unreal component.
+- Shutdown object-load cancellation now snapshots requests before canceling
+  streamable handles, remaining safe if cancellation completes immediately.
 - One-shot widget, audio, and component-hit callbacks now avoid touching a raw
   Unreal delegate after cancellation or destruction from inside the callback.
 - Asynchronous object-load completions now use the shared gated object-handle
