@@ -37,6 +37,35 @@
         return CopyFStringToUtf8(object->GetName(), buffer, bufferSize, requiredSize);
     }
 
+    uec_result UEC_CALL GetObjectPath(uec_object* rawObject,
+                                      char* buffer,
+                                      size_t bufferSize,
+                                      size_t* requiredSize)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return CopyFStringToUtf8(object->GetPathName(), buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL GetObjectClassName(uec_object* rawObject,
+                                           char* buffer,
+                                           size_t bufferSize,
+                                           size_t* requiredSize)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        if (object == nullptr || object->GetClass() == nullptr)
+        {
+            return UEC_RESULT_INVALID_HANDLE;
+        }
+        return CopyFStringToUtf8(object->GetClass()->GetPathName(), buffer, bufferSize, requiredSize);
+    }
+
     uec_result UEC_CALL ObjectIsA(uec_object* rawObject,
                                   uec_string_view classPath,
                                   uec_bool* outIsA)
@@ -405,4 +434,3 @@
         }
         GInputBindings.Empty();
     }
-

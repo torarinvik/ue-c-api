@@ -440,7 +440,8 @@ namespace
         &GetPlayerController, &GetWorldGameInstance,
         &InvokeActorFunctionText,
         &SubscribeWorldTick, &UnsubscribeWorldTick,
-        &BindAudioFinished, &UnbindAudioFinished
+        &BindAudioFinished, &UnbindAudioFinished,
+        &GetObjectPath, &GetObjectClassName
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

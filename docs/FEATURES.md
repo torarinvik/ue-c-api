@@ -40,7 +40,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Attached audio playback | Runtime implemented / Unreal integration pending | Spawn, stop, destroy, and release non-auto-destroying audio components on scene components |
 | Audio completion subscriptions | Runtime implemented / Unreal integration pending | One-shot native finished callbacks with unsubscribe tokens and component-destruction cleanup |
 | C gameplay example | Source and header verified | Spawn, timer-driven movement, callback, and cleanup flow |
-| Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, and type checks |
+| Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, full object paths, class paths, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, game-thread callbacks, and a 1024-request bound |
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries and game-thread `OpenLevel` requests |
 | Player flow | Runtime implemented / Unreal integration pending | Indexed local controller lookup, world game-instance access, possession, and view-target selection |
