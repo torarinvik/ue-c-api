@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.98`.
+The current runtime slice is intentionally small and versioned as ABI `1.99`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -126,6 +126,9 @@ Unreal's integer configuration API.
 ABI minor 98 adds `bind_actor_destroyed` and `unbind_actor_destroyed`. The
 one-shot callback carries only its subscription id and borrowed user data, so
 it cannot accidentally retain or use a destroyed actor handle.
+
+ABI minor 99 adds `get_config_bool`, which reads a boolean from the game INI on
+the game thread and clears its output before validation.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

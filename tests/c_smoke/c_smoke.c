@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 98u, "ABI minor must include actor destruction callbacks");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 99u, "ABI minor must include config booleans");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -202,6 +202,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, bind_actor_destroyed) >
 UEC_TEST_ASSERT(offsetof(uec_api, unbind_actor_destroyed) >
                    offsetof(uec_api, bind_actor_destroyed),
                "actor destruction unbinding must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_config_bool) >
+                   offsetof(uec_api, unbind_actor_destroyed),
+               "config boolean readback must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -416,6 +419,14 @@ int main(void)
     {
         api->release_context(context);
         return 25;
+    }
+
+    uec_bool config_bool = UEC_TRUE;
+    if (api->get_config_bool(context, streaming_package, streaming_package, &config_bool) !=
+            UEC_RESULT_UNSUPPORTED || config_bool != UEC_FALSE)
+    {
+        api->release_context(context);
+        return 26;
     }
 
     const char message[] = "C ABI smoke test";

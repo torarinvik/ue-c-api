@@ -672,6 +672,23 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetConfigBool(uec_context* rawContext, uec_string_view section,
+                                      uec_string_view key, uec_bool* outValue)
+    {
+        if (outValue != nullptr) *outValue = UEC_FALSE;
+        if (outValue == nullptr || !IsValidStringView(section) || section.size == 0 ||
+            !IsValidStringView(key) || key.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (GConfig == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        bool value = false;
+        if (!GConfig->GetBool(*ToFString(section), *ToFString(key), value, GGameIni)) {
+            return UEC_RESULT_NOT_INITIALIZED;
+        }
+        *outValue = value ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL BindComponentHit(uec_scene_component* rawComponent,
                                          uec_component_hit_callback callback,
                                          void* userData,

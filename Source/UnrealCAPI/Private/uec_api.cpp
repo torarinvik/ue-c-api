@@ -719,7 +719,7 @@ namespace
         &InvokeActorFunctionValue,
         &InvokeActorFunctionValues, &GetClassFunctionParameterAt,
         &InvokeActorFunctionTextValues, &FindObjectHandle,
-        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText, &GetComponentCollisionEnabled, &GetAudioComponentPlaying, &SetStreamingLevelStateAsync, &CancelStreamingLevelRequest, &GetComponentCollisionResponse, &GetConfigInteger, &SetConfigInteger, &BindActorDestroyed, &UnbindActorDestroyed
+        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText, &GetComponentCollisionEnabled, &GetAudioComponentPlaying, &SetStreamingLevelStateAsync, &CancelStreamingLevelRequest, &GetComponentCollisionResponse, &GetConfigInteger, &SetConfigInteger, &BindActorDestroyed, &UnbindActorDestroyed, &GetConfigBool
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

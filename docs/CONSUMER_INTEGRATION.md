@@ -85,6 +85,8 @@ ABI 97 adds game-INI integer get/set helpers; values outside Unreal's signed
 ABI 98 adds one-shot actor-destruction callbacks. Unbind while the actor is
 alive when possible; world cleanup and module shutdown remove remaining
 subscriptions without invoking consumer code.
+ABI 99 adds boolean game-INI readback alongside the existing string and
+integer configuration helpers.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.
