@@ -162,13 +162,15 @@ ABI minor 105 adds `set_actor_property_soft_path` and
 only into writable reflected properties, reject read-only members, and never
 retain or load the referenced asset.
 
-ABI minor 106 adds one-level nested struct field text readers for actor and
-UObject properties. The outer property must be a reflected struct; the field
-kind and serialized value are returned through the caller-owned UTF-8 buffer.
+ABI minor 106 adds nested struct field text readers for actor and UObject
+properties. The outer property must be a reflected struct; dotted paths such as
+`Transform.Location.X` may traverse nested structs, and the field kind and
+serialized value are returned through the caller-owned UTF-8 buffer.
 
-ABI minor 107 adds matching one-level nested struct field text writers. Both
-the outer struct and selected field must be writable reflected properties;
-Unreal imports the caller's text on the game thread.
+ABI minor 107 adds matching nested struct field text writers. Both the outer
+struct and selected field must be writable reflected properties; dotted paths
+may traverse nested structs, and Unreal imports the caller's text on the game
+thread.
 
 ABI minor 108 adds indexed array element text writers for actor and UObject
 properties. The array property must be writable; callers must re-query the

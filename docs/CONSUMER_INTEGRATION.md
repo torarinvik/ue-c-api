@@ -104,8 +104,9 @@ append-only and invalidate indices after mutation; re-query before later reads.
 ABI 105 adds soft object/class path writes for writable reflected properties;
 the path is imported on the game thread and the referenced asset is not loaded
 or retained by the bridge.
-ABI 106 adds one-level nested-struct field text reads. Re-enumerate or retry
-after hot reload and treat the serialized field text as Unreal-versioned data.
+ABI 106 adds nested-struct field text reads, including dotted paths such as
+`Transform.Location.X`. Re-enumerate or retry after hot reload and treat the
+serialized field text as Unreal-versioned data.
 ABI 107 adds matching nested-struct field writes, which reject read-only outer
 structs and fields before importing text.
 ABI 108 adds indexed reflected array element writes. Re-query counts after each

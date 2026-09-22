@@ -289,6 +289,8 @@ development; they do not imply a published or runtime-verified release.
 
 - Local checks accept `CC` and `CXX` compiler overrides and reject language
   extensions, including C-only constructs when compiling the consumer as C++.
+- Nested reflected-struct field readers and writers now resolve dotted paths
+  such as `Transform.Location.X` while retaining the existing text contract.
 
 ### Validation status
 

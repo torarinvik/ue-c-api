@@ -472,6 +472,32 @@
         return ImportSoftPropertyPath(object, propertyName, path);
     }
 
+    static FProperty* ResolveStructFieldPath(FStructProperty* outerProperty,
+                                             UObject* owner,
+                                             const FString& fieldPath,
+                                             void*& outContainer)
+    {
+        outContainer = nullptr;
+        if (outerProperty == nullptr || owner == nullptr || fieldPath.IsEmpty()) return nullptr;
+        TArray<FString> segments;
+        fieldPath.ParseIntoArray(segments, TEXT("."), false);
+        if (segments.Num() == 0) return nullptr;
+        FProperty* currentProperty = outerProperty;
+        void* container = owner;
+        for (const FString& segment : segments)
+        {
+            if (segment.IsEmpty()) return nullptr;
+            const FStructProperty* currentStruct = CastField<FStructProperty>(currentProperty);
+            if (currentStruct == nullptr || currentStruct->Struct == nullptr) return nullptr;
+            void* structValue = currentStruct->ContainerPtrToValuePtr<void>(container);
+            currentProperty = currentStruct->Struct->FindPropertyByName(FName(*segment));
+            if (currentProperty == nullptr) return nullptr;
+            container = structValue;
+        }
+        outContainer = container;
+        return currentProperty;
+    }
+
     static uec_result ExportStructFieldText(UObject* owner,
                                             uec_string_view propertyName,
                                             uec_string_view fieldName,
@@ -489,10 +515,10 @@
         if (structProperty == nullptr || structProperty->Struct == nullptr) {
             return UEC_RESULT_UNSUPPORTED;
         }
-        FProperty* field = structProperty->Struct->FindPropertyByName(FName(*ToFString(fieldName)));
+        void* fieldContainer = nullptr;
+        FProperty* field = ResolveStructFieldPath(structProperty, owner, ToFString(fieldName), fieldContainer);
         if (field == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        void* structValue = structProperty->ContainerPtrToValuePtr<void>(owner);
-        void* fieldValue = field->ContainerPtrToValuePtr<void>(structValue);
+        void* fieldValue = field->ContainerPtrToValuePtr<void>(fieldContainer);
         if (fieldValue == nullptr) return UEC_RESULT_UNSUPPORTED;
         *outKind = GetPropertyKind(field);
         FString text;
@@ -551,13 +577,13 @@
             return UEC_RESULT_UNSUPPORTED;
         }
         if (!IsWritableProperty(structProperty)) return UEC_RESULT_UNSUPPORTED;
-        FProperty* field = structProperty->Struct->FindPropertyByName(FName(*ToFString(fieldName)));
+        void* fieldContainer = nullptr;
+        FProperty* field = ResolveStructFieldPath(structProperty, owner, ToFString(fieldName), fieldContainer);
         if (field == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsWritableProperty(field)) return UEC_RESULT_UNSUPPORTED;
-        void* structValue = structProperty->ContainerPtrToValuePtr<void>(owner);
-        if (structValue == nullptr) return UEC_RESULT_UNSUPPORTED;
+        if (fieldContainer == nullptr) return UEC_RESULT_UNSUPPORTED;
         const FString text = ToFString(value);
-        if (field->ImportText_InContainer(*text, structValue, owner, PPF_None, GWarn) == nullptr) {
+        if (field->ImportText_InContainer(*text, fieldContainer, owner, PPF_None, GWarn) == nullptr) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         return UEC_RESULT_OK;
