@@ -147,6 +147,12 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
     if (result == UEC_RESULT_OK && (capabilities & UEC_CAPABILITY_BOOTSTRAP) == 0) {
         result = UEC_RESULT_INTERNAL_ERROR;
     }
+    uint32_t invalidWorldKindCount = 1u;
+    if (result == UEC_RESULT_OK &&
+        (api->get_world_count_by_kind(context, (uec_world_kind)99, &invalidWorldKindCount) !=
+             UEC_RESULT_INVALID_ARGUMENT || invalidWorldKindCount != 0u)) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
     if (result == UEC_RESULT_OK) {
         const char message[] = "UnrealCAPI C host bootstrap reached the bridge";
         const uec_string_view view = {message, sizeof(message) - 1};

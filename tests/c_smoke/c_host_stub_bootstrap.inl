@@ -201,9 +201,11 @@ static uec_result UEC_CALL StubGetWorldCountByKind(uec_context* context,
                                                    uec_world_kind kind,
                                                    uint32_t* outCount)
 {
-    (void)kind;
     if (outCount != NULL) *outCount = 0u;
     if (outCount == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (kind < UEC_WORLD_KIND_GAME || kind > UEC_WORLD_KIND_INACTIVE) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
     return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
 }
 
@@ -212,10 +214,12 @@ static uec_result UEC_CALL StubGetWorldAtByKind(uec_context* context,
                                                 uint32_t index,
                                                 uec_world** outWorld)
 {
-    (void)kind;
     (void)index;
     if (outWorld != NULL) *outWorld = NULL;
     if (outWorld == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (kind < UEC_WORLD_KIND_GAME || kind > UEC_WORLD_KIND_INACTIVE) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
     return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
 }
 
