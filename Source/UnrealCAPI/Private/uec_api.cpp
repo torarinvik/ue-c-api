@@ -2487,6 +2487,18 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL DestroyAudioComponent(uec_object* rawAudioComponent)
+    {
+        auto* audioHandle = reinterpret_cast<FUECObject*>(rawAudioComponent);
+        if (!IsValidObject(audioHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UAudioComponent* audio = Cast<UAudioComponent>(audioHandle->Value.Get());
+        if (audio == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        audio->Stop();
+        audio->DestroyComponent();
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL LineTraceFiltered(uec_world* rawWorld,
                                           uec_vector3 start,
                                           uec_vector3 end,
@@ -2919,7 +2931,7 @@ namespace
         &GetActorPropertyObject, &SetActorPropertyObject,
         &GetObjectPropertyObject, &SetObjectPropertyObject,
         &AsyncSaveGameToSlot, &AsyncLoadGameFromSlot, &CancelSaveGameRequest,
-        &GetActorCountByClass, &GetActorAtByClass
+        &GetActorCountByClass, &GetActorAtByClass, &DestroyAudioComponent
     };
 }
 

@@ -36,7 +36,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Reflected function metadata | Runtime implemented / Unreal integration pending | Enumerate names, parameter counts, return presence, and latent flags |
 | Collision settings | Runtime implemented / Unreal integration pending | Primitive collision mode and stable trace-channel responses |
 | Asset path queries | Runtime implemented / Unreal integration pending | Check whether a soft object path currently resolves in memory |
-| Attached audio playback | Runtime implemented / Unreal integration pending | Spawn and stop non-auto-destroying audio components on scene components |
+| Attached audio playback | Runtime implemented / Unreal integration pending | Spawn, stop, destroy, and release non-auto-destroying audio components on scene components |
 | C gameplay example | Source and header verified | Spawn, timer-driven movement, callback, and cleanup flow |
 | Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, game-thread callbacks, and a 1024-request bound |

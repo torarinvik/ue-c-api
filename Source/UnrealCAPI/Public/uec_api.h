@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 46u
+#define UEC_ABI_MINOR 47u
 
 #ifdef __cplusplus
 extern "C" {
@@ -551,6 +551,7 @@ typedef struct uec_api {
                                                  uec_string_view class_path,
                                                  uint32_t index,
                                                  uec_actor** out_actor);
+    uec_result (UEC_CALL *destroy_audio_component)(uec_object* audio_component);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the
