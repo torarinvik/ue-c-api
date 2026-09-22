@@ -94,6 +94,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UButton* button = Cast<UButton>(buttonHandle->Value.Get());
         if (button == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (GWidgetSubscriptions.Num() >= MaxSubscriptions) return UEC_RESULT_QUEUE_FULL;
 
         uint64 subscriptionId = 0;
         if (!AllocateMonotonicId(GNextWidgetSubscriptionId, subscriptionId)) {
@@ -257,6 +258,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UAudioComponent* audio = Cast<UAudioComponent>(audioHandle->Value.Get());
         if (audio == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (GAudioSubscriptions.Num() >= MaxSubscriptions) return UEC_RESULT_QUEUE_FULL;
 
         uint64 subscriptionId = 0;
         if (!AllocateMonotonicId(GNextAudioSubscriptionId, subscriptionId)) {
@@ -458,6 +460,7 @@
         USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(componentHandle->Value.Get());
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!component->IsPlaying()) return UEC_RESULT_NOT_INITIALIZED;
+        if (GAnimationSubscriptions.Num() >= MaxSubscriptions) return UEC_RESULT_QUEUE_FULL;
 
         uint64 subscriptionId = 0;
         if (!AllocateMonotonicId(GNextAnimationSubscriptionId, subscriptionId)) {

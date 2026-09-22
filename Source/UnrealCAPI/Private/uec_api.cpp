@@ -247,6 +247,7 @@ namespace
     uint64 GNextInputBindingId = 1;
     constexpr int32 MaxQueuedObjectLoads = 1024;
     constexpr int32 MaxQueuedGameThreadRequests = 1024;
+    constexpr int32 MaxSubscriptions = 1024;
     static uint64 AllocateHandleGeneration()
     {
         FScopeLock lock(&GHandleMutex);
@@ -473,7 +474,6 @@ namespace
         return FMath::IsFinite(value) &&
             FMath::Abs(value) <= static_cast<double>(TNumericLimits<float>::Max());
     }
-
     static bool IsValidBool(uec_bool value)
     {
         return value == UEC_FALSE || value == UEC_TRUE;

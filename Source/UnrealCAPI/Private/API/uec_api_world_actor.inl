@@ -623,6 +623,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (GTimers.Num() >= MaxSubscriptions) return UEC_RESULT_QUEUE_FULL;
 
         uint64 timerId = 0;
         if (!AllocateMonotonicId(GNextTimerId, timerId)) return UEC_RESULT_INTERNAL_ERROR;
@@ -696,6 +697,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (GTickSubscriptions.Num() >= MaxSubscriptions) return UEC_RESULT_QUEUE_FULL;
 
         uint64 subscriptionId = 0;
         if (!AllocateMonotonicId(GNextTickSubscriptionId, subscriptionId)) {

@@ -606,6 +606,7 @@
         UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         EnsureActorDestroyedHandler(component->GetWorld());
+        if (GCollisionSubscriptions.Num() >= MaxSubscriptions) return UEC_RESULT_QUEUE_FULL;
 
         uint64 subscriptionId = 0;
         if (!AllocateMonotonicId(GNextCollisionSubscriptionId, subscriptionId)) {

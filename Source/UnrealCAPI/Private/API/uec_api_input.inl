@@ -397,7 +397,7 @@
         UEnhancedInputComponent* inputComponent = Cast<UEnhancedInputComponent>(actor->InputComponent);
         if (inputComponent == nullptr) return UEC_RESULT_UNSUPPORTED;
         EnsureActorDestroyedHandler(actor->GetWorld());
-        if (GInputBindings.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
+        if (GInputBindings.Num() >= MaxSubscriptions) return UEC_RESULT_QUEUE_FULL;
 
         auto binding = MakeShared<FUECInputBinding>();
         if (!AllocateMonotonicId(GNextInputBindingId, binding->Id)) {

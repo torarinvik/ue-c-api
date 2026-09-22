@@ -202,6 +202,8 @@ development; they do not imply a published or runtime-verified release.
   subscriptions, pending requests, and callbacks before consumer unload.
 - ABI minor 83 adds explicit world-kind enumeration for editor, PIE,
   game-preview, inactive, and game contexts.
+- All subscription categories now have a 1024-entry bound and return
+  `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and
   actor-scoped collision/input subscriptions, then invalidates world, actor,
   component, and world-bound object bridge handles immediately before

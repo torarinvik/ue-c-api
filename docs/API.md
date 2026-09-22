@@ -40,6 +40,8 @@ number of registered subscriptions, pending asynchronous or game-thread
 requests, and consumer callbacks currently executing. Before unloading code
 that owns callback functions, stop submitting work, cancel or unsubscribe
 everything, and wait for all three counts to reach zero.
+Each subscription category is bounded at 1024 active entries; a bind that
+would exceed its category returns `UEC_RESULT_QUEUE_FULL`.
 
 ABI minor 83 adds `get_world_count_by_kind` and `get_world_at_by_kind`. These
 explicit context queries enumerate editor, PIE, game-preview, inactive, and

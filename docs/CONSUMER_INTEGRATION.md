@@ -39,6 +39,9 @@ all are zero.
 The ABI 83 `get_world_count_by_kind` and `get_world_at_by_kind` entries expose
 explicit editor, PIE, game-preview, inactive, and game-world selection. The
 original Game/PIE lookup remains the convenience path for active gameplay.
+Subscription categories are bounded at 1024 active entries and return
+`UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
+bindings during bursts.
 
 The public header is C11-compatible and the table contains only fixed-width
 integers, opaque handles, callbacks, and POD values. Keep the header in the
