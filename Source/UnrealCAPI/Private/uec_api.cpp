@@ -713,7 +713,8 @@ namespace
         &BindComponentHit,
         &UnbindComponentHit,
         &SweepTraceFiltered,
-        &OverlapShapeFiltered
+        &OverlapShapeFiltered,
+        &SetActorTag
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

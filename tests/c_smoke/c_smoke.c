@@ -18,7 +18,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 80u, "ABI minor must include filtered collision queries");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 81u, "ABI minor must include actor tag mutation");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -127,6 +127,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace_filtered) >
 UEC_TEST_ASSERT(offsetof(uec_api, overlap_shape_filtered) >
                    offsetof(uec_api, sweep_trace_filtered),
                "filtered overlaps must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_actor_tag) >
+                   offsetof(uec_api, overlap_shape_filtered),
+               "actor tag mutation must append to uec_api");
 
 int main(void)
 {

@@ -135,6 +135,32 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL SetActorTag(uec_actor* rawActor,
+                                    uec_string_view tag,
+                                    uec_bool enabled)
+    {
+        if (!IsValidStringView(tag) || tag.size == 0 || !IsValidBool(enabled)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const uec_result authorityResult = RequireWorldAuthority(actor->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
+        const FName tagName(*ToFString(tag));
+        if (enabled != UEC_FALSE)
+        {
+            actor->Tags.AddUnique(tagName);
+        }
+        else
+        {
+            actor->Tags.Remove(tagName);
+        }
+        return UEC_RESULT_OK;
+    }
+
     /* Component handles and component state. */
     uec_result UEC_CALL GetActorRootComponent(uec_actor* rawActor, uec_scene_component** outComponent)
     {

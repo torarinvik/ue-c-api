@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 80u
+#define UEC_ABI_MINOR 81u
 
 #ifdef __cplusplus
 extern "C" {
@@ -763,6 +763,9 @@ typedef struct uec_api {
         uint32_t ignored_actor_count,
         uec_actor** out_actors,
         uint32_t* out_count);
+    uec_result (UEC_CALL *set_actor_tag)(uec_actor* actor,
+                                         uec_string_view tag,
+                                         uec_bool enabled);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.80`.
+The current runtime slice is intentionally small and versioned as ABI `1.81`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -107,7 +107,9 @@ reported as `UEC_RESULT_INVALID_ARGUMENT`.
 Actor names use UTF-8 output-buffer semantics, including a terminating NUL in
 the required size. Tag checks accept a UTF-8 tag view and return an explicit
 boolean result. `get_actor_tag_count` and `get_actor_tag_at` enumerate the
-actor's tags with the same caller-owned output-buffer convention.
+actor's tags with the same caller-owned output-buffer convention. The
+authority-gated `set_actor_tag` entry adds or removes one non-empty tag on the
+game thread; it returns `UEC_RESULT_UNSUPPORTED` for client worlds.
 
 `get_actor_component_count_by_class` and `get_actor_component_at_by_class`
 filter an actor's scene components by a loaded class path. The class must derive
