@@ -254,6 +254,14 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    uec_actor* destroyedActor = actor;
+    result = api->destroy_actor(actor);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    actor = NULL;
+    if (api->destroy_actor(destroyedActor) != UEC_RESULT_INVALID_HANDLE) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
     result = api->get_runtime_stats(context, &observedStats);
     if (result != UEC_RESULT_OK ||
         observedStats.active_subscriptions != baselineStats.active_subscriptions ||

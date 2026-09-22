@@ -325,8 +325,9 @@ development; they do not imply a published or runtime-verified release.
   count and scalar-kind rejection, short text-output sizing and retry, invalid
   world-kind handling, an explicit world context, real
   completion, canceled callback suppression, cross-world context rejection
-  when another world is available, and pending-request drain counts; the
-  portable C gate verifies the appended entries.
+  when another world is available, stale actor and bridge handle rejection,
+  and pending-request drain counts; the portable C gate verifies the appended
+  entries.
 - The portable old-consumer fixture now requests ABI 1.132 from the ABI 1.133
   bridge and exercises only the stable table prefix.
 - The C gameplay example now binds the event component, emits a validated

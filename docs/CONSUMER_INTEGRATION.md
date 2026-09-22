@@ -20,8 +20,9 @@ and latent completion, cancellation, signature-validation, scalar and
 text-backed mixed invocation, mixed-output capacity preflight and ordering,
 pure out parameters, mixed-call argument-count and scalar-kind rejection,
 short text-output sizing and retry, invalid world-kind handling, explicit
-world-context, cross-world rejection when an editor world is available, and
-pending-request drain probes after a Game or PIE world becomes available. A
+world-context, cross-world rejection when an editor world is available,
+stale actor and bridge handle rejection, and pending-request drain probes after
+a Game or PIE world becomes available. A
 packaged or PIE run is still required to verify those paths on an installed
 target engine.
 
