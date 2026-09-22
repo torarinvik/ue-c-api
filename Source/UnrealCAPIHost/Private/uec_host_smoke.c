@@ -1,6 +1,7 @@
 #include "uec_api.h"
 
 #include <stddef.h>
+#include <string.h>
 
 typedef struct uec_event_bridge_smoke_state {
     uint64_t subscription_id;
@@ -296,6 +297,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     static const char nonLatentFunctionName[] = "NoOpSmokeCall";
     static const char scalarFunctionName[] = "ScalarSmokeCall";
     static const char textFunctionName[] = "ValidateSmokeText";
+    static const char echoTextFunctionName[] = "EchoSmokeText";
     static const char worldContextFunctionName[] = "WorldContextSmokeCall";
     static const char missingFunctionName[] = "MissingLatentSmokeFunction";
     uec_latent_smoke_state* state = &g_latent_smoke_state;
@@ -441,6 +443,37 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         &textOutput, 1u, &noOutputs);
     if (result != UEC_RESULT_OK || noOutputs != 1u ||
         textOutput.kind != UEC_PROPERTY_BOOL || textOutput.bool_value != UEC_TRUE) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    char echoedText[64] = {0};
+    uec_function_output echoOutput = {0};
+    echoOutput.struct_size = sizeof(echoOutput);
+    echoOutput.text_buffer = echoedText;
+    echoOutput.text_buffer_size = 4u;
+    uec_string_view echoTextFunction = {
+        echoTextFunctionName, sizeof(echoTextFunctionName) - 1};
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, echoTextFunction, &textArgument, 1u,
+        &echoOutput, 1u, &noOutputs);
+    if (result != UEC_RESULT_BUFFER_TOO_SMALL || noOutputs != 1u ||
+        echoOutput.kind != UEC_PROPERTY_STRING ||
+        echoOutput.text_required_size <= echoOutput.text_buffer_size) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    echoOutput.text_buffer_size = sizeof(echoedText);
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, echoTextFunction, &textArgument, 1u,
+        &echoOutput, 1u, &noOutputs);
+    if (result != UEC_RESULT_OK || noOutputs != 1u ||
+        echoOutput.kind != UEC_PROPERTY_STRING ||
+        echoOutput.text_required_size == 0 ||
+        echoOutput.text_required_size > sizeof(echoedText) ||
+        echoedText[echoOutput.text_required_size - 1] != '\0' ||
+        strstr(echoedText, "mixed-smoke") == NULL) {
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
         return UEC_RESULT_INTERNAL_ERROR;
     }

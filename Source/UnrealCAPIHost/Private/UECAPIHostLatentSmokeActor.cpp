@@ -64,6 +64,11 @@ bool AUECAPIHostLatentSmokeActor::ValidateSmokeText(FString Value)
     return Value == TEXT("mixed-smoke");
 }
 
+FString AUECAPIHostLatentSmokeActor::EchoSmokeText(FString Value)
+{
+    return Value;
+}
+
 void AUECAPIHostLatentSmokeActor::WorldContextSmokeCall(UObject* WorldContextObject)
 {
     (void)WorldContextObject;
