@@ -22,6 +22,7 @@
     {
         static constexpr char Message[] = "No error";
         const size_t required = sizeof(Message); // includes the NUL terminator
+        if (requiredSize != nullptr) *requiredSize = 0;
         if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         *requiredSize = required;

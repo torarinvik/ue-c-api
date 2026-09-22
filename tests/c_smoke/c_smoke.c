@@ -156,7 +156,7 @@ int main(void)
         return 7;
     }
 
-    size_t invalid_required = 0;
+    size_t invalid_required = 42;
     result = api->get_last_error(NULL, NULL, 0, &invalid_required);
     if (result != UEC_RESULT_INVALID_HANDLE || invalid_required != 0)
     {

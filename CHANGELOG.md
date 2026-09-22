@@ -155,6 +155,8 @@ development; they do not imply a published or runtime-verified release.
 - Object, save-game, path-query, and queued-request outputs now clear at entry,
   so invalid calls cannot leave stale handles, booleans, or request ids in the
   caller's variables.
+- Diagnostic required-size outputs now clear before context validation, keeping
+  invalid-context failures deterministic with the other bounded-output APIs.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

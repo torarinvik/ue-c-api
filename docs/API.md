@@ -26,10 +26,10 @@ object. `destroy_actor` destroys the actor and tombstones its actor handle.
 it returns the bounded diagnostic string using the same terminating-NUL buffer
 contract as other text APIs.
 
-Output pointers are cleared as soon as they are available on entry for the
-object, save-game, path-query, and queued-request adapters. A failed call with
-a non-null output pointer therefore leaves a null handle, `UEC_FALSE`, zero, or
-an empty value instead of preserving stale caller data.
+Output pointers are cleared as soon as they are available on entry for
+diagnostics, object, save-game, path-query, and queued-request adapters. A
+failed call with a non-null output pointer therefore leaves a null handle,
+`UEC_FALSE`, zero, or an empty value instead of preserving stale caller data.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
