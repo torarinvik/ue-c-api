@@ -43,10 +43,10 @@ queues work. A worker thread should submit a borrowed callback with
 `user_data` pointer is not copied or retained; keep its storage alive until the
 request completes or is canceled.
 
-Timer, tick, input, audio, and widget subscriptions return tokens. Unsubscribe
-with the matching context before releasing consumer state. A callback may
-unsubscribe itself; the bridge suppresses later calls after cancellation and
-during module shutdown.
+Timer, tick, input, audio, widget, and primitive-component hit subscriptions
+return tokens. Unsubscribe with the matching context before releasing consumer
+state. A callback may unsubscribe itself; the bridge suppresses later calls
+after cancellation and during module shutdown.
 
 Skeletal-animation completion subscriptions use the same token rules. Bind only
 while a single animation is playing; the one-shot callback fires when that
