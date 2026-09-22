@@ -44,6 +44,7 @@ fi
 "$stub_build_dir/c_compat_cpp" >/dev/null
 python3 -m json.tool "$plugin_dir/UnrealCAPI.uplugin" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPIHost.uproject" >/dev/null
+python3 "$repo_dir/tests/test_unreal_version.py" >/dev/null
 sh -n "$repo_dir/tests/run_unreal_build.sh"
 if [ ! -x "$repo_dir/tests/run_unreal_build.sh" ]; then
     printf '%s\n' 'The Unreal build gate must remain executable.' >&2

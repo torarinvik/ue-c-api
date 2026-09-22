@@ -43,7 +43,9 @@ another platform supplied by the engine installation) to validate a target
 different from the host platform; cross-platform requests skip rebuilding the
 local Editor target. The script runs the portable gate first, reads the exact
 patch from `Engine/Build/Build.version`, and rejects an engine whose major/minor
-version does not match the host descriptor's `EngineAssociation`. Set
+version does not match the host descriptor's `EngineAssociation`.
+`UE_TARGET_VERSION` records the minimum supported patch (`5.8.3`); later 5.8.x
+hotfixes are accepted, while older patches are rejected. Use
 `UEC_ALLOW_ENGINE_MISMATCH=1` only for an explicit compatibility probe. The
 script exits with status 2 when the engine path, version metadata, or requested
 platform is unavailable, so the portable gate remains usable on contributors'
