@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 94u, "ABI minor must include state readback");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 95u, "ABI minor must include streaming completion");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -181,6 +181,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_component_collision_enabled) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_audio_component_playing) >
                    offsetof(uec_api, get_component_collision_enabled),
                "audio readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_streaming_level_state_async) >
+                   offsetof(uec_api, get_audio_component_playing),
+               "streaming completion must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, cancel_streaming_level_request) >
+                   offsetof(uec_api, set_streaming_level_state_async),
+               "streaming cancellation must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -354,6 +360,18 @@ int main(void)
     {
         api->release_context(context);
         return 21;
+    }
+
+    uint64_t streaming_request_id = 42u;
+    const uec_string_view streaming_package = {"/Game/Test", 10u};
+    if (api->set_streaming_level_state_async(NULL, streaming_package,
+                                             UEC_TRUE, UEC_TRUE, NULL, NULL,
+                                             &streaming_request_id) != UEC_RESULT_INVALID_ARGUMENT ||
+        streaming_request_id != 0u ||
+        api->cancel_streaming_level_request(context, 42u) != UEC_RESULT_UNSUPPORTED)
+    {
+        api->release_context(context);
+        return 22;
     }
 
     const char message[] = "C ABI smoke test";

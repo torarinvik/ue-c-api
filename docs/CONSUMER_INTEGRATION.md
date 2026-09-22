@@ -75,6 +75,9 @@ ABI 93 adds UMG visibility and `UTextBlock` text readback; query the required
 text size first, then provide a caller-owned UTF-8 buffer.
 ABI 94 adds collision-mode and audio-playing readback to pair with the common
 component and audio mutators.
+ABI 95 adds streaming-level state completion requests. Keep the request id
+until the callback or explicit cancellation; callbacks report the observed
+loaded and visible state and run on the game thread.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

@@ -293,90 +293,6 @@
         return UEC_RESULT_OK;
     }
 
-    uec_result UEC_CALL GetStreamingLevelCount(uec_world* rawWorld, uint32_t* outCount)
-    {
-        if (outCount != nullptr) *outCount = 0;
-        if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
-        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        UWorld* world = worldHandle->Value.Get();
-        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        const TArray<ULevelStreaming*>& levels = world->GetStreamingLevels();
-        if (static_cast<uint64>(levels.Num()) > UINT32_MAX) return UEC_RESULT_INTERNAL_ERROR;
-        *outCount = static_cast<uint32_t>(levels.Num());
-        return UEC_RESULT_OK;
-    }
-
-    uec_result UEC_CALL GetStreamingLevelAt(uec_world* rawWorld,
-                                            uint32_t index,
-                                            char* packageBuffer,
-                                            size_t packageBufferSize,
-                                            size_t* packageRequiredSize,
-                                            uec_bool* outLoaded,
-                                            uec_bool* outVisible)
-    {
-        if (packageRequiredSize != nullptr) *packageRequiredSize = 0;
-        if (outLoaded != nullptr) *outLoaded = UEC_FALSE;
-        if (outVisible != nullptr) *outVisible = UEC_FALSE;
-        if (packageRequiredSize == nullptr || outLoaded == nullptr || outVisible == nullptr) {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
-        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        UWorld* world = worldHandle->Value.Get();
-        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        const TArray<ULevelStreaming*>& levels = world->GetStreamingLevels();
-        if (index >= static_cast<uint32_t>(levels.Num()) || levels[static_cast<int32>(index)] == nullptr) {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        ULevelStreaming* level = levels[static_cast<int32>(index)];
-        *outLoaded = level->HasLoadedLevel() ? UEC_TRUE : UEC_FALSE;
-        *outVisible = level->ShouldBeVisible() ? UEC_TRUE : UEC_FALSE;
-        return CopyFStringToUtf8(level->GetWorldAssetPackageName(),
-                                 packageBuffer, packageBufferSize, packageRequiredSize);
-    }
-
-    uec_result UEC_CALL SetStreamingLevelState(uec_world* rawWorld,
-                                               uec_string_view packagePath,
-                                               uec_bool shouldBeLoaded,
-                                               uec_bool shouldBeVisible)
-    {
-        if (!IsValidStringView(packagePath) || packagePath.size == 0 ||
-            !IsValidBool(shouldBeLoaded) || !IsValidBool(shouldBeVisible)) {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
-        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        UWorld* world = worldHandle->Value.Get();
-        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        const FName targetPackage(*ToFString(packagePath));
-        for (ULevelStreaming* level : world->GetStreamingLevels())
-        {
-            if (level == nullptr || FName(*level->GetWorldAssetPackageName()) != targetPackage) continue;
-            level->SetShouldBeLoaded(shouldBeLoaded != UEC_FALSE);
-            level->SetShouldBeVisible(shouldBeVisible != UEC_FALSE);
-            return UEC_RESULT_OK;
-        }
-        return UEC_RESULT_NOT_INITIALIZED;
-    }
-
-    uec_result UEC_CALL GetWorldName(uec_world* rawWorld,
-                                     char* buffer,
-                                     size_t bufferSize,
-                                     size_t* requiredSize)
-    {
-        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        *requiredSize = 0;
-        auto* handle = reinterpret_cast<FUECWorld*>(rawWorld);
-        if (!IsValidWorld(handle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        UWorld* world = handle->Value.Get();
-        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        return CopyFStringToUtf8(world->GetMapName(), buffer, bufferSize, requiredSize);
-    }
 
     static void CancelTimersFor(UWorld* world)
     {
@@ -466,26 +382,8 @@
         RemoveActorDestroyedHandler(world);
         CancelTimersFor(world);
         CancelTickSubscriptionsFor(world);
+        CancelStreamingRequestsFor(world);
         InvalidateWorldHandles(world);
-    }
-
-    uec_result UEC_CALL TravelWorld(uec_world* rawWorld, uec_string_view levelPath)
-    {
-        if (!IsValidStringView(levelPath) || levelPath.size == 0) {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        auto* handle = reinterpret_cast<FUECWorld*>(rawWorld);
-        if (!IsValidWorld(handle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        UWorld* world = handle->Value.Get();
-        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        const FString path = ToFString(levelPath);
-        if (path.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
-        CancelTimersFor(world);
-        CancelTickSubscriptionsFor(world);
-        InvalidateWorldHandles(world);
-        UGameplayStatics::OpenLevel(world, FName(*path));
-        return UEC_RESULT_OK;
     }
 
     static FUECActor* MakeActorHandle(AActor* actor)
@@ -793,3 +691,4 @@
         }
         GTickSubscriptions.Empty();
     }
+#include "uec_api_streaming.inl"

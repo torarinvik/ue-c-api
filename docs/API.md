@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.94`.
+The current runtime slice is intentionally small and versioned as ABI `1.95`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -107,6 +107,13 @@ NUL-terminated UTF-8 buffer contract as other string outputs.
 ABI minor 94 adds `get_component_collision_enabled` and
 `get_audio_component_playing`, which report the current primitive collision
 mode and whether an attached audio component is playing.
+
+ABI minor 95 adds `set_streaming_level_state_async` and
+`cancel_streaming_level_request`. The request changes an existing streaming
+level's target state and invokes its callback on the game thread when the
+loaded and visible state reaches that target. Requests are bounded, cancellable,
+and removed automatically when their world is cleaned up or the module shuts
+down.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

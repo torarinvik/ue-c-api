@@ -259,6 +259,32 @@ static uec_result UEC_CALL StubGetAudioComponentPlaying(uec_object* audioCompone
     return outPlaying == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubSetStreamingLevelStateAsync(
+    uec_world* world,
+    uec_string_view packagePath,
+    uec_bool shouldBeLoaded,
+    uec_bool shouldBeVisible,
+    uec_streaming_callback callback,
+    void* userData,
+    uint64_t* outRequestId)
+{
+    (void)world;
+    (void)packagePath;
+    (void)shouldBeLoaded;
+    (void)shouldBeVisible;
+    (void)callback;
+    (void)userData;
+    if (outRequestId != NULL) *outRequestId = 0u;
+    return outRequestId == NULL || callback == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubCancelStreamingLevelRequest(uec_context* context,
+                                                            uint64_t requestId)
+{
+    (void)requestId;
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -297,6 +323,8 @@ static const uec_api g_api = {
     .get_text_block_text = &StubGetTextBlockText,
     .get_component_collision_enabled = &StubGetComponentCollisionEnabled,
     .get_audio_component_playing = &StubGetAudioComponentPlaying,
+    .set_streaming_level_state_async = &StubSetStreamingLevelStateAsync,
+    .cancel_streaming_level_request = &StubCancelStreamingLevelRequest,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

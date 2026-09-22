@@ -50,7 +50,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Basic physics | Runtime implemented / Unreal integration pending | Finite-validated actor and primitive-component velocity reads, impulses, and forces on simulating primitive roots |
 | Reflection and Blueprint calls | Partial | Property writes, class/function/parameter/flag metadata, zero-argument calls, scalar typed calls, bounded text-marshaled calls, scalar multi-output calls, and text multi-output calls are available; broader typed ABI calls remain |
 | Input | Partial | Enhanced Input mapping contexts, action polling/injection, and tokenized callbacks are implemented; broader action semantics remain |
-| Async loading, travel, streaming | Partial | Async object requests, cancellation, loaded-state queries, level-travel submission, and indexed streaming-level state requests are available; completion events remain |
+| Async loading, travel, streaming | Partial | Async object requests, cancellation, loaded-state queries, level-travel submission, indexed streaming-level state requests, and cancellable streaming completion callbacks are available |
 | Multiplayer and replication | Partial | Network-mode and authority queries plus authority-gated actor, possession, transform, and physics mutators; replication/RPC adapters remain planned |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
 

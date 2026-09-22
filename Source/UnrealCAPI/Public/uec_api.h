@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 94u
+#define UEC_ABI_MINOR 95u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -247,6 +247,7 @@ typedef void (UEC_CALL *uec_save_game_callback)(uint64_t request_id,
 typedef void (UEC_CALL *uec_game_thread_callback)(void* user_data);
 typedef void (UEC_CALL *uec_travel_callback)(uint64_t request_id, uec_result result,
                                               uec_world* world, void* user_data);
+typedef void (UEC_CALL *uec_streaming_callback)(uint64_t request_id, uec_result result, uec_bool loaded, uec_bool visible, void* user_data);
 typedef struct uec_api {
     uint32_t struct_size;
     uint32_t abi_major;
@@ -766,10 +767,9 @@ typedef struct uec_api {
                                                         uec_property_value* out_values,
                                                         uint32_t out_capacity,
                                                         uint32_t* out_count);
-    uec_result (UEC_CALL *get_class_function_parameter_at)(uec_class* klass,
-        uint32_t function_index, uint32_t parameter_index, char* name_buffer,
-        size_t name_buffer_size, size_t* name_required_size, uec_property_kind* out_kind,
-        uint32_t* out_flags);
+    uec_result (UEC_CALL *get_class_function_parameter_at)(uec_class* klass, uint32_t function_index,
+        uint32_t parameter_index, char* name_buffer, size_t name_buffer_size, size_t* name_required_size,
+        uec_property_kind* out_kind, uint32_t* out_flags);
     uec_result (UEC_CALL *invoke_actor_function_text_values)(uec_actor* actor,
         uec_string_view function_name, const uec_string_view* argument_values,
         uint32_t argument_count, uec_text_output* out_values, uint32_t out_capacity,
@@ -785,6 +785,7 @@ typedef struct uec_api {
     uec_result (UEC_CALL *get_class_function_flags)(uec_class* klass, uint32_t index, uint32_t* out_flags);
     uec_result (UEC_CALL *get_widget_visibility)(uec_object* widget, uec_widget_visibility* out_visibility); uec_result (UEC_CALL *get_text_block_text)(uec_object* widget, char* buffer, size_t buffer_size, size_t* required_size);
     uec_result (UEC_CALL *get_component_collision_enabled)(uec_scene_component* component, uec_collision_enabled* out_enabled); uec_result (UEC_CALL *get_audio_component_playing)(uec_object* audio_component, uec_bool* out_playing);
+    uec_result (UEC_CALL *set_streaming_level_state_async)(uec_world* world, uec_string_view package_path, uec_bool should_be_loaded, uec_bool should_be_visible, uec_streaming_callback callback, void* user_data, uint64_t* out_request_id); uec_result (UEC_CALL *cancel_streaming_level_request)(uec_context* context, uint64_t request_id);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the
