@@ -5,6 +5,7 @@ repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 public_dir="$repo_dir/Source/UnrealCAPI/Public"
 consumer="$repo_dir/tests/c_smoke/c_smoke.c"
 compat_consumer="$repo_dir/tests/c_smoke/c_compat.c"
+host_stub="$repo_dir/tests/c_smoke/c_host_stub.c"
 gameplay_example="$repo_dir/examples/c_gameplay/c_gameplay.c"
 private_dir="$repo_dir/Source/UnrealCAPI/Private"
 
@@ -14,6 +15,11 @@ git -C "$repo_dir" diff --check
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -x c++ -fsyntax-only "$consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$compat_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$gameplay_example"
+stub_build_dir=$(mktemp -d)
+trap 'rm -rf "$stub_build_dir"' EXIT HUP INT TERM
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    "$consumer" "$host_stub" -o "$stub_build_dir/c_smoke"
+"$stub_build_dir/c_smoke" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPI.uplugin" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPIHost.uproject" >/dev/null
 
@@ -36,4 +42,4 @@ for source_file in "$public_dir/uec_api.h" "$private_dir/uec_api.cpp" "$private_
     fi
 done
 
-printf '%s\n' 'C/C++ public-header, Unreal descriptor, and private-layout checks passed.'
+printf '%s\n' 'C/C++ public-header, linked C consumer, Unreal descriptor, and private-layout checks passed.'

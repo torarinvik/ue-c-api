@@ -140,6 +140,8 @@ development; they do not imply a published or runtime-verified release.
 - C consumer source and public math-type layout assertions.
 - GitHub Actions checks for C11/C++17 headers and descriptor JSON on Linux
   (GCC and Clang) and macOS (Clang), on pushes and pull requests.
+- Linked C consumer smoke fixture using an explicit host stub for portable ABI
+  bootstrap and table-call coverage.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,
