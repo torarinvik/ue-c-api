@@ -66,7 +66,9 @@ strong reference is needed and release that retained handle when finished.
 Stop submitting work before unloading the module. Shutdown first rejects new
 API entry points, then cancels timers, subscriptions, queued callbacks, asset
 requests, save requests, and input bindings. Existing handles and callbacks
-must be treated as unusable once shutdown begins.
+must be treated as unusable once shutdown begins. Worker-thread dispatch checks
+the shutdown gate while registering its request, so a request cannot be added
+after teardown has already drained the queue.
 
 In networked worlds, call `get_world_net_mode` and `get_world_has_authority`
 before mutating gameplay state. The authority query does not provide

@@ -270,6 +270,7 @@
         request->UserData = userData;
         {
             FScopeLock lock(&GHandleMutex);
+            if (GShuttingDown) return UEC_RESULT_SHUTTING_DOWN;
             if (GGameThreadRequests.Num() >= MaxQueuedGameThreadRequests)
             {
                 return UEC_RESULT_QUEUE_FULL;

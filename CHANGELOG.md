@@ -125,6 +125,8 @@ development; they do not imply a published or runtime-verified release.
   overflow Unreal's float-backed math types.
 - Transform writes now reject a zero-length quaternion before constructing the
   Unreal transform.
+- Worker-thread dispatch now checks the shutdown gate while registering a
+  request, preventing work from being queued after teardown has drained it.
 - Failed Enhanced Input binding creation now removes the native delegate before
   returning an internal error, preventing an untracked callback from surviving.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
