@@ -673,6 +673,38 @@ static uec_result UEC_CALL StubSetObjectPropertyMapValueText(uec_object* object,
     return UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result StubGetArrayElementValue(uec_property_value* outValue)
+{
+    if (outValue == NULL || outValue->struct_size < sizeof(*outValue)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    outValue->kind = UEC_PROPERTY_UNKNOWN;
+    outValue->bool_value = UEC_FALSE;
+    outValue->integer_value = 0;
+    outValue->real_value = 0.0;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetActorPropertyArrayElementValue(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    uec_property_value* outValue)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubGetArrayElementValue(outValue);
+}
+
+static uec_result UEC_CALL StubGetObjectPropertyArrayElementValue(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    uec_property_value* outValue)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    return StubGetArrayElementValue(outValue);
+}
+
 static uec_result UEC_CALL StubGetClassPropertyFlags(uec_class* klass,
                                                      uint32_t index,
                                                      uint32_t* outFlags)
@@ -754,6 +786,8 @@ static const uec_api g_api = {
     .set_actor_property_map_value_text = &StubSetActorPropertyMapValueText,
     .set_object_property_map_value_text = &StubSetObjectPropertyMapValueText,
     .get_class_property_flags = &StubGetClassPropertyFlags,
+    .get_actor_property_array_element_value = &StubGetActorPropertyArrayElementValue,
+    .get_object_property_array_element_value = &StubGetObjectPropertyArrayElementValue,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

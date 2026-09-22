@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.110`.
+The current runtime slice is intentionally small and versioned as ABI `1.111`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -184,6 +184,11 @@ covered by the contract.
 ABI minor 110 adds `get_class_property_flags`. It reports edit-const,
 Blueprint-read-only, const-parameter, parameter, return, out, and reference
 flags for the same reflected property order used by `get_class_property_at`.
+
+ABI minor 111 adds typed scalar reads for reflected array elements on actors and
+UObjects. Boolean, integer, enum, float, and double elements use
+`uec_property_value`; compound elements remain available through the existing
+text accessor.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

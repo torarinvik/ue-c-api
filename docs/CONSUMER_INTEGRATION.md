@@ -115,6 +115,10 @@ ABI 109 adds map value writes without changing keys. Set mutation remains
 unsupported; re-query map counts after writes before using later indices.
 ABI 110 adds class-property access flags so consumers can inspect editability
 and parameter semantics before issuing reflected writes.
+ABI 111 adds typed scalar reads for reflected array elements. Boolean, integer,
+enum, float, and double elements use `uec_property_value`; compound elements
+remain on the text accessor, and array indices must still be re-queried after
+mutation.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

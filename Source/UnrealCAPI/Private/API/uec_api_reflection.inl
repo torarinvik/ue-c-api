@@ -30,6 +30,50 @@
         const UEnum* enumeration = property == nullptr ? nullptr : property->GetEnum();
         return enumeration != nullptr && enumeration->IsValidEnumValueOrBitfield(value);
     }
+    static void ResetPropertyValue(uec_property_value* value)
+    {
+        value->kind = UEC_PROPERTY_UNKNOWN;
+        value->bool_value = UEC_FALSE;
+        value->integer_value = 0;
+        value->real_value = 0.0;
+    }
+    static uec_result ExportScalarPropertyValue(const FProperty* property,
+                                                const void* value,
+                                                uec_property_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(uec_property_value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        ResetPropertyValue(outValue);
+        if (property == nullptr || value == nullptr) return UEC_RESULT_UNSUPPORTED;
+        outValue->kind = GetPropertyKind(property);
+        if (const FBoolProperty* boolProperty = CastField<FBoolProperty>(property)) {
+            outValue->bool_value = boolProperty->GetPropertyValue(value) ? UEC_TRUE : UEC_FALSE;
+            return UEC_RESULT_OK;
+        }
+        const FNumericProperty* numeric = CastField<FNumericProperty>(property);
+        const FNumericProperty* integer = numeric;
+        if (const FEnumProperty* enumProperty = CastField<FEnumProperty>(property)) {
+            integer = enumProperty->GetUnderlyingProperty();
+        }
+        if (integer != nullptr && integer->IsInteger()) {
+            if (IsUnsignedIntegerProperty(integer)) {
+                const uint64 raw = integer->GetUnsignedIntPropertyValue(value);
+                if (raw > static_cast<uint64>(TNumericLimits<int64>::Max())) {
+                    return UEC_RESULT_UNSUPPORTED;
+                }
+                outValue->integer_value = static_cast<int64>(raw);
+            } else {
+                outValue->integer_value = integer->GetSignedIntPropertyValue(value);
+            }
+            return UEC_RESULT_OK;
+        }
+        if (numeric != nullptr && numeric->IsFloatingPoint()) {
+            outValue->real_value = numeric->GetFloatingPointPropertyValue(value);
+            return UEC_RESULT_OK;
+        }
+        return UEC_RESULT_UNSUPPORTED;
+    }
     uec_result UEC_CALL IsClassPathLoaded(uec_context* rawContext,
                                           uec_string_view classPath,
                                           uec_bool* outLoaded)
