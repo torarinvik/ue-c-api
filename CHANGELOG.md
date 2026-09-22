@@ -50,6 +50,7 @@ development; they do not imply a published or runtime-verified release.
 - Indexed world actor queries by reflected actor class.
 - Explicit destruction for attached audio components.
 - Tokenized Enhanced Input action callbacks with unbinding and shutdown cleanup.
+- Explicit local-player-index controller lookup and world game-instance access.
 - Soft object-path loaded-state queries.
 - C-only gameplay example covering spawn, transforms, timer callbacks, and cleanup.
 - Input validation for oversized UTF-8 views and non-finite transform values.

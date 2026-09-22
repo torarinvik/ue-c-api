@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.49`.
+The current runtime slice is intentionally small and versioned as ABI `1.52`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -44,9 +44,12 @@ means the request was submitted, not that loading has completed. Existing world
 and object handles may become invalid during travel.
 
 Player-flow helpers use actor handles for controllers, pawns, and view targets.
-The controller lookup selects local player index zero. Possession and view-target
-changes are submitted on the game thread and require the supplied handles to
-reference the corresponding Unreal types.
+`get_player_controller` selects an explicit local-player index, while
+`get_first_player_controller` remains a convenience wrapper for index zero.
+`get_world_game_instance` returns the world-scoped game-instance object as a
+weak handle. Possession and view-target changes are submitted on the game
+thread and require the supplied handles to reference the corresponding Unreal
+types.
 
 Input polling accepts Unreal key names such as `SpaceBar` or `Gamepad_LeftX`.
 `get_input_key_down` returns the current digital state, while

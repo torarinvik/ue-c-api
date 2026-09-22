@@ -41,7 +41,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, game-thread callbacks, and a 1024-request bound |
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries and game-thread `OpenLevel` requests |
-| Player flow | Runtime implemented / Unreal integration pending | Local controller/pawn lookup, possession, and view-target selection |
+| Player flow | Runtime implemented / Unreal integration pending | Indexed local controller lookup, world game-instance access, possession, and view-target selection |
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |
 | Basic physics | Runtime implemented / Unreal integration pending | Finite-validated velocity, impulses, and forces on simulating primitive roots |
 | Reflection and Blueprint calls | Partial | Property writes and zero-argument calls are available; typed calls remain |

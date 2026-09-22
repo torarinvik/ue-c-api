@@ -556,6 +556,24 @@ namespace
         return handle;
     }
 
+    uec_result UEC_CALL GetWorldGameInstance(uec_world* rawWorld,
+                                             uec_object** outGameInstance)
+    {
+        if (outGameInstance == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outGameInstance = nullptr;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        UGameInstance* gameInstance = world->GetGameInstance();
+        if (gameInstance == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        FUECObject* handle = MakeObjectHandle(gameInstance);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outGameInstance = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetFirstPlayerController(uec_world* rawWorld, uec_actor** outController)
     {
         if (outController == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
@@ -566,6 +584,27 @@ namespace
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         APlayerController* controller = UGameplayStatics::GetPlayerController(world, 0);
+        FUECActor* handle = MakeActorHandle(controller);
+        if (handle == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        *outController = reinterpret_cast<uec_actor*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetPlayerController(uec_world* rawWorld,
+                                            uint32_t playerIndex,
+                                            uec_actor** outController)
+    {
+        if (outController == nullptr || playerIndex > static_cast<uint32>(INT32_MAX)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outController = nullptr;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        APlayerController* controller = UGameplayStatics::GetPlayerController(
+            world, static_cast<int32>(playerIndex));
         FUECActor* handle = MakeActorHandle(controller);
         if (handle == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         *outController = reinterpret_cast<uec_actor*>(handle);
@@ -3040,7 +3079,8 @@ namespace
         &GetObjectPropertyObject, &SetObjectPropertyObject,
         &AsyncSaveGameToSlot, &AsyncLoadGameFromSlot, &CancelSaveGameRequest,
         &GetActorCountByClass, &GetActorAtByClass, &DestroyAudioComponent,
-        &BindInputAction, &UnbindInputAction
+        &BindInputAction, &UnbindInputAction,
+        &GetPlayerController, &GetWorldGameInstance
     };
 }
 

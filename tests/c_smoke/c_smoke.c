@@ -31,6 +31,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_actor_count_by_class) >
 UEC_TEST_ASSERT(offsetof(uec_api, bind_input_action) >
                    offsetof(uec_api, destroy_audio_component),
                "input binding functions must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_player_controller) >
+                   offsetof(uec_api, unbind_input_action),
+               "context access functions must append to uec_api");
 
 int main(void)
 {
