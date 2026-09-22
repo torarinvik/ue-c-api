@@ -13,6 +13,8 @@
 #include "GameFramework/SaveGame.h"
 #include "InputCoreTypes.h"
 #include "EnhancedInputSubsystems.h"
+#include "EnhancedPlayerInput.h"
+#include "InputAction.h"
 #include "InputMappingContext.h"
 #include "Kismet/GameplayStatics.h"
 #include "CollisionShape.h"
@@ -581,6 +583,65 @@ namespace
         if (name.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
         const FKey key{FName(*name)};
         *outValue = static_cast<double>(controller->GetInputAnalogKeyState(key));
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetInputActionValue(uec_actor* rawController,
+                                            uec_object* rawAction,
+                                            uec_input_action_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(uec_input_action_value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        auto* actionHandle = reinterpret_cast<FUECObject*>(rawAction);
+        if (!IsValidActor(controllerHandle) || !IsValidObject(actionHandle)) {
+            return UEC_RESULT_INVALID_HANDLE;
+        }
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        UInputAction* action = Cast<UInputAction>(actionHandle->Value.Get());
+        if (controller == nullptr || action == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        UEnhancedPlayerInput* playerInput = Cast<UEnhancedPlayerInput>(controller->PlayerInput);
+        if (playerInput == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+
+        const FInputActionValue value = playerInput->GetActionValue(action);
+        outValue->kind = UEC_INPUT_ACTION_VALUE_BOOLEAN;
+        outValue->bool_value = UEC_FALSE;
+        outValue->reserved[0] = 0;
+        outValue->reserved[1] = 0;
+        outValue->reserved[2] = 0;
+        outValue->axis = {0.0, 0.0, 0.0};
+        switch (value.GetValueType())
+        {
+        case EInputActionValueType::Boolean:
+            outValue->kind = UEC_INPUT_ACTION_VALUE_BOOLEAN;
+            outValue->bool_value = value.Get<bool>() ? UEC_TRUE : UEC_FALSE;
+            break;
+        case EInputActionValueType::Axis1D:
+            outValue->kind = UEC_INPUT_ACTION_VALUE_AXIS_1D;
+            outValue->axis.x = static_cast<double>(value.Get<float>());
+            break;
+        case EInputActionValueType::Axis2D:
+        {
+            outValue->kind = UEC_INPUT_ACTION_VALUE_AXIS_2D;
+            const FVector2D axis = value.Get<FVector2D>();
+            outValue->axis.x = axis.X;
+            outValue->axis.y = axis.Y;
+            break;
+        }
+        case EInputActionValueType::Axis3D:
+        {
+            outValue->kind = UEC_INPUT_ACTION_VALUE_AXIS_3D;
+            const FVector axis = value.Get<FVector>();
+            outValue->axis.x = axis.X;
+            outValue->axis.y = axis.Y;
+            outValue->axis.z = axis.Z;
+            break;
+        }
+        default:
+            return UEC_RESULT_UNSUPPORTED;
+        }
         return UEC_RESULT_OK;
     }
 
@@ -2417,7 +2478,8 @@ namespace
         &AddInputMappingContext, &RemoveInputMappingContext,
         &GetClassFunctionCount, &GetClassFunctionAt,
         &SetComponentCollisionEnabled, &SetComponentCollisionResponse,
-        &IsObjectPathLoaded, &SpawnSoundAttached, &StopAudioComponent
+        &IsObjectPathLoaded, &SpawnSoundAttached, &StopAudioComponent,
+        &GetInputActionValue
     };
 }
 

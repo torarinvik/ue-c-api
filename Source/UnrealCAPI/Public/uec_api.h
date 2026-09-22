@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 37u
+#define UEC_ABI_MINOR 38u
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,6 +165,21 @@ typedef enum uec_collision_enabled {
     UEC_COLLISION_PHYSICS_ONLY = 2,
     UEC_COLLISION_QUERY_AND_PHYSICS = 3
 } uec_collision_enabled;
+
+typedef enum uec_input_action_value_kind {
+    UEC_INPUT_ACTION_VALUE_BOOLEAN = 0,
+    UEC_INPUT_ACTION_VALUE_AXIS_1D = 1,
+    UEC_INPUT_ACTION_VALUE_AXIS_2D = 2,
+    UEC_INPUT_ACTION_VALUE_AXIS_3D = 3
+} uec_input_action_value_kind;
+
+typedef struct uec_input_action_value {
+    uint32_t struct_size;
+    uec_input_action_value_kind kind;
+    uec_bool bool_value;
+    uint8_t reserved[3];
+    uec_vector3 axis;
+} uec_input_action_value;
 
 typedef struct uec_collision_shape {
     uint32_t struct_size;
@@ -484,6 +499,9 @@ typedef struct uec_api {
                                                 double pitch_multiplier,
                                                 uec_object** out_audio_component);
     uec_result (UEC_CALL *stop_audio_component)(uec_object* audio_component);
+    uec_result (UEC_CALL *get_input_action_value)(uec_actor* controller,
+                                                  uec_object* action,
+                                                  uec_input_action_value* out_value);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.37`.
+The current runtime slice is intentionally small and versioned as ABI `1.38`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -50,7 +50,11 @@ reference the corresponding Unreal types.
 Input polling accepts Unreal key names such as `SpaceBar` or `Gamepad_LeftX`.
 `get_input_key_down` returns the current digital state, while
 `get_input_key_value` returns the controller's analog value. Both require a
-player-controller handle and run on the game thread.
+player-controller handle and run on the game thread. `get_input_action_value`
+reads a loaded `UInputAction` through `UEnhancedPlayerInput` and returns its
+current boolean, 1D, 2D, or 3D value. An action that is not currently
+triggering returns zero in its configured value type; action events and
+bindings remain outside this polling API.
 
 Physics helpers read actor velocity and operate on a simulating primitive root
 component. Velocity replacement/addition, impulses, and forces return
