@@ -111,6 +111,8 @@ development; they do not imply a published or runtime-verified release.
   code.
 - Handle-adjacent request, timer, binding, and subscription IDs now stop with
   an internal error instead of wrapping to zero after counter exhaustion.
+- Timer dispatch drops world-invalidated timers before invoking their consumer
+  callback.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Embedded NUL rejection for all public UTF-8 string views, including reflected,
   input, save-game, and configuration adapters.

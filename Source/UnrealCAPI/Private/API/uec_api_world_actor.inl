@@ -464,6 +464,11 @@
             TSharedPtr<FUECTimerState> current = weakState.Pin();
             if (!current.IsValid() || current->Cancelled || current->Callback == nullptr ||
                 IsShuttingDown()) return;
+            if (current->World.Get() == nullptr)
+            {
+                GTimers.Remove(current->Id);
+                return;
+            }
             current->Callback(current->Id, current->UserData);
             if (!current->Looping)
             {
