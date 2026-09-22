@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.136`.
+The current runtime slice is intentionally small and versioned as ABI `1.137`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -727,8 +727,11 @@ invocation.
 
 `set_component_collision_enabled` maps the stable C collision mode enum to a
 primitive component's query/physics setting. `set_component_collision_response`
-sets one supported trace channel to block or ignore. Both operations require a
-primitive component and run on the game thread.
+sets one supported trace channel to block or ignore.
+`set_component_collision_channel_response` accepts the three-way
+`uec_collision_response` enum to set Ignore, Overlap, or Block and rejects
+undeclared values with `UEC_RESULT_INVALID_ARGUMENT`. These operations require
+a primitive component and run on the game thread.
 
 `play_skeletal_animation` and `stop_skeletal_animation` control the transient
 animation state of skeletal mesh components using a loaded animation asset.

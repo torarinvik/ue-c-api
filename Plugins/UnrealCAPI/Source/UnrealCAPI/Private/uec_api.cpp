@@ -374,7 +374,7 @@ namespace
         &UnbindActorEventBridge, &EmitActorEventBridge,
         &InvokeActorFunctionLatent, &CancelActorFunctionLatent,
         &SaveVersionedApplicationData, &LoadVersionedApplicationData,
-        &GetControllerEnhancedInputSubsystem
+        &GetControllerEnhancedInputSubsystem, &SetComponentCollisionChannelResponse
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

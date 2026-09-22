@@ -79,6 +79,7 @@ int main(void)
         api->save_versioned_application_data == NULL ||
         api->load_versioned_application_data == NULL ||
         api->get_controller_enhanced_input_subsystem == NULL ||
+        api->set_component_collision_channel_response == NULL ||
         api->get_or_create_actor_event_bridge == NULL || api->destroy_actor_event_bridge == NULL ||
         api->bind_actor_event_bridge == NULL || api->unbind_actor_event_bridge == NULL ||
         api->emit_actor_event_bridge == NULL ||
@@ -394,10 +395,9 @@ int main(void)
     }
 
     uec_collision_response collision_response = UEC_COLLISION_RESPONSE_BLOCK;
-    if (api->get_component_collision_response(NULL, UEC_TRACE_VISIBILITY,
-                                              &collision_response) != UEC_RESULT_UNSUPPORTED ||
-        collision_response != UEC_COLLISION_RESPONSE_IGNORE)
-    {
+    if (api->get_component_collision_response(NULL, UEC_TRACE_VISIBILITY, &collision_response) != UEC_RESULT_UNSUPPORTED ||
+        collision_response != UEC_COLLISION_RESPONSE_IGNORE ||
+        api->set_component_collision_channel_response(NULL, UEC_TRACE_VISIBILITY, (uec_collision_response)99) != UEC_RESULT_INVALID_ARGUMENT) {
         api->release_context(context);
         return 23;
     }

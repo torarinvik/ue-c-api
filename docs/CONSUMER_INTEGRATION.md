@@ -249,6 +249,10 @@ weak object handle to the controller's `UEnhancedInputLocalPlayerSubsystem`.
 Check `UEC_CAPABILITY_INPUT`; release the handle with `release_object` and call
 it on the game thread. Controllers without an associated local player return
 `UEC_RESULT_NOT_INITIALIZED`.
+ABI minor 137 adds `set_component_collision_channel_response` so consumers can
+set a primitive component's channel response to Ignore, Overlap, or Block. It
+uses the existing `uec_collision_response` values and rejects undeclared enum
+values.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

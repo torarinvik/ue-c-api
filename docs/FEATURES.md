@@ -43,7 +43,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Actor type introspection | Runtime implemented / Unreal integration pending | Class-path output, inheritance checks, and indexed world queries by actor class |
 | Enhanced Input contexts | Runtime implemented / Unreal integration pending | Add/remove loaded mapping contexts, expose the local-player subsystem as a weak object handle, read/inject typed action values, and bind/unbind game-thread callbacks for Started, Ongoing, Triggered, Canceled, and Completed phases |
 | Reflected function metadata | Runtime implemented / Unreal integration pending | Enumerate names, parameter counts, return presence, and latent flags |
-| Collision settings | Runtime implemented / Unreal integration pending | Primitive collision mode read/write and per-channel ignore/overlap/block response readback |
+| Collision settings | Runtime implemented / Unreal integration pending | Primitive collision mode read/write, legacy per-channel block/ignore writes, and ABI 137 typed per-channel Ignore/Overlap/Block writes plus response readback |
 | Asset path queries | Runtime implemented / Unreal integration pending | Check whether soft object and class paths currently resolve in memory |
 | Attached audio playback | Runtime implemented / Unreal integration pending | Spawn, stop, playing-state readback, destroy, and release non-auto-destroying audio components on scene components |
 | Audio completion subscriptions | Runtime implemented / Unreal integration pending | One-shot native finished callbacks with unsubscribe tokens and component-destruction cleanup |

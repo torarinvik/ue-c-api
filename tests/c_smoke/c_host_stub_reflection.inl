@@ -777,7 +777,8 @@ static const uec_api g_api = {
     .apply_actor_angular_impulse = &StubApplyActorAngularImpulse,
     .get_actor_property_map_key = &StubGetActorPropertyMapKey,
     .get_object_property_map_key = &StubGetObjectPropertyMapKey,
-    .run_on_game_thread = &StubRunOnGameThread
+    .run_on_game_thread = &StubRunOnGameThread,
+    .set_component_collision_channel_response = &StubSetComponentCollisionChannelResponse
 };
 
 UEC_API uec_result UEC_CALL uec_get_api(uint32_t requestedMajor,

@@ -244,6 +244,30 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL SetComponentCollisionChannelResponse(
+        uec_scene_component* rawComponent,
+        uec_trace_channel channel,
+        uec_collision_response response)
+    {
+        ECollisionResponse engineResponse;
+        switch (response)
+        {
+        case UEC_COLLISION_RESPONSE_IGNORE: engineResponse = ECR_Ignore; break;
+        case UEC_COLLISION_RESPONSE_OVERLAP: engineResponse = ECR_Overlap; break;
+        case UEC_COLLISION_RESPONSE_BLOCK: engineResponse = ECR_Block; break;
+        default: return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        ECollisionChannel collisionChannel;
+        if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
+        component->SetCollisionResponseToChannel(collisionChannel, engineResponse);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetComponentCollisionResponse(uec_scene_component* rawComponent,
                                                       uec_trace_channel channel,
                                                       uec_collision_response* outResponse)

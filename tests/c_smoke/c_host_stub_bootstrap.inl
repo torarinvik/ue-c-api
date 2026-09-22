@@ -585,6 +585,18 @@ static uec_result UEC_CALL StubGetComponentCollisionResponse(
     return outResponse == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubSetComponentCollisionChannelResponse(
+    uec_scene_component* component,
+    uec_trace_channel channel,
+    uec_collision_response response)
+{
+    (void)channel;
+    if (response < UEC_COLLISION_RESPONSE_IGNORE || response > UEC_COLLISION_RESPONSE_BLOCK) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetConfigInteger(uec_context* context,
                                                 uec_string_view section,
                                                 uec_string_view key,
