@@ -1,6 +1,7 @@
 #include "uec_api.h"
 
 #include <stdio.h>
+#include <string.h>
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -545,7 +546,7 @@ int main(void)
     char error[32];
     size_t required = 0;
     result = api->get_last_error(context, error, sizeof(error), &required);
-    if (result != UEC_RESULT_OK || required == 0)
+    if (result != UEC_RESULT_OK || required == 0 || strcmp(error, "Invalid context handle") != 0)
     {
         api->release_context(context);
         return 3;

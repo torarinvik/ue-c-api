@@ -13,8 +13,9 @@ cc -std=c11 -I../../Plugins/UnrealCAPI/Source/UnrealCAPI/Public -fsyntax-only c_
 ```
 
 The local gate links the runtime consumer and its layout assertions against
-`tests/c_smoke/c_host_stub.c` so bootstrap, table calls, output clearing, and
-the append-only prefix can run without Unreal. The stub is assembled from the
+`tests/c_smoke/c_host_stub.c` so bootstrap, table calls, output clearing,
+bounded last-error retrieval, and the append-only prefix can run without
+Unreal. The stub is assembled from the
 focused `c_host_stub_bootstrap.inl` and `c_host_stub_reflection.inl` units.
 `uec_get_api` is still exported by the Unreal plugin when it is loaded into a
 real host. `c_compat.c` models an older minor-version consumer that only uses

@@ -7,6 +7,16 @@ struct uec_context {
 };
 
 static struct uec_context g_context = {0u};
+static char g_last_error[64] = "No error";
+
+static void StubSetLastError(const char* message)
+{
+    const size_t length = strlen(message);
+    const size_t copy_length = length < sizeof(g_last_error) - 1u
+        ? length : sizeof(g_last_error) - 1u;
+    memcpy(g_last_error, message, copy_length);
+    g_last_error[copy_length] = '\0';
+}
 
 static uec_result UEC_CALL StubGetCapabilities(uec_context* context,
                                                 uec_capabilities* outCapabilities)
@@ -24,13 +34,21 @@ static uec_result UEC_CALL StubGetLastError(uec_context* context,
                                             size_t bufferSize,
                                             size_t* requiredSize)
 {
-    static const char message[] = "No error";
     if (requiredSize != NULL) *requiredSize = 0;
-    if (requiredSize == NULL) return UEC_RESULT_INVALID_ARGUMENT;
-    if (context != &g_context) return UEC_RESULT_INVALID_HANDLE;
-    *requiredSize = sizeof(message);
-    if (buffer == NULL || bufferSize < sizeof(message)) return UEC_RESULT_BUFFER_TOO_SMALL;
-    memcpy(buffer, message, sizeof(message));
+    if (requiredSize == NULL) {
+        StubSetLastError("Required-size output is null");
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    if (context != &g_context) {
+        StubSetLastError("Invalid context handle");
+        return UEC_RESULT_INVALID_HANDLE;
+    }
+    *requiredSize = strlen(g_last_error) + 1u;
+    if (buffer == NULL || bufferSize < *requiredSize) {
+        StubSetLastError("Output buffer is null or too small");
+        return UEC_RESULT_BUFFER_TOO_SMALL;
+    }
+    memcpy(buffer, g_last_error, *requiredSize);
     return UEC_RESULT_OK;
 }
 
