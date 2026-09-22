@@ -504,9 +504,13 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     result = state->api->invoke_actor_function_arguments(
         state->actor, vectorFunction, &structArgument, 1u,
         &structOutput, 1u, &noOutputs);
-    if (result != UEC_RESULT_INVALID_ARGUMENT) {
+    if (result != UEC_RESULT_INVALID_ARGUMENT) return FailLatentSmoke(state);
+    structArgument.struct_value.kind = (uec_function_struct_kind)99;
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, vectorFunction, &structArgument, 1u, &structOutput, 1u, &noOutputs);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0u)
         return FailLatentSmoke(state);
-    }
     structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_QUATERNION;
     structArgument.struct_value.value.quaternion = (uec_quaternion){
         0.0, 0.0, 0.7071067811865476, 0.7071067811865476};
@@ -551,9 +555,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     result = state->api->invoke_actor_function_arguments(
         state->actor, transformFunction, &structArgument, 1u,
         &structOutput, 1u, &noOutputs);
-    if (result != UEC_RESULT_INVALID_ARGUMENT) {
-        return FailLatentSmoke(state);
-    }
+    if (result != UEC_RESULT_INVALID_ARGUMENT) return FailLatentSmoke(state);
     structArgument.struct_value.kind = UEC_FUNCTION_STRUCT_QUATERNION;
     structArgument.struct_value.value.quaternion = (uec_quaternion){0.0, 0.0, 0.0, 0.0};
     structOutput.struct_value.kind = UEC_FUNCTION_STRUCT_QUATERNION;
@@ -561,9 +563,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     result = state->api->invoke_actor_function_arguments(
         state->actor, quaternionFunction, &structArgument, 1u,
         &structOutput, 1u, &noOutputs);
-    if (result != UEC_RESULT_INVALID_ARGUMENT) {
-        return FailLatentSmoke(state);
-    }
+    if (result != UEC_RESULT_INVALID_ARGUMENT) return FailLatentSmoke(state);
     static const char quotedSmokeText[] = "\"mixed-smoke\"";
     uec_function_argument textArgument = {0};
     textArgument.struct_size = (uint32_t)offsetof(uec_function_argument, struct_value);
@@ -651,9 +651,8 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     uint32_t invalidWorldCount = UINT32_MAX;
     result = state->api->get_world_count_by_kind(
         state->context, (uec_world_kind)99, &invalidWorldCount);
-    if (result != UEC_RESULT_INVALID_ARGUMENT || invalidWorldCount != 0) {
+    if (result != UEC_RESULT_INVALID_ARGUMENT || invalidWorldCount != 0)
         return FailLatentSmoke(state);
-    }
     uint32_t editorWorldCount = 0;
     result = state->api->get_world_count_by_kind(
         state->context, UEC_WORLD_KIND_EDITOR, &editorWorldCount);
