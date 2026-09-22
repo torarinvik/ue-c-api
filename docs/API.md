@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.26`.
+The current runtime slice is intentionally small and versioned as ABI `1.27`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -152,6 +152,12 @@ handles to compatible scene components. Static mesh assignment reports engine
 failure through `UEC_RESULT_INTERNAL_ERROR`; skeletal mesh assignment can
 optionally reinitialize the animation pose. Both operations run on the game
 thread and do not retain the asset handle.
+
+`play_skeletal_animation` and `stop_skeletal_animation` control the transient
+animation state of skeletal mesh components using a loaded animation asset.
+`set_component_material_scalar` and `set_component_material_vector` update all
+matching material parameters on a mesh component; parameter names are UTF-8
+views and vector values use the API's world-independent double-precision type.
 
 ## Verification
 

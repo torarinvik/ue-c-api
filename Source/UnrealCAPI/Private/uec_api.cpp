@@ -18,6 +18,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimationAsset.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
 #include "Camera/CameraComponent.h"
@@ -1943,6 +1944,69 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL PlaySkeletalAnimation(uec_scene_component* rawComponent,
+                                              uec_object* rawAnimation,
+                                              uec_bool looping)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        auto* animationHandle = reinterpret_cast<FUECObject*>(rawAnimation);
+        if (!IsValidComponent(componentHandle) || !IsValidObject(animationHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(componentHandle->Value.Get());
+        UAnimationAsset* animation = Cast<UAnimationAsset>(animationHandle->Value.Get());
+        if (component == nullptr || animation == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        component->PlayAnimation(animation, looping != UEC_FALSE);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL StopSkeletalAnimation(uec_scene_component* rawComponent)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        component->Stop();
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetComponentMaterialScalar(uec_scene_component* rawComponent,
+                                                    uec_string_view parameterName,
+                                                    double value)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if ((parameterName.data == nullptr && parameterName.size != 0) ||
+            parameterName.size == 0 || !FMath::IsFinite(value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        UMeshComponent* component = Cast<UMeshComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        component->SetScalarParameterValueOnMaterials(
+            FName(*ToFString(parameterName)), static_cast<float>(value));
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetComponentMaterialVector(uec_scene_component* rawComponent,
+                                                    uec_string_view parameterName,
+                                                    uec_vector3 value)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if ((parameterName.data == nullptr && parameterName.size != 0) ||
+            parameterName.size == 0 || !FMath::IsFinite(value.x) ||
+            !FMath::IsFinite(value.y) || !FMath::IsFinite(value.z)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        UMeshComponent* component = Cast<UMeshComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        component->SetVectorParameterValueOnMaterials(
+            FName(*ToFString(parameterName)), FVector(value.x, value.y, value.z));
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -1993,7 +2057,9 @@ namespace
         &CreateSaveGame, &SaveGameToSlot, &LoadGameFromSlot, &DeleteGameSlot,
         &RunOnGameThread, &CancelGameThreadRequest,
         &AddPawnMovementInput, &JumpCharacter, &StopCharacterJumping,
-        &SetStaticMesh, &SetSkeletalMesh
+        &SetStaticMesh, &SetSkeletalMesh,
+        &PlaySkeletalAnimation, &StopSkeletalAnimation,
+        &SetComponentMaterialScalar, &SetComponentMaterialVector
     };
 }
 

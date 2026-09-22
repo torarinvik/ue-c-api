@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 26u
+#define UEC_ABI_MINOR 27u
 
 #ifdef __cplusplus
 extern "C" {
@@ -413,6 +413,16 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_skeletal_mesh)(uec_scene_component* component,
                                              uec_object* mesh,
                                              uec_bool reinitialize_pose);
+    uec_result (UEC_CALL *play_skeletal_animation)(uec_scene_component* component,
+                                                   uec_object* animation,
+                                                   uec_bool looping);
+    uec_result (UEC_CALL *stop_skeletal_animation)(uec_scene_component* component);
+    uec_result (UEC_CALL *set_component_material_scalar)(uec_scene_component* component,
+                                                         uec_string_view parameter_name,
+                                                         double value);
+    uec_result (UEC_CALL *set_component_material_vector)(uec_scene_component* component,
+                                                         uec_string_view parameter_name,
+                                                         uec_vector3 value);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the
