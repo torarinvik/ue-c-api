@@ -17,6 +17,9 @@ The returned table is owned by the plugin and remains valid until the module
 is unloaded. The context is a bridge handle and must be released through
 `api->release_context`. Consumers call through the table rather than linking
 against private C++ symbols or Unreal headers.
+The runtime module is built with C++ exceptions disabled, so no C++ exception
+may cross the C ABI. Unreal assertions and fatal errors remain process-level
+failures.
 
 ## Compatibility
 

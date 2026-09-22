@@ -15,6 +15,11 @@ git -C "$repo_dir" diff --check
 python3 -m json.tool "$repo_dir/UnrealCAPI.uplugin" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPIHost.uproject" >/dev/null
 
+if ! rg -q 'bEnableExceptions\s*=\s*false' "$repo_dir/Source/UnrealCAPI/UnrealCAPI.Build.cs"; then
+    printf '%s\n' 'The Unreal module must keep C++ exceptions disabled at the ABI boundary.' >&2
+    exit 1
+fi
+
 if [ ! -f "$repo_dir/IMPLEMENTATION_PLAN.md" ] || ! git -C "$repo_dir" check-ignore -q IMPLEMENTATION_PLAN.md; then
     printf '%s\n' 'IMPLEMENTATION_PLAN.md must exist and remain gitignored.' >&2
     exit 1
