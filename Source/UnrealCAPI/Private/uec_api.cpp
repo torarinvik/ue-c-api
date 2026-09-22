@@ -325,13 +325,13 @@ namespace
     static uec_property_kind GetPropertyKind(const FProperty* property)
     {
         if (CastField<FBoolProperty>(property)) return UEC_PROPERTY_BOOL;
+        if (const FByteProperty* byteProperty = CastField<FByteProperty>(property); byteProperty != nullptr && byteProperty->GetIntPropertyEnum() != nullptr) return UEC_PROPERTY_ENUM;
         if (CastField<FIntProperty>(property) || CastField<FInt64Property>(property) ||
             CastField<FUInt32Property>(property) || CastField<FUInt64Property>(property) ||
             CastField<FByteProperty>(property) || CastField<FInt16Property>(property) ||
             CastField<FUInt16Property>(property) || CastField<FInt8Property>(property) ||
             CastField<FUInt8Property>(property)) return UEC_PROPERTY_INTEGER;
-        if (CastField<FFloatProperty>(property)) return UEC_PROPERTY_FLOAT;
-        if (CastField<FDoubleProperty>(property)) return UEC_PROPERTY_DOUBLE;
+        if (CastField<FFloatProperty>(property)) return UEC_PROPERTY_FLOAT; if (CastField<FDoubleProperty>(property)) return UEC_PROPERTY_DOUBLE;
         if (CastField<FEnumProperty>(property)) return UEC_PROPERTY_ENUM;
         if (CastField<FStrProperty>(property)) return UEC_PROPERTY_STRING;
         if (CastField<FNameProperty>(property)) return UEC_PROPERTY_NAME;

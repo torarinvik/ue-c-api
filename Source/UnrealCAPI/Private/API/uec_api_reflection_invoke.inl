@@ -28,7 +28,7 @@
             }
             FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
             if (!IsIntegerValueInRange(underlying, value->integer_value) ||
-                !IsValidEnumValue(enumProperty, value->integer_value)) {
+                !IsValidEnumValue(property, value->integer_value)) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             const FString text = LexToString(value->integer_value);
@@ -51,8 +51,9 @@
             }
             if (numericProperty->IsInteger())
             {
-                if (value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) return UEC_RESULT_INVALID_ARGUMENT;
-                if (!IsIntegerValueInRange(numericProperty, value->integer_value)) {
+                if ((value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) ||
+                    (numericProperty->IsEnum() && !IsValidEnumValue(property, value->integer_value)) ||
+                    !IsIntegerValueInRange(numericProperty, value->integer_value)) {
                     return UEC_RESULT_INVALID_ARGUMENT;
                 }
                 const FString text = LexToString(value->integer_value);
@@ -227,7 +228,7 @@
         {
             if ((value.kind != UEC_PROPERTY_INTEGER && value.kind != UEC_PROPERTY_ENUM) ||
                 !IsIntegerValueInRange(enumProperty->GetUnderlyingProperty(), value.integer_value) ||
-                !IsValidEnumValue(enumProperty, value.integer_value)) {
+                !IsValidEnumValue(property, value.integer_value)) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             enumProperty->GetUnderlyingProperty()->SetNumericPropertyValueFromString_InContainer(
@@ -250,6 +251,7 @@
             if (numericProperty->IsInteger())
             {
                 if ((value.kind != UEC_PROPERTY_INTEGER && value.kind != UEC_PROPERTY_ENUM) ||
+                    (numericProperty->IsEnum() && !IsValidEnumValue(property, value.integer_value)) ||
                     !IsIntegerValueInRange(numericProperty, value.integer_value)) {
                     return UEC_RESULT_INVALID_ARGUMENT;
                 }

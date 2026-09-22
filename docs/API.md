@@ -227,6 +227,8 @@ same access flags used for class properties.
 ABI minor 120 adds typed hard class-reference accessors for actor and UObject
 properties. They accept and return `uec_class*` handles, validate the reflected
 `MetaClass` constraint, and leave soft class references on the path accessors.
+Byte-backed enum properties use the enum kind and declared-value validation in
+the same typed scalar paths as `FEnumProperty`.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

@@ -1,6 +1,11 @@
-    static bool IsValidEnumValue(const FEnumProperty* property, int64 value)
+    static bool IsValidEnumValue(const FProperty* property, int64 value)
     {
-        const UEnum* enumeration = property == nullptr ? nullptr : property->GetEnum();
+        const UEnum* enumeration = nullptr;
+        if (const FEnumProperty* enumProperty = CastField<FEnumProperty>(property)) {
+            enumeration = enumProperty->GetEnum();
+        } else if (const FByteProperty* byteProperty = CastField<FByteProperty>(property)) {
+            enumeration = byteProperty->GetIntPropertyEnum();
+        }
         return enumeration != nullptr && enumeration->IsValidEnumValueOrBitfield(value);
     }
     static const UEnum* GetEnumForProperty(const FProperty* property)
@@ -78,7 +83,7 @@
             FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
             if ((value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) ||
                 !IsIntegerValueInRange(underlying, value->integer_value) ||
-                !IsValidEnumValue(enumProperty, value->integer_value)) {
+                !IsValidEnumValue(property, value->integer_value)) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             underlying->SetIntPropertyValue(data, value->integer_value);
@@ -96,6 +101,7 @@
             }
             if (numeric->IsInteger()) {
                 if ((value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) ||
+                    (numeric->IsEnum() && !IsValidEnumValue(property, value->integer_value)) ||
                     !IsIntegerValueInRange(numeric, value->integer_value)) {
                     return UEC_RESULT_INVALID_ARGUMENT;
                 }
@@ -236,7 +242,7 @@
             }
             FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
             if (!IsIntegerValueInRange(underlying, value->integer_value) ||
-                !IsValidEnumValue(enumProperty, value->integer_value)) {
+                !IsValidEnumValue(property, value->integer_value)) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             const FString text = LexToString(value->integer_value);
@@ -260,7 +266,9 @@
             if (numericProperty->IsInteger())
             {
                 if (value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) return UEC_RESULT_INVALID_ARGUMENT;
-                if (!IsIntegerValueInRange(numericProperty, value->integer_value)) {
+                if ((numericProperty->IsEnum() &&
+                     !IsValidEnumValue(property, value->integer_value)) ||
+                    !IsIntegerValueInRange(numericProperty, value->integer_value)) {
                     return UEC_RESULT_INVALID_ARGUMENT;
                 }
                 const FString text = LexToString(value->integer_value);
