@@ -636,13 +636,13 @@ namespace
     #include "API/uec_api_actor_component.inl"
     #include "API/uec_api_reflection.inl"
     #include "API/uec_api_reflection_containers.inl"
+    #include "API/uec_api_reflection_map_set.inl"
     #include "API/uec_api_reflection_invoke.inl"
     #include "API/uec_api_presentation.inl"
     #include "API/uec_api_gameplay.inl"
     #include "API/uec_api_input.inl"
     #include "API/uec_api_async.inl"
-    const uec_api GApi = {
-        sizeof(uec_api), UEC_ABI_MAJOR, UEC_ABI_MINOR,
+    const uec_api GApi = { sizeof(uec_api), UEC_ABI_MAJOR, UEC_ABI_MINOR,
         &GetCapabilities, &GetLastError, &Log, &ReleaseContext,
         &GetWorldCount, &GetWorldAt, &GetWorldKind, &GetWorldName, &TravelWorld,
         &GetFirstPlayerController, &GetControllerPawn, &PossessPawn,
