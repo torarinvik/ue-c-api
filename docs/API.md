@@ -710,7 +710,9 @@ engine level. `bind_input_action` binds a typed value callback to an actor's
 `unbind_input_action`. Binding callbacks run on the game thread, borrow the
 user pointer, and are suppressed after unbinding or module shutdown. Unbinding
 from inside a callback defers native binding removal until that callback
-returns. At most 1024 bindings can be active.
+returns. Select one of Started, Ongoing, Triggered, Canceled, or Completed for
+each binding using `uec_input_trigger_event`. At most 1024 bindings can be
+active.
 
 `get_class_function_count` and `get_class_function_at` enumerate reflected
 functions, report non-return parameter counts, and identify return values and

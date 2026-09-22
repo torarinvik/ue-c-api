@@ -113,6 +113,48 @@ int main(void)
         return 56;
     }
 
+    const uint8_t expected_payload[] = {0x55u, 0x45u, 0x43u, 0x01u};
+    uint8_t short_payload[] = {0xA5u, 0x5Au};
+    uint8_t loaded_payload[sizeof(expected_payload)] = {0u};
+    versioned_saved = UEC_FALSE;
+    result = api->save_versioned_application_data(context, versioned_slot, 0, 7u,
+        expected_payload, sizeof(expected_payload), &versioned_saved);
+    if (result != UEC_RESULT_OK || versioned_saved != UEC_TRUE)
+    {
+        api->release_context(context);
+        return 57;
+    }
+    stored_schema_version = 0u;
+    stored_data_size = 0u;
+    result = api->load_versioned_application_data(context, versioned_slot, 0,
+        &stored_schema_version, NULL, 0u, &stored_data_size);
+    if (result != UEC_RESULT_BUFFER_TOO_SMALL || stored_schema_version != 7u ||
+        stored_data_size != sizeof(expected_payload))
+    {
+        api->release_context(context);
+        return 58;
+    }
+    stored_schema_version = 0u;
+    stored_data_size = 0u;
+    result = api->load_versioned_application_data(context, versioned_slot, 0,
+        &stored_schema_version, short_payload, sizeof(short_payload), &stored_data_size);
+    if (result != UEC_RESULT_BUFFER_TOO_SMALL || stored_schema_version != 7u ||
+        stored_data_size != sizeof(expected_payload) || short_payload[0] != 0xA5u ||
+        short_payload[1] != 0x5Au)
+    {
+        api->release_context(context);
+        return 59;
+    }
+    result = api->load_versioned_application_data(context, versioned_slot, 0,
+        &stored_schema_version, loaded_payload, sizeof(loaded_payload), &stored_data_size);
+    if (result != UEC_RESULT_OK || stored_schema_version != 7u ||
+        stored_data_size != sizeof(expected_payload) ||
+        memcmp(loaded_payload, expected_payload, sizeof(expected_payload)) != 0)
+    {
+        api->release_context(context);
+        return 60;
+    }
+
     uec_hit_result_details details;
     memset(&details, 0, sizeof(details));
     details.struct_size = sizeof(details);

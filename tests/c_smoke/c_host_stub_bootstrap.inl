@@ -1,6 +1,7 @@
 #include "uec_api.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 struct uec_context {
     unsigned int marker;
@@ -8,6 +9,10 @@ struct uec_context {
 
 static struct uec_context g_context = {0u};
 static char g_last_error[64] = "No error";
+static uint8_t* g_versioned_payload = NULL;
+static size_t g_versioned_payload_size = 0u;
+static uint32_t g_versioned_schema_version = 0u;
+static int g_versioned_payload_saved = 0;
 
 static void StubSetLastError(const char* message)
 {
@@ -65,7 +70,13 @@ static uec_result UEC_CALL StubLog(uec_context* context, uec_string_view message
 
 static uec_result UEC_CALL StubReleaseContext(uec_context* context)
 {
-    return context == &g_context ? UEC_RESULT_OK : UEC_RESULT_INVALID_HANDLE;
+    if (context != &g_context) return UEC_RESULT_INVALID_HANDLE;
+    free(g_versioned_payload);
+    g_versioned_payload = NULL;
+    g_versioned_payload_size = 0u;
+    g_versioned_schema_version = 0u;
+    g_versioned_payload_saved = 0;
+    return UEC_RESULT_OK;
 }
 
 static uec_result UEC_CALL StubGetRuntimeStats(uec_context* context,
@@ -310,10 +321,21 @@ static uec_result UEC_CALL StubSaveVersionedApplicationData(
 {
     if (outSaved != NULL) *outSaved = UEC_FALSE;
     if (outSaved == NULL || slotName.data == NULL || slotName.size == 0u || userIndex < 0 ||
-        schemaVersion == 0u || (data == NULL && dataSize != 0u)) {
+        schemaVersion == 0u || dataSize > 16u * 1024u * 1024u ||
+        (data == NULL && dataSize != 0u)) {
         return UEC_RESULT_INVALID_ARGUMENT;
     }
-    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+    if (context != &g_context) return UEC_RESULT_INVALID_HANDLE;
+    uint8_t* copy = dataSize == 0u ? NULL : (uint8_t*)malloc(dataSize);
+    if (dataSize != 0u && copy == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    if (dataSize != 0u) memcpy(copy, data, dataSize);
+    free(g_versioned_payload);
+    g_versioned_payload = copy;
+    g_versioned_payload_size = dataSize;
+    g_versioned_schema_version = schemaVersion;
+    g_versioned_payload_saved = 1;
+    *outSaved = UEC_TRUE;
+    return UEC_RESULT_OK;
 }
 
 static uec_result UEC_CALL StubLoadVersionedApplicationData(
@@ -331,7 +353,15 @@ static uec_result UEC_CALL StubLoadVersionedApplicationData(
         slotName.size == 0u || userIndex < 0 || (buffer == NULL && bufferCapacity != 0u)) {
         return UEC_RESULT_INVALID_ARGUMENT;
     }
-    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+    if (context != &g_context) return UEC_RESULT_INVALID_HANDLE;
+    if (!g_versioned_payload_saved) return UEC_RESULT_NOT_INITIALIZED;
+    *outSchemaVersion = g_versioned_schema_version;
+    *outRequiredSize = g_versioned_payload_size;
+    if (bufferCapacity < g_versioned_payload_size) return UEC_RESULT_BUFFER_TOO_SMALL;
+    if (g_versioned_payload_size != 0u) {
+        memcpy(buffer, g_versioned_payload, g_versioned_payload_size);
+    }
+    return UEC_RESULT_OK;
 }
 
 static uec_result UEC_CALL StubInvokeActorFunctionValue(
