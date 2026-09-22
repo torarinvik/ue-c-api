@@ -78,6 +78,8 @@ development; they do not imply a published or runtime-verified release.
   and shutdown cleanup.
 - Read-only world-authority queries for standalone, client, listen-server, and
   dedicated-server workflows.
+- Explicit authoritative game-mode object access from world handles, with a
+  clear unsupported result on client worlds.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Explicit overflow checks on world, component, class-property, and reflected-function enumeration counts.
 - Strict 0/1 validation for boolean inputs across transforms, collision,

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.71`.
+The current runtime slice is intentionally small and versioned as ABI `1.72`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -50,6 +50,8 @@ world is standalone, a client, a listen server, or a dedicated server.
 `get_world_has_authority` is a read-only guard for mutating workflows: it is
 true for standalone, listen-server, and dedicated-server worlds, and false for
 client worlds. Replication and RPC behavior remain outside this query.
+`get_world_game_mode` returns the authoritative game-mode object when one is
+available; client worlds return `UEC_RESULT_UNSUPPORTED`.
 `get_default_world` remains a convenience operation
 that selects the first active world; consumers needing deterministic selection
 should enumerate and retain the desired world handle.

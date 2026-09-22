@@ -542,7 +542,8 @@ namespace
         &FindPlayerStart,
         &BindAnimationFinished,
         &UnbindAnimationFinished,
-        &GetWorldHasAuthority
+        &GetWorldHasAuthority,
+        &GetWorldGameMode
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

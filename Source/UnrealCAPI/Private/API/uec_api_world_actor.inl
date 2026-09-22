@@ -187,6 +187,23 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetWorldGameMode(uec_world* rawWorld, uec_object** outGameMode)
+    {
+        if (outGameMode == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outGameMode = nullptr;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        AGameModeBase* gameMode = world->GetAuthGameMode();
+        if (gameMode == nullptr) return UEC_RESULT_UNSUPPORTED;
+        FUECObject* handle = MakeObjectHandle(gameMode);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outGameMode = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetWorldName(uec_world* rawWorld,
                                      char* buffer,
                                      size_t bufferSize,
