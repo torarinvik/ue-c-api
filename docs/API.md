@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.30`.
+The current runtime slice is intentionally small and versioned as ABI `1.31`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -167,6 +167,10 @@ primitive, or project-specific component adapters without guessing a type.
 keep-world or keep-relative transform rules and an optional socket name.
 `detach_scene_component` applies the same transform choice when removing a
 parent. Both operations are game-thread-only.
+
+`get_actor_class_name` returns an actor's full Unreal class path, while
+`actor_is_a` checks inheritance against another actor class path. These queries
+run on the game thread and return invalid-argument for non-actor class paths.
 
 `play_skeletal_animation` and `stop_skeletal_animation` control the transient
 animation state of skeletal mesh components using a loaded animation asset.

@@ -2100,6 +2100,36 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetActorClassName(uec_actor* rawActor,
+                                          char* buffer,
+                                          size_t bufferSize,
+                                          size_t* requiredSize)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return CopyFStringToUtf8(actor->GetClass()->GetPathName(), buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL ActorIsA(uec_actor* rawActor,
+                                 uec_string_view classPath,
+                                 uec_bool* outIsA)
+    {
+        if (outIsA == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (classPath.data == nullptr && classPath.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        UClass* klass = LoadClass<AActor>(nullptr, *ToFString(classPath));
+        if (klass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outIsA = actor->IsA(klass) ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2154,7 +2184,8 @@ namespace
         &PlaySkeletalAnimation, &StopSkeletalAnimation,
         &SetComponentMaterialScalar, &SetComponentMaterialVector,
         &RetainObject, &GetComponentClassName, &ComponentIsA,
-        &AttachSceneComponent, &DetachSceneComponent
+        &AttachSceneComponent, &DetachSceneComponent,
+        &GetActorClassName, &ActorIsA
     };
 }
 
