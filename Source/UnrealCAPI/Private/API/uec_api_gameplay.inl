@@ -84,7 +84,9 @@
         outHit->distance = hit.Distance;
         if (AActor* actor = hit.GetActor())
         {
-            outHit->actor = reinterpret_cast<uec_actor*>(MakeActorHandle(actor));
+            FUECActor* actorHandle = MakeActorHandle(actor);
+            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
         }
         return UEC_RESULT_OK;
     }
@@ -136,7 +138,9 @@
         for (AActor* actor : actors)
         {
             if (copied == maxHits) break;
-            outActors[copied++] = reinterpret_cast<uec_actor*>(MakeActorHandle(actor));
+            FUECActor* actorHandle = MakeActorHandle(actor);
+            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            outActors[copied++] = reinterpret_cast<uec_actor*>(actorHandle);
         }
         *outCount = copied;
         return UEC_RESULT_OK;
