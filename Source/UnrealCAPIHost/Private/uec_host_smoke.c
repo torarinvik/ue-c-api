@@ -6,6 +6,9 @@ typedef struct uec_event_bridge_smoke_state {
     uint64_t subscription_id;
     uint32_t callback_count;
     uec_bool payload_valid;
+    const uec_api* api;
+    uec_context* context;
+    uec_result self_unbind_result;
 } uec_event_bridge_smoke_state;
 
 static void UEC_CALL VerifyEventBridgeCallback(uint64_t subscriptionId,
@@ -28,6 +31,30 @@ static void UEC_CALL VerifyEventBridgeCallback(uint64_t subscriptionId,
         if (textValue.data[index] != expectedText[index]) return;
     }
     state->payload_valid = UEC_TRUE;
+}
+
+static void UEC_CALL SelfUnbindEventBridgeCallback(uint64_t subscriptionId,
+                                                   int64_t eventId,
+                                                   int64_t integerValue,
+                                                   double realValue,
+                                                   uec_string_view textValue,
+                                                   void* userData)
+{
+    uec_event_bridge_smoke_state* state = (uec_event_bridge_smoke_state*)userData;
+    const char expectedText[] = "bridge-smoke";
+    if (state == NULL) return;
+    ++state->callback_count;
+    state->payload_valid = UEC_FALSE;
+    if (subscriptionId != state->subscription_id || eventId != 732 || integerValue != 7 ||
+        realValue != 4.5 || textValue.data == NULL || textValue.size != sizeof(expectedText) - 1) {
+        return;
+    }
+    for (size_t index = 0; index < textValue.size; ++index) {
+        if (textValue.data[index] != expectedText[index]) return;
+    }
+    state->payload_valid = UEC_TRUE;
+    state->self_unbind_result = state->api->unbind_actor_event_bridge(state->context,
+                                                                      subscriptionId);
 }
 
 uec_result UEC_CALL uec_host_smoke_bootstrap(void)
@@ -76,9 +103,12 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     uec_actor* actor = NULL;
     uec_object* bridge = NULL;
     uint64_t subscriptionId = 0;
-    uec_event_bridge_smoke_state state = {0, 0, UEC_FALSE};
+    uec_event_bridge_smoke_state state = {0, 0, UEC_FALSE, NULL, NULL,
+                                          UEC_RESULT_INTERNAL_ERROR};
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
     if (result != UEC_RESULT_OK) return result;
+    state.api = api;
+    state.context = context;
     if (api == NULL || context == NULL || api->get_or_create_actor_event_bridge == NULL ||
         api->destroy_actor_event_bridge == NULL || api->bind_actor_event_bridge == NULL ||
         api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL) {
@@ -106,6 +136,22 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     subscriptionId = 0;
     result = api->emit_actor_event_bridge(bridge, 732, 0, 0.0, text);
     if (result != UEC_RESULT_OK || state.callback_count != 1) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->bind_actor_event_bridge(bridge, &SelfUnbindEventBridgeCallback,
+                                          &state, &subscriptionId);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    state.subscription_id = subscriptionId;
+    result = api->emit_actor_event_bridge(bridge, 732, 7, 4.5, text);
+    if (result != UEC_RESULT_OK || state.callback_count != 2 ||
+        state.payload_valid != UEC_TRUE || state.self_unbind_result != UEC_RESULT_OK) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    subscriptionId = 0;
+    result = api->emit_actor_event_bridge(bridge, 733, 0, 0.0, text);
+    if (result != UEC_RESULT_OK || state.callback_count != 2) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
