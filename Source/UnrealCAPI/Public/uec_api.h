@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 63u
+#define UEC_ABI_MINOR 64u
 
 #ifdef __cplusplus
 extern "C" {
