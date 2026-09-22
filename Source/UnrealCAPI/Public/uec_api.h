@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 28u
+#define UEC_ABI_MINOR 29u
 
 #ifdef __cplusplus
 extern "C" {
@@ -426,6 +426,13 @@ typedef struct uec_api {
                                                          uec_vector3 value);
     uec_result (UEC_CALL *retain_object)(uec_object* object,
                                          uec_object** out_retained_object);
+    uec_result (UEC_CALL *get_component_class_name)(uec_scene_component* component,
+                                                    char* buffer,
+                                                    size_t buffer_size,
+                                                    size_t* required_size);
+    uec_result (UEC_CALL *component_is_a)(uec_scene_component* component,
+                                          uec_string_view class_path,
+                                          uec_bool* out_is_a);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

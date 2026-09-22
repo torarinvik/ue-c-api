@@ -2034,6 +2034,36 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetComponentClassName(uec_scene_component* rawComponent,
+                                              char* buffer,
+                                              size_t bufferSize,
+                                              size_t* requiredSize)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USceneComponent* component = componentHandle->Value.Get();
+        if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return CopyFStringToUtf8(component->GetClass()->GetPathName(), buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL ComponentIsA(uec_scene_component* rawComponent,
+                                     uec_string_view classPath,
+                                     uec_bool* outIsA)
+    {
+        if (outIsA == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USceneComponent* component = componentHandle->Value.Get();
+        if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (classPath.data == nullptr && classPath.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        UClass* klass = LoadClass<USceneComponent>(nullptr, *ToFString(classPath));
+        if (klass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outIsA = component->IsA(klass) ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2087,7 +2117,7 @@ namespace
         &SetStaticMesh, &SetSkeletalMesh,
         &PlaySkeletalAnimation, &StopSkeletalAnimation,
         &SetComponentMaterialScalar, &SetComponentMaterialVector,
-        &RetainObject
+        &RetainObject, &GetComponentClassName, &ComponentIsA
     };
 }
 
