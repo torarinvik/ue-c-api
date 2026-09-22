@@ -427,6 +427,14 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     textOutput.struct_size = sizeof(textOutput);
     uec_string_view textFunction = {
         textFunctionName, sizeof(textFunctionName) - 1};
+    noOutputs = 0;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, textFunction, &textArgument, 1u,
+        NULL, 0u, &noOutputs);
+    if (result != UEC_RESULT_BUFFER_TOO_SMALL || noOutputs != 1u) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
     noOutputs = UINT32_MAX;
     result = state->api->invoke_actor_function_arguments(
         state->actor, textFunction, &textArgument, 1u,
