@@ -197,6 +197,22 @@ static uec_result UEC_CALL StubCancelTravelRequest(uec_context* context, uint64_
     return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubGetComponentVisible(uec_scene_component* component,
+                                                   uec_bool* outVisible)
+{
+    (void)component;
+    if (outVisible != NULL) *outVisible = UEC_FALSE;
+    return outVisible == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetComponentActive(uec_scene_component* component,
+                                                  uec_bool* outActive)
+{
+    (void)component;
+    if (outActive != NULL) *outActive = UEC_FALSE;
+    return outActive == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -228,6 +244,8 @@ static const uec_api g_api = {
     .find_object = &StubFindObject,
     .travel_world_async = &StubTravelWorldAsync,
     .cancel_travel_request = &StubCancelTravelRequest,
+    .get_component_visible = &StubGetComponentVisible,
+    .get_component_active = &StubGetComponentActive,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

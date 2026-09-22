@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 90u, "ABI minor must include travel completion");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 91u, "ABI minor must include component readback");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -160,6 +160,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, travel_world_async) > offsetof(uec_api, find_o
 UEC_TEST_ASSERT(offsetof(uec_api, cancel_travel_request) >
                    offsetof(uec_api, travel_world_async),
                "travel cancellation must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_component_visible) >
+                   offsetof(uec_api, cancel_travel_request),
+               "component visibility readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_component_active) >
+                   offsetof(uec_api, get_component_visible),
+               "component activation readback must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -292,6 +298,17 @@ int main(void)
     {
         api->release_context(context);
         return 17;
+    }
+
+    uec_bool component_visible = UEC_TRUE;
+    uec_bool component_active = UEC_TRUE;
+    if (api->get_component_visible(NULL, &component_visible) != UEC_RESULT_UNSUPPORTED ||
+        component_visible != UEC_FALSE ||
+        api->get_component_active(NULL, &component_active) != UEC_RESULT_UNSUPPORTED ||
+        component_active != UEC_FALSE)
+    {
+        api->release_context(context);
+        return 18;
     }
 
     const char message[] = "C ABI smoke test";

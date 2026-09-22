@@ -498,6 +498,34 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetComponentVisible(uec_scene_component* rawComponent,
+                                            uec_bool* outVisible)
+    {
+        if (outVisible != nullptr) *outVisible = UEC_FALSE;
+        if (outVisible == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USceneComponent* component = handle->Value.Get();
+        if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        *outVisible = component->IsVisible() ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetComponentActive(uec_scene_component* rawComponent,
+                                           uec_bool* outActive)
+    {
+        if (outActive != nullptr) *outActive = UEC_FALSE;
+        if (outActive == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USceneComponent* component = handle->Value.Get();
+        if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        *outActive = component->IsActive() ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
     /* Shared registry cleanup is kept with the handles it invalidates. */
     static void ClearAllHandles()
     {

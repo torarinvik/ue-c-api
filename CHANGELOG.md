@@ -216,6 +216,7 @@ development; they do not imply a published or runtime-verified release.
   `UEC_RESULT_NOT_INITIALIZED` cache-miss result.
 - ABI minor 90 adds cancellable level-travel requests with post-load world
   callbacks and automatic cleanup during module shutdown.
+- ABI minor 91 adds component visibility and activation readback adapters.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

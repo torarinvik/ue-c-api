@@ -65,6 +65,9 @@ ABI 90 adds `travel_world_async`; the callback runs on the game thread after
 the post-load map delegate, receives a newly created world handle, and borrows
 `user_data`. Cancel the request through `cancel_travel_request` before the
 callback fires; module shutdown cancels all remaining travel requests.
+ABI 91 adds component visibility and activation readback; both functions clear
+their boolean output before validating the component and require the game
+thread.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

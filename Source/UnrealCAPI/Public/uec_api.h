@@ -18,9 +18,8 @@
 #  endif
 #  define UEC_CALL
 #endif
-
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 90u
+#define UEC_ABI_MINOR 91u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -599,7 +598,6 @@ typedef struct uec_api {
                                                  uint32_t index,
                                                  uec_actor** out_actor);
     uec_result (UEC_CALL *destroy_audio_component)(uec_object* audio_component);
-
     /* Tokenized input bindings and explicit world-context access. */
     uec_result (UEC_CALL *bind_input_action)(uec_actor* actor,
                                              uec_object* action,
@@ -786,6 +784,8 @@ typedef struct uec_api {
                                               uec_travel_callback callback, void* user_data,
                                               uint64_t* out_request_id);
     uec_result (UEC_CALL *cancel_travel_request)(uec_context* context, uint64_t request_id);
+    uec_result (UEC_CALL *get_component_visible)(uec_scene_component* component, uec_bool* out_visible);
+    uec_result (UEC_CALL *get_component_active)(uec_scene_component* component, uec_bool* out_active);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

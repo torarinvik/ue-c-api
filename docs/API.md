@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.90`.
+The current runtime slice is intentionally small and versioned as ABI `1.91`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -90,6 +90,10 @@ invalidates handles and world-owned subscriptions before submitting
 `OpenLevel`; a one-shot callback receives the loaded world handle after
 Unreal's post-load delegate fires. Travel callbacks run on the game thread,
 borrow `user_data`, and are removed on cancellation or module shutdown.
+
+ABI minor 91 adds `get_component_visible` and `get_component_active`, matching
+the existing component setters with game-thread-only readback and deterministic
+boolean outputs.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
