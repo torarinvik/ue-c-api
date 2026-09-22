@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.120`.
+The current runtime slice is intentionally small and versioned as ABI `1.121`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -229,6 +229,9 @@ properties. They accept and return `uec_class*` handles, validate the reflected
 `MetaClass` constraint, and leave soft class references on the path accessors.
 Byte-backed enum properties use the enum kind and declared-value validation in
 the same typed scalar paths as `FEnumProperty`.
+
+ABI minor 121 adds `get_class_property_struct_path`, which returns the
+reflected `UStruct` path for a struct property before its fields are enumerated.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

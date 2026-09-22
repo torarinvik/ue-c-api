@@ -497,6 +497,17 @@ int main(void)
         return 50;
     }
 
+    size_t struct_path_required = 99u;
+    uec_property_kind struct_path_kind = UEC_PROPERTY_STRING;
+    if (api->get_class_property_struct_path(NULL, 0u, NULL, 0u,
+                                            &struct_path_required, &struct_path_kind) !=
+            UEC_RESULT_UNSUPPORTED || struct_path_required != 0u ||
+        struct_path_kind != UEC_PROPERTY_UNKNOWN)
+    {
+        api->release_context(context);
+        return 51;
+    }
+
     const char message[] = "C ABI smoke test";
     const uec_string_view message_view = {message, sizeof(message) - 1u};
     result = api->log(context, message_view);

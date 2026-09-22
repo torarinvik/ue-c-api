@@ -525,3 +525,26 @@
         property->SetObjectPropertyValue_InContainer(object, value);
         return UEC_RESULT_OK;
     }
+
+    uec_result UEC_CALL GetClassPropertyStructPath(uec_class* rawClass,
+                                                   uint32_t propertyIndex,
+                                                   char* buffer,
+                                                   size_t bufferSize,
+                                                   size_t* requiredSize,
+                                                   uec_property_kind* outKind)
+    {
+        if (requiredSize != nullptr) *requiredSize = 0;
+        if (outKind != nullptr) *outKind = UEC_PROPERTY_UNKNOWN;
+        if (requiredSize == nullptr || outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = handle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const FProperty* classProperty = GetClassPropertyAtIndex(klass, propertyIndex);
+        if (classProperty == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const FStructProperty* property = CastField<FStructProperty>(classProperty);
+        if (property == nullptr || property->Struct == nullptr) return UEC_RESULT_UNSUPPORTED;
+        *outKind = UEC_PROPERTY_STRUCT;
+        return CopyFStringToUtf8(property->Struct->GetPathName(), buffer, bufferSize, requiredSize);
+    }

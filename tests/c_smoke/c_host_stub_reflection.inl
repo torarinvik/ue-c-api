@@ -524,6 +524,19 @@ static uec_result UEC_CALL StubSetObjectPropertyClass(
     return UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetClassPropertyStructPath(
+    uec_class* klass, uint32_t propertyIndex, char* buffer, size_t bufferSize,
+    size_t* requiredSize, uec_property_kind* outKind)
+{
+    (void)klass;
+    (void)propertyIndex;
+    (void)buffer;
+    (void)bufferSize;
+    if (requiredSize != NULL) *requiredSize = 0u;
+    if (outKind != NULL) *outKind = UEC_PROPERTY_UNKNOWN;
+    return requiredSize == NULL || outKind == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetClassPropertyFlags(uec_class* klass,
                                                      uint32_t index,
                                                      uint32_t* outFlags)
@@ -629,6 +642,7 @@ static const uec_api g_api = {
     .set_actor_property_class = &StubSetActorPropertyClass,
     .get_object_property_class = &StubGetObjectPropertyClass,
     .set_object_property_class = &StubSetObjectPropertyClass,
+    .get_class_property_struct_path = &StubGetClassPropertyStructPath,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

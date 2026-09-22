@@ -139,6 +139,8 @@ ABI 119 adds reflected struct-field enumeration with field kinds and access
 flags, using the same IncludeSuper ordering as the property metadata calls.
 ABI 120 adds typed hard class-property reads and writes through `uec_class*`
 handles; the reflected `MetaClass` constraint is checked before mutation.
+ABI 121 adds the reflected `UStruct` path for struct properties, allowing a
+consumer to identify the field schema it is about to enumerate.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

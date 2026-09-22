@@ -274,6 +274,7 @@ development; they do not imply a published or runtime-verified release.
   UObject owners with reflected `MetaClass` validation.
 - ABI minor 120 also aligns byte-backed enum kinds and typed writes with
   declared enum-value validation.
+- ABI minor 121 adds reflected struct type paths for schema-aware field access.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and
