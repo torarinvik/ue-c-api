@@ -165,6 +165,8 @@ ABI 125 adds append-only scene-component physics operations for setting linear
 velocity, applying impulses, and applying forces. They require a simulating
 primitive component, game-thread execution, world authority, and finite vector
 arguments.
+ABI 126 adds angular-velocity readback plus angular-velocity and torque writes;
+the readback is game-thread-only, while writes also require world authority.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

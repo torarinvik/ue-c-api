@@ -127,17 +127,25 @@
         return UEC_RESULT_OK;
     }
 
-    static uec_result GetSimulatingPhysicsComponent(FUECSceneComponent* componentHandle,
-                                                     UPrimitiveComponent*& outComponent)
+    static uec_result GetPhysicsComponent(FUECSceneComponent* componentHandle,
+                                          UPrimitiveComponent*& outComponent)
     {
         outComponent = nullptr;
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
         if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
-        const uec_result authorityResult = RequireWorldAuthority(component->GetWorld());
-        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         outComponent = component;
+        return UEC_RESULT_OK;
+    }
+
+    static uec_result GetSimulatingPhysicsComponent(FUECSceneComponent* componentHandle,
+                                                     UPrimitiveComponent*& outComponent)
+    {
+        const uec_result componentResult = GetPhysicsComponent(componentHandle, outComponent);
+        if (componentResult != UEC_RESULT_OK) return componentResult;
+        const uec_result authorityResult = RequireWorldAuthority(outComponent->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         return UEC_RESULT_OK;
     }
 
@@ -182,6 +190,52 @@
         const uec_result result = GetSimulatingPhysicsComponent(componentHandle, component);
         if (result != UEC_RESULT_OK) return result;
         component->AddForce(FVector(force.x, force.y, force.z));
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetComponentPhysicsAngularVelocity(uec_scene_component* rawComponent,
+                                                           uec_vector3* outVelocity)
+    {
+        if (outVelocity != nullptr) *outVelocity = {};
+        if (outVelocity == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetPhysicsComponent(componentHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        const FVector velocity = component->GetPhysicsAngularVelocityInRadians(NAME_None);
+        *outVelocity = {velocity.X, velocity.Y, velocity.Z};
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetComponentPhysicsAngularVelocity(uec_scene_component* rawComponent,
+                                                           uec_vector3 velocity,
+                                                           uec_bool addToCurrent)
+    {
+        if (!IsFiniteVector(velocity) || !IsValidBool(addToCurrent)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetSimulatingPhysicsComponent(componentHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        component->SetPhysicsAngularVelocityInRadians(
+            FVector(velocity.x, velocity.y, velocity.z), addToCurrent != UEC_FALSE, NAME_None);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL ApplyComponentTorque(uec_scene_component* rawComponent,
+                                             uec_vector3 torque,
+                                             uec_bool accelerationChange)
+    {
+        if (!IsFiniteVector(torque) || !IsValidBool(accelerationChange)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetSimulatingPhysicsComponent(componentHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        component->AddTorqueInRadians(FVector(torque.x, torque.y, torque.z), NAME_None,
+                                      accelerationChange != UEC_FALSE);
         return UEC_RESULT_OK;
     }
 

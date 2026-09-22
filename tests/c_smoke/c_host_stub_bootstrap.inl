@@ -111,6 +111,34 @@ static uec_result UEC_CALL StubApplyComponentForce(uec_scene_component* componen
     return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetComponentPhysicsAngularVelocity(
+    uec_scene_component* component,
+    uec_vector3* outVelocity)
+{
+    if (outVelocity != NULL) *outVelocity = (uec_vector3){0.0, 0.0, 0.0};
+    if (outVelocity == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetComponentPhysicsAngularVelocity(
+    uec_scene_component* component,
+    uec_vector3 velocity,
+    uec_bool addToCurrent)
+{
+    (void)velocity;
+    (void)addToCurrent;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubApplyComponentTorque(uec_scene_component* component,
+                                                    uec_vector3 torque,
+                                                    uec_bool accelerationChange)
+{
+    (void)torque;
+    (void)accelerationChange;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetWorldCountByKind(uec_context* context,
                                                    uec_world_kind kind,
                                                    uint32_t* outCount)

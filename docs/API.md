@@ -256,6 +256,9 @@ ABI minor 125 adds append-only scene-component physics operations for setting
 linear velocity, applying impulses, and applying forces. These calls require a
 valid simulating primitive component, run on the game thread, require world
 authority, and reject non-finite vectors or invalid boolean values.
+ABI minor 126 adds angular-velocity readback and authority-gated angular
+velocity and torque operations for simulating primitive components. Angular
+velocities and torques are expressed in radians per second and torque units.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
