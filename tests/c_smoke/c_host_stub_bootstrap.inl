@@ -139,6 +139,16 @@ static uec_result UEC_CALL StubApplyComponentTorque(uec_scene_component* compone
     return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubApplyComponentAngularImpulse(
+    uec_scene_component* component,
+    uec_vector3 impulse,
+    uec_bool velocityChange)
+{
+    (void)impulse;
+    (void)velocityChange;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetWorldCountByKind(uec_context* context,
                                                    uec_world_kind kind,
                                                    uint32_t* outCount)

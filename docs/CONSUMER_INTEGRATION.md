@@ -167,6 +167,8 @@ primitive component, game-thread execution, world authority, and finite vector
 arguments.
 ABI 126 adds angular-velocity readback plus angular-velocity and torque writes;
 the readback is game-thread-only, while writes also require world authority.
+ABI 127 adds angular impulse application in radians to the same authority-gated
+simulating-component physics boundary.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

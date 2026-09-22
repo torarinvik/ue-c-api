@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.126`.
+The current runtime slice is intentionally small and versioned as ABI `1.127`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -259,6 +259,8 @@ authority, and reject non-finite vectors or invalid boolean values.
 ABI minor 126 adds angular-velocity readback and authority-gated angular
 velocity and torque operations for simulating primitive components. Angular
 velocities and torques are expressed in radians per second and torque units.
+ABI minor 127 adds authority-gated angular impulse application in radians for
+the simulated root body.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

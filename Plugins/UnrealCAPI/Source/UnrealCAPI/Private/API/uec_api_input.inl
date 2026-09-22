@@ -239,6 +239,22 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL ApplyComponentAngularImpulse(uec_scene_component* rawComponent,
+                                                     uec_vector3 impulse,
+                                                     uec_bool velocityChange)
+    {
+        if (!IsFiniteVector(impulse) || !IsValidBool(velocityChange)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetSimulatingPhysicsComponent(componentHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        component->AddAngularImpulseInRadians(FVector(impulse.x, impulse.y, impulse.z), NAME_None,
+                                              velocityChange != UEC_FALSE);
+        return UEC_RESULT_OK;
+    }
+
     static UPrimitiveComponent* GetActorPrimitiveRoot(FUECActor* actorHandle)
     {
         AActor* actor = actorHandle == nullptr ? nullptr : actorHandle->Value.Get();

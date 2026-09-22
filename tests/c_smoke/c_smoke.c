@@ -59,7 +59,8 @@ int main(void)
         api->trace_detailed == NULL || api->trace_detailed_filtered == NULL ||
         api->set_component_physics_velocity == NULL || api->apply_component_impulse == NULL ||
         api->apply_component_force == NULL || api->get_component_physics_angular_velocity == NULL ||
-        api->set_component_physics_angular_velocity == NULL || api->apply_component_torque == NULL)
+        api->set_component_physics_angular_velocity == NULL || api->apply_component_torque == NULL ||
+        api->apply_component_angular_impulse == NULL)
     {
         api->release_context(context);
         return 5;
@@ -102,6 +103,8 @@ int main(void)
         api->set_component_physics_angular_velocity(NULL, physics_value, UEC_FALSE) !=
             UEC_RESULT_INVALID_HANDLE ||
         api->apply_component_torque(NULL, physics_value, UEC_FALSE) !=
+            UEC_RESULT_INVALID_HANDLE ||
+        api->apply_component_angular_impulse(NULL, physics_value, UEC_FALSE) !=
             UEC_RESULT_INVALID_HANDLE || angular_velocity.x != 0.0 ||
         angular_velocity.y != 0.0 || angular_velocity.z != 0.0)
     {
