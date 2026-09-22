@@ -18,7 +18,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Timers | Runtime implemented / Unreal integration pending | One-shot and looping game-thread callbacks with cancellation |
 | Class/property metadata | Runtime implemented / Unreal integration pending | Class lookup, inheritance, names, and broad reflected property kinds |
 | Reflected scalar/string reads and writes | Runtime implemented / Unreal integration pending | Bool, integer, floating-point, string, name, and text values |
-| Collision line traces | Runtime implemented / Unreal integration pending | Game-thread single traces with stable channel mapping |
+| Collision line traces | Runtime implemented / Unreal integration pending | Game-thread single traces with stable channel mapping and ignored-actor filtering |
 | Collision sweeps and overlaps | Runtime implemented / Unreal integration pending | World-aligned sphere, box, and capsule queries with bounded actor results |
 | One-shot spatial audio | Runtime implemented / Unreal integration pending | Fire-and-forget `USoundBase` playback at a world location |
 | Basic UMG widgets | Runtime implemented / Unreal integration pending | Create a `UUserWidget` class and add or remove it from the viewport |

@@ -502,6 +502,14 @@ typedef struct uec_api {
     uec_result (UEC_CALL *get_input_action_value)(uec_actor* controller,
                                                   uec_object* action,
                                                   uec_input_action_value* out_value);
+    uec_result (UEC_CALL *line_trace_filtered)(uec_world* world,
+                                               uec_vector3 start,
+                                               uec_vector3 end,
+                                               uec_trace_channel channel,
+                                               uec_bool trace_complex,
+                                               const uec_actor* const* ignored_actors,
+                                               uint32_t ignored_actor_count,
+                                               uec_hit_result* out_hit);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

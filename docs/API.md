@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.38`.
+The current runtime slice is intentionally small and versioned as ABI `1.39`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -122,6 +122,11 @@ attach-component handles are borrowed for the duration of the call.
 `line_trace` maps a small stable C channel enum to Unreal collision channels and
 returns a POD hit record. A hit actor, when present, is returned as an owned
 weak actor handle and must be released with `release_actor`.
+
+`line_trace_filtered` adds a caller-owned array of actor handles to ignore.
+Every ignored handle must be valid for the duration of the call; the array is
+borrowed and is never retained. It also rejects non-finite endpoints before
+submitting the query.
 
 `sweep_trace` applies a world-aligned sphere, box, or capsule shape between two
 points and returns the first blocking hit using the same channel and hit-record
