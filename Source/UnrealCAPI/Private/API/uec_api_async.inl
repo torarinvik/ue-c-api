@@ -22,6 +22,7 @@
         if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
         TombstoneHandle(handle->Header);
         handle->Value.Reset();
+        handle->StrongValue.Reset();
         return UEC_RESULT_OK;
     }
 
