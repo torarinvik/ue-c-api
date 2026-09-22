@@ -6,7 +6,7 @@ build, launch, and exercise the C smoke path.
 
 | Engine | Host platform | Compiler/toolchain | C consumer | Plugin/host status |
 | --- | --- | --- | --- | --- |
-| UE 5.8.2 (latest 5.8.x hotfix; descriptor target 5.8) | Not recorded | Not recorded | C11/C++17 linked host-stub smoke verified | Unreal build pending |
+| UE 5.8.2 target (engine unavailable) | macOS 27 arm64 local workstation | Apple Clang 21.0.0; Python 3.9.6 | C11/C++17 linked host-stub smoke verified | Unreal build pending (`UE_ROOT` unavailable) |
 | UE 5.8.2 (latest 5.8.x hotfix; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 | UE 5.8.2 (latest 5.8.x hotfix; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 
@@ -25,6 +25,11 @@ host project for the current platform. Set `UEC_UNREAL_CONFIGURATION=Shipping`
 to repeat the build in Shipping mode. The script exits with status 2 when the
 engine path is unavailable, so the portable gate remains usable on contributors'
 machines without Unreal installed.
+
+The minimum consumer language standard is C11. The plugin implementation uses
+C++17 through Unreal Build Tool; consumers may compile the public header as C11
+or C++17. The recorded local baseline above is informational until a matching
+UE 5.8.2 installation is available.
 
 When an engine installation is available, record the exact UE patch, host OS,
 architecture, compiler version, build configuration, and whether the check ran
