@@ -45,6 +45,10 @@ with the matching context before releasing consumer state. A callback may
 unsubscribe itself; the bridge suppresses later calls after cancellation and
 during module shutdown.
 
+Skeletal-animation completion subscriptions use the same token rules. Bind only
+while a single animation is playing; the one-shot callback fires when that
+animation stops. Looping playback remains active until the consumer stops it.
+
 ## Handles and shutdown
 
 Handles are opaque bridge references to Unreal objects. Releasing a handle does
@@ -56,6 +60,10 @@ Stop submitting work before unloading the module. Shutdown first rejects new
 API entry points, then cancels timers, subscriptions, queued callbacks, asset
 requests, save requests, and input bindings. Existing handles and callbacks
 must be treated as unusable once shutdown begins.
+
+In networked worlds, call `get_world_net_mode` and `get_world_has_authority`
+before mutating gameplay state. The authority query does not provide
+replication or RPC behavior; those contracts remain explicit future adapters.
 
 ## Verification path
 
