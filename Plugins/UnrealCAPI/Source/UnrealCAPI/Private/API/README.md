@@ -25,7 +25,8 @@ headers and are not compiled as independent translation units.
   ignored-actor filters, and primitive collision settings.
 - `uec_api_gameplay.inl` owns spatial sound, attachment, actor/component utilities,
   configuration, and component-hit subscriptions.
-- `uec_api_input.inl` owns controller input, movement, Enhanced Input mappings, and action bindings.
+- `uec_api_input.inl` owns controller input, movement, Enhanced Input mappings,
+  action bindings, and actor/scene-component physics adapters.
 - `uec_api_async.inl` owns object loading, callback-based travel completion,
   save-game operations, game-thread dispatch, and shutdown cancellation.
 - `uec_api_streaming.inl` owns level streaming state, immediate and callback-
