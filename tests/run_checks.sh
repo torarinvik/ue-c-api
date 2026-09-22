@@ -10,7 +10,7 @@ compat_consumer="$repo_dir/tests/c_smoke/c_compat.c"
 host_stub="$repo_dir/tests/c_smoke/c_host_stub.c"
 gameplay_example="$repo_dir/examples/c_gameplay/c_gameplay.c"
 host_consumer="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_smoke.c"
-host_abi_consumer="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_abi_smoke.c"
+host_abi_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_abi_smoke.c"
 private_dir="$plugin_dir/Source/UnrealCAPI/Private"
 
 git -C "$repo_dir" diff --check

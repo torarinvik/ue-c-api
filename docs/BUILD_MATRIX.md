@@ -30,7 +30,9 @@ as C11 and C++17, links and runs the current and old-minor C consumers against
 an explicit host stub, including the tracked Unreal host's C bootstrap
 translation unit, checks the C gameplay example and Unreal descriptor JSON,
 and enforces the 400–800 line budget for private implementation units and the
-tracked C host smoke translation unit. The host stub proves consumer-side
+tracked primary C host smoke translation unit. Focused probes under
+`Source/UnrealCAPIHost/Private/Tests/` are test fixtures and stay small by
+design. The host stub proves consumer-side
 bootstrap, table calls, and the append-only prefix;
 the CI matrix also repeats those linked consumers with AddressSanitizer and
 UndefinedBehaviorSanitizer. These checks do not compile the Unreal module or
