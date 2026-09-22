@@ -164,6 +164,8 @@ development; they do not imply a published or runtime-verified release.
 - Typed handle validation now checks the underlying weak object reference, so
   metadata queries reject destroyed or unloaded worlds, actors, components,
   classes, and objects consistently.
+- World, player, timer, and streaming outputs now clear before validation,
+  including required sizes for bounded world names and streaming package names.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

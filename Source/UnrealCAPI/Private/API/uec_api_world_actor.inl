@@ -1,5 +1,6 @@
     uec_result UEC_CALL GetCapabilities(uec_context* rawContext, uec_capabilities* outCapabilities)
     {
+        if (outCapabilities != nullptr) *outCapabilities = 0;
         if (outCapabilities == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         *outCapabilities = UEC_CAPABILITY_BOOTSTRAP | UEC_CAPABILITY_LOGGING |
@@ -63,10 +64,10 @@
 
     uec_result UEC_CALL GetDefaultWorld(uec_context* rawContext, uec_world** outWorld)
     {
+        if (outWorld != nullptr) *outWorld = nullptr;
         if (outWorld == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outWorld = nullptr;
         if (GEngine == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         for (const FWorldContext& worldContext : GEngine->GetWorldContexts())
         {
@@ -95,10 +96,10 @@
 
     uec_result UEC_CALL GetWorldCount(uec_context* rawContext, uint32_t* outCount)
     {
+        if (outCount != nullptr) *outCount = 0;
         if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outCount = 0;
         if (GEngine == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         for (const FWorldContext& worldContext : GEngine->GetWorldContexts())
         {
@@ -114,10 +115,10 @@
 
     uec_result UEC_CALL GetWorldAt(uec_context* rawContext, uint32_t index, uec_world** outWorld)
     {
+        if (outWorld != nullptr) *outWorld = nullptr;
         if (outWorld == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outWorld = nullptr;
         if (GEngine == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         uint32_t current = 0;
         for (const FWorldContext& worldContext : GEngine->GetWorldContexts())
@@ -149,6 +150,7 @@
 
     uec_result UEC_CALL GetWorldKind(uec_world* rawWorld, uec_world_kind* outKind)
     {
+        if (outKind != nullptr) *outKind = UEC_WORLD_KIND_UNKNOWN;
         if (outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* world = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(world)) return UEC_RESULT_INVALID_HANDLE;
@@ -158,6 +160,7 @@
 
     uec_result UEC_CALL GetWorldPIEInstance(uec_world* rawWorld, int32_t* outInstance)
     {
+        if (outInstance != nullptr) *outInstance = -1;
         if (outInstance == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* world = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(world)) return UEC_RESULT_INVALID_HANDLE;
@@ -167,6 +170,7 @@
 
     uec_result UEC_CALL GetWorldNetMode(uec_world* rawWorld, uec_net_mode* outMode)
     {
+        if (outMode != nullptr) *outMode = UEC_NET_MODE_UNKNOWN;
         if (outMode == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -186,6 +190,7 @@
 
     uec_result UEC_CALL GetWorldHasAuthority(uec_world* rawWorld, uec_bool* outHasAuthority)
     {
+        if (outHasAuthority != nullptr) *outHasAuthority = UEC_FALSE;
         if (outHasAuthority == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
@@ -200,11 +205,11 @@
 
     uec_result UEC_CALL GetWorldGameMode(uec_world* rawWorld, uec_object** outGameMode)
     {
+        if (outGameMode != nullptr) *outGameMode = nullptr;
         if (outGameMode == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outGameMode = nullptr;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         AGameModeBase* gameMode = world->GetAuthGameMode();
@@ -217,11 +222,11 @@
 
     uec_result UEC_CALL GetWorldGameState(uec_world* rawWorld, uec_object** outGameState)
     {
+        if (outGameState != nullptr) *outGameState = nullptr;
         if (outGameState == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outGameState = nullptr;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         AGameStateBase* gameState = world->GetGameState();
@@ -234,11 +239,11 @@
 
     uec_result UEC_CALL GetStreamingLevelCount(uec_world* rawWorld, uint32_t* outCount)
     {
+        if (outCount != nullptr) *outCount = 0;
         if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outCount = 0;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         const TArray<ULevelStreaming*>& levels = world->GetStreamingLevels();
@@ -255,14 +260,15 @@
                                             uec_bool* outLoaded,
                                             uec_bool* outVisible)
     {
+        if (packageRequiredSize != nullptr) *packageRequiredSize = 0;
+        if (outLoaded != nullptr) *outLoaded = UEC_FALSE;
+        if (outVisible != nullptr) *outVisible = UEC_FALSE;
         if (packageRequiredSize == nullptr || outLoaded == nullptr || outVisible == nullptr) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outLoaded = UEC_FALSE;
-        *outVisible = UEC_FALSE;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         const TArray<ULevelStreaming*>& levels = world->GetStreamingLevels();
@@ -306,6 +312,7 @@
                                      size_t bufferSize,
                                      size_t* requiredSize)
     {
+        if (requiredSize != nullptr) *requiredSize = 0;
         auto* handle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -374,11 +381,11 @@
     uec_result UEC_CALL GetWorldGameInstance(uec_world* rawWorld,
                                              uec_object** outGameInstance)
     {
+        if (outGameInstance != nullptr) *outGameInstance = nullptr;
         if (outGameInstance == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outGameInstance = nullptr;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         UGameInstance* gameInstance = world->GetGameInstance();
@@ -391,11 +398,11 @@
 
     uec_result UEC_CALL GetFirstPlayerController(uec_world* rawWorld, uec_actor** outController)
     {
+        if (outController != nullptr) *outController = nullptr;
         if (outController == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outController = nullptr;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         APlayerController* controller = UGameplayStatics::GetPlayerController(world, 0);
@@ -409,13 +416,13 @@
                                             uint32_t playerIndex,
                                             uec_actor** outController)
     {
+        if (outController != nullptr) *outController = nullptr;
         if (outController == nullptr || playerIndex > static_cast<uint32>(INT32_MAX)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        *outController = nullptr;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         APlayerController* controller = UGameplayStatics::GetPlayerController(
@@ -442,6 +449,7 @@
                                  void* userData,
                                  uint64_t* outTimerId)
     {
+        if (outTimerId != nullptr) *outTimerId = 0;
         if (outTimerId == nullptr || callback == nullptr || !IsValidBool(looping)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -509,6 +517,7 @@
                                            void* userData,
                                            uint64_t* outSubscriptionId)
     {
+        if (outSubscriptionId != nullptr) *outSubscriptionId = 0;
         if (callback == nullptr || outSubscriptionId == nullptr)
         {
             return UEC_RESULT_INVALID_ARGUMENT;
