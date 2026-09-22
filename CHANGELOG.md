@@ -15,6 +15,7 @@ development; they do not imply a published or runtime-verified release.
 - A bounded zero-argument reflected actor-function invocation path.
 - Stable collision-channel line traces with POD hit results.
 - Synchronous weak UObject loading with names and type checks.
+- Asynchronous streamable object loading with cancellation and game-thread callbacks.
 - Reflected actor property writes and reads for supported scalar, string, name,
   and text types.
 - C consumer source and public math-type layout assertions.

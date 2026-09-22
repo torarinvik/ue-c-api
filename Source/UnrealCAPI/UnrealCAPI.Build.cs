@@ -15,7 +15,8 @@ public class UnrealCAPI : ModuleRules
         {
             "Projects",
             "Engine",
-            "CoreUObject"
+            "CoreUObject",
+            "AssetManager"
         });
 
         // Keep the first ABI slice usable by packaged runtime builds. Editor-only

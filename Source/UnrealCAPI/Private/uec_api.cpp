@@ -1,7 +1,9 @@
 #include "uec_api.h"
 
 #include "CoreMinimal.h"
+#include "Engine/AssetManager.h"
 #include "Engine/Engine.h"
+#include "Engine/StreamableManager.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Components/SceneComponent.h"
@@ -41,6 +43,15 @@ namespace
     };
     struct FUECClass final { TWeakObjectPtr<UClass> Value; };
     struct FUECObject final { TWeakObjectPtr<UObject> Value; };
+    struct FUECObjectLoadRequest final
+    {
+        uint64 Id = 0;
+        FSoftObjectPath Path;
+        TSharedPtr<FStreamableHandle> Handle;
+        uec_object_load_callback Callback = nullptr;
+        void* UserData = nullptr;
+        bool Cancelled = false;
+    };
 
     FCriticalSection GHandleMutex;
     TSet<const FUECContext*> GContexts;
@@ -50,6 +61,8 @@ namespace
     TMap<uint64, TSharedPtr<FUECTimerState>> GTimers;
     TSet<const FUECClass*> GClasses;
     TSet<const FUECObject*> GObjects;
+    TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
+    uint64 GNextObjectLoadRequestId = 1;
     uint64 GNextTimerId = 1;
 
     static bool IsValidContext(uec_context* rawContext)
@@ -177,7 +190,7 @@ namespace
         *outCapabilities = UEC_CAPABILITY_BOOTSTRAP | UEC_CAPABILITY_LOGGING |
             UEC_CAPABILITY_WORLD | UEC_CAPABILITY_ACTORS | UEC_CAPABILITY_COMPONENTS |
             UEC_CAPABILITY_TIMERS | UEC_CAPABILITY_CLASS_METADATA | UEC_CAPABILITY_REFLECTION |
-            UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS;
+            UEC_CAPABILITY_COLLISION | UEC_CAPABILITY_ASSETS | UEC_CAPABILITY_ASYNC_ASSETS;
         return UEC_RESULT_OK;
     }
 
@@ -1045,6 +1058,80 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL RequestObjectLoad(uec_context* rawContext,
+                                           uec_string_view objectPath,
+                                           uec_object_load_callback callback,
+                                           void* userData,
+                                           uint64_t* outRequestId)
+    {
+        if (callback == nullptr || outRequestId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        const FString pathString = ToFString(objectPath);
+        if (pathString.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
+        const FSoftObjectPath path(pathString);
+        if (!path.IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
+
+        const uint64 requestId = GNextObjectLoadRequestId++;
+        auto request = MakeShared<FUECObjectLoadRequest>();
+        request->Id = requestId;
+        request->Path = path;
+        request->Callback = callback;
+        request->UserData = userData;
+        TWeakPtr<FUECObjectLoadRequest> weakRequest = request;
+        FStreamableDelegate completed = FStreamableDelegate::CreateLambda([weakRequest]()
+        {
+            TSharedPtr<FUECObjectLoadRequest> current = weakRequest.Pin();
+            if (!current.IsValid() || current->Cancelled || current->Callback == nullptr) return;
+            UObject* loadedObject = current->Path.ResolveObject();
+            uec_object* objectHandle = nullptr;
+            uec_result result = loadedObject == nullptr ? UEC_RESULT_INTERNAL_ERROR : UEC_RESULT_OK;
+            if (loadedObject != nullptr)
+            {
+                auto* handle = new FUECObject();
+                handle->Value = loadedObject;
+                {
+                    FScopeLock lock(&GHandleMutex);
+                    GObjects.Add(handle);
+                }
+                objectHandle = reinterpret_cast<uec_object*>(handle);
+            }
+            GObjectLoadRequests.Remove(current->Id);
+            current->Callback(current->Id, result, objectHandle, current->UserData);
+        });
+        request->Handle = UAssetManager::Get().GetStreamableManager().RequestAsyncLoad(path, completed);
+        if (!request->Handle.IsValid()) return UEC_RESULT_INTERNAL_ERROR;
+        GObjectLoadRequests.Add(requestId, request);
+        *outRequestId = requestId;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL CancelObjectLoad(uec_context* rawContext, uint64_t requestId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        TSharedPtr<FUECObjectLoadRequest>* requestPtr = GObjectLoadRequests.Find(requestId);
+        if (requestPtr == nullptr || !requestPtr->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
+        TSharedPtr<FUECObjectLoadRequest> request = *requestPtr;
+        request->Cancelled = true;
+        if (request->Handle.IsValid()) request->Handle->CancelHandle();
+        GObjectLoadRequests.Remove(requestId);
+        return UEC_RESULT_OK;
+    }
+
+    static void CancelAllObjectLoads()
+    {
+        for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
+        {
+            if (pair.Value.IsValid())
+            {
+                pair.Value->Cancelled = true;
+                if (pair.Value->Handle.IsValid()) pair.Value->Handle->CancelHandle();
+            }
+        }
+        GObjectLoadRequests.Empty();
+    }
+
     const uec_api GApi = {
         sizeof(uec_api), UEC_ABI_MAJOR, UEC_ABI_MINOR,
         &GetCapabilities, &GetLastError, &Log, &ReleaseContext,
@@ -1059,7 +1146,7 @@ namespace
         &GetActorPropertyValue, &GetActorPropertyString,
         &SetActorPropertyValue, &SetActorPropertyString, &LineTrace,
         &InvokeActorFunction, &LoadObjectHandle, &ReleaseObject,
-        &GetObjectName, &ObjectIsA
+        &GetObjectName, &ObjectIsA, &RequestObjectLoad, &CancelObjectLoad
     };
 }
 
@@ -1075,6 +1162,7 @@ public:
     void ShutdownModule() override
     {
         ClearAllTimers();
+        CancelAllObjectLoads();
         ClearAllHandles();
         UE_LOG(LogTemp, Log, TEXT("%s runtime module stopped"), UTF8_TO_TCHAR(kModuleName));
     }

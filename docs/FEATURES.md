@@ -20,6 +20,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Reflected scalar/string reads and writes | Runtime implemented / Unreal integration pending | Bool, integer, floating-point, string, name, and text values |
 | Collision line traces | Runtime implemented / Unreal integration pending | Game-thread single traces with stable channel mapping |
 | Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, and type checks |
+| Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, and game-thread callbacks |
 | Reflection and Blueprint calls | Partial | Property writes and zero-argument calls are available; typed calls remain |
 | Input, collision, movement, camera, UI, audio, save data | Planned | No public functions yet |
 | Async loading, travel, streaming | Planned | No public functions yet |

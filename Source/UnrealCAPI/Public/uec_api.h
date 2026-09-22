@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 13u
+#define UEC_ABI_MINOR 14u
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,7 +63,8 @@ enum {
     UEC_CAPABILITY_TIMERS = UINT64_C(1) << 6,
     UEC_CAPABILITY_CLASS_METADATA = UINT64_C(1) << 7,
     UEC_CAPABILITY_COLLISION = UINT64_C(1) << 8,
-    UEC_CAPABILITY_ASSETS = UINT64_C(1) << 9
+    UEC_CAPABILITY_ASSETS = UINT64_C(1) << 9,
+    UEC_CAPABILITY_ASYNC_ASSETS = UINT64_C(1) << 10
 };
 
 typedef struct uec_context uec_context;
@@ -148,6 +149,10 @@ typedef struct uec_hit_result {
 } uec_hit_result;
 
 typedef void (UEC_CALL *uec_timer_callback)(uint64_t timer_id, void* user_data);
+typedef void (UEC_CALL *uec_object_load_callback)(uint64_t request_id,
+                                                  uec_result result,
+                                                  uec_object* object,
+                                                  void* user_data);
 
 typedef struct uec_api {
     uint32_t struct_size;
@@ -266,6 +271,13 @@ typedef struct uec_api {
     uec_result (UEC_CALL *object_is_a)(uec_object* object,
                                        uec_string_view class_path,
                                        uec_bool* out_is_a);
+    uec_result (UEC_CALL *request_object_load)(uec_context* context,
+                                               uec_string_view object_path,
+                                               uec_object_load_callback callback,
+                                               void* user_data,
+                                               uint64_t* out_request_id);
+    uec_result (UEC_CALL *cancel_object_load)(uec_context* context,
+                                              uint64_t request_id);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

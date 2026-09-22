@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.13`.
+The current runtime slice is intentionally small and versioned as ABI `1.14`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -73,6 +73,12 @@ argument and async completion ABI is available.
 returns a weak opaque handle. The handle does not keep the UObject alive; calls
 after Unreal unloads or destroys it return `UEC_RESULT_INVALID_HANDLE`. Object
 names and `object_is_a` checks are available on valid handles.
+
+`request_object_load` uses Unreal's streamable asset manager and invokes the C
+callback on the game thread. The callback owns any returned object handle and
+must release it. `user_data` is borrowed until completion or cancellation;
+`cancel_object_load` prevents the callback from being delivered when called
+before completion. Outstanding requests are cancelled during module shutdown.
 
 `line_trace` maps a small stable C channel enum to Unreal collision channels and
 returns a POD hit record. A hit actor, when present, is returned as an owned
