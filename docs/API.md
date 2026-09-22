@@ -24,6 +24,13 @@ returns `UEC_RESULT_WRONG_THREAD` for calls made from another thread. Queued
 work is available through `run_on_game_thread`, which invokes a borrowed
 callback on the game thread with cancellation and a bounded queue.
 
+Module teardown enters a shutdown gate before canceling timers, queued work,
+asset requests, save requests, and input bindings. New `uec_get_api` calls
+return `UEC_RESULT_SHUTTING_DOWN`, and existing handles are rejected while the
+gate is active. Consumers must stop submitting work and release their context
+before unloading the plugin; callbacks already pending at teardown are
+suppressed.
+
 Strings are UTF-8 views with an explicit byte length. The caller owns the bytes
 for the duration of a call; the bridge does not retain them. Transforms use
 double-precision values in Unreal's world units and the Unreal quaternion

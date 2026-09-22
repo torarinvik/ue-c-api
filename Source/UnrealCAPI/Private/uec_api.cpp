@@ -107,6 +107,7 @@ namespace
     };
 
     FCriticalSection GHandleMutex;
+    bool GShuttingDown = false;
     TSet<const FUECContext*> GContexts;
     TSet<const FUECWorld*> GWorlds;
     TSet<const FUECActor*> GActors;
@@ -130,37 +131,37 @@ namespace
     {
         const auto* context = reinterpret_cast<const FUECContext*>(rawContext);
         FScopeLock lock(&GHandleMutex);
-        return context != nullptr && GContexts.Contains(context) && !context->bReleased;
+        return context != nullptr && !GShuttingDown && GContexts.Contains(context) && !context->bReleased;
     }
 
     static bool IsValidWorld(const FUECWorld* world)
     {
         FScopeLock lock(&GHandleMutex);
-        return world != nullptr && GWorlds.Contains(world);
+        return world != nullptr && !GShuttingDown && GWorlds.Contains(world);
     }
 
     static bool IsValidActor(const FUECActor* actor)
     {
         FScopeLock lock(&GHandleMutex);
-        return actor != nullptr && GActors.Contains(actor);
+        return actor != nullptr && !GShuttingDown && GActors.Contains(actor);
     }
 
     static bool IsValidComponent(const FUECSceneComponent* component)
     {
         FScopeLock lock(&GHandleMutex);
-        return component != nullptr && GComponents.Contains(component);
+        return component != nullptr && !GShuttingDown && GComponents.Contains(component);
     }
 
     static bool IsValidClass(const FUECClass* klass)
     {
         FScopeLock lock(&GHandleMutex);
-        return klass != nullptr && GClasses.Contains(klass);
+        return klass != nullptr && !GShuttingDown && GClasses.Contains(klass);
     }
 
     static bool IsValidObject(const FUECObject* object)
     {
         FScopeLock lock(&GHandleMutex);
-        return object != nullptr && GObjects.Contains(object);
+        return object != nullptr && !GShuttingDown && GObjects.Contains(object);
     }
 
     static uec_property_kind GetPropertyKind(const FProperty* property)
@@ -414,12 +415,20 @@ class FUnrealCAPIModule final : public IModuleInterface
 public:
     void StartupModule() override
     {
+        {
+            FScopeLock lock(&GHandleMutex);
+            GShuttingDown = false;
+        }
         UE_LOG(LogTemp, Log, TEXT("%s runtime module started (ABI %u.%u)"),
             UTF8_TO_TCHAR(kModuleName), UEC_ABI_MAJOR, UEC_ABI_MINOR);
     }
 
     void ShutdownModule() override
     {
+        {
+            FScopeLock lock(&GHandleMutex);
+            GShuttingDown = true;
+        }
         ClearAllTimers();
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
@@ -449,12 +458,16 @@ UEC_API uec_result UEC_CALL uec_get_api(uint32_t requestedMajor,
         return UEC_RESULT_UNSUPPORTED;
     }
 
-    auto* context = new FUECContext();
     {
         FScopeLock lock(&GHandleMutex);
+        if (GShuttingDown)
+        {
+            return UEC_RESULT_SHUTTING_DOWN;
+        }
+        auto* context = new FUECContext();
         GContexts.Add(context);
+        *outApi = &GApi;
+        *outContext = reinterpret_cast<uec_context*>(context);
     }
-    *outApi = &GApi;
-    *outContext = reinterpret_cast<uec_context*>(context);
     return UEC_RESULT_OK;
 }
