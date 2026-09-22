@@ -292,6 +292,8 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 124 adds size-tagged detailed line/sweep hit readback through
   `trace_detailed` and `trace_detailed_filtered`, and advertises
   `UEC_CAPABILITY_COLLISION_DETAILS`.
+- ABI minor 125 adds scene-component physics velocity, impulse, and force
+  operations with game-thread, simulating-component, and authority validation.
 - Adds `UEC_CAPABILITY_REFLECTION_CONTAINERS` so consumers can gate container metadata and set mutation explicitly.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.

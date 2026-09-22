@@ -30,7 +30,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Camera field of view | Runtime implemented / Unreal integration pending | Read and write perspective FOV on camera scene components |
 | Save-game slots and object properties | Runtime implemented / Unreal integration pending | Create, load, save, delete, edit supported reflected save-object fields, bounded async completion, and game-INI string/integer/boolean configuration access |
 | Game-thread dispatch | Runtime implemented / Unreal integration pending | Queue and cancel borrowed callbacks from worker threads; bounded at 1024 pending requests |
-| Pawn and character movement | Runtime implemented / Unreal integration pending | Add world-space pawn input and character jump state |
+| Pawn and character movement | Runtime implemented / Unreal integration pending | Add world-space pawn input and character jump state; ABI 125 scene-component velocity, impulse, and force operations |
 | Mesh presentation | Runtime implemented / Unreal integration pending | Assign loaded static or skeletal meshes to compatible components |
 | Animation and material parameters | Runtime implemented / Unreal integration pending | Play/stop skeletal assets, tokenized one-shot completion callbacks, and scalar/vector material parameters |
 | Explicit object retention | Runtime implemented / Unreal integration pending | Promote a weak object handle to a GC-tracked strong handle |

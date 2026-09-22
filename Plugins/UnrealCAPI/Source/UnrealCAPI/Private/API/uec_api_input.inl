@@ -127,6 +127,64 @@
         return UEC_RESULT_OK;
     }
 
+    static uec_result GetSimulatingPhysicsComponent(FUECSceneComponent* componentHandle,
+                                                     UPrimitiveComponent*& outComponent)
+    {
+        outComponent = nullptr;
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
+        if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
+        const uec_result authorityResult = RequireWorldAuthority(component->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
+        outComponent = component;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetComponentPhysicsVelocity(uec_scene_component* rawComponent,
+                                                    uec_vector3 velocity,
+                                                    uec_bool addToCurrent)
+    {
+        if (!IsFiniteVector(velocity) || !IsValidBool(addToCurrent)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetSimulatingPhysicsComponent(componentHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        const FVector value(velocity.x, velocity.y, velocity.z);
+        component->SetPhysicsLinearVelocity(
+            addToCurrent != UEC_FALSE ? component->GetPhysicsLinearVelocity() + value : value);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL ApplyComponentImpulse(uec_scene_component* rawComponent,
+                                              uec_vector3 impulse,
+                                              uec_bool velocityChange)
+    {
+        if (!IsFiniteVector(impulse) || !IsValidBool(velocityChange)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetSimulatingPhysicsComponent(componentHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        component->AddImpulse(FVector(impulse.x, impulse.y, impulse.z), NAME_None,
+                              velocityChange != UEC_FALSE);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL ApplyComponentForce(uec_scene_component* rawComponent, uec_vector3 force)
+    {
+        if (!IsFiniteVector(force)) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetSimulatingPhysicsComponent(componentHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        component->AddForce(FVector(force.x, force.y, force.z));
+        return UEC_RESULT_OK;
+    }
+
     static UPrimitiveComponent* GetActorPrimitiveRoot(FUECActor* actorHandle)
     {
         AActor* actor = actorHandle == nullptr ? nullptr : actorHandle->Value.Get();

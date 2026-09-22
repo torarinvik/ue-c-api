@@ -702,6 +702,9 @@ static const uec_api g_api = {
     .set_object_property_set_element_value = &StubSetObjectPropertySetElementValue,
     .trace_detailed = &StubTraceDetailed,
     .trace_detailed_filtered = &StubTraceDetailedFiltered,
+    .set_component_physics_velocity = &StubSetComponentPhysicsVelocity,
+    .apply_component_impulse = &StubApplyComponentImpulse,
+    .apply_component_force = &StubApplyComponentForce,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

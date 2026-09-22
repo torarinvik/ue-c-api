@@ -161,6 +161,10 @@ handles until the consumer releases them; both calls run on the game thread, and
 the filtered variant rejects invalid ignored-actor handles. They return
 `UEC_RESULT_UNSUPPORTED` when the bridge does not advertise
 `UEC_CAPABILITY_COLLISION_DETAILS`.
+ABI 125 adds append-only scene-component physics operations for setting linear
+velocity, applying impulses, and applying forces. They require a simulating
+primitive component, game-thread execution, world authority, and finite vector
+arguments.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

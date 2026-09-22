@@ -85,6 +85,31 @@ static uec_result UEC_CALL StubGetRuntimeStats(uec_context* context,
     return context == &g_context ? UEC_RESULT_OK : UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubSetComponentPhysicsVelocity(uec_scene_component* component,
+                                                           uec_vector3 velocity,
+                                                           uec_bool addToCurrent)
+{
+    (void)velocity;
+    (void)addToCurrent;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubApplyComponentImpulse(uec_scene_component* component,
+                                                     uec_vector3 impulse,
+                                                     uec_bool velocityChange)
+{
+    (void)impulse;
+    (void)velocityChange;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubApplyComponentForce(uec_scene_component* component,
+                                                    uec_vector3 force)
+{
+    (void)force;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetWorldCountByKind(uec_context* context,
                                                    uec_world_kind kind,
                                                    uint32_t* outCount)

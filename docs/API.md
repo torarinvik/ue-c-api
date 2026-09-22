@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.124`.
+The current runtime slice is intentionally small and versioned as ABI `1.125`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -251,6 +251,11 @@ before query validation and returns the base hit, impact point and normal, trace
 penetration depth, item and face indices, and a separately owned component
 handle when Unreal reports one. Both calls are game-thread-only; the filtered
 variant validates and ignores the supplied actor handles.
+
+ABI minor 125 adds append-only scene-component physics operations for setting
+linear velocity, applying impulses, and applying forces. These calls require a
+valid simulating primitive component, run on the game thread, require world
+authority, and reject non-finite vectors or invalid boolean values.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

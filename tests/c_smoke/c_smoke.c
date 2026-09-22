@@ -55,7 +55,9 @@ int main(void)
         (capabilities & UEC_CAPABILITY_STREAMING) == 0 ||
         (capabilities & UEC_CAPABILITY_REFLECTION_CONTAINERS) == 0 ||
         (capabilities & UEC_CAPABILITY_COLLISION_DETAILS) == 0 ||
-        api->trace_detailed == NULL || api->trace_detailed_filtered == NULL)
+        api->trace_detailed == NULL || api->trace_detailed_filtered == NULL ||
+        api->set_component_physics_velocity == NULL || api->apply_component_impulse == NULL ||
+        api->apply_component_force == NULL)
     {
         api->release_context(context);
         return 5;
@@ -79,6 +81,17 @@ int main(void)
     {
         api->release_context(context);
         return 54;
+    }
+
+    const uec_vector3 physics_value = {0.0, 0.0, 0.0};
+    if (api->set_component_physics_velocity(NULL, physics_value, UEC_FALSE) !=
+            UEC_RESULT_INVALID_HANDLE ||
+        api->apply_component_impulse(NULL, physics_value, UEC_FALSE) !=
+            UEC_RESULT_INVALID_HANDLE ||
+        api->apply_component_force(NULL, physics_value) != UEC_RESULT_INVALID_HANDLE)
+    {
+        api->release_context(context);
+        return 55;
     }
 
     uec_runtime_stats stats = {sizeof(stats), 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};

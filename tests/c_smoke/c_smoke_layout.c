@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details A
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 124u, "ABI minor must include collision details");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 125u, "ABI minor must include component physics operations");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
@@ -410,3 +410,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, trace_detailed) >
 UEC_TEST_ASSERT(offsetof(uec_api, trace_detailed_filtered) >
                    offsetof(uec_api, trace_detailed),
                "filtered detailed collision tracing must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_component_physics_velocity) >
+                   offsetof(uec_api, trace_detailed_filtered),
+               "component physics velocity must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, apply_component_impulse) >
+                   offsetof(uec_api, set_component_physics_velocity),
+               "component physics impulse must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, apply_component_force) >
+                   offsetof(uec_api, apply_component_impulse),
+               "component physics force must append to uec_api");
