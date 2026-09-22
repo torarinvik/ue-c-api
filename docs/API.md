@@ -38,6 +38,11 @@ collision, retained-object, identity, configuration, widget, audio, camera,
 animation, object, save-game, path-query, and queued-request adapters.
 A failed call with a non-null output pointer therefore leaves a null handle,
 `UEC_FALSE`, zero, or an empty value instead of preserving stale caller data.
+The bridge validates null/count combinations, structure sizes, and opaque
+handle membership, but it cannot safely probe arbitrary non-null caller-owned
+pointers or verify their actual allocation size. Callers must ensure every
+buffer and array covers its declared capacity or count; an invalid address or
+undersized allocation can fault the process.
 
 `get_runtime_stats` is a game-thread-only drain diagnostic. It reports the
 number of registered subscriptions, pending asynchronous or game-thread

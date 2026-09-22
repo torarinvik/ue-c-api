@@ -365,6 +365,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Changed
 
+- API and consumer documentation now distinguish bridge-validated null/count
+  and opaque-handle checks from caller-owned pointer validity and allocation
+  sizes, which an in-process C ABI cannot safely probe.
 - Local checks accept `CC` and `CXX` compiler overrides and reject language
   extensions, including C-only constructs when compiling the consumer as C++.
 - Nested reflected-struct field readers and writers now resolve dotted paths

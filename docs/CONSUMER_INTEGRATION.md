@@ -48,6 +48,13 @@ all are zero. ABI 87 appends `live_contexts`, `live_worlds`, `live_actors`,
 `struct_size` to read them and use the original prefix when targeting older
 bridges.
 
+The bridge checks null/count consistency, size-tagged structures, and opaque
+handle membership. It cannot determine whether an arbitrary non-null pointer
+from the caller is readable or whether its allocation is as large as the
+declared buffer capacity or element count. Keep every caller-owned buffer and
+array valid for the full call and large enough for the sizes you provide;
+invalid memory can crash the Unreal process.
+
 The ABI 83 `get_world_count_by_kind` and `get_world_at_by_kind` entries expose
 explicit editor, PIE, game-preview, inactive, and game-world selection. The
 original Game/PIE lookup remains the convenience path for active gameplay.
