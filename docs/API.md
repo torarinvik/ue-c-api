@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.24`.
+The current runtime slice is intentionally small and versioned as ABI `1.25`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -8,7 +8,8 @@ Unreal headers and C++ types stay inside the plugin.
 `get_capabilities` reports the feature bits present in the loaded bridge. The
 current implementation reports bootstrap, logging, world, actor, component,
 timer, reflection, collision, asset loading, player flow, input, physics,
-collision-query, audio, UI, camera, save-data, and game-thread dispatch adapters.
+collision-query, audio, UI, camera, save-data, game-thread dispatch, and
+movement adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed active
 handle registries. A world or actor handle is a bridge-owned reference to an
@@ -139,6 +140,12 @@ can cancel a queued callback from any thread; cancellation wins if it races
 with dispatch. The callback owns any handles it receives and must not retain
 the borrowed user pointer after it returns. Module shutdown cancels queued
 callbacks without invoking them.
+
+`add_pawn_movement_input` forwards a world-space direction and scale to an
+`APawn`; base pawns only accumulate input, while movement-capable subclasses
+consume it. `jump_character` and `stop_character_jumping` require an
+`ACharacter` handle and map to its built-in jump state. These calls are
+game-thread-only.
 
 ## Verification
 

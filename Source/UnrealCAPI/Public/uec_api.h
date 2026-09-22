@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 24u
+#define UEC_ABI_MINOR 25u
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,7 +74,8 @@ enum {
     UEC_CAPABILITY_UI = UINT64_C(1) << 17,
     UEC_CAPABILITY_CAMERA = UINT64_C(1) << 18,
     UEC_CAPABILITY_SAVE_DATA = UINT64_C(1) << 19,
-    UEC_CAPABILITY_THREADING = UINT64_C(1) << 20
+    UEC_CAPABILITY_THREADING = UINT64_C(1) << 20,
+    UEC_CAPABILITY_MOVEMENT = UINT64_C(1) << 21
 };
 
 typedef struct uec_context uec_context;
@@ -400,6 +401,12 @@ typedef struct uec_api {
                                               uint64_t* out_request_id);
     uec_result (UEC_CALL *cancel_game_thread_request)(uec_context* context,
                                                       uint64_t request_id);
+    uec_result (UEC_CALL *add_pawn_movement_input)(uec_actor* pawn,
+                                                   uec_vector3 world_direction,
+                                                   double scale,
+                                                   uec_bool force);
+    uec_result (UEC_CALL *jump_character)(uec_actor* character);
+    uec_result (UEC_CALL *stop_character_jumping)(uec_actor* character);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

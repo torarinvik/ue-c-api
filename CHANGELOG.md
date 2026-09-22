@@ -28,6 +28,7 @@ development; they do not imply a published or runtime-verified release.
 - Generic reflected object property access plus synchronous save-game slot create,
   load, save, and delete operations.
 - Cancellable game-thread callback dispatch for worker-thread callers.
+- Pawn movement-input forwarding plus character jump and stop-jump adapters.
 - Reflected actor property writes and reads for supported scalar, string, name,
   and text types.
 - C consumer source and public math-type layout assertions.

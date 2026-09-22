@@ -8,6 +8,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SaveGame.h"
 #include "InputCoreTypes.h"
@@ -267,7 +268,7 @@ namespace
         *outCapabilities |= UEC_CAPABILITY_LEVEL_TRAVEL | UEC_CAPABILITY_PLAYER_FLOW |
             UEC_CAPABILITY_INPUT | UEC_CAPABILITY_PHYSICS | UEC_CAPABILITY_COLLISION_QUERIES |
             UEC_CAPABILITY_AUDIO | UEC_CAPABILITY_UI | UEC_CAPABILITY_CAMERA |
-            UEC_CAPABILITY_SAVE_DATA | UEC_CAPABILITY_THREADING;
+            UEC_CAPABILITY_SAVE_DATA | UEC_CAPABILITY_THREADING | UEC_CAPABILITY_MOVEMENT;
         return UEC_RESULT_OK;
     }
 
@@ -1867,6 +1868,49 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL AddPawnMovementInput(uec_actor* rawPawn,
+                                             uec_vector3 worldDirection,
+                                             double scale,
+                                             uec_bool force)
+    {
+        auto* pawnHandle = reinterpret_cast<FUECActor*>(rawPawn);
+        if (!IsValidActor(pawnHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!FMath::IsFinite(worldDirection.x) || !FMath::IsFinite(worldDirection.y) ||
+            !FMath::IsFinite(worldDirection.z) || !FMath::IsFinite(scale)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        APawn* pawn = Cast<APawn>(pawnHandle->Value.Get());
+        if (pawn == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        pawn->AddMovementInput(
+            FVector(worldDirection.x, worldDirection.y, worldDirection.z),
+            static_cast<float>(scale),
+            force != UEC_FALSE);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL JumpCharacter(uec_actor* rawCharacter)
+    {
+        auto* characterHandle = reinterpret_cast<FUECActor*>(rawCharacter);
+        if (!IsValidActor(characterHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        ACharacter* character = Cast<ACharacter>(characterHandle->Value.Get());
+        if (character == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        character->Jump();
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL StopCharacterJumping(uec_actor* rawCharacter)
+    {
+        auto* characterHandle = reinterpret_cast<FUECActor*>(rawCharacter);
+        if (!IsValidActor(characterHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        ACharacter* character = Cast<ACharacter>(characterHandle->Value.Get());
+        if (character == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        character->StopJumping();
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -1915,7 +1959,8 @@ namespace
         &GetObjectPropertyValue, &GetObjectPropertyString,
         &SetObjectPropertyValue, &SetObjectPropertyString,
         &CreateSaveGame, &SaveGameToSlot, &LoadGameFromSlot, &DeleteGameSlot,
-        &RunOnGameThread, &CancelGameThreadRequest
+        &RunOnGameThread, &CancelGameThreadRequest,
+        &AddPawnMovementInput, &JumpCharacter, &StopCharacterJumping
     };
 }
 
