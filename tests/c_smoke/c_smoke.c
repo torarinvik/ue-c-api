@@ -463,6 +463,24 @@ int main(void)
         return 46;
     }
 
+    uint32_t struct_field_count = 99u;
+    if (api->get_class_property_struct_field_count(NULL, 0u, &struct_field_count) !=
+            UEC_RESULT_UNSUPPORTED || struct_field_count != 0u)
+    {
+        api->release_context(context);
+        return 47;
+    }
+    uec_property_kind struct_field_kind = UEC_PROPERTY_STRING;
+    uint32_t struct_field_flags = 99u;
+    if (api->get_class_property_struct_field_at(
+            NULL, 0u, 0u, NULL, 0u, &enum_required, &struct_field_kind,
+            &struct_field_flags) != UEC_RESULT_UNSUPPORTED || enum_required != 0u ||
+        struct_field_kind != UEC_PROPERTY_UNKNOWN || struct_field_flags != 0u)
+    {
+        api->release_context(context);
+        return 48;
+    }
+
     const char message[] = "C ABI smoke test";
     const uec_string_view message_view = {message, sizeof(message) - 1u};
     result = api->log(context, message_view);

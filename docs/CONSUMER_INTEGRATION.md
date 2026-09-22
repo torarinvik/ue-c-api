@@ -135,6 +135,8 @@ ABI 117 adds referenced-class paths for object, class, and soft-reference
 properties, allowing consumers to validate target classes before writes.
 ABI 118 adds enumeration of reflected enum names and signed values, including
 byte-backed enums, so consumers can build validated selection controls.
+ABI 119 adds reflected struct-field enumeration with field kinds and access
+flags, using the same IncludeSuper ordering as the property metadata calls.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

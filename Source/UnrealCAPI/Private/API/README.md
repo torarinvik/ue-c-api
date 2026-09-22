@@ -9,7 +9,9 @@ headers and are not compiled as independent translation units.
 - `uec_api_world_actor.inl` owns context, world, player, timer, world-tick, and world-framework access.
 - `uec_api_actor_component.inl` owns actor/component lifetime, transforms,
   component enumeration, actor queries, and cross-subsystem handle cleanup.
-- `uec_api_reflection.inl` owns class metadata and reflected scalar/string properties.
+- `uec_api_reflection.inl` owns reflected scalar/string properties and conversion helpers.
+- `uec_api_reflection_metadata.inl` owns reflected class metadata, enum metadata,
+  and struct-field enumeration.
 - `uec_api_reflection_containers.inl` owns reflected arrays, maps, sets, soft
   reference paths, nested structs, and caller-owned array text outputs.
 - `uec_api_reflection_map_set.inl` owns reflected map/set enumeration and text
