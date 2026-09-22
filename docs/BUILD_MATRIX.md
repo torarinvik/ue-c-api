@@ -15,15 +15,16 @@ The project plugin lives under `Plugins/UnrealCAPI/`, which is the standard
 project-plugin layout Unreal uses to discover the descriptor and module source.
 The host project includes tracked Game and Editor target files plus a minimal
 primary module, a C bootstrap probe, and a native latent-test actor fixture
-that exercises completion and cancellation, so Unreal Build Tool does not need
-to synthesize temporary targets before compiling the plugin and its first C
-consumer.
+that exercises completion, cancellation, and signature rejection, so Unreal
+Build Tool does not need to synthesize temporary targets before compiling the
+plugin and its first C consumer.
 The portable gate is `sh tests/run_checks.sh`. It validates the public header
 as C11 and C++17, links and runs the current and old-minor C consumers against
 an explicit host stub, including the tracked Unreal host's C bootstrap
 translation unit, checks the C gameplay example and Unreal descriptor JSON,
-and enforces the 400–800 line budget for private implementation units. The host
-stub proves consumer-side bootstrap, table calls, and the append-only prefix;
+and enforces the 400–800 line budget for private implementation units and the
+tracked C host smoke translation unit. The host stub proves consumer-side
+bootstrap, table calls, and the append-only prefix;
 the CI matrix also repeats those linked consumers with AddressSanitizer and
 UndefinedBehaviorSanitizer. These checks do not compile the Unreal module or
 run PIE.

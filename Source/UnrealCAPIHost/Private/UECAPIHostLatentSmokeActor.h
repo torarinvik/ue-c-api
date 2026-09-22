@@ -14,4 +14,7 @@ public:
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke",
               meta=(Latent, LatentInfo="LatentInfo"))
     void WaitForSmokeDuration(float Duration, FLatentActionInfo LatentInfo);
+
+    UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke")
+    void NoOpSmokeCall();
 };

@@ -47,3 +47,7 @@ void AUECAPIHostLatentSmokeActor::WaitForSmokeDuration(
     manager.AddNewAction(LatentInfo.CallbackTarget.Get(), LatentInfo.UUID,
                          new FUECAPIHostSmokeDelayAction(Duration, LatentInfo));
 }
+
+void AUECAPIHostLatentSmokeActor::NoOpSmokeCall()
+{
+}

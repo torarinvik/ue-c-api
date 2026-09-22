@@ -292,6 +292,8 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     static const char actorClassPath[] =
         "/Script/UnrealCAPIHost.UECAPIHostLatentSmokeActor";
     static const char functionName[] = "WaitForSmokeDuration";
+    static const char nonLatentFunctionName[] = "NoOpSmokeCall";
+    static const char missingFunctionName[] = "MissingLatentSmokeFunction";
     uec_latent_smoke_state* state = &g_latent_smoke_state;
     if (state->started == UEC_TRUE) return UEC_RESULT_INVALID_ARGUMENT;
     *state = (uec_latent_smoke_state){0};
@@ -341,6 +343,45 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     duration.struct_size = sizeof(duration);
     duration.kind = UEC_PROPERTY_FLOAT;
     duration.real_value = 0.05;
+    uint64_t rejectedRequestId = UINT64_MAX;
+    uec_string_view nonLatentName = {
+        nonLatentFunctionName, sizeof(nonLatentFunctionName) - 1};
+    result = state->api->invoke_actor_function_latent(
+        state->actor, nonLatentName, NULL, 0u, &CompleteLatentSmoke,
+        state, &rejectedRequestId);
+    if (result != UEC_RESULT_UNSUPPORTED || rejectedRequestId != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uec_string_view missingName = {
+        missingFunctionName, sizeof(missingFunctionName) - 1};
+    rejectedRequestId = UINT64_MAX;
+    result = state->api->invoke_actor_function_latent(
+        state->actor, missingName, NULL, 0u, &CompleteLatentSmoke,
+        state, &rejectedRequestId);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || rejectedRequestId != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    rejectedRequestId = UINT64_MAX;
+    result = state->api->invoke_actor_function_latent(
+        state->actor, latentName, NULL, 0u, &CompleteLatentSmoke,
+        state, &rejectedRequestId);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || rejectedRequestId != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uec_function_argument wrongDurationKind = duration;
+    wrongDurationKind.kind = UEC_PROPERTY_INTEGER;
+    rejectedRequestId = UINT64_MAX;
+    result = state->api->invoke_actor_function_latent(
+        state->actor, latentName, &wrongDurationKind, 1u,
+        &CompleteLatentSmoke, state, &rejectedRequestId);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || rejectedRequestId != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+
     result = state->api->invoke_actor_function_latent(
         state->actor, latentName, &duration, 1u, &CompleteLatentSmoke,
         state, &state->request_id);
