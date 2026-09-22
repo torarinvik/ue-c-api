@@ -30,6 +30,8 @@ UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
                "soft property kind values changed");
 UEC_TEST_ASSERT(UEC_CAPABILITY_REFLECTION_CONTAINERS == (UINT64_C(1) << 26),
                "reflection container capability changed");
+UEC_TEST_ASSERT(UEC_CAPABILITY_EVENT_BRIDGE == (UINT64_C(1) << 28),
+               "event bridge capability changed");
 UEC_TEST_ASSERT(UEC_CAPABILITY_COLLISION_DETAILS == (UINT64_C(1) << 27),
                "collision details capability changed");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),

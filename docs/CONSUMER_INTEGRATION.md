@@ -196,6 +196,7 @@ only. Self-unbind is supported, subscriptions are bounded at 1024, and actor,
 component, world, travel, and module teardown cancel them. Component creation
 and explicit destruction require authority. The component does not replicate;
 an already-present component can be retrieved without authority.
+Check `UEC_CAPABILITY_EVENT_BRIDGE` before depending on these entries.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

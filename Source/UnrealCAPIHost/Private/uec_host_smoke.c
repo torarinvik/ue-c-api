@@ -116,8 +116,14 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     if (api == NULL || context == NULL || api->get_or_create_actor_event_bridge == NULL ||
         api->destroy_actor_event_bridge == NULL || api->bind_actor_event_bridge == NULL ||
         api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL ||
-        api->get_runtime_stats == NULL) {
+        api->get_runtime_stats == NULL || api->get_capabilities == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    uec_capabilities capabilities = 0;
+    result = api->get_capabilities(context, &capabilities);
+    if (result != UEC_RESULT_OK || (capabilities & UEC_CAPABILITY_EVENT_BRIDGE) == 0) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_UNSUPPORTED;
         goto cleanup;
     }
     result = api->get_runtime_stats(context, &baselineStats);

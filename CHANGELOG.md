@@ -307,7 +307,8 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 131 adds mixed typed actor-function arguments and typed, handle, or
   text-backed return/out values.
 - ABI minor 132 adds a Blueprint-assignable actor event component, bounded C
-  callback subscriptions, event emission from C, and teardown cleanup. The host
+  callback subscriptions, event emission from C, teardown cleanup, and the
+  `UEC_CAPABILITY_EVENT_BRIDGE` feature bit. The host
   runtime smoke path exercises payload validation, explicit and in-callback
   unbinding, component teardown cleanup, and stale-handle rejection in Game/PIE.
 - The portable old-consumer fixture now requests ABI 1.131 from the ABI 1.132

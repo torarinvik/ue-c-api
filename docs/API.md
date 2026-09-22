@@ -10,7 +10,8 @@ current implementation reports bootstrap, logging, world, actor, component,
 timer, reflection, reflection containers, collision, asset loading, player
 flow, input, physics, collision-query, audio, UI, camera, save-data,
 game-thread dispatch, movement, presentation, retained-object,
-component-introspection, configuration, and streaming adapters.
+component-introspection, configuration, streaming, and Blueprint event bridge
+adapters.
 
 Contexts, worlds, and actors are opaque handles validated against typed
 registries. Each handle receives a monotonic generation and kind tag; released
