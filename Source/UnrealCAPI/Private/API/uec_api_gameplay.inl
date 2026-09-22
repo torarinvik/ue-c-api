@@ -240,7 +240,8 @@
                                               size_t bufferSize,
                                               size_t* requiredSize)
     {
-        if (requiredSize != nullptr) *requiredSize = 0;
+        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *requiredSize = 0;
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -310,7 +311,8 @@
                                           size_t bufferSize,
                                           size_t* requiredSize)
     {
-        if (requiredSize != nullptr) *requiredSize = 0;
+        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *requiredSize = 0;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;

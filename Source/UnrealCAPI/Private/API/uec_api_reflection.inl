@@ -58,7 +58,8 @@
                                      size_t bufferSize,
                                      size_t* requiredSize)
     {
-        if (requiredSize != nullptr) *requiredSize = 0;
+        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *requiredSize = 0;
         auto* handle = reinterpret_cast<FUECClass*>(rawClass);
         if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
