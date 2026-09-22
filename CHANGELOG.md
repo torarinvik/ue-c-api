@@ -142,6 +142,8 @@ development; they do not imply a published or runtime-verified release.
   (GCC and Clang) and macOS (Clang), on pushes and pull requests.
 - Linked C consumer smoke fixture using an explicit host stub for portable ABI
   bootstrap and table-call coverage.
+- The portable fixture now links and runs the independent old-minor consumer
+  against the same stub to exercise the append-only compatibility prefix.
 - Portable old-minor ABI-prefix compatibility fixture for C consumers.
 - Public-domain license, contribution guide, and API/feature documentation.
 - C consumer integration guide covering bootstrap, compatibility, threading,

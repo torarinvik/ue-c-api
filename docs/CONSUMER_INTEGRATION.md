@@ -110,11 +110,12 @@ Run the portable gate from the repository root:
 sh tests/run_checks.sh
 ```
 
-This checks the C11 and C++17 public header, links and runs the consumer against
-an explicit host stub, checks the C gameplay example, descriptor JSON, and
-private source-unit line budgets. The stub exercises the bootstrap and table
-prefix without pretending to be an Unreal runtime. A real integration is
-complete only after the host project is built against the latest available
+This checks the C11 and C++17 public header, links and runs the current and
+old-minor consumers against an explicit host stub, checks the C gameplay
+example, descriptor JSON, and private source-unit line budgets. The stub
+exercises the bootstrap and append-only table prefix without pretending to be
+an Unreal runtime. A real integration is complete only after the host project
+is built against the latest available
 Unreal 5.8.x patch and the C smoke path is exercised in PIE and a packaged
 Development build. Record that
 run in [`docs/BUILD_MATRIX.md`](BUILD_MATRIX.md).

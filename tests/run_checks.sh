@@ -20,6 +20,9 @@ trap 'rm -rf "$stub_build_dir"' EXIT HUP INT TERM
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     "$consumer" "$host_stub" -o "$stub_build_dir/c_smoke"
 "$stub_build_dir/c_smoke" >/dev/null
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    "$compat_consumer" "$host_stub" -o "$stub_build_dir/c_compat"
+"$stub_build_dir/c_compat" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPI.uplugin" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPIHost.uproject" >/dev/null
 

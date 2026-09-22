@@ -11,11 +11,11 @@ build, launch, and exercise the C smoke path.
 | UE 5.8.2 (latest 5.8.x hotfix; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 
 The portable gate is `sh tests/run_checks.sh`. It validates the public header
-as C11 and C++17, links and runs the C consumer against an explicit host stub,
-checks the C gameplay example and Unreal descriptor JSON, and enforces the
-400–800 line budget for private implementation units. The host stub proves the
-consumer-side bootstrap and table calls; it does not compile the Unreal module
-or run PIE.
+as C11 and C++17, links and runs the current and old-minor C consumers against
+an explicit host stub, checks the C gameplay example and Unreal descriptor JSON,
+and enforces the 400–800 line budget for private implementation units. The host
+stub proves consumer-side bootstrap, table calls, and the append-only prefix;
+it does not compile the Unreal module or run PIE.
 
 When an engine installation is available, record the exact UE patch, host OS,
 architecture, compiler version, build configuration, and whether the check ran
