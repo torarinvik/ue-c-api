@@ -410,6 +410,14 @@
         }
     }
 
+    static void HandleWorldCleanup(UWorld* world, bool, bool)
+    {
+        if (IsShuttingDown() || world == nullptr) return;
+        CancelTimersFor(world);
+        CancelTickSubscriptionsFor(world);
+        InvalidateWorldHandles(world);
+    }
+
     uec_result UEC_CALL TravelWorld(uec_world* rawWorld, uec_string_view levelPath)
     {
         if (!IsValidStringView(levelPath) || levelPath.size == 0) {

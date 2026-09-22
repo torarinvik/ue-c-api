@@ -103,6 +103,8 @@ development; they do not imply a published or runtime-verified release.
   boundary before touching Unreal reflection objects.
 - Module shutdown now emits a verbose resource summary before cleanup, covering
   live handles, subscriptions, bindings, and queued requests.
+- External Unreal world cleanup now cancels world-owned work and invalidates
+  world-bound bridge handles, including during PIE restart and non-bridge travel.
 - Actor and attached-audio creation clean up the newly created Unreal object if
   bridge-handle allocation fails.
 - Queued game-thread, object-load, and save-game callbacks now recheck the

@@ -72,6 +72,7 @@ namespace
     static bool InitializeHandle(FUECHandleHeader& header, EUECHandleKind kind);
     static void CancelActorSubscriptions(AActor* actor);
     static void CancelActorSubscriptionsForWorld(UWorld* world);
+    static void HandleWorldCleanup(UWorld* world, bool sessionEnded, bool cleanupResources);
 
     static bool AllocateMonotonicId(uint64& nextId, uint64& outId)
     {
@@ -347,7 +348,6 @@ namespace
             CastField<FUInt16Property>(property) || CastField<FUInt32Property>(property) ||
             CastField<FUInt64Property>(property);
     }
-
     static bool TryReadIntegerProperty(const FNumericProperty* property,
                                        const void* container, int64& outValue)
     {
@@ -362,7 +362,6 @@ namespace
         outValue = static_cast<int64>(value);
         return true;
     }
-
     static bool IsIntegerValueInRange(const FNumericProperty* property, int64 value)
     {
         if (property == nullptr) return false;
@@ -386,7 +385,6 @@ namespace
             return value >= TNumericLimits<int32>::Lowest() && value <= TNumericLimits<int32>::Max();
         return true;
     }
-
     static uec_result CopyFStringToUtf8(const FString& value, char* buffer,
                                         size_t bufferSize, size_t* requiredSize)
     {
@@ -401,7 +399,6 @@ namespace
     }
 
     static bool IsValidStringView(uec_string_view value);
-
     static FString ToFString(uec_string_view value)
     {
         if (!IsValidStringView(value) || value.size == 0) return FString();
@@ -727,6 +724,7 @@ namespace
 }
 class FUnrealCAPIModule final : public IModuleInterface
 {
+    FDelegateHandle WorldCleanupHandle;
 public:
     void StartupModule() override
     {
@@ -734,12 +732,14 @@ public:
             FScopeLock lock(&GHandleMutex);
             GShuttingDown = false;
         }
+        WorldCleanupHandle = FWorldDelegates::OnWorldCleanup.AddStatic(&HandleWorldCleanup);
         UE_LOG(LogTemp, Log, TEXT("%s runtime module started (ABI %u.%u)"),
             UTF8_TO_TCHAR(kModuleName), UEC_ABI_MAJOR, UEC_ABI_MINOR);
     }
 
     void ShutdownModule() override
     {
+        FWorldDelegates::OnWorldCleanup.Remove(WorldCleanupHandle);
         {
             FScopeLock lock(&GHandleMutex);
             GShuttingDown = true;
