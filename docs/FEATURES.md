@@ -12,7 +12,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Context/world/actor handles | Runtime implemented / Unreal integration pending | Typed active registries and weak UObject references |
 | World selection | Runtime implemented / Unreal integration pending | Indexed active Game/PIE enumeration, world kind, PIE instance identifiers, network mode, and first-world convenience |
 | Actor spawn and destruction | Runtime implemented / Unreal integration pending | Loadable actor class paths; game thread only |
-| Actor identity and tags | Runtime implemented / Unreal integration pending | UTF-8 name output and tag lookup; game thread only |
+| Actor identity and tags | Runtime implemented / Unreal integration pending | UTF-8 name output, tag lookup/enumeration, and game-thread access |
 | Actor transforms | Runtime implemented / Unreal integration pending | Double-precision C POD transform; game thread only |
 | Scene components | Runtime implemented / Unreal integration pending | Root-component handle, world transforms, visibility, activation |
 | Timers | Runtime implemented / Unreal integration pending | One-shot and looping game-thread callbacks with cancellation |
@@ -43,7 +43,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Synchronous object loading | Runtime implemented / Unreal integration pending | Weak path-loaded UObject handles, names, full object paths, class paths, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, game-thread callbacks, and a 1024-request bound |
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries and game-thread `OpenLevel` requests |
-| Player flow | Runtime implemented / Unreal integration pending | Indexed local controller lookup, world game-instance access, possession, and view-target selection |
+| Player flow | Runtime implemented / Unreal integration pending | Indexed local controller lookup, player-start lookup, world game-instance access, possession, and view-target selection |
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |
 | Basic physics | Runtime implemented / Unreal integration pending | Finite-validated actor and primitive-component velocity reads, impulses, and forces on simulating primitive roots |
 | Reflection and Blueprint calls | Partial | Property writes, zero-argument calls, and bounded text-marshaled calls with one return/first out value are available; typed ABI calls remain |

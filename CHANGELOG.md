@@ -73,6 +73,7 @@ development; they do not imply a published or runtime-verified release.
 - Primitive scene-component velocity reads for moving mesh and physics components.
 - PIE instance identifiers on world handles for distinguishing simultaneous PIE worlds.
 - Read-only world network-mode queries for standalone, client, listen-server, and dedicated-server contexts.
+- Actor tag enumeration, world-space actor bounds, and indexed player-start lookup.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Explicit overflow checks on world, component, class-property, and reflected-function enumeration counts.
 - Strict 0/1 validation for boolean inputs across transforms, collision,

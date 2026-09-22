@@ -462,6 +462,7 @@ namespace
 
 
     #include "API/uec_api_world_actor.inl"
+    #include "API/uec_api_actor_component.inl"
     #include "API/uec_api_reflection.inl"
     #include "API/uec_api_gameplay.inl"
     #include "API/uec_api_input.inl"
@@ -519,7 +520,11 @@ namespace
         &BindButtonClicked, &UnbindButtonClicked,
         &GetComponentVelocity,
         &GetWorldPIEInstance,
-        &GetWorldNetMode
+        &GetWorldNetMode,
+        &GetActorTagCount,
+        &GetActorTagAt,
+        &GetActorBounds,
+        &FindPlayerStart
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
