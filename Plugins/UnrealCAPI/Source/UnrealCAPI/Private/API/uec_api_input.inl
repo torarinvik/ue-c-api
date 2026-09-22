@@ -162,7 +162,8 @@
         if (result != UEC_RESULT_OK) return result;
         const FVector value(velocity.x, velocity.y, velocity.z);
         component->SetPhysicsLinearVelocity(
-            addToCurrent != UEC_FALSE ? component->GetPhysicsLinearVelocity() + value : value);
+            addToCurrent != UEC_FALSE ? component->GetPhysicsLinearVelocity(NAME_None) + value : value,
+            false, NAME_None);
         return UEC_RESULT_OK;
     }
 
@@ -189,7 +190,7 @@
         UPrimitiveComponent* component = nullptr;
         const uec_result result = GetSimulatingPhysicsComponent(componentHandle, component);
         if (result != UEC_RESULT_OK) return result;
-        component->AddForce(FVector(force.x, force.y, force.z));
+        component->AddForce(FVector(force.x, force.y, force.z), NAME_None, false);
         return UEC_RESULT_OK;
     }
 
@@ -278,11 +279,12 @@
         const FVector value(velocity.x, velocity.y, velocity.z);
         if (addToCurrent != UEC_FALSE)
         {
-            component->SetPhysicsLinearVelocity(component->GetPhysicsLinearVelocity() + value);
+            component->SetPhysicsLinearVelocity(
+                component->GetPhysicsLinearVelocity(NAME_None) + value, false, NAME_None);
         }
         else
         {
-            component->SetPhysicsLinearVelocity(value);
+            component->SetPhysicsLinearVelocity(value, false, NAME_None);
         }
         return UEC_RESULT_OK;
     }
@@ -315,7 +317,7 @@
         if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
         const uec_result authorityResult = RequireWorldAuthority(component->GetWorld());
         if (authorityResult != UEC_RESULT_OK) return authorityResult;
-        component->AddForce(FVector(force.x, force.y, force.z));
+        component->AddForce(FVector(force.x, force.y, force.z), NAME_None, false);
         return UEC_RESULT_OK;
     }
 
