@@ -56,6 +56,8 @@ development; they do not imply a published or runtime-verified release.
 - Input validation for oversized UTF-8 views and non-finite transform values.
 - Reflected actor property writes and reads for supported scalar, string, name,
   and text types.
+- Reflected property string access for Unreal's supported struct and container
+  text serialization, including import and export for actor and object owners.
 - C consumer source and public math-type layout assertions.
 - GitHub Actions checks for C11/C++17 headers and descriptor JSON on Linux
   (GCC and Clang) and macOS (Clang), on pushes and pull requests.

@@ -94,10 +94,14 @@ property index is only meaningful for the class state at the time of the call;
 consumers should re-enumerate after hot reload or class reinstancing. Scalar,
 enum, name, string, and text actor properties can be read through the typed
 property functions; enum values use their underlying integer and expose their
-reflected name through string reads. Arrays, maps, sets, structs, object
-references, and reflected function invocation remain unsupported and return an explicit
-unsupported result. Text writes create culture-neutral `FText` values from the
-provided UTF-8 text; they do not create localization tables.
+reflected name through string reads. The string accessors also use Unreal's
+reflected text import/export for supported structs, arrays, maps, sets, and
+other property kinds that have a text representation. The serialized text is
+the engine's property syntax, so callers should treat it as versioned Unreal
+data rather than a stable cross-engine format. Typed `uec_property_value`
+access remains limited to scalar and enum values. Text writes create
+culture-neutral `FText` values for text properties; they do not create
+localization tables.
 
 `invoke_actor_function` supports only reflected actor functions with no
 parameters, no return or out values, and no latent flag. Functions with any
@@ -113,7 +117,8 @@ names and `object_is_a` checks are available on valid handles.
 object or class references and return releasable weak object handles. The
 corresponding setters accept a valid compatible object handle or `NULL` to
 clear the property. Soft references and container properties remain outside
-this typed adapter.
+this typed adapter; use the bounded string accessors when Unreal's text
+serialization is an acceptable representation.
 
 `request_object_load` uses Unreal's streamable asset manager and invokes the C
 callback on the game thread. The callback owns any returned object handle and
@@ -170,8 +175,9 @@ handles that refer to `UCameraComponent` instances. Field of view is expressed
 in degrees and writes are restricted to the open interval `(0, 360)`.
 
 Object property accessors apply the same supported scalar, enum, string, name,
-text, and hard object-reference reflection rules as actor property accessors,
-but accept any valid object handle.
+text, and reflected text-serialization rules as actor property accessors, but
+accept any valid object handle. Hard object-reference adapters remain the
+preferred typed path for object references.
 Save-game helpers create a `USaveGame` subclass by class path, save or delete a
 named slot synchronously, and load a slot only when its object is compatible
 with the requested class. Save failures are returned through the `out_saved` or

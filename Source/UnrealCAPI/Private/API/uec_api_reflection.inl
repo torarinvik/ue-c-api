@@ -190,7 +190,10 @@
         }
         else
         {
-            return UEC_RESULT_UNSUPPORTED;
+            if (!property->ExportText_InContainer(0, value, actor, nullptr, actor, PPF_None, actor))
+            {
+                return UEC_RESULT_UNSUPPORTED;
+            }
         }
         return CopyFStringToUtf8(value, buffer, bufferSize, requiredSize);
     }
@@ -273,7 +276,11 @@
             textProperty->SetPropertyValue_InContainer(actor, FText::FromString(text));
             return UEC_RESULT_OK;
         }
-        return UEC_RESULT_UNSUPPORTED;
+        if (property->ImportText_InContainer(*text, actor, actor, PPF_None, GWarn) == nullptr)
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return UEC_RESULT_OK;
     }
 
     uec_result UEC_CALL GetObjectPropertyValue(uec_object* rawObject,
@@ -367,7 +374,10 @@
         }
         else
         {
-            return UEC_RESULT_UNSUPPORTED;
+            if (!property->ExportText_InContainer(0, value, object, nullptr, object, PPF_None, object))
+            {
+                return UEC_RESULT_UNSUPPORTED;
+            }
         }
         return CopyFStringToUtf8(value, buffer, bufferSize, requiredSize);
     }
@@ -450,7 +460,11 @@
             textProperty->SetPropertyValue_InContainer(object, FText::FromString(text));
             return UEC_RESULT_OK;
         }
-        return UEC_RESULT_UNSUPPORTED;
+        if (property->ImportText_InContainer(*text, object, object, PPF_None, GWarn) == nullptr)
+        {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return UEC_RESULT_OK;
     }
 
     uec_result UEC_CALL GetClassFunctionCount(uec_class* rawClass, uint32_t* outCount)
@@ -612,5 +626,4 @@
         objectProperty->SetObjectPropertyValue_InContainer(owner, value);
         return UEC_RESULT_OK;
     }
-
 

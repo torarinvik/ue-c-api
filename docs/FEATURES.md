@@ -17,7 +17,7 @@ that can run without the Unreal Engine 5.8 toolchain in this repository.
 | Scene components | Runtime implemented / Unreal integration pending | Root-component handle, world transforms, visibility, activation |
 | Timers | Runtime implemented / Unreal integration pending | One-shot and looping game-thread callbacks with cancellation |
 | Class/property metadata | Runtime implemented / Unreal integration pending | Class lookup, inheritance, names, and broad reflected property kinds |
-| Reflected scalar/string reads and writes | Runtime implemented / Unreal integration pending | Bool, integer, enum, floating-point, string, name, text, and hard object references |
+| Reflected scalar/string reads and writes | Runtime implemented / Unreal integration pending | Typed bool, integer, enum, and floating-point values plus string, name, text, hard object references, and Unreal text serialization for supported structs and containers |
 | Collision line traces | Runtime implemented / Unreal integration pending | Game-thread single traces with stable channel mapping and ignored-actor filtering |
 | Collision sweeps and overlaps | Runtime implemented / Unreal integration pending | World-aligned sphere, box, and capsule queries with bounded actor results |
 | One-shot spatial audio | Runtime implemented / Unreal integration pending | Fire-and-forget `USoundBase` playback at a world location |
