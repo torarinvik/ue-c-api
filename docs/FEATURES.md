@@ -47,7 +47,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |
 | Basic physics | Runtime implemented / Unreal integration pending | Finite-validated actor and primitive-component velocity reads, impulses, and forces on simulating primitive roots |
 | Reflection and Blueprint calls | Partial | Property writes, zero-argument calls, and bounded text-marshaled calls with one return/first out value are available; typed ABI calls remain |
-| Input | Planned | No public functions yet beyond the input, movement, audio, UI, camera, save-data, and dispatch slices above |
+| Input | Partial | Enhanced Input mapping contexts, action polling/injection, and tokenized callbacks are implemented; broader action semantics remain |
 | Async loading, travel, streaming | Partial | Async object requests, cancellation, loaded-state queries, and level-travel submission are available; streaming and completion events remain |
 | Multiplayer and replication | Planned | No public functions yet |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
