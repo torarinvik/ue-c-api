@@ -11,6 +11,7 @@ save-game slots, and cancellable game-thread dispatch. See [docs/API.md](docs/AP
 for ownership, threading, and unsupported-operation rules.
 
 Run `sh tests/run_checks.sh` to validate the public C/C++ ABI headers and Unreal descriptors without an engine installation. The current feature boundary is tracked in [docs/FEATURES.md](docs/FEATURES.md).
+The engine/toolchain verification fields and portable gate are recorded in [docs/BUILD_MATRIX.md](docs/BUILD_MATRIX.md).
 
 GitHub Actions runs these checks on Linux and macOS for pushes and pull requests.
 They check header syntax, selected layouts, and descriptor JSON; Unreal module
