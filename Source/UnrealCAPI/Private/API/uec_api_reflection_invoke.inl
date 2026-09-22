@@ -526,6 +526,62 @@
         return UEC_RESULT_INVALID_ARGUMENT;
     }
 
+    uec_result UEC_CALL GetClassFunctionParameterAt(uec_class* rawClass,
+                                                    uint32_t functionIndex,
+                                                    uint32_t parameterIndex,
+                                                    char* nameBuffer,
+                                                    size_t nameBufferSize,
+                                                    size_t* nameRequiredSize,
+                                                    uec_property_kind* outKind,
+                                                    uint32_t* outFlags)
+    {
+        if (nameRequiredSize == nullptr || outKind == nullptr || outFlags == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        *nameRequiredSize = 0;
+        *outKind = UEC_PROPERTY_UNKNOWN;
+        *outFlags = 0;
+        auto* classHandle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(classHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = classHandle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        uint32_t currentFunction = 0;
+        for (TFieldIterator<UFunction> iterator(klass, EFieldIteratorFlags::IncludeSuper);
+             iterator; ++iterator)
+        {
+            if (currentFunction++ != functionIndex) continue;
+            UFunction* function = *iterator;
+            uint32_t currentParameter = 0;
+            for (TFieldIterator<FProperty> propertyIterator(function); propertyIterator;
+                 ++propertyIterator)
+            {
+                FProperty* property = *propertyIterator;
+                if (!property->HasAnyPropertyFlags(CPF_Parm)) continue;
+                if (currentParameter++ != parameterIndex) continue;
+                *outKind = GetPropertyKind(property);
+                if (!property->HasAnyPropertyFlags(CPF_OutParm) &&
+                    !property->HasAnyPropertyFlags(CPF_ReturnParm)) {
+                    *outFlags |= UEC_FUNCTION_PARAMETER_INPUT;
+                }
+                if (property->HasAnyPropertyFlags(CPF_OutParm)) {
+                    *outFlags |= UEC_FUNCTION_PARAMETER_OUT;
+                }
+                if (property->HasAnyPropertyFlags(CPF_ReturnParm)) {
+                    *outFlags |= UEC_FUNCTION_PARAMETER_RETURN;
+                }
+                if (property->HasAnyPropertyFlags(CPF_ReferenceParm)) {
+                    *outFlags |= UEC_FUNCTION_PARAMETER_REFERENCE;
+                    *outFlags |= UEC_FUNCTION_PARAMETER_INPUT;
+                }
+                return CopyFStringToUtf8(property->GetName(), nameBuffer, nameBufferSize,
+                                         nameRequiredSize);
+            }
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+
     uec_result UEC_CALL GetActorPropertyObject(uec_actor* rawActor,
                                                uec_string_view propertyName,
                                                uec_object** outObject)

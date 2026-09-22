@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.85`.
+The current runtime slice is intentionally small and versioned as ABI `1.86`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -59,6 +59,12 @@ out parameter into a caller-sized `uec_property_value` array. The required
 output count is reported before an undersized call returns
 `UEC_RESULT_BUFFER_TOO_SMALL`; strings, objects, structs, containers, latent
 functions, and network functions remain on the text or unsupported paths.
+
+ABI minor 86 adds `get_class_function_parameter_at`. It reports the name,
+property kind, and input/output/return/reference flags for one reflected
+parameter in Unreal's function-property order, including the return property
+when present. The metadata is descriptive; unsupported property kinds remain
+unsupported by typed invocation.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

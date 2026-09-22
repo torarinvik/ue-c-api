@@ -18,7 +18,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 85u, "ABI minor must include multi-output invocation");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 86u, "ABI minor must include parameter metadata");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -145,6 +145,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_value) >
 UEC_TEST_ASSERT(offsetof(uec_api, invoke_actor_function_values) >
                    offsetof(uec_api, invoke_actor_function_value),
                "multi-output invocation must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_class_function_parameter_at) >
+                   offsetof(uec_api, invoke_actor_function_values),
+               "parameter metadata must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -236,6 +239,19 @@ int main(void)
     {
         api->release_context(context);
         return 13;
+    }
+
+    size_t parameter_name_size = 99u;
+    uec_property_kind parameter_kind = UEC_PROPERTY_BOOL;
+    uint32_t parameter_flags = 99u;
+    result = api->get_class_function_parameter_at(NULL, 0u, 0u, NULL, 0u,
+                                                   &parameter_name_size, &parameter_kind,
+                                                   &parameter_flags);
+    if (result != UEC_RESULT_UNSUPPORTED || parameter_name_size != 0u ||
+        parameter_kind != UEC_PROPERTY_UNKNOWN || parameter_flags != 0u)
+    {
+        api->release_context(context);
+        return 14;
     }
 
     const char message[] = "C ABI smoke test";

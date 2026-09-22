@@ -20,7 +20,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 85u
+#define UEC_ABI_MINOR 86u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -97,26 +97,22 @@ typedef struct uec_string_view {
     const char* data;
     size_t size;
 } uec_string_view;
-
 typedef struct uec_vector3 {
     double x;
     double y;
     double z;
 } uec_vector3;
-
 typedef struct uec_quaternion {
     double x;
     double y;
     double z;
     double w;
 } uec_quaternion;
-
 typedef struct uec_transform {
     uec_vector3 translation;
     uec_quaternion rotation;
     uec_vector3 scale;
 } uec_transform;
-
 typedef enum uec_property_kind {
     UEC_PROPERTY_UNKNOWN = 0,
     UEC_PROPERTY_BOOL = 1,
@@ -134,6 +130,8 @@ typedef enum uec_property_kind {
     UEC_PROPERTY_MAP = 13,
     UEC_PROPERTY_SET = 14
 } uec_property_kind;
+enum { UEC_FUNCTION_PARAMETER_INPUT = 1u << 0, UEC_FUNCTION_PARAMETER_OUT = 1u << 1,
+       UEC_FUNCTION_PARAMETER_RETURN = 1u << 2, UEC_FUNCTION_PARAMETER_REFERENCE = 1u << 3 };
 
 typedef struct uec_property_value {
     uint32_t struct_size;
@@ -143,7 +141,6 @@ typedef struct uec_property_value {
     int64_t integer_value;
     double real_value;
 } uec_property_value;
-
 typedef enum uec_trace_channel {
     UEC_TRACE_VISIBILITY = 0,
     UEC_TRACE_CAMERA = 1,
@@ -152,20 +149,17 @@ typedef enum uec_trace_channel {
     UEC_TRACE_PAWN = 4,
     UEC_TRACE_PHYSICS_BODY = 5
 } uec_trace_channel;
-
 typedef enum uec_collision_shape_kind {
     UEC_COLLISION_SHAPE_SPHERE = 0,
     UEC_COLLISION_SHAPE_BOX = 1,
     UEC_COLLISION_SHAPE_CAPSULE = 2
 } uec_collision_shape_kind;
-
 typedef enum uec_collision_enabled {
     UEC_COLLISION_DISABLED = 0,
     UEC_COLLISION_QUERY_ONLY = 1,
     UEC_COLLISION_PHYSICS_ONLY = 2,
     UEC_COLLISION_QUERY_AND_PHYSICS = 3
 } uec_collision_enabled;
-
 typedef enum uec_widget_visibility {
     UEC_WIDGET_VISIBLE = 0,
     UEC_WIDGET_COLLAPSED = 1,
@@ -784,8 +778,15 @@ typedef struct uec_api {
                                                         uec_property_value* out_values,
                                                         uint32_t out_capacity,
                                                         uint32_t* out_count);
+    uec_result (UEC_CALL *get_class_function_parameter_at)(uec_class* klass,
+                                                           uint32_t function_index,
+                                                           uint32_t parameter_index,
+                                                           char* name_buffer,
+                                                           size_t name_buffer_size,
+                                                           size_t* name_required_size,
+                                                           uec_property_kind* out_kind,
+                                                           uint32_t* out_flags);
 } uec_api;
-
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the
  * table's release_context function. */
@@ -793,7 +794,6 @@ UEC_API uec_result UEC_CALL uec_get_api(uint32_t requested_major,
                                         uint32_t requested_minor,
                                         const uec_api** out_api,
                                         uec_context** out_context);
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

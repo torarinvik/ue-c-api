@@ -46,6 +46,9 @@ caller-provided output slot with its `struct_size`, call once with a capacity,
 and retry with the reported count when the result is
 `UEC_RESULT_BUFFER_TOO_SMALL`. Outputs are ordered as the return value first,
 then reflected scalar out parameters.
+ABI 86 adds `get_class_function_parameter_at`; its parameter index follows
+Unreal's reflected property order, including a return property when present.
+Inspect its flags before selecting the scalar or text invocation path.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

@@ -119,6 +119,27 @@ static uec_result UEC_CALL StubInvokeActorFunctionValues(
     return UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetClassFunctionParameterAt(
+    uec_class* klass,
+    uint32_t functionIndex,
+    uint32_t parameterIndex,
+    char* nameBuffer,
+    size_t nameBufferSize,
+    size_t* nameRequiredSize,
+    uec_property_kind* outKind,
+    uint32_t* outFlags)
+{
+    (void)klass;
+    (void)functionIndex;
+    (void)parameterIndex;
+    (void)nameBuffer;
+    (void)nameBufferSize;
+    if (nameRequiredSize != NULL) *nameRequiredSize = 0u;
+    if (outKind != NULL) *outKind = UEC_PROPERTY_UNKNOWN;
+    if (outFlags != NULL) *outFlags = 0u;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -143,6 +164,7 @@ static const uec_api g_api = {
     .get_runtime_stats = &StubGetRuntimeStats,
     .get_world_count_by_kind = &StubGetWorldCountByKind,
     .get_world_at_by_kind = &StubGetWorldAtByKind,
+    .get_class_function_parameter_at = &StubGetClassFunctionParameterAt,
     .invoke_actor_function_value = &StubInvokeActorFunctionValue,
     .invoke_actor_function_values = &StubInvokeActorFunctionValues,
     .run_on_game_thread = &StubRunOnGameThread
