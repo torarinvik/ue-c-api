@@ -396,10 +396,21 @@
             [weakBinding](const FInputActionValue& inputValue)
             {
                 TSharedPtr<FUECInputBinding> current = weakBinding.Pin();
-                if (!current.IsValid() || current->Cancelled || current->Callback == nullptr) return;
+                if (!current.IsValid() || current->Cancelled || current->Callback == nullptr ||
+                    IsShuttingDown()) return;
                 uec_input_action_value value{};
                 if (!WriteInputActionValue(inputValue, value)) return;
+                current->InCallback = true;
                 current->Callback(current->Id, value, current->UserData);
+                current->InCallback = false;
+                if (current->Cancelled || IsShuttingDown())
+                {
+                    if (UEnhancedInputComponent* component = current->Component.Get())
+                    {
+                        component->RemoveBindingByHandle(current->EngineHandle);
+                    }
+                    GInputBindings.Remove(current->Id);
+                }
             });
         binding->EngineHandle = engineBinding.GetHandle();
         if (binding->EngineHandle == 0) return UEC_RESULT_INTERNAL_ERROR;
@@ -416,9 +427,12 @@
         if (bindingPtr == nullptr || !bindingPtr->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
         TSharedPtr<FUECInputBinding> binding = *bindingPtr;
         binding->Cancelled = true;
-        if (UEnhancedInputComponent* component = binding->Component.Get())
+        if (!binding->InCallback)
         {
-            component->RemoveBindingByHandle(binding->EngineHandle);
+            if (UEnhancedInputComponent* component = binding->Component.Get())
+            {
+                component->RemoveBindingByHandle(binding->EngineHandle);
+            }
         }
         GInputBindings.Remove(bindingId);
         return UEC_RESULT_OK;

@@ -197,6 +197,7 @@ namespace
         uec_input_action_callback Callback = nullptr;
         void* UserData = nullptr;
         bool Cancelled = false;
+        bool InCallback = false;
     };
 
     FCriticalSection GHandleMutex;

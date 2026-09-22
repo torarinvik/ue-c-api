@@ -95,6 +95,8 @@ development; they do not imply a published or runtime-verified release.
   ignored-actor arrays and output counts that match the handles written.
 - Float-backed engine parameters reject finite C values that would overflow
   during conversion from the API's double-precision inputs.
+- Enhanced Input callbacks now defer native binding removal when unbinding from
+  inside the callback and suppress delivery after shutdown begins.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Embedded NUL rejection for all public UTF-8 string views, including reflected,
   input, save-game, and configuration adapters.
