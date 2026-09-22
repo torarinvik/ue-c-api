@@ -156,7 +156,7 @@
         auto* soundHandle = reinterpret_cast<FUECObject*>(rawSound);
         if (!IsValidWorld(worldHandle) || !IsValidObject(soundHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if (!FMath::IsFinite(volumeMultiplier) || !FMath::IsFinite(pitchMultiplier) ||
+        if (!IsRepresentableFloat(volumeMultiplier) || !IsRepresentableFloat(pitchMultiplier) ||
             volumeMultiplier < 0.0 || pitchMultiplier <= 0.0 || !IsFiniteVector(location)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }

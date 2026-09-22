@@ -187,7 +187,8 @@
         if (!IsValidActor(pawnHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         if (!FMath::IsFinite(worldDirection.x) || !FMath::IsFinite(worldDirection.y) ||
-            !FMath::IsFinite(worldDirection.z) || !FMath::IsFinite(scale) || !IsValidBool(force)) {
+            !FMath::IsFinite(worldDirection.z) || !IsRepresentableFloat(scale) ||
+            !IsValidBool(force)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         APawn* pawn = Cast<APawn>(pawnHandle->Value.Get());
@@ -229,7 +230,7 @@
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         if (!IsValidStringView(parameterName) ||
-            parameterName.size == 0 || !FMath::IsFinite(value)) {
+            parameterName.size == 0 || !IsRepresentableFloat(value)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         UMeshComponent* component = Cast<UMeshComponent>(componentHandle->Value.Get());
@@ -317,8 +318,9 @@
         if (controller == nullptr || action == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         UEnhancedPlayerInput* playerInput = Cast<UEnhancedPlayerInput>(controller->PlayerInput);
         if (playerInput == nullptr) return UEC_RESULT_NOT_INITIALIZED;
-        if (!FMath::IsFinite(value->axis.x) || !FMath::IsFinite(value->axis.y) ||
-            !FMath::IsFinite(value->axis.z) || !IsValidBool(value->bool_value)) {
+        if (!IsRepresentableFloat(value->axis.x) ||
+            !IsRepresentableFloat(value->axis.y) ||
+            !IsRepresentableFloat(value->axis.z) || !IsValidBool(value->bool_value)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
 

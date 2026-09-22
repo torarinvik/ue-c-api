@@ -93,6 +93,8 @@ development; they do not imply a published or runtime-verified release.
   shutdown cleanup.
 - Filtered sphere, box, and capsule sweeps plus bounded overlap queries with
   ignored-actor arrays and output counts that match the handles written.
+- Float-backed engine parameters reject finite C values that would overflow
+  during conversion from the API's double-precision inputs.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Embedded NUL rejection for all public UTF-8 string views, including reflected,
   input, save-game, and configuration adapters.

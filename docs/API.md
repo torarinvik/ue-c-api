@@ -41,9 +41,10 @@ cannot fit Unreal's `int32` conversion are rejected as invalid arguments. Transf
 double-precision values in Unreal's world units and the Unreal quaternion
 component order `(x, y, z, w)`. Null pointers paired with nonzero lengths,
 non-finite transform, physics, collision, audio, and movement values are also
-rejected as invalid arguments. Boolean inputs must be exactly `UEC_FALSE` or
-`UEC_TRUE`; invalid byte values are rejected rather than silently treated as
-true.
+rejected as invalid arguments; values that will cross into Unreal float-only
+parameters must also fit the engine's float range. Boolean inputs must be
+exactly `UEC_FALSE` or `UEC_TRUE`; invalid byte values are rejected rather than
+silently treated as true.
 
 World enumeration reports active Game and PIE worlds by index and labels each
 handle with its world kind. `get_world_pie_instance` exposes Unreal's PIE

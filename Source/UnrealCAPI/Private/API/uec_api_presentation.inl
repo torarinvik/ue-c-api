@@ -164,7 +164,7 @@
         auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if (!FMath::IsFinite(degrees) || degrees <= 0.0 || degrees >= 360.0) {
+        if (!IsRepresentableFloat(degrees) || degrees <= 0.0 || degrees >= 360.0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         UCameraComponent* camera = Cast<UCameraComponent>(componentHandle->Value.Get());
@@ -187,7 +187,7 @@
         if (!IsValidComponent(componentHandle) || !IsValidObject(soundHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         if (!IsValidStringView(socketName) ||
-            !FMath::IsFinite(volumeMultiplier) || !FMath::IsFinite(pitchMultiplier) ||
+            !IsRepresentableFloat(volumeMultiplier) || !IsRepresentableFloat(pitchMultiplier) ||
             volumeMultiplier < 0.0 || pitchMultiplier <= 0.0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }

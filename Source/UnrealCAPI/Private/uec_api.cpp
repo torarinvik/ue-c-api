@@ -422,6 +422,12 @@ namespace
         return FMath::IsFinite(value.x) && FMath::IsFinite(value.y) && FMath::IsFinite(value.z);
     }
 
+    static bool IsRepresentableFloat(double value)
+    {
+        return FMath::IsFinite(value) &&
+            FMath::Abs(value) <= static_cast<double>(TNumericLimits<float>::Max());
+    }
+
     static bool IsValidBool(uec_bool value)
     {
         return value == UEC_FALSE || value == UEC_TRUE;
@@ -536,7 +542,7 @@ namespace
         switch (descriptor->kind)
         {
         case UEC_COLLISION_SHAPE_SPHERE:
-            if (!FMath::IsFinite(descriptor->radius) || descriptor->radius <= 0.0) {
+            if (!IsRepresentableFloat(descriptor->radius) || descriptor->radius <= 0.0) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             outShape = FCollisionShape::MakeSphere(static_cast<float>(descriptor->radius));
@@ -553,7 +559,8 @@ namespace
                 descriptor->half_extents.x, descriptor->half_extents.y, descriptor->half_extents.z));
             return UEC_RESULT_OK;
         case UEC_COLLISION_SHAPE_CAPSULE:
-            if (!FMath::IsFinite(descriptor->radius) || !FMath::IsFinite(descriptor->half_height) ||
+            if (!IsRepresentableFloat(descriptor->radius) ||
+                !IsRepresentableFloat(descriptor->half_height) ||
                 descriptor->radius <= 0.0 || descriptor->half_height < descriptor->radius) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
