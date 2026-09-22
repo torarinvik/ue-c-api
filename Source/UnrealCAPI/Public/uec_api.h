@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 57u
+#define UEC_ABI_MINOR 59u
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,6 +165,12 @@ typedef enum uec_collision_enabled {
     UEC_COLLISION_PHYSICS_ONLY = 2,
     UEC_COLLISION_QUERY_AND_PHYSICS = 3
 } uec_collision_enabled;
+
+typedef enum uec_widget_visibility {
+    UEC_WIDGET_VISIBLE = 0,
+    UEC_WIDGET_COLLAPSED = 1,
+    UEC_WIDGET_HIDDEN = 2
+} uec_widget_visibility;
 
 typedef enum uec_input_action_value_kind {
     UEC_INPUT_ACTION_VALUE_BOOLEAN = 0,
@@ -611,6 +617,10 @@ typedef struct uec_api {
                                                  char* buffer,
                                                  size_t buffer_size,
                                                  size_t* required_size);
+    uec_result (UEC_CALL *set_widget_visibility)(uec_object* widget,
+                                                 uec_widget_visibility visibility);
+    uec_result (UEC_CALL *set_text_block_text)(uec_object* widget,
+                                               uec_string_view text);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

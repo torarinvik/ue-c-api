@@ -46,6 +46,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, bind_audio_finished) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_object_path) >
                    offsetof(uec_api, unbind_audio_finished),
                "object identity queries must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_widget_visibility) >
+                   offsetof(uec_api, get_object_class_name),
+               "widget adapters must append to uec_api");
 
 int main(void)
 {

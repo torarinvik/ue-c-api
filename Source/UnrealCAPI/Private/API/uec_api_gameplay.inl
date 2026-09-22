@@ -219,6 +219,39 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL SetWidgetVisibility(uec_object* rawWidget,
+                                            uec_widget_visibility visibility)
+    {
+        auto* widgetHandle = reinterpret_cast<FUECObject*>(rawWidget);
+        if (!IsValidObject(widgetHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWidget* widget = Cast<UWidget>(widgetHandle->Value.Get());
+        if (widget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        ESlateVisibility engineVisibility;
+        switch (visibility)
+        {
+        case UEC_WIDGET_VISIBLE: engineVisibility = ESlateVisibility::Visible; break;
+        case UEC_WIDGET_COLLAPSED: engineVisibility = ESlateVisibility::Collapsed; break;
+        case UEC_WIDGET_HIDDEN: engineVisibility = ESlateVisibility::Hidden; break;
+        default: return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        widget->SetVisibility(engineVisibility);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetTextBlockText(uec_object* rawWidget,
+                                         uec_string_view text)
+    {
+        auto* widgetHandle = reinterpret_cast<FUECObject*>(rawWidget);
+        if (!IsValidObject(widgetHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(text)) return UEC_RESULT_INVALID_ARGUMENT;
+        UTextBlock* textBlock = Cast<UTextBlock>(widgetHandle->Value.Get());
+        if (textBlock == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        textBlock->SetText(FText::FromString(ToFString(text)));
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetCameraFieldOfView(uec_scene_component* rawComponent,
                                              double* outDegrees)
     {
@@ -632,4 +665,3 @@
         }
         return UEC_RESULT_OK;
     }
-

@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.57`.
+The current runtime slice is intentionally small and versioned as ABI `1.59`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -194,7 +194,9 @@ remaining callbacks.
 owned by the caller. `add_widget_to_viewport` and `remove_widget_from_parent`
 operate on that handle on the game thread. The widget must be kept alive by
 being added to a viewport or another Unreal owner; releasing the bridge handle
-does not destroy the widget.
+does not destroy the widget. `set_widget_visibility` supports visible,
+collapsed, and hidden states for any `UWidget`; `set_text_block_text` updates
+the text of a `UTextBlock` using a culture-neutral `FText`.
 
 `get_camera_field_of_view` and `set_camera_field_of_view` accept scene-component
 handles that refer to `UCameraComponent` instances. Field of view is expressed

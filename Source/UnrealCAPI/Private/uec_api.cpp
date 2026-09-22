@@ -32,6 +32,7 @@
 #include "Camera/CameraComponent.h"
 #include "Sound/SoundBase.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 #include "HAL/CriticalSection.h"
 #include "Modules/ModuleManager.h"
 #include "Misc/ScopeLock.h"
@@ -441,7 +442,8 @@ namespace
         &InvokeActorFunctionText,
         &SubscribeWorldTick, &UnsubscribeWorldTick,
         &BindAudioFinished, &UnbindAudioFinished,
-        &GetObjectPath, &GetObjectClassName
+        &GetObjectPath, &GetObjectClassName,
+        &SetWidgetVisibility, &SetTextBlockText
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
