@@ -54,6 +54,11 @@ void AUECAPIHostLatentSmokeActor::NoOpSmokeCall()
 {
 }
 
+void AUECAPIHostLatentSmokeActor::ScalarSmokeCall(float Value)
+{
+    (void)Value;
+}
+
 void AUECAPIHostLatentSmokeActor::WorldContextSmokeCall(UObject* WorldContextObject)
 {
     (void)WorldContextObject;

@@ -97,34 +97,6 @@
         return UEC_RESULT_OK;
     }
 
-    static uec_result ValidateLatentArgumentRecords(
-        const uec_function_argument* arguments,
-        uint32_t argumentCount)
-    {
-        if (argumentCount != 0 && arguments == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        for (uint32 index = 0; index < argumentCount; ++index)
-        {
-            const uec_function_argument& argument = arguments[index];
-            if (argument.struct_size < sizeof(uec_function_argument)) {
-                return UEC_RESULT_INVALID_ARGUMENT;
-            }
-            if (argument.object_value != nullptr && argument.world_value != nullptr) {
-                return UEC_RESULT_INVALID_ARGUMENT;
-            }
-            if (argument.kind != UEC_PROPERTY_OBJECT &&
-                (argument.object_value != nullptr || argument.world_value != nullptr)) {
-                return UEC_RESULT_INVALID_ARGUMENT;
-            }
-            if (argument.kind != UEC_PROPERTY_CLASS && argument.class_value != nullptr) {
-                return UEC_RESULT_INVALID_ARGUMENT;
-            }
-            if (argument.text_value.data != nullptr || argument.text_value.size != 0) {
-                if (!IsValidStringView(argument.text_value)) return UEC_RESULT_INVALID_ARGUMENT;
-            }
-        }
-        return UEC_RESULT_OK;
-    }
-
     static uec_result ValidateLatentFunctionTarget(
         AActor* actor,
         UFunction* function,
@@ -296,7 +268,7 @@
             !IsValidStringView(functionName) || functionName.size == 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
-        const uec_result argumentRecordsResult = ValidateLatentArgumentRecords(
+        const uec_result argumentRecordsResult = ValidateFunctionArgumentRecords(
             arguments, argumentCount);
         if (argumentRecordsResult != UEC_RESULT_OK) return argumentRecordsResult;
 

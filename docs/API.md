@@ -287,6 +287,7 @@ its full `struct_size`. Set each argument's `kind`, then use the matching
 scalar fields, an object/world handle, a class handle, or `text_value`. Object
 and world handles are mutually exclusive; either may be null to pass a null
 object reference. Class references use `class_value`, which may also be null.
+Non-null handle fields that do not match the selected kind are rejected.
 Text-backed arguments use Unreal property text syntax, including quoted string
 values. Outputs are ordered with the return property first, followed by all
 out parameters. Scalar and enum results use the typed fields, hard object and

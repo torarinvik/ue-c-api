@@ -294,6 +294,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         "/Script/UnrealCAPIHost.UECAPIHostLatentSmokeActor";
     static const char functionName[] = "WaitForSmokeDuration";
     static const char nonLatentFunctionName[] = "NoOpSmokeCall";
+    static const char scalarFunctionName[] = "ScalarSmokeCall";
     static const char worldContextFunctionName[] = "WorldContextSmokeCall";
     static const char missingFunctionName[] = "MissingLatentSmokeFunction";
     uec_latent_smoke_state* state = &g_latent_smoke_state;
@@ -382,6 +383,18 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, worldContextName, &latentArguments[0], 1u,
         NULL, 0u, &noOutputs);
     if (result != UEC_RESULT_OK || noOutputs != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uec_function_argument malformedScalarArgument = duration;
+    malformedScalarArgument.world_value = state->world;
+    uec_string_view scalarName = {
+        scalarFunctionName, sizeof(scalarFunctionName) - 1};
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, scalarName, &malformedScalarArgument, 1u,
+        NULL, 0u, &noOutputs);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
         return UEC_RESULT_INTERNAL_ERROR;
     }

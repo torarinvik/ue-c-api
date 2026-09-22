@@ -335,6 +335,28 @@
             ? UEC_RESULT_OK : UEC_RESULT_INVALID_ARGUMENT;
     }
 
+    static uec_result ValidateFunctionArgumentRecords(
+        const uec_function_argument* arguments,
+        uint32_t argumentCount)
+    {
+        if (argumentCount != 0 && arguments == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        for (uint32_t index = 0; index < argumentCount; ++index)
+        {
+            const uec_function_argument& argument = arguments[index];
+            if (argument.struct_size < sizeof(uec_function_argument) ||
+                (argument.kind != UEC_PROPERTY_OBJECT &&
+                 (argument.object_value != nullptr || argument.world_value != nullptr)) ||
+                (argument.kind != UEC_PROPERTY_CLASS && argument.class_value != nullptr) ||
+                (argument.object_value != nullptr && argument.world_value != nullptr)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            if (argument.text_value.data != nullptr || argument.text_value.size != 0) {
+                if (!IsValidStringView(argument.text_value)) return UEC_RESULT_INVALID_ARGUMENT;
+            }
+        }
+        return UEC_RESULT_OK;
+    }
+
     static bool IsInvocationScalarProperty(const FProperty* property)
     {
         return CastField<FBoolProperty>(property) != nullptr ||
@@ -381,11 +403,9 @@
         if ((argumentCount != 0 && arguments == nullptr) ||
             (outputCapacity != 0 && outputs == nullptr) || !IsValidStringView(functionName) ||
             functionName.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
-        for (uint32_t index = 0; index < argumentCount; ++index) {
-            if (arguments[index].struct_size < sizeof(uec_function_argument)) {
-                return UEC_RESULT_INVALID_ARGUMENT;
-            }
-        }
+        const uec_result argumentRecordsResult = ValidateFunctionArgumentRecords(
+            arguments, argumentCount);
+        if (argumentRecordsResult != UEC_RESULT_OK) return argumentRecordsResult;
         auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
         if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;

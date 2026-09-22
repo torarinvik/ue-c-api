@@ -317,6 +317,8 @@ development; they do not imply a published or runtime-verified release.
 - Mixed and latent actor-function calls reject world handles and world-bound
   object handles from a different target-actor world; callers pass world
   context handles explicitly without depending on editor-only metadata.
+- Mixed reflected calls reject handle pointers supplied in unrelated argument
+  fields instead of silently ignoring them on scalar parameters.
 - The host Game/PIE probe now spawns a native latent-test actor, checks
   unsupported signatures, an explicit world context, real completion, canceled
   callback suppression, cross-world context rejection when another world is

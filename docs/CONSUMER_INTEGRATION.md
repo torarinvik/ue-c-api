@@ -192,7 +192,8 @@ the existing text-entry calls for map keys whose kinds do not fit
 ABI 131 adds `invoke_actor_function_arguments` for mixed signatures. Initialize
 each argument and output record with `struct_size`; use scalar fields, a hard
 object/world handle, a class handle, or Unreal property text according to the
-reflected kind. A null object, world, or class handle passes a null reference.
+reflected kind. Non-null handle fields that do not match the selected kind are
+rejected. A null object, world, or class handle passes a null reference.
 Text input follows Unreal's property syntax, including quoted strings. Output
 handles are caller-owned and must be released with `release_object` or
 `release_class`. A short output array is rejected before invocation, while a
