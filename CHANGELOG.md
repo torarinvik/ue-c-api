@@ -297,6 +297,8 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 126 adds scene-component angular-velocity readback, angular-velocity
   writes, and torque application for simulating primitive components.
 - ABI minor 127 adds scene-component angular impulse application in radians.
+- ABI minor 128 adds actor-root angular-velocity readback, angular velocity
+  writes, torque, and angular impulse operations.
 - Adds `UEC_CAPABILITY_REFLECTION_CONTAINERS` so consumers can gate container metadata and set mutation explicitly.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.

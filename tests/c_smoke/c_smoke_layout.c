@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details A
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 127u, "ABI minor must include angular impulse operations");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 128u, "ABI minor must include actor angular physics operations");
 UEC_TEST_ASSERT(UEC_PROPERTY_FLAG_EDIT_CONST == 1u && UEC_PROPERTY_FLAG_REFERENCE == (1u << 6),
                "property flag values changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
@@ -431,3 +431,15 @@ UEC_TEST_ASSERT(offsetof(uec_api, apply_component_torque) >
 UEC_TEST_ASSERT(offsetof(uec_api, apply_component_angular_impulse) >
                    offsetof(uec_api, apply_component_torque),
                "component angular impulse must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_physics_angular_velocity) >
+                   offsetof(uec_api, apply_component_angular_impulse),
+               "actor angular velocity read must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_actor_physics_angular_velocity) >
+                   offsetof(uec_api, get_actor_physics_angular_velocity),
+               "actor angular velocity write must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, apply_actor_torque) >
+                   offsetof(uec_api, set_actor_physics_angular_velocity),
+               "actor torque must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, apply_actor_angular_impulse) >
+                   offsetof(uec_api, apply_actor_torque),
+               "actor angular impulse must append to uec_api");

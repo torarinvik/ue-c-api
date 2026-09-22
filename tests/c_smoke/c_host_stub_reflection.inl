@@ -709,6 +709,10 @@ static const uec_api g_api = {
     .set_component_physics_angular_velocity = &StubSetComponentPhysicsAngularVelocity,
     .apply_component_torque = &StubApplyComponentTorque,
     .apply_component_angular_impulse = &StubApplyComponentAngularImpulse,
+    .get_actor_physics_angular_velocity = &StubGetActorPhysicsAngularVelocity,
+    .set_actor_physics_angular_velocity = &StubSetActorPhysicsAngularVelocity,
+    .apply_actor_torque = &StubApplyActorTorque,
+    .apply_actor_angular_impulse = &StubApplyActorAngularImpulse,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

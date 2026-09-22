@@ -149,6 +149,41 @@ static uec_result UEC_CALL StubApplyComponentAngularImpulse(
     return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetActorPhysicsAngularVelocity(uec_actor* actor,
+                                                              uec_vector3* outVelocity)
+{
+    if (outVelocity != NULL) *outVelocity = (uec_vector3){0.0, 0.0, 0.0};
+    if (outVelocity == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return actor == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetActorPhysicsAngularVelocity(uec_actor* actor,
+                                                              uec_vector3 velocity,
+                                                              uec_bool addToCurrent)
+{
+    (void)velocity;
+    (void)addToCurrent;
+    return actor == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubApplyActorTorque(uec_actor* actor,
+                                                uec_vector3 torque,
+                                                uec_bool accelerationChange)
+{
+    (void)torque;
+    (void)accelerationChange;
+    return actor == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubApplyActorAngularImpulse(uec_actor* actor,
+                                                        uec_vector3 impulse,
+                                                        uec_bool velocityChange)
+{
+    (void)impulse;
+    (void)velocityChange;
+    return actor == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetWorldCountByKind(uec_context* context,
                                                    uec_world_kind kind,
                                                    uint32_t* outCount)

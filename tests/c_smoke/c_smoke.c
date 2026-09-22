@@ -60,7 +60,9 @@ int main(void)
         api->set_component_physics_velocity == NULL || api->apply_component_impulse == NULL ||
         api->apply_component_force == NULL || api->get_component_physics_angular_velocity == NULL ||
         api->set_component_physics_angular_velocity == NULL || api->apply_component_torque == NULL ||
-        api->apply_component_angular_impulse == NULL)
+        api->apply_component_angular_impulse == NULL || api->get_actor_physics_angular_velocity == NULL ||
+        api->set_actor_physics_angular_velocity == NULL || api->apply_actor_torque == NULL ||
+        api->apply_actor_angular_impulse == NULL)
     {
         api->release_context(context);
         return 5;
@@ -110,6 +112,20 @@ int main(void)
     {
         api->release_context(context);
         return 56;
+    }
+
+    uec_vector3 actor_angular_velocity = {42.0, 42.0, 42.0};
+    if (api->get_actor_physics_angular_velocity(NULL, &actor_angular_velocity) !=
+            UEC_RESULT_INVALID_HANDLE ||
+        api->set_actor_physics_angular_velocity(NULL, physics_value, UEC_FALSE) !=
+            UEC_RESULT_INVALID_HANDLE ||
+        api->apply_actor_torque(NULL, physics_value, UEC_FALSE) != UEC_RESULT_INVALID_HANDLE ||
+        api->apply_actor_angular_impulse(NULL, physics_value, UEC_FALSE) !=
+            UEC_RESULT_INVALID_HANDLE || actor_angular_velocity.x != 0.0 ||
+        actor_angular_velocity.y != 0.0 || actor_angular_velocity.z != 0.0)
+    {
+        api->release_context(context);
+        return 57;
     }
 
     uec_runtime_stats stats = {sizeof(stats), 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};

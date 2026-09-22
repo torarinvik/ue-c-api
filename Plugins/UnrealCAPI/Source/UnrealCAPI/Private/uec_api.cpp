@@ -328,7 +328,9 @@ namespace
         &TraceDetailed, &TraceDetailedFiltered,
         &SetComponentPhysicsVelocity, &ApplyComponentImpulse, &ApplyComponentForce,
         &GetComponentPhysicsAngularVelocity, &SetComponentPhysicsAngularVelocity,
-        &ApplyComponentTorque, &ApplyComponentAngularImpulse
+        &ApplyComponentTorque, &ApplyComponentAngularImpulse,
+        &GetActorPhysicsAngularVelocity, &SetActorPhysicsAngularVelocity,
+        &ApplyActorTorque, &ApplyActorAngularImpulse
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

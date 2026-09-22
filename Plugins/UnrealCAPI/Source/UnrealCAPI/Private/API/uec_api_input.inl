@@ -262,6 +262,28 @@
         return actor == nullptr ? nullptr : Cast<UPrimitiveComponent>(actor->GetRootComponent());
     }
 
+    static uec_result GetActorPhysicsPrimitiveRoot(FUECActor* actorHandle,
+                                                   UPrimitiveComponent*& outComponent)
+    {
+        outComponent = nullptr;
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
+        if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
+        outComponent = component;
+        return UEC_RESULT_OK;
+    }
+
+    static uec_result GetSimulatingActorPrimitiveRoot(FUECActor* actorHandle,
+                                                       UPrimitiveComponent*& outComponent)
+    {
+        const uec_result componentResult = GetActorPhysicsPrimitiveRoot(actorHandle, outComponent);
+        if (componentResult != UEC_RESULT_OK) return componentResult;
+        const uec_result authorityResult = RequireWorldAuthority(outComponent->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL SetActorPhysicsVelocity(uec_actor* rawActor,
                                                 uec_vector3 velocity,
                                                 uec_bool addToCurrent)
@@ -318,6 +340,68 @@
         const uec_result authorityResult = RequireWorldAuthority(component->GetWorld());
         if (authorityResult != UEC_RESULT_OK) return authorityResult;
         component->AddForce(FVector(force.x, force.y, force.z), NAME_None, false);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetActorPhysicsAngularVelocity(uec_actor* rawActor,
+                                                       uec_vector3* outVelocity)
+    {
+        if (outVelocity != nullptr) *outVelocity = {};
+        if (outVelocity == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetActorPhysicsPrimitiveRoot(actorHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        const FVector velocity = component->GetPhysicsAngularVelocityInRadians(NAME_None);
+        *outVelocity = {velocity.X, velocity.Y, velocity.Z};
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetActorPhysicsAngularVelocity(uec_actor* rawActor,
+                                                       uec_vector3 velocity,
+                                                       uec_bool addToCurrent)
+    {
+        if (!IsFiniteVector(velocity) || !IsValidBool(addToCurrent)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetSimulatingActorPrimitiveRoot(actorHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        component->SetPhysicsAngularVelocityInRadians(
+            FVector(velocity.x, velocity.y, velocity.z), addToCurrent != UEC_FALSE, NAME_None);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL ApplyActorTorque(uec_actor* rawActor,
+                                         uec_vector3 torque,
+                                         uec_bool accelerationChange)
+    {
+        if (!IsFiniteVector(torque) || !IsValidBool(accelerationChange)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetSimulatingActorPrimitiveRoot(actorHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        component->AddTorqueInRadians(FVector(torque.x, torque.y, torque.z), NAME_None,
+                                      accelerationChange != UEC_FALSE);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL ApplyActorAngularImpulse(uec_actor* rawActor,
+                                                 uec_vector3 impulse,
+                                                 uec_bool velocityChange)
+    {
+        if (!IsFiniteVector(impulse) || !IsValidBool(velocityChange)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        UPrimitiveComponent* component = nullptr;
+        const uec_result result = GetSimulatingActorPrimitiveRoot(actorHandle, component);
+        if (result != UEC_RESULT_OK) return result;
+        component->AddAngularImpulseInRadians(FVector(impulse.x, impulse.y, impulse.z), NAME_None,
+                                              velocityChange != UEC_FALSE);
         return UEC_RESULT_OK;
     }
 
