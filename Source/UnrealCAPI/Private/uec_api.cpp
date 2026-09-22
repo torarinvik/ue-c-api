@@ -336,6 +336,8 @@ namespace
         if (CastField<FStrProperty>(property)) return UEC_PROPERTY_STRING;
         if (CastField<FNameProperty>(property)) return UEC_PROPERTY_NAME;
         if (CastField<FTextProperty>(property)) return UEC_PROPERTY_TEXT;
+        if (CastField<FSoftClassProperty>(property)) return UEC_PROPERTY_SOFT_CLASS;
+        if (CastField<FSoftObjectProperty>(property)) return UEC_PROPERTY_SOFT_OBJECT;
         if (CastField<FClassProperty>(property)) return UEC_PROPERTY_CLASS;
         if (CastField<FObjectPropertyBase>(property)) return UEC_PROPERTY_OBJECT;
         if (CastField<FStructProperty>(property)) return UEC_PROPERTY_STRUCT;
@@ -719,13 +721,11 @@ namespace
         &InvokeActorFunctionValue,
         &InvokeActorFunctionValues, &GetClassFunctionParameterAt,
         &InvokeActorFunctionTextValues, &FindObjectHandle,
-        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText, &GetComponentCollisionEnabled, &GetAudioComponentPlaying, &SetStreamingLevelStateAsync, &CancelStreamingLevelRequest, &GetComponentCollisionResponse, &GetConfigInteger, &SetConfigInteger, &BindActorDestroyed, &UnbindActorDestroyed, &GetConfigBool, &GetActorPropertyArrayCount, &GetActorPropertyArrayElementText, &GetObjectPropertyArrayCount, &GetObjectPropertyArrayElementText, &GetObjectPropertyMapCount, &GetObjectPropertyMapEntryText, &GetObjectPropertySetCount, &GetObjectPropertySetElementText
+        &TravelWorldAsync, &CancelTravelRequest, &GetComponentVisible, &GetComponentActive, &GetClassFunctionFlags, &GetWidgetVisibility, &GetTextBlockText, &GetComponentCollisionEnabled, &GetAudioComponentPlaying, &SetStreamingLevelStateAsync, &CancelStreamingLevelRequest, &GetComponentCollisionResponse, &GetConfigInteger, &SetConfigInteger, &BindActorDestroyed, &UnbindActorDestroyed, &GetConfigBool, &GetActorPropertyArrayCount, &GetActorPropertyArrayElementText, &GetObjectPropertyArrayCount, &GetObjectPropertyArrayElementText, &GetObjectPropertyMapCount, &GetObjectPropertyMapEntryText, &GetObjectPropertySetCount, &GetObjectPropertySetElementText, &GetActorPropertySoftPath, &GetObjectPropertySoftPath
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
-{
-    FDelegateHandle WorldCleanupHandle;
-    FDelegateHandle PostLoadMapHandle;
+{ FDelegateHandle WorldCleanupHandle; FDelegateHandle PostLoadMapHandle;
 public:
     void StartupModule() override
     {

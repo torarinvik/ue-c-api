@@ -412,6 +412,62 @@
         }
         return UEC_RESULT_OK;
     }
+    static uec_result ExportSoftPropertyPath(UObject* owner,
+                                             uec_string_view propertyName,
+                                             char* buffer,
+                                             size_t bufferSize,
+                                             size_t* requiredSize,
+                                             uec_property_kind* outKind)
+    {
+        if (requiredSize == nullptr || outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *requiredSize = 0; *outKind = UEC_PROPERTY_UNKNOWN;
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FProperty* property = owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!CastField<FSoftObjectProperty>(property) && !CastField<FSoftClassProperty>(property)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        *outKind = GetPropertyKind(property);
+        FString path;
+        if (!property->ExportTextItem_Direct(path, property->ContainerPtrToValuePtr<void>(owner),
+                                             nullptr, owner, PPF_None, owner)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        return CopyFStringToUtf8(path, buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL GetActorPropertySoftPath(uec_actor* rawActor,
+                                                 uec_string_view propertyName,
+                                                 char* buffer,
+                                                 size_t bufferSize,
+                                                 size_t* requiredSize,
+                                                 uec_property_kind* outKind)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ExportSoftPropertyPath(actor, propertyName, buffer, bufferSize, requiredSize, outKind);
+    }
+
+    uec_result UEC_CALL GetObjectPropertySoftPath(uec_object* rawObject,
+                                                  uec_string_view propertyName,
+                                                  char* buffer,
+                                                  size_t bufferSize,
+                                                  size_t* requiredSize,
+                                                  uec_property_kind* outKind)
+    {
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ExportSoftPropertyPath(object, propertyName, buffer, bufferSize, requiredSize, outKind);
+    }
+
     uec_result UEC_CALL GetObjectPropertyArrayCount(uec_object* rawObject,
                                                     uec_string_view propertyName,
                                                     uint32_t* outCount)

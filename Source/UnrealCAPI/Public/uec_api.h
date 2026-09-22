@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 102u
+#define UEC_ABI_MINOR 103u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -127,7 +127,7 @@ typedef enum uec_property_kind {
     UEC_PROPERTY_STRUCT = 11,
     UEC_PROPERTY_ARRAY = 12,
     UEC_PROPERTY_MAP = 13,
-    UEC_PROPERTY_SET = 14
+    UEC_PROPERTY_SET = 14, UEC_PROPERTY_SOFT_OBJECT = 15, UEC_PROPERTY_SOFT_CLASS = 16
 } uec_property_kind;
 enum { UEC_FUNCTION_PARAMETER_INPUT = 1u << 0, UEC_FUNCTION_PARAMETER_OUT = 1u << 1, UEC_FUNCTION_PARAMETER_RETURN = 1u << 2, UEC_FUNCTION_PARAMETER_REFERENCE = 1u << 3 };
 enum { UEC_FUNCTION_FLAG_BLUEPRINT_CALLABLE = 1u << 0, UEC_FUNCTION_FLAG_NATIVE = 1u << 1, UEC_FUNCTION_FLAG_EVENT = 1u << 2, UEC_FUNCTION_FLAG_LATENT = 1u << 3, UEC_FUNCTION_FLAG_NETWORK = 1u << 4, UEC_FUNCTION_FLAG_AUTHORITY_ONLY = 1u << 5 };
@@ -785,7 +785,7 @@ typedef struct uec_api {
     uec_result (UEC_CALL *bind_actor_destroyed)(uec_actor* actor, uec_actor_destroyed_callback callback, void* user_data, uint64_t* out_subscription_id); uec_result (UEC_CALL *unbind_actor_destroyed)(uec_context* context, uint64_t subscription_id);
     uec_result (UEC_CALL *get_config_bool)(uec_context* context, uec_string_view section, uec_string_view key, uec_bool* out_value);
     uec_result (UEC_CALL *get_actor_property_array_count)(uec_actor* actor, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_actor_property_array_element_text)(uec_actor* actor, uec_string_view property_name, uint32_t index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind);
-    uec_result (UEC_CALL *get_object_property_array_count)(uec_object* object, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_object_property_array_element_text)(uec_object* object, uec_string_view property_name, uint32_t index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *get_object_property_map_count)(uec_object* object, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_object_property_map_entry_text)(uec_object* object, uec_string_view property_name, uint32_t index, uec_text_output* out_key, uec_text_output* out_value); uec_result (UEC_CALL *get_object_property_set_count)(uec_object* object, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_object_property_set_element_text)(uec_object* object, uec_string_view property_name, uint32_t index, uec_text_output* out_element);
+    uec_result (UEC_CALL *get_object_property_array_count)(uec_object* object, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_object_property_array_element_text)(uec_object* object, uec_string_view property_name, uint32_t index, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *get_object_property_map_count)(uec_object* object, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_object_property_map_entry_text)(uec_object* object, uec_string_view property_name, uint32_t index, uec_text_output* out_key, uec_text_output* out_value); uec_result (UEC_CALL *get_object_property_set_count)(uec_object* object, uec_string_view property_name, uint32_t* out_count); uec_result (UEC_CALL *get_object_property_set_element_text)(uec_object* object, uec_string_view property_name, uint32_t index, uec_text_output* out_element); uec_result (UEC_CALL *get_actor_property_soft_path)(uec_actor* actor, uec_string_view property_name, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind); uec_result (UEC_CALL *get_object_property_soft_path)(uec_object* object, uec_string_view property_name, char* buffer, size_t buffer_size, size_t* required_size, uec_property_kind* out_kind);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

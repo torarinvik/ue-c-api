@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.102`.
+The current runtime slice is intentionally small and versioned as ABI `1.103`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -146,6 +146,12 @@ entry count and export each key and value through separate `uec_text_output`
 records; set calls report a logical element count and export one record per
 element. Container iteration order is Unreal-defined and can change after any
 mutation, so re-query the count and do not cache indices across changes.
+
+ABI minor 103 adds `get_actor_property_soft_path` and
+`get_object_property_soft_path`. They export reflected soft object and soft
+class properties through the bounded UTF-8 path contract and report
+`UEC_PROPERTY_SOFT_OBJECT` or `UEC_PROPERTY_SOFT_CLASS` respectively. The
+readback does not load or retain the referenced asset.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
@@ -311,7 +317,9 @@ reflected name through string reads. The string accessors also use Unreal's
 reflected text import/export for supported structs, arrays, maps, sets, and
 other property kinds that have a text representation. The serialized text is
 the engine's property syntax, so callers should treat it as versioned Unreal
-data rather than a stable cross-engine format. Typed `uec_property_value`
+data rather than a stable cross-engine format. Soft object and soft class
+properties have distinct kinds and explicit bounded path readers. Typed
+`uec_property_value`
 access remains limited to scalar and enum values. Property writes reject
 reflected `EditConst`, `BlueprintReadOnly`, const-parameter, and return-value
 flags. Text writes create

@@ -19,7 +19,9 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 102u, "ABI minor must include object map/set readback");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 103u, "ABI minor must include soft property paths");
+UEC_TEST_ASSERT(UEC_PROPERTY_SOFT_OBJECT == 15 && UEC_PROPERTY_SOFT_CLASS == 16,
+               "soft property kind values changed");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -229,6 +231,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_set_count) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_set_element_text) >
                    offsetof(uec_api, get_object_property_set_count),
                "object set element readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_soft_path) >
+                   offsetof(uec_api, get_object_property_set_element_text),
+               "actor soft path readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_soft_path) >
+                   offsetof(uec_api, get_actor_property_soft_path),
+               "object soft path readback must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -497,6 +505,19 @@ int main(void)
     {
         api->release_context(context);
         return 29;
+    }
+
+    size_t soft_required = 42u;
+    uec_property_kind soft_kind = UEC_PROPERTY_STRING;
+    if (api->get_actor_property_soft_path(NULL, streaming_package, NULL, 0u,
+                                           &soft_required, &soft_kind) != UEC_RESULT_UNSUPPORTED ||
+        soft_required != 0u || soft_kind != UEC_PROPERTY_UNKNOWN ||
+        api->get_object_property_soft_path(NULL, streaming_package, NULL, 0u,
+                                           &soft_required, &soft_kind) != UEC_RESULT_UNSUPPORTED ||
+        soft_required != 0u || soft_kind != UEC_PROPERTY_UNKNOWN)
+    {
+        api->release_context(context);
+        return 30;
     }
 
     const char message[] = "C ABI smoke test";
