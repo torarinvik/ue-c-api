@@ -2,7 +2,9 @@
                                   uec_string_view classPath,
                                   uec_class** outClass)
     {
-        if (outClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (outClass == nullptr || !IsValidStringView(classPath) || classPath.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         *outClass = nullptr;
@@ -63,6 +65,9 @@
                                  uec_bool* outIsA)
     {
         if (outIsA == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(parentClassPath) || parentClassPath.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         auto* handle = reinterpret_cast<FUECClass*>(rawClass);
         if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;

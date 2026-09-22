@@ -2,13 +2,16 @@
                                          uec_string_view objectPath,
                                          uec_object** outObject)
     {
-        if (outObject == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (outObject == nullptr || !IsValidStringView(objectPath) || objectPath.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         *outObject = nullptr;
         UObject* object = LoadObject<UObject>(nullptr, *ToFString(objectPath));
         if (object == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = MakeObjectHandle(object);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
         *outObject = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -68,6 +71,9 @@
                                   uec_bool* outIsA)
     {
         if (outIsA == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsValidStringView(classPath) || classPath.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         auto* handle = reinterpret_cast<FUECObject*>(rawObject);
         if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -88,8 +94,10 @@
         if (callback == nullptr || outRequestId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(objectPath) || objectPath.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         const FString pathString = ToFString(objectPath);
-        if (pathString.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
         if (GObjectLoadRequests.Num() >= MaxQueuedObjectLoads) return UEC_RESULT_QUEUE_FULL;
         const FSoftObjectPath path(pathString);
         if (!path.IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
