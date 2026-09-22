@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.113`.
+The current runtime slice is intentionally small and versioned as ABI `1.114`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -197,6 +197,10 @@ re-queried after any mutation.
 ABI minor 113 adds typed scalar reads for nested struct fields on actors and
 UObjects. The field name accepts the same dotted path syntax as the text
 accessor, and scalar leaves use `uec_property_value`.
+
+ABI minor 114 adds typed scalar writes for reflected array elements and map
+values. The same access checks, numeric range checks, and finite-value rules as
+top-level property writes apply; set mutation remains separate.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

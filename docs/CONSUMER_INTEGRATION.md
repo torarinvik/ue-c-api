@@ -124,6 +124,9 @@ and set indices are logical enumeration positions; re-query counts after any
 mutation before using a later index.
 ABI 113 adds typed scalar reads for nested struct fields, including dotted paths
 such as `Transform.Location.X`; compound leaves remain on the text accessor.
+ABI 114 adds typed scalar writes for reflected array elements and map values.
+Writes reject read-only containers and invalid scalar ranges before mutation;
+set mutation remains unsupported.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

@@ -259,6 +259,8 @@ development; they do not imply a published or runtime-verified release.
   values and set elements using `uec_property_value`.
 - ABI minor 113 adds typed scalar reads for nested reflected-struct fields,
   including dotted paths, using `uec_property_value`.
+- ABI minor 114 adds typed scalar writes for reflected actor and UObject array
+  elements and map values with the existing access and range validation.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

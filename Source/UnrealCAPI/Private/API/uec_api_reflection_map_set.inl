@@ -439,3 +439,44 @@
         UObject* object = handle->Value.Get();
         return object == nullptr ? UEC_RESULT_INVALID_HANDLE : GetSetElement(object, propertyName, index, outValue);
     }
+
+    static uec_result SetMapValue(UObject* owner,
+                                  uec_string_view propertyName,
+                                  uint32_t index,
+                                  const uec_property_value* value)
+    {
+        if (value == nullptr || value->struct_size < sizeof(uec_property_value)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FMapProperty* mapProperty = CastField<FMapProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (mapProperty == nullptr || mapProperty->ValueProp == nullptr) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritableProperty(mapProperty)) return UEC_RESULT_UNSUPPORTED;
+        FScriptMapHelper helper(mapProperty, mapProperty->ContainerPtrToValuePtr<void>(owner));
+        int32 slot = INDEX_NONE;
+        if (!FindMapSlot(helper, index, slot)) return UEC_RESULT_INVALID_ARGUMENT;
+        return ImportScalarPropertyValue(mapProperty->ValueProp, helper.GetValuePtr(slot), value);
+    }
+    uec_result UEC_CALL SetActorPropertyMapValue(uec_actor* rawActor,
+                                                 uec_string_view propertyName,
+                                                 uint32_t index,
+                                                 const uec_property_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        return actor == nullptr ? UEC_RESULT_INVALID_HANDLE : SetMapValue(actor, propertyName, index, value);
+    }
+    uec_result UEC_CALL SetObjectPropertyMapValue(uec_object* rawObject,
+                                                  uec_string_view propertyName,
+                                                  uint32_t index,
+                                                  const uec_property_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        return object == nullptr ? UEC_RESULT_INVALID_HANDLE : SetMapValue(object, propertyName, index, value);
+    }

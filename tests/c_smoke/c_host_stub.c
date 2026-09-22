@@ -765,6 +765,52 @@ static uec_result UEC_CALL StubGetObjectPropertyStructFieldValue(
     return StubGetArrayElementValue(outValue);
 }
 
+static uec_result StubSetContainerValue(const uec_property_value* value)
+{
+    if (value == NULL || value->struct_size < sizeof(*value)) return UEC_RESULT_INVALID_ARGUMENT;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetActorPropertyArrayElementValue(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    const uec_property_value* value)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubSetContainerValue(value);
+}
+
+static uec_result UEC_CALL StubSetObjectPropertyArrayElementValue(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    const uec_property_value* value)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    return StubSetContainerValue(value);
+}
+
+static uec_result UEC_CALL StubSetActorPropertyMapValue(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    const uec_property_value* value)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubSetContainerValue(value);
+}
+
+static uec_result UEC_CALL StubSetObjectPropertyMapValue(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    const uec_property_value* value)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    return StubSetContainerValue(value);
+}
+
 static uec_result UEC_CALL StubGetClassPropertyFlags(uec_class* klass,
                                                      uint32_t index,
                                                      uint32_t* outFlags)
@@ -854,6 +900,10 @@ static const uec_api g_api = {
     .get_object_property_set_element_value = &StubGetObjectPropertySetElementValue,
     .get_actor_property_struct_field_value = &StubGetActorPropertyStructFieldValue,
     .get_object_property_struct_field_value = &StubGetObjectPropertyStructFieldValue,
+    .set_actor_property_array_element_value = &StubSetActorPropertyArrayElementValue,
+    .set_object_property_array_element_value = &StubSetObjectPropertyArrayElementValue,
+    .set_actor_property_map_value = &StubSetActorPropertyMapValue,
+    .set_object_property_map_value = &StubSetObjectPropertyMapValue,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

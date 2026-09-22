@@ -74,6 +74,58 @@
         }
         return UEC_RESULT_UNSUPPORTED;
     }
+    static uec_result ImportScalarPropertyValue(const FProperty* property,
+                                                void* data,
+                                                const uec_property_value* value)
+    {
+        if (value == nullptr || value->struct_size < sizeof(uec_property_value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (property == nullptr || data == nullptr || !IsWritableProperty(property)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (const FBoolProperty* boolProperty = CastField<FBoolProperty>(property)) {
+            if (value->kind != UEC_PROPERTY_BOOL || !IsValidBool(value->bool_value)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            boolProperty->SetPropertyValue(data, value->bool_value != UEC_FALSE);
+            return UEC_RESULT_OK;
+        }
+        if (const FEnumProperty* enumProperty = CastField<FEnumProperty>(property)) {
+            FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
+            if ((value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) ||
+                !IsIntegerValueInRange(underlying, value->integer_value) ||
+                !IsValidEnumValue(enumProperty, value->integer_value)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            underlying->SetIntPropertyValue(data, value->integer_value);
+            return UEC_RESULT_OK;
+        }
+        if (FNumericProperty* numeric = CastField<FNumericProperty>(property)) {
+            if (numeric->IsFloatingPoint()) {
+                if ((value->kind != UEC_PROPERTY_FLOAT && value->kind != UEC_PROPERTY_DOUBLE) ||
+                    !FMath::IsFinite(value->real_value) ||
+                    (CastField<FFloatProperty>(property) && !IsRepresentableFloat(value->real_value))) {
+                    return UEC_RESULT_INVALID_ARGUMENT;
+                }
+                numeric->SetFloatingPointPropertyValue(data, value->real_value);
+                return UEC_RESULT_OK;
+            }
+            if (numeric->IsInteger()) {
+                if ((value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) ||
+                    !IsIntegerValueInRange(numeric, value->integer_value)) {
+                    return UEC_RESULT_INVALID_ARGUMENT;
+                }
+                if (IsUnsignedIntegerProperty(numeric)) {
+                    numeric->SetIntPropertyValue(data, static_cast<uint64>(value->integer_value));
+                } else {
+                    numeric->SetIntPropertyValue(data, value->integer_value);
+                }
+                return UEC_RESULT_OK;
+            }
+        }
+        return UEC_RESULT_UNSUPPORTED;
+    }
     uec_result UEC_CALL IsClassPathLoaded(uec_context* rawContext,
                                           uec_string_view classPath,
                                           uec_bool* outLoaded)
