@@ -17,11 +17,12 @@ The minimal host project also contains a tracked C translation unit at
 `Source/UnrealCAPIHost/Private/uec_host_smoke.c`. It performs bootstrap,
 capability, logging, and context-release calls from C, then runs event-bridge
 and latent completion, cancellation, signature-validation, scalar and
-text-backed mixed invocation, mixed-output capacity preflight, short text
-output sizing and retry, invalid world-kind handling, explicit world-context,
-cross-world rejection when an editor world is available, and pending-request
-drain probes after a Game or PIE world becomes available. A packaged or PIE
-run is still required to verify those paths on an installed target engine.
+text-backed mixed invocation, mixed-output capacity preflight and ordering,
+pure out parameters, short text-output sizing and retry, invalid world-kind
+handling, explicit world-context, cross-world rejection when an editor world
+is available, and pending-request drain probes after a Game or PIE world
+becomes available. A packaged or PIE run is still required to verify those
+paths on an installed target engine.
 
 The returned table is owned by the plugin and remains valid until the module
 is unloaded. The context is a bridge handle and must be released through

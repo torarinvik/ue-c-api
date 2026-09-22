@@ -69,6 +69,16 @@ FString AUECAPIHostLatentSmokeActor::EchoSmokeText(FString Value)
     return Value;
 }
 
+void AUECAPIHostLatentSmokeActor::BuildSmokeOutputs(
+    bool& OutFlag,
+    int32& OutNumber,
+    FString& OutText)
+{
+    OutFlag = true;
+    OutNumber = 42;
+    OutText = TEXT("output-smoke");
+}
+
 void AUECAPIHostLatentSmokeActor::WorldContextSmokeCall(UObject* WorldContextObject)
 {
     (void)WorldContextObject;

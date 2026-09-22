@@ -30,6 +30,9 @@ public:
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke")
     FString EchoSmokeText(FString Value);
 
+    UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke")
+    void BuildSmokeOutputs(bool& OutFlag, int32& OutNumber, FString& OutText);
+
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke",
               meta=(WorldContext="WorldContextObject"))
     void WorldContextSmokeCall(UObject* WorldContextObject);

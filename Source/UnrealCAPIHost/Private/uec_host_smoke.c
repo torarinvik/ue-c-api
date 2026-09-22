@@ -298,6 +298,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     static const char scalarFunctionName[] = "ScalarSmokeCall";
     static const char textFunctionName[] = "ValidateSmokeText";
     static const char echoTextFunctionName[] = "EchoSmokeText";
+    static const char outputFunctionName[] = "BuildSmokeOutputs";
     static const char worldContextFunctionName[] = "WorldContextSmokeCall";
     static const char missingFunctionName[] = "MissingLatentSmokeFunction";
     uec_latent_smoke_state* state = &g_latent_smoke_state;
@@ -474,6 +475,38 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         echoOutput.text_required_size > sizeof(echoedText) ||
         echoedText[echoOutput.text_required_size - 1] != '\0' ||
         strstr(echoedText, "mixed-smoke") == NULL) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uec_string_view outputFunction = {
+        outputFunctionName, sizeof(outputFunctionName) - 1};
+    noOutputs = 0;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, outputFunction, NULL, 0u, NULL, 0u, &noOutputs);
+    if (result != UEC_RESULT_BUFFER_TOO_SMALL || noOutputs != 3u) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    char outputText[64] = {0};
+    uec_function_output mixedOutputs[3] = {0};
+    for (uint32_t index = 0; index < 3u; ++index) {
+        mixedOutputs[index].struct_size = sizeof(mixedOutputs[index]);
+    }
+    mixedOutputs[2].text_buffer = outputText;
+    mixedOutputs[2].text_buffer_size = sizeof(outputText);
+    noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, outputFunction, NULL, 0u, mixedOutputs, 3u, &noOutputs);
+    if (result != UEC_RESULT_OK || noOutputs != 3u ||
+        mixedOutputs[0].kind != UEC_PROPERTY_BOOL ||
+        mixedOutputs[0].bool_value != UEC_TRUE ||
+        mixedOutputs[1].kind != UEC_PROPERTY_INTEGER ||
+        mixedOutputs[1].integer_value != 42 ||
+        mixedOutputs[2].kind != UEC_PROPERTY_STRING ||
+        mixedOutputs[2].text_required_size == 0 ||
+        mixedOutputs[2].text_required_size > sizeof(outputText) ||
+        outputText[mixedOutputs[2].text_required_size - 1] != '\0' ||
+        strstr(outputText, "output-smoke") == NULL) {
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
         return UEC_RESULT_INTERNAL_ERROR;
     }
