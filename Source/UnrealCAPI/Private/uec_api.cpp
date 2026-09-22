@@ -459,7 +459,10 @@ namespace
 
     static bool IsFiniteVector(const uec_vector3& value)
     {
-        return FMath::IsFinite(value.x) && FMath::IsFinite(value.y) && FMath::IsFinite(value.z);
+        const double maximum = static_cast<double>(TNumericLimits<float>::Max());
+        return FMath::IsFinite(value.x) && FMath::Abs(value.x) <= maximum &&
+            FMath::IsFinite(value.y) && FMath::Abs(value.y) <= maximum &&
+            FMath::IsFinite(value.z) && FMath::Abs(value.z) <= maximum;
     }
 
     static bool IsRepresentableFloat(double value)
@@ -482,8 +485,8 @@ namespace
     static bool IsFiniteTransform(const uec_transform& value)
     {
         return IsFiniteVector(value.translation) && IsFiniteVector(value.scale) &&
-            FMath::IsFinite(value.rotation.x) && FMath::IsFinite(value.rotation.y) &&
-            FMath::IsFinite(value.rotation.z) && FMath::IsFinite(value.rotation.w);
+            IsRepresentableFloat(value.rotation.x) && IsRepresentableFloat(value.rotation.y) &&
+            IsRepresentableFloat(value.rotation.z) && IsRepresentableFloat(value.rotation.w);
     }
 
     static bool WriteInputActionValue(const FInputActionValue& value,
@@ -588,9 +591,9 @@ namespace
             outShape = FCollisionShape::MakeSphere(static_cast<float>(descriptor->radius));
             return UEC_RESULT_OK;
         case UEC_COLLISION_SHAPE_BOX:
-            if (!FMath::IsFinite(descriptor->half_extents.x) ||
-                !FMath::IsFinite(descriptor->half_extents.y) ||
-                !FMath::IsFinite(descriptor->half_extents.z) ||
+            if (!IsRepresentableFloat(descriptor->half_extents.x) ||
+                !IsRepresentableFloat(descriptor->half_extents.y) ||
+                !IsRepresentableFloat(descriptor->half_extents.z) ||
                 descriptor->half_extents.x <= 0.0 || descriptor->half_extents.y <= 0.0 ||
                 descriptor->half_extents.z <= 0.0) {
                 return UEC_RESULT_INVALID_ARGUMENT;

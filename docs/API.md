@@ -43,7 +43,8 @@ double-precision values in Unreal's world units and the Unreal quaternion
 component order `(x, y, z, w)`. Null pointers paired with nonzero lengths,
 non-finite transform, physics, collision, audio, and movement values are also
 rejected as invalid arguments; values that will cross into Unreal float-only
-parameters must also fit the engine's float range. Boolean inputs must be
+parameters must also fit the engine's float range, including vector components,
+quaternion components, and collision box extents. Boolean inputs must be
 exactly `UEC_FALSE` or `UEC_TRUE`; invalid byte values are rejected rather than
 silently treated as true.
 
