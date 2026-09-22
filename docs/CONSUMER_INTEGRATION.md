@@ -16,9 +16,9 @@ if (result != UEC_RESULT_OK) {
 The minimal host project also contains a tracked C translation unit at
 `Source/UnrealCAPIHost/Private/uec_host_smoke.c`. It performs bootstrap,
 capability, logging, and context-release calls from C, then runs event-bridge
-and latent completion, cancellation, and signature-validation probes after a
-Game or PIE world becomes available. A packaged or PIE run is still required
-to verify those paths on an installed target engine.
+and latent completion, cancellation, signature-validation, and pending-request
+drain probes after a Game or PIE world becomes available. A packaged or PIE run
+is still required to verify those paths on an installed target engine.
 
 The returned table is owned by the plugin and remains valid until the module
 is unloaded. The context is a bridge handle and must be released through

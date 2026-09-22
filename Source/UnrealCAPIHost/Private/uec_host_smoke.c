@@ -19,6 +19,7 @@ typedef struct uec_latent_smoke_state {
     uint64_t request_id;
     uint64_t cancelled_request_id;
     uint32_t cancelled_callback_count;
+    uint32_t baseline_pending_requests;
     uec_result result;
     uec_bool callback_received;
     uec_bool started;
@@ -299,6 +300,9 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     *state = (uec_latent_smoke_state){0};
     state->started = UEC_TRUE;
 
+    uec_runtime_stats baselineStats = {0};
+    baselineStats.struct_size = sizeof(baselineStats);
+
     const uec_string_view classPath = {actorClassPath, sizeof(actorClassPath) - 1};
     const uec_string_view latentName = {functionName, sizeof(functionName) - 1};
     const uec_transform initialTransform = {
@@ -312,6 +316,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     if (state->api == NULL || state->context == NULL ||
         state->api->get_capabilities == NULL ||
         state->api->get_default_world == NULL || state->api->release_world == NULL ||
+        state->api->get_runtime_stats == NULL ||
         state->api->spawn_actor == NULL || state->api->destroy_actor == NULL ||
         state->api->release_actor == NULL ||
         state->api->invoke_actor_function_latent == NULL ||
@@ -329,6 +334,12 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         FinishLatentSmoke(state, result, UEC_FALSE);
         return result;
     }
+    result = state->api->get_runtime_stats(state->context, &baselineStats);
+    if (result != UEC_RESULT_OK) {
+        FinishLatentSmoke(state, result, UEC_FALSE);
+        return result;
+    }
+    state->baseline_pending_requests = baselineStats.pending_requests;
     result = state->api->get_default_world(state->context, &state->world);
     if (result == UEC_RESULT_OK) {
         result = state->api->spawn_actor(state->world, classPath,
@@ -396,6 +407,16 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         result = state->api->cancel_actor_function_latent(
             state->context, state->cancelled_request_id);
     }
+    if (result == UEC_RESULT_OK) {
+        uec_runtime_stats observedStats = {0};
+        observedStats.struct_size = sizeof(observedStats);
+        result = state->api->get_runtime_stats(state->context, &observedStats);
+        if (result == UEC_RESULT_OK &&
+            (state->baseline_pending_requests == UINT32_MAX ||
+             observedStats.pending_requests != state->baseline_pending_requests + 1u)) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+    }
     if (result != UEC_RESULT_OK) FinishLatentSmoke(state, result, UEC_TRUE);
     return result;
 }
@@ -406,6 +427,17 @@ uec_bool UEC_CALL uec_host_latent_smoke_poll(uec_result* outResult)
     uec_latent_smoke_state* state = &g_latent_smoke_state;
     if (state->complete != UEC_TRUE && state->callback_received == UEC_TRUE) {
         if (state->cancelled_callback_count != 0) state->result = UEC_RESULT_INTERNAL_ERROR;
+        if (state->api != NULL && state->context != NULL &&
+            state->api->get_runtime_stats != NULL) {
+            uec_runtime_stats observedStats = {0};
+            observedStats.struct_size = sizeof(observedStats);
+            const uec_result statsResult = state->api->get_runtime_stats(
+                state->context, &observedStats);
+            if (statsResult != UEC_RESULT_OK ||
+                observedStats.pending_requests != state->baseline_pending_requests) {
+                state->result = UEC_RESULT_INTERNAL_ERROR;
+            }
+        }
         FinishLatentSmoke(state, state->result, UEC_FALSE);
     }
     *outResult = state->complete == UEC_TRUE ? state->result : UEC_RESULT_NOT_INITIALIZED;
