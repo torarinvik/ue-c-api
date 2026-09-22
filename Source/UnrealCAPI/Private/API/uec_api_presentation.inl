@@ -208,8 +208,13 @@
             nullptr,
             nullptr,
             false);
+        if (audio == nullptr) return UEC_RESULT_INTERNAL_ERROR;
         FUECObject* handle = MakeObjectHandle(audio);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr)
+        {
+            audio->DestroyComponent();
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         *outAudioComponent = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }

@@ -103,6 +103,8 @@ development; they do not imply a published or runtime-verified release.
   boundary before touching Unreal reflection objects.
 - Module shutdown now emits a verbose resource summary before cleanup, covering
   live handles, subscriptions, bindings, and queued requests.
+- Actor and attached-audio creation clean up the newly created Unreal object if
+  bridge-handle allocation fails.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Embedded NUL rejection for all public UTF-8 string views, including reflected,
   input, save-game, and configuration adapters.

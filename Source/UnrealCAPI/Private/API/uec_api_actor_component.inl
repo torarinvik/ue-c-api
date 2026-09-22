@@ -42,7 +42,11 @@
         AActor* actor = world->SpawnActor<AActor>(actorClass, ToFTransform(*transform));
         if (actor == nullptr) return UEC_RESULT_INTERNAL_ERROR;
         auto* handle = MakeActorHandle(actor);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr)
+        {
+            actor->Destroy();
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
         *outActor = reinterpret_cast<uec_actor*>(handle);
         return UEC_RESULT_OK;
     }
