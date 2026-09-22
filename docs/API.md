@@ -292,6 +292,13 @@ called; an undersized text buffer is reported after execution, so callers must
 check for side effects before retrying. Release every non-null returned object
 or class handle with its matching release function. The call is game-thread
 only and rejects latent, network, and client-world authority-only functions.
+For a function that needs a world context, pass a non-null world handle in its
+positional argument. The mixed and latent adapters reject world handles and
+world-bound object handles from a different world than the target actor. The
+scalar and text adapters cannot supply a world handle, so use the mixed
+argument adapter for world-context parameters. The bridge does not inspect
+editor-only UFunction metadata; callers must follow each function's reflected
+parameter contract.
 
 ABI minor 132 adds a local `UECEventBridgeComponent` to an actor through
 `get_or_create_actor_event_bridge`. Bind a C callback with
@@ -313,8 +320,10 @@ The target must be a callable latent actor function with exactly one reflected
 `FLatentActionInfo` parameter. Supply every other input in the ABI 131 tagged
 argument format; functions with return values, out parameters, or reference
 parameters are rejected because their storage does not survive the initial
-`ProcessEvent` call. The completion callback runs on the game thread after the
-latent continuation and receives the request id plus `UEC_RESULT_OK`. It borrows
+`ProcessEvent` call. For a world-context parameter, pass a non-null world
+handle for the actor's own world. The completion callback runs on the game
+thread after the latent continuation and receives the request id plus
+`UEC_RESULT_OK`. It borrows
 `user_data` until it returns. Requests are bounded at 1024. Cancellation
 suppresses the C callback and asks Unreal's world latent-action manager to
 remove work for that request's unique callback target; an action already being

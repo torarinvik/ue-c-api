@@ -33,11 +33,13 @@ namespace
 }
 
 void AUECAPIHostLatentSmokeActor::WaitForSmokeDuration(
+    UObject* WorldContextObject,
     float Duration,
     FLatentActionInfo LatentInfo)
 {
     UWorld* world = GetWorld();
-    if (world == nullptr || LatentInfo.CallbackTarget == nullptr) return;
+    if (world == nullptr || WorldContextObject != world ||
+        LatentInfo.CallbackTarget == nullptr) return;
 
     FLatentActionManager& manager = world->GetLatentActionManager();
     if (manager.FindExistingAction<FPendingLatentAction>(LatentInfo.CallbackTarget.Get(),
@@ -50,4 +52,9 @@ void AUECAPIHostLatentSmokeActor::WaitForSmokeDuration(
 
 void AUECAPIHostLatentSmokeActor::NoOpSmokeCall()
 {
+}
+
+void AUECAPIHostLatentSmokeActor::WorldContextSmokeCall(UObject* WorldContextObject)
+{
+    (void)WorldContextObject;
 }

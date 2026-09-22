@@ -294,6 +294,7 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         "/Script/UnrealCAPIHost.UECAPIHostLatentSmokeActor";
     static const char functionName[] = "WaitForSmokeDuration";
     static const char nonLatentFunctionName[] = "NoOpSmokeCall";
+    static const char worldContextFunctionName[] = "WorldContextSmokeCall";
     static const char missingFunctionName[] = "MissingLatentSmokeFunction";
     uec_latent_smoke_state* state = &g_latent_smoke_state;
     if (state->started == UEC_TRUE) return UEC_RESULT_INVALID_ARGUMENT;
@@ -321,6 +322,11 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->api->release_actor == NULL ||
         state->api->invoke_actor_function_latent == NULL ||
         state->api->cancel_actor_function_latent == NULL ||
+        state->api->invoke_actor_function_arguments == NULL ||
+        state->api->invoke_actor_function_value == NULL ||
+        state->api->invoke_actor_function_text == NULL ||
+        state->api->get_world_count_by_kind == NULL ||
+        state->api->get_world_at_by_kind == NULL ||
         state->api->release_context == NULL) {
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
         return UEC_RESULT_INTERNAL_ERROR;
@@ -354,6 +360,11 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     duration.struct_size = sizeof(duration);
     duration.kind = UEC_PROPERTY_FLOAT;
     duration.real_value = 0.05;
+    uec_function_argument latentArguments[2] = {0};
+    latentArguments[0].struct_size = sizeof(latentArguments[0]);
+    latentArguments[0].kind = UEC_PROPERTY_OBJECT;
+    latentArguments[0].world_value = state->world;
+    latentArguments[1] = duration;
     uint64_t rejectedRequestId = UINT64_MAX;
     uec_string_view nonLatentName = {
         nonLatentFunctionName, sizeof(nonLatentFunctionName) - 1};
@@ -361,6 +372,70 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
         state->actor, nonLatentName, NULL, 0u, &CompleteLatentSmoke,
         state, &rejectedRequestId);
     if (result != UEC_RESULT_UNSUPPORTED || rejectedRequestId != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uec_string_view worldContextName = {
+        worldContextFunctionName, sizeof(worldContextFunctionName) - 1};
+    uint32_t noOutputs = UINT32_MAX;
+    result = state->api->invoke_actor_function_arguments(
+        state->actor, worldContextName, &latentArguments[0], 1u,
+        NULL, 0u, &noOutputs);
+    if (result != UEC_RESULT_OK || noOutputs != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uint32_t editorWorldCount = 0;
+    result = state->api->get_world_count_by_kind(
+        state->context, UEC_WORLD_KIND_EDITOR, &editorWorldCount);
+    if (result != UEC_RESULT_OK) {
+        FinishLatentSmoke(state, result, UEC_FALSE);
+        return result;
+    }
+    if (editorWorldCount != 0) {
+        uec_world* otherWorld = NULL;
+        result = state->api->get_world_at_by_kind(
+            state->context, UEC_WORLD_KIND_EDITOR, 0u, &otherWorld);
+        if (result != UEC_RESULT_OK || otherWorld == NULL) {
+            FinishLatentSmoke(state, result == UEC_RESULT_OK
+                ? UEC_RESULT_INTERNAL_ERROR : result, UEC_FALSE);
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
+        if (otherWorld != state->world) {
+            uec_function_argument crossWorldContext = latentArguments[0];
+            crossWorldContext.world_value = otherWorld;
+            noOutputs = UINT32_MAX;
+            const uec_result crossWorldResult = state->api->invoke_actor_function_arguments(
+                state->actor, worldContextName, &crossWorldContext, 1u,
+                NULL, 0u, &noOutputs);
+            if (crossWorldResult != UEC_RESULT_INVALID_ARGUMENT || noOutputs != 0) {
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+        }
+        const uec_result releaseOtherWorldResult = state->api->release_world(otherWorld);
+        if (result == UEC_RESULT_OK && releaseOtherWorldResult != UEC_RESULT_OK) {
+            result = releaseOtherWorldResult;
+        }
+        if (result != UEC_RESULT_OK) {
+            FinishLatentSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+    }
+    uec_property_value scalarOutput = {0};
+    scalarOutput.struct_size = sizeof(scalarOutput);
+    result = state->api->invoke_actor_function_value(
+        state->actor, latentName, NULL, 0u, &scalarOutput);
+    if (result != UEC_RESULT_UNSUPPORTED) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    size_t requiredSize = 99u;
+    uec_property_kind returnKind = UEC_PROPERTY_INTEGER;
+    result = state->api->invoke_actor_function_text(
+        state->actor, latentName, NULL, 0u, NULL, 0u,
+        &requiredSize, &returnKind);
+    if (result != UEC_RESULT_UNSUPPORTED || requiredSize != 0u ||
+        returnKind != UEC_PROPERTY_UNKNOWN) {
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
         return UEC_RESULT_INTERNAL_ERROR;
     }
@@ -378,15 +453,28 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     result = state->api->invoke_actor_function_latent(
         state->actor, latentName, NULL, 0u, &CompleteLatentSmoke,
         state, &rejectedRequestId);
-    if (result != UEC_RESULT_INVALID_ARGUMENT || rejectedRequestId != 0) {
+    if (result != UEC_RESULT_UNSUPPORTED || rejectedRequestId != 0) {
+        FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uec_function_argument missingWorldContext[2] = {
+        latentArguments[0], latentArguments[1]};
+    missingWorldContext[0].world_value = NULL;
+    rejectedRequestId = UINT64_MAX;
+    result = state->api->invoke_actor_function_latent(
+        state->actor, latentName, missingWorldContext, 2u,
+        &CompleteLatentSmoke, state, &rejectedRequestId);
+    if (result != UEC_RESULT_UNSUPPORTED || rejectedRequestId != 0) {
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
         return UEC_RESULT_INTERNAL_ERROR;
     }
     uec_function_argument wrongDurationKind = duration;
     wrongDurationKind.kind = UEC_PROPERTY_INTEGER;
+    uec_function_argument wrongLatentArguments[2] = {
+        latentArguments[0], wrongDurationKind};
     rejectedRequestId = UINT64_MAX;
     result = state->api->invoke_actor_function_latent(
-        state->actor, latentName, &wrongDurationKind, 1u,
+        state->actor, latentName, wrongLatentArguments, 2u,
         &CompleteLatentSmoke, state, &rejectedRequestId);
     if (result != UEC_RESULT_INVALID_ARGUMENT || rejectedRequestId != 0) {
         FinishLatentSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
@@ -394,14 +482,14 @@ uec_result UEC_CALL uec_host_latent_smoke_start(void)
     }
 
     result = state->api->invoke_actor_function_latent(
-        state->actor, latentName, &duration, 1u, &CompleteLatentSmoke,
+        state->actor, latentName, latentArguments, 2u, &CompleteLatentSmoke,
         state, &state->request_id);
     if (result != UEC_RESULT_OK) {
         FinishLatentSmoke(state, result, UEC_TRUE);
         return result;
     }
     result = state->api->invoke_actor_function_latent(
-        state->actor, latentName, &duration, 1u, &CompleteLatentSmoke,
+        state->actor, latentName, latentArguments, 2u, &CompleteLatentSmoke,
         state, &state->cancelled_request_id);
     if (result == UEC_RESULT_OK) {
         result = state->api->cancel_actor_function_latent(

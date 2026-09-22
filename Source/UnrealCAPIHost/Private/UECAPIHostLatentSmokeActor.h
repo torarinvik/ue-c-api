@@ -12,9 +12,16 @@ class AUECAPIHostLatentSmokeActor final : public AActor
 
 public:
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke",
-              meta=(Latent, LatentInfo="LatentInfo"))
-    void WaitForSmokeDuration(float Duration, FLatentActionInfo LatentInfo);
+              meta=(Latent, LatentInfo="LatentInfo",
+                    WorldContext="WorldContextObject"))
+    void WaitForSmokeDuration(UObject* WorldContextObject,
+                              float Duration,
+                              FLatentActionInfo LatentInfo);
 
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke")
     void NoOpSmokeCall();
+
+    UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke",
+              meta=(WorldContext="WorldContextObject"))
+    void WorldContextSmokeCall(UObject* WorldContextObject);
 };

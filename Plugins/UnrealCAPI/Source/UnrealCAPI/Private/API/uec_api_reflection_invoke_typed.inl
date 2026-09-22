@@ -295,6 +295,15 @@
                 if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
                 value = handle->Value.Get();
                 if (value == nullptr) return UEC_RESULT_INVALID_HANDLE;
+                // Enforce same-world inputs without relying on editor-only function metadata.
+                UWorld* valueWorld = Cast<UWorld>(value);
+                if (valueWorld == nullptr && GEngine != nullptr) {
+                    valueWorld = GEngine->GetWorldFromContextObject(
+                        value, EGetWorldErrorMode::ReturnNull);
+                }
+                if (valueWorld != nullptr && valueWorld != actor->GetWorld()) {
+                    return UEC_RESULT_INVALID_ARGUMENT;
+                }
             }
             else if (argument.world_value != nullptr)
             {
@@ -302,6 +311,7 @@
                 if (!IsValidWorld(handle)) return UEC_RESULT_INVALID_HANDLE;
                 value = handle->Value.Get();
                 if (value == nullptr) return UEC_RESULT_INVALID_HANDLE;
+                if (value != actor->GetWorld()) return UEC_RESULT_INVALID_ARGUMENT;
             }
             if (value != nullptr && objectProperty->PropertyClass != nullptr &&
                 !value->IsA(objectProperty->PropertyClass)) return UEC_RESULT_INVALID_ARGUMENT;

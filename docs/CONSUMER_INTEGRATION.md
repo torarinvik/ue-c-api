@@ -16,9 +16,11 @@ if (result != UEC_RESULT_OK) {
 The minimal host project also contains a tracked C translation unit at
 `Source/UnrealCAPIHost/Private/uec_host_smoke.c`. It performs bootstrap,
 capability, logging, and context-release calls from C, then runs event-bridge
-and latent completion, cancellation, signature-validation, and pending-request
-drain probes after a Game or PIE world becomes available. A packaged or PIE run
-is still required to verify those paths on an installed target engine.
+and latent completion, cancellation, signature-validation, explicit
+world-context, cross-world rejection when an editor world is available, and
+pending-request drain probes after a Game or PIE world becomes available. A
+packaged or PIE run is still required to verify those paths on an installed
+target engine.
 
 The returned table is owned by the plugin and remains valid until the module
 is unloaded. The context is a bridge handle and must be released through
@@ -189,6 +191,11 @@ handles are caller-owned and must be released with `release_object` or
 `release_class`. A short output array is rejected before invocation, while a
 short per-value text buffer is reported after the function has run; do not
 retry a side-effecting call solely to grow those text buffers.
+For a world-context parameter, pass a non-null world handle positionally.
+Mixed and latent calls reject world handles and world-bound object handles
+from a different world than the target actor. The bridge does not inspect
+editor-only UFunction metadata, so callers must follow each function's
+reflected parameter contract.
 ABI minor 132 adds a local actor event component. Retrieve or create it with
 `get_or_create_actor_event_bridge`, bind a synchronous game-thread C callback,
 and emit through C or its Blueprint-callable `EmitEvent`; Blueprint graphs may
@@ -202,8 +209,10 @@ ABI minor 133 adds `invoke_actor_function_latent` and
 `cancel_actor_function_latent`; check `UEC_CAPABILITY_ASYNC_LATENT_FUNCTIONS`.
 Pass a size-initialized mixed argument array for every non-latent input
 parameter. The function must expose one `FLatentActionInfo`; return, out, and
-reference parameters are unsupported. Completion runs on the game thread and
-borrows `user_data`. Cancellation suppresses the callback and requests removal
+reference parameters are unsupported. Pass a world handle for world-context
+parameters; any world-bound input handle must resolve to the target actor's
+world. Completion runs on the game thread and borrows `user_data`. Cancellation
+suppresses the callback and requests removal
 from the world's latent-action manager, but Unreal may finish an action already
 being processed. Actor/world teardown, travel, and plugin shutdown cancel
 pending requests.
