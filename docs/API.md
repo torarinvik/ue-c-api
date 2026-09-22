@@ -88,9 +88,10 @@ Unreal class path. The current metadata surface reports the class name,
 inheritance checks, and reflected property names and broad property kinds. A
 property index is only meaningful for the class state at the time of the call;
 consumers should re-enumerate after hot reload or class reinstancing. Scalar,
-name, string, and text actor properties can be read through the typed
-property functions. Arrays, maps, sets, structs, object references, and
-reflected function invocation remain unsupported and return an explicit
+enum, name, string, and text actor properties can be read through the typed
+property functions; enum values use their underlying integer and expose their
+reflected name through string reads. Arrays, maps, sets, structs, object
+references, and reflected function invocation remain unsupported and return an explicit
 unsupported result. Text writes create culture-neutral `FText` values from the
 provided UTF-8 text; they do not create localization tables.
 

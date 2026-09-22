@@ -43,6 +43,7 @@ development; they do not imply a published or runtime-verified release.
 - Typed Enhanced Input action-value polling for boolean and axis actions.
 - Ignored-actor filtering for finite-endpoint line traces.
 - Enhanced Input action-value injection for synthetic input and tests.
+- Reflected enum property reads, names, and integer writes.
 - Soft object-path loaded-state queries.
 - C-only gameplay example covering spawn, transforms, timer callbacks, and cleanup.
 - Input validation for oversized UTF-8 views and non-finite transform values.

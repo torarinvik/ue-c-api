@@ -1181,6 +1181,14 @@ namespace
             outValue->bool_value = boolProperty->GetPropertyValue_InContainer(actor) ? UEC_TRUE : UEC_FALSE;
             return UEC_RESULT_OK;
         }
+        if (FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
+        {
+            FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
+            outValue->integer_value = IsUnsignedIntegerProperty(underlying)
+                ? static_cast<int64>(underlying->GetUnsignedIntPropertyValue_InContainer(actor))
+                : underlying->GetSignedIntPropertyValue_InContainer(actor);
+            return UEC_RESULT_OK;
+        }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
         {
             if (numericProperty->IsFloatingPoint())
@@ -1229,6 +1237,14 @@ namespace
         {
             value = textProperty->GetPropertyValue_InContainer(actor).ToString();
         }
+        else if (const FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
+        {
+            const FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
+            const int64 enumValue = IsUnsignedIntegerProperty(underlying)
+                ? static_cast<int64>(underlying->GetUnsignedIntPropertyValue_InContainer(actor))
+                : underlying->GetSignedIntPropertyValue_InContainer(actor);
+            value = enumProperty->GetEnum()->GetNameStringByValue(enumValue);
+        }
         else
         {
             return UEC_RESULT_UNSUPPORTED;
@@ -1253,6 +1269,16 @@ namespace
         {
             if (value->kind != UEC_PROPERTY_BOOL) return UEC_RESULT_INVALID_ARGUMENT;
             boolProperty->SetPropertyValue_InContainer(actor, value->bool_value != UEC_FALSE);
+            return UEC_RESULT_OK;
+        }
+        if (FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
+        {
+            if (value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            const FString text = LexToString(value->integer_value);
+            enumProperty->GetUnderlyingProperty()->SetNumericPropertyValueFromString_InContainer(
+                actor, *text);
             return UEC_RESULT_OK;
         }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
@@ -1332,6 +1358,14 @@ namespace
             outValue->bool_value = boolProperty->GetPropertyValue_InContainer(object) ? UEC_TRUE : UEC_FALSE;
             return UEC_RESULT_OK;
         }
+        if (FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
+        {
+            FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
+            outValue->integer_value = IsUnsignedIntegerProperty(underlying)
+                ? static_cast<int64>(underlying->GetUnsignedIntPropertyValue_InContainer(object))
+                : underlying->GetSignedIntPropertyValue_InContainer(object);
+            return UEC_RESULT_OK;
+        }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
         {
             if (numericProperty->IsFloatingPoint())
@@ -1380,6 +1414,14 @@ namespace
         {
             value = textProperty->GetPropertyValue_InContainer(object).ToString();
         }
+        else if (const FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
+        {
+            const FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
+            const int64 enumValue = IsUnsignedIntegerProperty(underlying)
+                ? static_cast<int64>(underlying->GetUnsignedIntPropertyValue_InContainer(object))
+                : underlying->GetSignedIntPropertyValue_InContainer(object);
+            value = enumProperty->GetEnum()->GetNameStringByValue(enumValue);
+        }
         else
         {
             return UEC_RESULT_UNSUPPORTED;
@@ -1404,6 +1446,16 @@ namespace
         {
             if (value->kind != UEC_PROPERTY_BOOL) return UEC_RESULT_INVALID_ARGUMENT;
             boolProperty->SetPropertyValue_InContainer(object, value->bool_value != UEC_FALSE);
+            return UEC_RESULT_OK;
+        }
+        if (FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
+        {
+            if (value->kind != UEC_PROPERTY_INTEGER && value->kind != UEC_PROPERTY_ENUM) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            const FString text = LexToString(value->integer_value);
+            enumProperty->GetUnderlyingProperty()->SetNumericPropertyValueFromString_InContainer(
+                object, *text);
             return UEC_RESULT_OK;
         }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
