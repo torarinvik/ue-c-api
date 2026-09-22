@@ -178,6 +178,9 @@ development; they do not imply a published or runtime-verified release.
 - Timer, world-tick, input, audio, widget, animation, and component-hit
   registration now rolls back the native engine binding if shutdown begins
   before the bridge records the subscription.
+- Asynchronous object-load and save-game requests now register through a gated
+  helper that applies queue limits and monotonic request ids atomically with
+  shutdown admission.
 - Asynchronous object-load completions now use the shared gated object-handle
   constructor instead of maintaining a separate registry insertion path.
 - Default and indexed world lookup now share one gated world-handle constructor,

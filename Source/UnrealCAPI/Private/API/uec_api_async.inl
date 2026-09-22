@@ -1,3 +1,27 @@
+    static uec_result RegisterObjectLoadRequest(const TSharedPtr<FUECObjectLoadRequest>& request)
+    {
+        FScopeLock lock(&GHandleMutex);
+        if (GShuttingDown) return UEC_RESULT_SHUTTING_DOWN;
+        if (GObjectLoadRequests.Num() >= MaxQueuedObjectLoads) return UEC_RESULT_QUEUE_FULL;
+        if (!AllocateMonotonicId(GNextObjectLoadRequestId, request->Id)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        GObjectLoadRequests.Add(request->Id, request);
+        return UEC_RESULT_OK;
+    }
+
+    static uec_result RegisterSaveGameRequest(const TSharedPtr<FUECSaveGameRequest>& request)
+    {
+        FScopeLock lock(&GHandleMutex);
+        if (GShuttingDown) return UEC_RESULT_SHUTTING_DOWN;
+        if (GSaveGameRequests.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
+        if (!AllocateMonotonicId(GNextSaveGameRequestId, request->Id)) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        GSaveGameRequests.Add(request->Id, request);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL LoadObjectHandle(uec_context* rawContext,
                                          uec_string_view objectPath,
                                          uec_object** outObject)
@@ -102,20 +126,15 @@
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         const FString pathString = ToFString(objectPath);
-        if (GObjectLoadRequests.Num() >= MaxQueuedObjectLoads) return UEC_RESULT_QUEUE_FULL;
         const FSoftObjectPath path(pathString);
         if (!path.IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
 
-        uint64 requestId = 0;
-        if (!AllocateMonotonicId(GNextObjectLoadRequestId, requestId)) {
-            return UEC_RESULT_INTERNAL_ERROR;
-        }
         auto request = MakeShared<FUECObjectLoadRequest>();
-        request->Id = requestId;
         request->Path = path;
         request->Callback = callback;
         request->UserData = userData;
-        GObjectLoadRequests.Add(requestId, request);
+        const uec_result registrationResult = RegisterObjectLoadRequest(request);
+        if (registrationResult != UEC_RESULT_OK) return registrationResult;
         TWeakPtr<FUECObjectLoadRequest> weakRequest = request;
         FStreamableDelegate completed = FStreamableDelegate::CreateLambda([weakRequest]()
         {
@@ -156,10 +175,10 @@
         request->Handle = UAssetManager::Get().GetStreamableManager().RequestAsyncLoad(path, completed);
         if (!request->Handle.IsValid())
         {
-            GObjectLoadRequests.Remove(requestId);
+            GObjectLoadRequests.Remove(request->Id);
             return UEC_RESULT_INTERNAL_ERROR;
         }
-        *outRequestId = requestId;
+        *outRequestId = request->Id;
         return UEC_RESULT_OK;
     }
 
@@ -342,15 +361,12 @@
         }
         USaveGame* saveGame = Cast<USaveGame>(saveHandle->Value.Get());
         if (saveGame == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (GSaveGameRequests.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
 
         auto request = MakeShared<FUECSaveGameRequest>();
-        if (!AllocateMonotonicId(GNextSaveGameRequestId, request->Id)) {
-            return UEC_RESULT_INTERNAL_ERROR;
-        }
         request->Callback = callback;
         request->UserData = userData;
-        GSaveGameRequests.Add(request->Id, request);
+        const uec_result registrationResult = RegisterSaveGameRequest(request);
+        if (registrationResult != UEC_RESULT_OK) return registrationResult;
         TWeakPtr<FUECSaveGameRequest> weakRequest = request;
         UGameplayStatics::AsyncSaveGameToSlot(
             saveGame,
@@ -390,15 +406,12 @@
         if (!IsValidStringView(slotName) || slotName.size == 0 || userIndex < 0) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
-        if (GSaveGameRequests.Num() >= MaxQueuedGameThreadRequests) return UEC_RESULT_QUEUE_FULL;
 
         auto request = MakeShared<FUECSaveGameRequest>();
-        if (!AllocateMonotonicId(GNextSaveGameRequestId, request->Id)) {
-            return UEC_RESULT_INTERNAL_ERROR;
-        }
         request->Callback = callback;
         request->UserData = userData;
-        GSaveGameRequests.Add(request->Id, request);
+        const uec_result registrationResult = RegisterSaveGameRequest(request);
+        if (registrationResult != UEC_RESULT_OK) return registrationResult;
         TWeakPtr<FUECSaveGameRequest> weakRequest = request;
         UGameplayStatics::AsyncLoadGameFromSlot(
             ToFString(slotName),

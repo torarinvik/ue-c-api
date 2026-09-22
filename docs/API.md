@@ -50,7 +50,8 @@ suppressed. Handle constructors also recheck the gate while registering world,
 actor, component, class, and object handles, so late callbacks cannot publish
 new live handles during teardown. Timer and native delegate registration also
 rolls back its engine-side binding if shutdown begins before the bridge registry
-entry is published.
+entry is published. Asynchronous object-load and save-game requests perform the
+same gated registry insertion before dispatch.
 
 Strings are UTF-8 views with an explicit byte length. The caller owns the bytes
 for the duration of a call; the bridge does not retain them. Malformed UTF-8,
