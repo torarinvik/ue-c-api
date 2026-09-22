@@ -217,6 +217,8 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 90 adds cancellable level-travel requests with post-load world
   callbacks and automatic cleanup during module shutdown.
 - ABI minor 91 adds component visibility and activation readback adapters.
+- ABI minor 92 adds reflected function capability flags for callable, native,
+  event, latent, network, and authority-only functions.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

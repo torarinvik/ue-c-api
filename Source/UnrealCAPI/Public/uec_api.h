@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 91u
+#define UEC_ABI_MINOR 92u
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -129,8 +129,8 @@ typedef enum uec_property_kind {
     UEC_PROPERTY_MAP = 13,
     UEC_PROPERTY_SET = 14
 } uec_property_kind;
-enum { UEC_FUNCTION_PARAMETER_INPUT = 1u << 0, UEC_FUNCTION_PARAMETER_OUT = 1u << 1,
-       UEC_FUNCTION_PARAMETER_RETURN = 1u << 2, UEC_FUNCTION_PARAMETER_REFERENCE = 1u << 3 };
+enum { UEC_FUNCTION_PARAMETER_INPUT = 1u << 0, UEC_FUNCTION_PARAMETER_OUT = 1u << 1, UEC_FUNCTION_PARAMETER_RETURN = 1u << 2, UEC_FUNCTION_PARAMETER_REFERENCE = 1u << 3 };
+enum { UEC_FUNCTION_FLAG_BLUEPRINT_CALLABLE = 1u << 0, UEC_FUNCTION_FLAG_NATIVE = 1u << 1, UEC_FUNCTION_FLAG_EVENT = 1u << 2, UEC_FUNCTION_FLAG_LATENT = 1u << 3, UEC_FUNCTION_FLAG_NETWORK = 1u << 4, UEC_FUNCTION_FLAG_AUTHORITY_ONLY = 1u << 5 };
 typedef struct uec_property_value {
     uint32_t struct_size;
     uec_property_kind kind;
@@ -784,8 +784,8 @@ typedef struct uec_api {
                                               uec_travel_callback callback, void* user_data,
                                               uint64_t* out_request_id);
     uec_result (UEC_CALL *cancel_travel_request)(uec_context* context, uint64_t request_id);
-    uec_result (UEC_CALL *get_component_visible)(uec_scene_component* component, uec_bool* out_visible);
-    uec_result (UEC_CALL *get_component_active)(uec_scene_component* component, uec_bool* out_active);
+    uec_result (UEC_CALL *get_component_visible)(uec_scene_component* component, uec_bool* out_visible); uec_result (UEC_CALL *get_component_active)(uec_scene_component* component, uec_bool* out_active);
+    uec_result (UEC_CALL *get_class_function_flags)(uec_class* klass, uint32_t index, uint32_t* out_flags);
 } uec_api;
 /* Bootstrap entry point. The returned function table remains valid until the
  * plugin is unloaded. The context is opaque and must be released with the

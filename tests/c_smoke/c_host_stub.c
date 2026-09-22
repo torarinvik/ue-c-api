@@ -213,6 +213,16 @@ static uec_result UEC_CALL StubGetComponentActive(uec_scene_component* component
     return outActive == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetClassFunctionFlags(uec_class* klass,
+                                                    uint32_t index,
+                                                    uint32_t* outFlags)
+{
+    (void)klass;
+    (void)index;
+    if (outFlags != NULL) *outFlags = 0u;
+    return outFlags == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -246,6 +256,7 @@ static const uec_api g_api = {
     .cancel_travel_request = &StubCancelTravelRequest,
     .get_component_visible = &StubGetComponentVisible,
     .get_component_active = &StubGetComponentActive,
+    .get_class_function_flags = &StubGetClassFunctionFlags,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

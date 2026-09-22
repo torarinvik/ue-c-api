@@ -19,7 +19,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 91u, "ABI minor must include component readback");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 92u, "ABI minor must include function flags");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -166,6 +166,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_component_visible) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_component_active) >
                    offsetof(uec_api, get_component_visible),
                "component activation readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_class_function_flags) >
+                   offsetof(uec_api, get_component_active),
+               "function flags must append to uec_api");
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -309,6 +312,14 @@ int main(void)
     {
         api->release_context(context);
         return 18;
+    }
+
+    uint32_t function_flags = 42u;
+    if (api->get_class_function_flags(NULL, 0u, &function_flags) != UEC_RESULT_UNSUPPORTED ||
+        function_flags != 0u)
+    {
+        api->release_context(context);
+        return 19;
     }
 
     const char message[] = "C ABI smoke test";

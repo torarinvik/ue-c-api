@@ -68,6 +68,9 @@ callback fires; module shutdown cancels all remaining travel requests.
 ABI 91 adds component visibility and activation readback; both functions clear
 their boolean output before validating the component and require the game
 thread.
+ABI 92 adds `get_class_function_flags`; inspect its bit flags together with
+parameter metadata before invoking a reflected function. Latent, network, and
+authority-only flags identify paths that the scalar and text adapters reject.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

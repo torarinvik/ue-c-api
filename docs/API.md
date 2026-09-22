@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.91`.
+The current runtime slice is intentionally small and versioned as ABI `1.92`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -94,6 +94,11 @@ borrow `user_data`, and are removed on cancellation or module shutdown.
 ABI minor 91 adds `get_component_visible` and `get_component_active`, matching
 the existing component setters with game-thread-only readback and deterministic
 boolean outputs.
+
+ABI minor 92 adds `get_class_function_flags`. It reports whether a reflected
+function is Blueprint-callable, native, a Blueprint event, latent, networked,
+or authority-only; consumers can reject unsupported or unsafe calls before
+marshaling arguments.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

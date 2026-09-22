@@ -127,6 +127,38 @@
         }
         return UEC_RESULT_INVALID_ARGUMENT;
     }
+
+    uec_result UEC_CALL GetClassFunctionFlags(uec_class* rawClass,
+                                              uint32_t index,
+                                              uint32_t* outFlags)
+    {
+        if (outFlags != nullptr) *outFlags = 0;
+        if (outFlags == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* classHandle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(classHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = classHandle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        uint32_t current = 0;
+        for (TFieldIterator<UFunction> iterator(klass, EFieldIteratorFlags::IncludeSuper);
+             iterator; ++iterator)
+        {
+            if (current++ != index) continue;
+            const UFunction* function = *iterator;
+            if (function->HasAnyFunctionFlags(FUNC_BlueprintCallable)) {
+                *outFlags |= UEC_FUNCTION_FLAG_BLUEPRINT_CALLABLE;
+            }
+            if (function->HasAnyFunctionFlags(FUNC_Native)) *outFlags |= UEC_FUNCTION_FLAG_NATIVE;
+            if (function->HasAnyFunctionFlags(FUNC_BlueprintEvent)) *outFlags |= UEC_FUNCTION_FLAG_EVENT;
+            if (function->HasAnyFunctionFlags(FUNC_Latent)) *outFlags |= UEC_FUNCTION_FLAG_LATENT;
+            if (function->HasAnyFunctionFlags(FUNC_Net)) *outFlags |= UEC_FUNCTION_FLAG_NETWORK;
+            if (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly)) {
+                *outFlags |= UEC_FUNCTION_FLAG_AUTHORITY_ONLY;
+            }
+            return UEC_RESULT_OK;
+        }
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
     uec_result UEC_CALL GetActorPropertyValue(uec_actor* rawActor,
                                               uec_string_view propertyName,
                                               uec_property_value* outValue)
