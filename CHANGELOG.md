@@ -71,6 +71,7 @@ development; they do not imply a published or runtime-verified release.
 - One-shot `UButton` click subscriptions with unsubscribe tokens and shutdown cleanup.
 - Primitive scene-component velocity reads for moving mesh and physics components.
 - PIE instance identifiers on world handles for distinguishing simultaneous PIE worlds.
+- Read-only world network-mode queries for standalone, client, listen-server, and dedicated-server contexts.
 - C consumer source and public math-type layout assertions.
 - GitHub Actions checks for C11/C++17 headers and descriptor JSON on Linux
   (GCC and Clang) and macOS (Clang), on pushes and pull requests.

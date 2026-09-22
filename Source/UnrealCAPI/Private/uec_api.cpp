@@ -460,7 +460,8 @@ namespace
         &SetWidgetVisibility, &SetTextBlockText,
         &BindButtonClicked, &UnbindButtonClicked,
         &GetComponentVelocity,
-        &GetWorldPIEInstance
+        &GetWorldPIEInstance,
+        &GetWorldNetMode
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

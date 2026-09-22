@@ -155,6 +155,25 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetWorldNetMode(uec_world* rawWorld, uec_net_mode* outMode)
+    {
+        if (outMode == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
+        if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UWorld* world = worldHandle->Value.Get();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        switch (world->GetNetMode())
+        {
+        case NM_Standalone: *outMode = UEC_NET_MODE_STANDALONE; break;
+        case NM_DedicatedServer: *outMode = UEC_NET_MODE_DEDICATED_SERVER; break;
+        case NM_ListenServer: *outMode = UEC_NET_MODE_LISTEN_SERVER; break;
+        case NM_Client: *outMode = UEC_NET_MODE_CLIENT; break;
+        default: *outMode = UEC_NET_MODE_UNKNOWN; break;
+        }
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetWorldName(uec_world* rawWorld,
                                      char* buffer,
                                      size_t bufferSize,

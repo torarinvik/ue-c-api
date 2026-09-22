@@ -53,6 +53,14 @@ typedef enum uec_world_kind {
     UEC_WORLD_KIND_INACTIVE = 5
 } uec_world_kind;
 
+typedef enum uec_net_mode {
+    UEC_NET_MODE_UNKNOWN = 0,
+    UEC_NET_MODE_STANDALONE = 1,
+    UEC_NET_MODE_DEDICATED_SERVER = 2,
+    UEC_NET_MODE_LISTEN_SERVER = 3,
+    UEC_NET_MODE_CLIENT = 4
+} uec_net_mode;
+
 typedef uint64_t uec_capabilities;
 enum {
     UEC_CAPABILITY_BOOTSTRAP = UINT64_C(1) << 0,
@@ -633,6 +641,8 @@ typedef struct uec_api {
                                                   uec_vector3* out_velocity);
     uec_result (UEC_CALL *get_world_pie_instance)(uec_world* world,
                                                   int32_t* out_instance);
+    uec_result (UEC_CALL *get_world_net_mode)(uec_world* world,
+                                              uec_net_mode* out_mode);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

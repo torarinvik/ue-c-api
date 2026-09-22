@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.63`.
+The current runtime slice is intentionally small and versioned as ABI `1.64`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -42,7 +42,9 @@ invalid arguments.
 World enumeration reports active Game and PIE worlds by index and labels each
 handle with its world kind. `get_world_pie_instance` exposes Unreal's PIE
 instance identifier (`-1` for the default/non-PIE context), allowing consumers
-to distinguish simultaneous PIE worlds. `get_default_world` remains a convenience operation
+to distinguish simultaneous PIE worlds. `get_world_net_mode` reports whether a
+world is standalone, a client, a listen server, or a dedicated server.
+`get_default_world` remains a convenience operation
 that selects the first active world; consumers needing deterministic selection
 should enumerate and retain the desired world handle.
 
