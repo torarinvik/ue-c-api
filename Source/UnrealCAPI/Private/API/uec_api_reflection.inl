@@ -23,6 +23,20 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL IsClassPathLoaded(uec_context* rawContext,
+                                          uec_string_view classPath,
+                                          uec_bool* outLoaded)
+    {
+        if (outLoaded == nullptr || !IsValidStringView(classPath) || classPath.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        *outLoaded = FindObject<UClass>(nullptr, *ToFString(classPath)) != nullptr
+            ? UEC_TRUE : UEC_FALSE;
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL ReleaseClass(uec_class* rawClass)
     {
         auto* handle = reinterpret_cast<FUECClass*>(rawClass);

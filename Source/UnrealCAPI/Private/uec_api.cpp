@@ -630,7 +630,8 @@ namespace
         &SetConfigString,
         &GetStreamingLevelCount,
         &GetStreamingLevelAt,
-        &SetStreamingLevelState
+        &SetStreamingLevelState,
+        &IsClassPathLoaded
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

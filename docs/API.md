@@ -121,6 +121,9 @@ loaded state, and requested visibility. `set_streaming_level_state` submits
 load and visibility flags for a matching package on the game thread; the call
 changes streaming intent and does not wait for asynchronous loading to finish.
 
+`is_class_path_loaded` checks whether a class object already exists in memory;
+it never loads the class and therefore is safe for cook/dependency preflight.
+
 `get_actor_bounds` reports a caller-owned world-space origin and box extent for
 an actor. `find_player_start` selects the start actor for an explicit local
 player index; a missing start actor returns `UEC_RESULT_NOT_INITIALIZED`.

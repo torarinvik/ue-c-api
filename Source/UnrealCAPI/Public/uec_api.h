@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 76u
+#define UEC_ABI_MINOR 77u
 
 #ifdef __cplusplus
 extern "C" {
@@ -730,6 +730,9 @@ typedef struct uec_api {
                                                      uec_string_view package_path,
                                                      uec_bool should_be_loaded,
                                                      uec_bool should_be_visible);
+    uec_result (UEC_CALL *is_class_path_loaded)(uec_context* context,
+                                                uec_string_view class_path,
+                                                uec_bool* out_loaded);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the
