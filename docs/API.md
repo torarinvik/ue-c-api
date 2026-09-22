@@ -233,6 +233,11 @@ the same typed scalar paths as `FEnumProperty`.
 ABI minor 121 adds `get_class_property_struct_path`, which returns the
 reflected `UStruct` path for a struct property before its fields are enumerated.
 
+ABI minor 122 adds `get_class_property_container_kinds`, which reports the
+declared element kind for arrays and sets, and both key and value kinds for
+maps. Non-container properties return `UEC_RESULT_UNSUPPORTED`; unused output
+kinds are reset to `UEC_PROPERTY_UNKNOWN`.
+
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
 returns `UEC_RESULT_WRONG_THREAD` for calls made from another thread. Queued
