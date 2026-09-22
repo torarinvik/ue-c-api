@@ -20,7 +20,7 @@ if [ ! -f "$repo_dir/IMPLEMENTATION_PLAN.md" ] || ! git -C "$repo_dir" check-ign
     exit 1
 fi
 
-for source_file in "$private_dir/uec_api.cpp" "$private_dir"/API/*.inl; do
+for source_file in "$public_dir/uec_api.h" "$private_dir/uec_api.cpp" "$private_dir"/API/*.inl; do
     line_count=$(wc -l < "$source_file" | tr -d ' ')
     if [ "$line_count" -lt 400 ] || [ "$line_count" -gt 800 ]; then
         printf 'Private source file is outside the 400-800 line budget: %s (%s lines)\n' \
