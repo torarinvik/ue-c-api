@@ -46,7 +46,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Asset path queries | Runtime implemented / Unreal integration pending | Check whether soft object and class paths currently resolve in memory |
 | Attached audio playback | Runtime implemented / Unreal integration pending | Spawn, stop, playing-state readback, destroy, and release non-auto-destroying audio components on scene components |
 | Audio completion subscriptions | Runtime implemented / Unreal integration pending | One-shot native finished callbacks with unsubscribe tokens and component-destruction cleanup |
-| C gameplay example | Source and header verified | Spawn, timer-driven movement, callback, and cleanup flow |
+| C gameplay example | Source and header verified | Spawn, timer-driven movement, synchronous event-bridge callback, and actor/component/handle cleanup flow |
 | Synchronous object loading and lookup | Runtime implemented / Unreal integration pending | Non-loading full-path lookup plus weak path-loaded UObject handles, names, full object paths, class paths, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, game-thread callbacks, and a 1024-request bound |
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries, immediate and callback-based game-thread `OpenLevel` requests, cancellation, world-owned timer/tick and actor-scoped subscription cancellation, and invalidation of old-world handles |

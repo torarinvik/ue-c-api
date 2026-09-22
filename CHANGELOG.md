@@ -313,6 +313,9 @@ development; they do not imply a published or runtime-verified release.
   unbinding, component teardown cleanup, and stale-handle rejection in Game/PIE.
 - The portable old-consumer fixture now requests ABI 1.131 from the ABI 1.132
   bridge and exercises only the stable table prefix.
+- The C gameplay example now binds the event component, emits a validated
+  payload on each movement tick, receives it synchronously, and cleans up the
+  actor, component, timer, subscription, world, and handles.
 - Adds `UEC_CAPABILITY_REFLECTION_CONTAINERS` so consumers can gate container metadata and set mutation explicitly.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
