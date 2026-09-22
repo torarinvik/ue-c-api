@@ -13,6 +13,12 @@ if (result != UEC_RESULT_OK) {
 }
 ```
 
+The minimal host project also contains a tracked C translation unit at
+`Source/UnrealCAPIHost/Private/uec_host_smoke.c`. It performs the bootstrap,
+capability, logging, and context-release calls from C and the host module logs
+whether that probe succeeds during startup. A packaged or PIE run is still
+required to verify the complete runtime path on an installed target engine.
+
 The returned table is owned by the plugin and remains valid until the module
 is unloaded. The context is a bridge handle and must be released through
 `api->release_context`. Consumers call through the table rather than linking

@@ -9,6 +9,7 @@ layout_consumer="$repo_dir/tests/c_smoke/c_smoke_layout.c"
 compat_consumer="$repo_dir/tests/c_smoke/c_compat.c"
 host_stub="$repo_dir/tests/c_smoke/c_host_stub.c"
 gameplay_example="$repo_dir/examples/c_gameplay/c_gameplay.c"
+host_consumer="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_smoke.c"
 private_dir="$plugin_dir/Source/UnrealCAPI/Private"
 
 git -C "$repo_dir" diff --check
@@ -19,6 +20,7 @@ git -C "$repo_dir" diff --check
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -x c++ -fsyntax-only "$layout_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$compat_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$gameplay_example"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_consumer"
 stub_build_dir=$(mktemp -d)
 trap 'rm -rf "$stub_build_dir"' EXIT HUP INT TERM
 sanitizer_flags=

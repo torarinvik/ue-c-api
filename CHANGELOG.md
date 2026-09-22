@@ -9,6 +9,10 @@ development; they do not imply a published or runtime-verified release.
 
 - Initial Unreal Engine C API runtime plugin scaffold targeting the latest UE
   5.8 release.
+- Standard `Plugins/UnrealCAPI` project-plugin layout with tracked host Game and
+  Editor targets for Unreal Build Tool discovery.
+- A tracked C host bootstrap probe that exercises table negotiation, capability
+  discovery, logging, and context release when the host starts.
 - Public C function table with version negotiation and capability discovery.
 - Initial world, actor, scene-component, timer, collision line-trace, and class
   metadata adapters.

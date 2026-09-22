@@ -14,8 +14,9 @@ build, launch, and exercise the C smoke path.
 The project plugin lives under `Plugins/UnrealCAPI/`, which is the standard
 project-plugin layout Unreal uses to discover the descriptor and module source.
 The host project includes tracked Game and Editor target files plus a minimal
-primary module, so Unreal Build Tool does not need to synthesize temporary
-targets before compiling the plugin.
+primary module and C bootstrap probe, so Unreal Build Tool does not need to
+synthesize temporary targets before compiling the plugin and its first C
+consumer.
 The portable gate is `sh tests/run_checks.sh`. It validates the public header
 as C11 and C++17, links and runs the current and old-minor C consumers against
 an explicit host stub, checks the C gameplay example and Unreal descriptor JSON,
