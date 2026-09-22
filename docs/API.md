@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.68`.
+The current runtime slice is intentionally small and versioned as ABI `1.70`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -298,6 +298,11 @@ primitive component and run on the game thread.
 
 `play_skeletal_animation` and `stop_skeletal_animation` control the transient
 animation state of skeletal mesh components using a loaded animation asset.
+`bind_animation_finished` watches a currently playing single animation and
+delivers one game-thread callback when it stops; it returns a token that can be
+unbound before completion. Looping animations do not complete until they are
+stopped. The adapter reports `UEC_RESULT_NOT_INITIALIZED` when no animation is
+playing at bind time.
 `set_component_material_scalar` and `set_component_material_vector` update all
 matching material parameters on a mesh component; parameter names are UTF-8
 views and vector values use the API's world-independent double-precision type.

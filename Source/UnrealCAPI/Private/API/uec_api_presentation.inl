@@ -401,3 +401,87 @@
         component->Stop();
         return UEC_RESULT_OK;
     }
+
+    /* Poll the documented single-animation state so completion works without
+     * requiring a generated native bridge component or Blueprint delegate. */
+    uec_result UEC_CALL BindAnimationFinished(uec_scene_component* rawComponent,
+                                              uec_animation_finished_callback callback,
+                                              void* userData,
+                                              uint64_t* outSubscriptionId)
+    {
+        if (callback == nullptr || outSubscriptionId == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USkeletalMeshComponent* component = Cast<USkeletalMeshComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!component->IsPlaying()) return UEC_RESULT_NOT_INITIALIZED;
+
+        const uint64 subscriptionId = GNextAnimationSubscriptionId++;
+        auto subscription = MakeShared<FUECAnimationSubscription>();
+        subscription->Id = subscriptionId;
+        subscription->Component = component;
+        subscription->Callback = callback;
+        subscription->UserData = userData;
+        subscription->WasPlaying = true;
+        TWeakPtr<FUECAnimationSubscription> weakSubscription = subscription;
+        subscription->Handle = FTSTicker::GetCoreTicker().AddTicker(
+            FTickerDelegate::CreateLambda([weakSubscription](float)
+            {
+                TSharedPtr<FUECAnimationSubscription> current = weakSubscription.Pin();
+                if (!current.IsValid() || current->Cancelled || IsShuttingDown()) return false;
+                USkeletalMeshComponent* component = current->Component.Get();
+                if (component == nullptr)
+                {
+                    GAnimationSubscriptions.Remove(current->Id);
+                    return false;
+                }
+                const bool isPlaying = component->IsPlaying();
+                if (current->WasPlaying && !isPlaying)
+                {
+                    current->InCallback = true;
+                    current->Callback(current->Id, current->UserData);
+                    current->InCallback = false;
+                    current->Cancelled = true;
+                    GAnimationSubscriptions.Remove(current->Id);
+                    return false;
+                }
+                current->WasPlaying = isPlaying;
+                return true;
+            }),
+            0.0f);
+        GAnimationSubscriptions.Add(subscriptionId, subscription);
+        *outSubscriptionId = subscriptionId;
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL UnbindAnimationFinished(uec_context* rawContext,
+                                                uint64_t subscriptionId)
+    {
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        TSharedPtr<FUECAnimationSubscription>* subscriptionPtr = GAnimationSubscriptions.Find(subscriptionId);
+        if (subscriptionPtr == nullptr || !subscriptionPtr->IsValid()) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        TSharedPtr<FUECAnimationSubscription> subscription = *subscriptionPtr;
+        subscription->Cancelled = true;
+        if (!subscription->InCallback) {
+            FTSTicker::RemoveTicker(subscription->Handle);
+        }
+        GAnimationSubscriptions.Remove(subscriptionId);
+        return UEC_RESULT_OK;
+    }
+
+    static void ClearAllAnimationSubscriptions()
+    {
+        for (const TPair<uint64, TSharedPtr<FUECAnimationSubscription>>& pair : GAnimationSubscriptions)
+        {
+            if (!pair.Value.IsValid()) continue;
+            pair.Value->Cancelled = true;
+            FTSTicker::RemoveTicker(pair.Value->Handle);
+        }
+        GAnimationSubscriptions.Empty();
+    }

@@ -102,6 +102,17 @@ namespace
         bool Cancelled = false;
         bool InCallback = false;
     };
+    struct FUECAnimationSubscription final
+    {
+        uint64 Id = 0;
+        TWeakObjectPtr<USkeletalMeshComponent> Component;
+        FTSTicker::FDelegateHandle Handle;
+        uec_animation_finished_callback Callback = nullptr;
+        void* UserData = nullptr;
+        bool Cancelled = false;
+        bool InCallback = false;
+        bool WasPlaying = false;
+    };
     struct FUECClass final { TWeakObjectPtr<UClass> Value; };
     struct FUECObject final
     {
@@ -151,6 +162,7 @@ namespace
     TMap<uint64, TSharedPtr<FUECTickSubscription>> GTickSubscriptions;
     TMap<uint64, TSharedPtr<FUECAudioSubscription>> GAudioSubscriptions;
     TMap<uint64, TSharedPtr<FUECWidgetSubscription>> GWidgetSubscriptions;
+    TMap<uint64, TSharedPtr<FUECAnimationSubscription>> GAnimationSubscriptions;
     TSet<const FUECClass*> GClasses;
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
@@ -163,6 +175,7 @@ namespace
     uint64 GNextTickSubscriptionId = 1;
     uint64 GNextAudioSubscriptionId = 1;
     uint64 GNextWidgetSubscriptionId = 1;
+    uint64 GNextAnimationSubscriptionId = 1;
     uint64 GNextSaveGameRequestId = 1;
     uint64 GNextInputBindingId = 1;
     constexpr int32 MaxQueuedObjectLoads = 1024;
@@ -526,7 +539,9 @@ namespace
         &GetActorTagCount,
         &GetActorTagAt,
         &GetActorBounds,
-        &FindPlayerStart
+        &FindPlayerStart,
+        &BindAnimationFinished,
+        &UnbindAnimationFinished
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
@@ -552,6 +567,7 @@ public:
         ClearAllTickSubscriptions();
         ClearAllAudioSubscriptions();
         ClearAllWidgetSubscriptions();
+        ClearAllAnimationSubscriptions();
         CancelAllObjectLoads();
         CancelAllGameThreadRequests();
         CancelAllSaveGameRequests();

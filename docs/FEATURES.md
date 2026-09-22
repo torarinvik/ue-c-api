@@ -28,7 +28,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Game-thread dispatch | Runtime implemented / Unreal integration pending | Queue and cancel borrowed callbacks from worker threads; bounded at 1024 pending requests |
 | Pawn and character movement | Runtime implemented / Unreal integration pending | Add world-space pawn input and character jump state |
 | Mesh presentation | Runtime implemented / Unreal integration pending | Assign loaded static or skeletal meshes to compatible components |
-| Animation and material parameters | Runtime implemented / Unreal integration pending | Play/stop skeletal assets and update scalar/vector material parameters |
+| Animation and material parameters | Runtime implemented / Unreal integration pending | Play/stop skeletal assets, tokenized one-shot completion callbacks, and scalar/vector material parameters |
 | Explicit object retention | Runtime implemented / Unreal integration pending | Promote a weak object handle to a GC-tracked strong handle |
 | Component type introspection | Runtime implemented / Unreal integration pending | Class-path output and inheritance checks for scene components |
 | Component attachment | Runtime implemented / Unreal integration pending | Same-world attach/detach with transform rules and optional sockets |

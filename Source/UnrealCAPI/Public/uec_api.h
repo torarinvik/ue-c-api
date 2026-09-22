@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 68u
+#define UEC_ABI_MINOR 70u
 
 #ifdef __cplusplus
 extern "C" {
@@ -231,6 +231,8 @@ typedef void (UEC_CALL *uec_tick_callback)(uint64_t subscription_id,
                                            void* user_data);
 typedef void (UEC_CALL *uec_audio_finished_callback)(uint64_t subscription_id,
                                                      void* user_data);
+typedef void (UEC_CALL *uec_animation_finished_callback)(uint64_t subscription_id,
+                                                         void* user_data);
 typedef void (UEC_CALL *uec_widget_event_callback)(uint64_t subscription_id,
                                                    void* user_data);
 typedef void (UEC_CALL *uec_object_load_callback)(uint64_t request_id,
@@ -682,6 +684,12 @@ typedef struct uec_api {
     uec_result (UEC_CALL *find_player_start)(uec_world* world,
                                              uint32_t player_index,
                                              uec_actor** out_start);
+    uec_result (UEC_CALL *bind_animation_finished)(uec_scene_component* component,
+                                                   uec_animation_finished_callback callback,
+                                                   void* user_data,
+                                                   uint64_t* out_subscription_id);
+    uec_result (UEC_CALL *unbind_animation_finished)(uec_context* context,
+                                                     uint64_t subscription_id);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

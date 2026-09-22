@@ -17,7 +17,7 @@ UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI chan
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 68u, "ABI minor must include actor query extensions");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 70u, "ABI minor must include animation callbacks");
 UEC_TEST_ASSERT(offsetof(uec_api, get_capabilities) > offsetof(uec_api, abi_minor),
                "uec_api function table ordering changed");
 UEC_TEST_ASSERT(offsetof(uec_api, sweep_trace) > offsetof(uec_api, cancel_object_load),
@@ -75,6 +75,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_actor_bounds) >
 UEC_TEST_ASSERT(offsetof(uec_api, find_player_start) >
                    offsetof(uec_api, get_actor_bounds),
                "player-start lookup must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, bind_animation_finished) >
+                   offsetof(uec_api, find_player_start),
+               "animation callbacks must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, unbind_animation_finished) >
+                   offsetof(uec_api, bind_animation_finished),
+               "animation unsubscribe must append to uec_api");
 
 int main(void)
 {
