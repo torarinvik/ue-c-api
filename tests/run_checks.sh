@@ -13,6 +13,11 @@ private_dir="$repo_dir/Source/UnrealCAPI/Private"
 python3 -m json.tool "$repo_dir/UnrealCAPI.uplugin" >/dev/null
 python3 -m json.tool "$repo_dir/UnrealCAPIHost.uproject" >/dev/null
 
+if [ ! -f "$repo_dir/IMPLEMENTATION_PLAN.md" ] || ! git -C "$repo_dir" check-ignore -q IMPLEMENTATION_PLAN.md; then
+    printf '%s\n' 'IMPLEMENTATION_PLAN.md must exist and remain gitignored.' >&2
+    exit 1
+fi
+
 for source_file in "$private_dir/uec_api.cpp" "$private_dir"/API/*.inl; do
     line_count=$(wc -l < "$source_file" | tr -d ' ')
     if [ "$line_count" -lt 400 ] || [ "$line_count" -gt 800 ]; then
