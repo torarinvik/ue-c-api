@@ -305,6 +305,7 @@
     {
         auto* handle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UWorld* world = handle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return CopyFStringToUtf8(world->GetMapName(), buffer, bufferSize, requiredSize);

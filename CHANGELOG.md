@@ -99,6 +99,8 @@ development; they do not imply a published or runtime-verified release.
   inside the callback and suppress delivery after shutdown begins.
 - Async object-load requests are registered before dispatch so an immediate
   completion cannot leave an orphaned request in the shutdown queue.
+- World, object, and class name reads now enforce the documented game-thread
+  boundary before touching Unreal reflection objects.
 - Strict UTF-8 validation for public string views, including rejection of overlong encodings, surrogates, and out-of-range code points.
 - Embedded NUL rejection for all public UTF-8 string views, including reflected,
   input, save-game, and configuration adapters.

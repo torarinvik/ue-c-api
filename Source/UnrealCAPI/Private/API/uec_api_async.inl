@@ -33,6 +33,7 @@
     {
         auto* handle = reinterpret_cast<FUECObject*>(rawObject);
         if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UObject* object = handle->Value.Get();
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return CopyFStringToUtf8(object->GetName(), buffer, bufferSize, requiredSize);

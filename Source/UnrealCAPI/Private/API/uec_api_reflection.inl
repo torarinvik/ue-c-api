@@ -55,6 +55,7 @@
     {
         auto* handle = reinterpret_cast<FUECClass*>(rawClass);
         if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UClass* klass = handle->Value.Get();
         if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return CopyFStringToUtf8(klass->GetName(), buffer, bufferSize, requiredSize);
