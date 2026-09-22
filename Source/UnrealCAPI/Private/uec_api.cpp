@@ -2064,6 +2064,42 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL AttachSceneComponent(uec_scene_component* rawChild,
+                                             uec_scene_component* rawParent,
+                                             uec_bool keepWorldTransform,
+                                             uec_string_view socketName)
+    {
+        auto* childHandle = reinterpret_cast<FUECSceneComponent*>(rawChild);
+        auto* parentHandle = reinterpret_cast<FUECSceneComponent*>(rawParent);
+        if (!IsValidComponent(childHandle) || !IsValidComponent(parentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (socketName.data == nullptr && socketName.size != 0) return UEC_RESULT_INVALID_ARGUMENT;
+        USceneComponent* child = childHandle->Value.Get();
+        USceneComponent* parent = parentHandle->Value.Get();
+        if (child == nullptr || parent == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (child == parent || child->GetWorld() != parent->GetWorld()) return UEC_RESULT_INVALID_ARGUMENT;
+        const FAttachmentTransformRules rules = keepWorldTransform != UEC_FALSE
+            ? FAttachmentTransformRules::KeepWorldTransform
+            : FAttachmentTransformRules::KeepRelativeTransform;
+        return child->AttachToComponent(parent, rules, FName(*ToFString(socketName)))
+            ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    uec_result UEC_CALL DetachSceneComponent(uec_scene_component* rawComponent,
+                                             uec_bool keepWorldTransform)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USceneComponent* component = componentHandle->Value.Get();
+        if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const FDetachmentTransformRules rules = keepWorldTransform != UEC_FALSE
+            ? FDetachmentTransformRules::KeepWorldTransform
+            : FDetachmentTransformRules::KeepRelativeTransform;
+        component->DetachFromComponent(rules);
+        return UEC_RESULT_OK;
+    }
+
     static void CancelAllObjectLoads()
     {
         for (const TPair<uint64, TSharedPtr<FUECObjectLoadRequest>>& pair : GObjectLoadRequests)
@@ -2117,7 +2153,8 @@ namespace
         &SetStaticMesh, &SetSkeletalMesh,
         &PlaySkeletalAnimation, &StopSkeletalAnimation,
         &SetComponentMaterialScalar, &SetComponentMaterialVector,
-        &RetainObject, &GetComponentClassName, &ComponentIsA
+        &RetainObject, &GetComponentClassName, &ComponentIsA,
+        &AttachSceneComponent, &DetachSceneComponent
     };
 }
 

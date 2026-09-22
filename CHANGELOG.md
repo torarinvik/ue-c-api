@@ -33,6 +33,7 @@ development; they do not imply a published or runtime-verified release.
 - Skeletal animation play/stop and scalar/vector material parameter adapters.
 - Explicit GC-tracked strong object handles alongside weak object handles.
 - Scene-component class-path output and inheritance checks.
+- Same-world scene-component attachment and detachment with transform rules.
 - Reflected actor property writes and reads for supported scalar, string, name,
   and text types.
 - C consumer source and public math-type layout assertions.
