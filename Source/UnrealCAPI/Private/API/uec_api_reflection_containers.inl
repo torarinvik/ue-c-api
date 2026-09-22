@@ -428,3 +428,46 @@
         if (slot == INDEX_NONE) return UEC_RESULT_INTERNAL_ERROR;
         return ExportPropertyText(setProperty->ElementProp, helper.GetElementPtr(slot), actor, outElement);
     }
+
+    static uec_result ImportSoftPropertyPath(UObject* owner,
+                                             uec_string_view propertyName,
+                                             uec_string_view path)
+    {
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0 ||
+            !IsValidStringView(path)) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!CastField<FSoftObjectProperty>(property) && !CastField<FSoftClassProperty>(property)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (!IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        const FString text = ToFString(path);
+        if (property->ImportText_InContainer(*text, owner, owner, PPF_None, GWarn) == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetActorPropertySoftPath(uec_actor* rawActor,
+                                                 uec_string_view propertyName,
+                                                 uec_string_view path)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ImportSoftPropertyPath(actor, propertyName, path);
+    }
+
+    uec_result UEC_CALL SetObjectPropertySoftPath(uec_object* rawObject,
+                                                  uec_string_view propertyName,
+                                                  uec_string_view path)
+    {
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ImportSoftPropertyPath(object, propertyName, path);
+    }

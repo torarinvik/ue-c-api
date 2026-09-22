@@ -241,6 +241,8 @@ development; they do not imply a published or runtime-verified release.
   readback and distinct soft-reference property kinds.
 - ABI minor 104 adds actor map/set counts and caller-owned key/value or element
   text readback; container adapters now live in a dedicated reflection unit.
+- ABI minor 105 adds writable actor and UObject soft object/class path
+  properties with reflected access checks and text import validation.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

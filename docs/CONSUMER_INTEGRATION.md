@@ -101,6 +101,9 @@ properties. These calls report distinct soft-reference kinds and never load or
 retain the referenced asset.
 ABI 104 adds actor map/set counts and text entries. The container adapters are
 append-only and invalidate indices after mutation; re-query before later reads.
+ABI 105 adds soft object/class path writes for writable reflected properties;
+the path is imported on the game thread and the referenced asset is not loaded
+or retained by the bridge.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

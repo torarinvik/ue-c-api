@@ -543,6 +543,26 @@ static uec_result UEC_CALL StubGetActorPropertySetElementText(uec_actor* actor,
         ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_ARGUMENT;
 }
 
+static uec_result UEC_CALL StubSetActorPropertySoftPath(uec_actor* actor,
+                                                        uec_string_view propertyName,
+                                                        uec_string_view path)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)path;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetObjectPropertySoftPath(uec_object* object,
+                                                         uec_string_view propertyName,
+                                                         uec_string_view path)
+{
+    (void)object;
+    (void)propertyName;
+    (void)path;
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -603,6 +623,8 @@ static const uec_api g_api = {
     .get_actor_property_map_entry_text = &StubGetActorPropertyMapEntryText,
     .get_actor_property_set_count = &StubGetActorPropertySetCount,
     .get_actor_property_set_element_text = &StubGetActorPropertySetElementText,
+    .set_actor_property_soft_path = &StubSetActorPropertySoftPath,
+    .set_object_property_soft_path = &StubSetObjectPropertySoftPath,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
