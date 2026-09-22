@@ -52,6 +52,9 @@ world is standalone, a client, a listen server, or a dedicated server.
 `get_world_has_authority` is a read-only guard for mutating workflows: it is
 true for standalone, listen-server, and dedicated-server worlds, and false for
 client worlds. Replication and RPC behavior remain outside this query.
+Actor spawn, destruction, transform writes, possession, and server-side
+physics writes return `UEC_RESULT_UNSUPPORTED` when their world is a client;
+local view-target and input-prediction operations remain client-usable.
 `get_world_game_mode` returns the authoritative game-mode object when one is
 available; client worlds return `UEC_RESULT_UNSUPPORTED`.
 `get_world_game_state` returns the active world game-state object when one is

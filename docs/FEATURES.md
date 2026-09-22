@@ -10,7 +10,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | C and C++ public-header compatibility | Verified | C11 and C++17 syntax checks pass |
 | Diagnostics and logging | Runtime implemented | Bounded `get_last_error`; game log output; strict UTF-8 input validation |
 | Context/world/actor handles | Runtime implemented / Unreal integration pending | Typed active registries and weak UObject references |
-| World selection | Runtime implemented / Unreal integration pending | Indexed active Game/PIE enumeration, world kind, PIE instance identifiers, network mode, authority query, game-mode/game-state access, and first-world convenience |
+| World selection | Runtime implemented / Unreal integration pending | Indexed active Game/PIE enumeration, world kind, PIE instance identifiers, network mode, authority query, game-mode/game-state access, authority-gated mutators, and first-world convenience |
 | Actor spawn and destruction | Runtime implemented / Unreal integration pending | Loadable actor class paths; game thread only |
 | Actor identity and tags | Runtime implemented / Unreal integration pending | UTF-8 name output, tag lookup/enumeration, and game-thread access |
 | Actor transforms | Runtime implemented / Unreal integration pending | Double-precision C POD transform; game thread only |
@@ -49,7 +49,7 @@ that can run without the Unreal Engine 5.8.2 toolchain in this repository.
 | Reflection and Blueprint calls | Partial | Property writes, zero-argument calls, and bounded text-marshaled calls with one return/first out value are available; typed ABI calls remain |
 | Input | Partial | Enhanced Input mapping contexts, action polling/injection, and tokenized callbacks are implemented; broader action semantics remain |
 | Async loading, travel, streaming | Partial | Async object requests, cancellation, loaded-state queries, and level-travel submission are available; streaming and completion events remain |
-| Multiplayer and replication | Planned | No public functions yet |
+| Multiplayer and replication | Partial | Network-mode and authority queries plus authority-gated actor, possession, transform, and physics mutators; replication/RPC adapters remain planned |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
 
 The Unreal-dependent statuses require an actual UE 5.8.2 build, PIE run, and

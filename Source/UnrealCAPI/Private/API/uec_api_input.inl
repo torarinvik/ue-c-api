@@ -22,6 +22,8 @@
         APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
         APawn* pawn = Cast<APawn>(pawnHandle->Value.Get());
         if (controller == nullptr || pawn == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const uec_result authorityResult = RequireWorldAuthority(controller->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         controller->Possess(pawn);
         return UEC_RESULT_OK;
     }
@@ -130,6 +132,8 @@
         }
         UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
         if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
+        const uec_result authorityResult = RequireWorldAuthority(component->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         const FVector value(velocity.x, velocity.y, velocity.z);
         if (addToCurrent != UEC_FALSE)
         {
@@ -154,6 +158,8 @@
         }
         UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
         if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
+        const uec_result authorityResult = RequireWorldAuthority(component->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         component->AddImpulse(FVector(impulse.x, impulse.y, impulse.z), NAME_None, velocityChange != UEC_FALSE);
         return UEC_RESULT_OK;
     }
@@ -166,6 +172,8 @@
         if (!IsFiniteVector(force)) return UEC_RESULT_INVALID_ARGUMENT;
         UPrimitiveComponent* component = GetActorPrimitiveRoot(actorHandle);
         if (component == nullptr || !component->IsSimulatingPhysics()) return UEC_RESULT_UNSUPPORTED;
+        const uec_result authorityResult = RequireWorldAuthority(component->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         component->AddForce(FVector(force.x, force.y, force.z));
         return UEC_RESULT_OK;
     }

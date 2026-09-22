@@ -35,6 +35,8 @@
         *outActor = nullptr;
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const uec_result authorityResult = RequireWorldAuthority(world);
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         UClass* actorClass = LoadClass<AActor>(nullptr, *ToFString(classPath));
         if (actorClass == nullptr || !actorClass->IsChildOf(AActor::StaticClass())) return UEC_RESULT_INVALID_ARGUMENT;
         AActor* actor = world->SpawnActor<AActor>(actorClass, ToFTransform(*transform));
@@ -51,9 +53,11 @@
         if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = handle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const uec_result authorityResult = RequireWorldAuthority(actor->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         TombstoneHandle(handle->Header);
         handle->Value.Reset();
-        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return actor->Destroy() ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;
     }
 
@@ -89,6 +93,8 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = handle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const uec_result authorityResult = RequireWorldAuthority(actor->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         actor->SetActorTransform(ToFTransform(*transform), sweep != UEC_FALSE);
         return UEC_RESULT_OK;
     }

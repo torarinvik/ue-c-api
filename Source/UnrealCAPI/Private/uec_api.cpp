@@ -413,6 +413,12 @@ namespace
         return value == UEC_FALSE || value == UEC_TRUE;
     }
 
+    static uec_result RequireWorldAuthority(const UWorld* world)
+    {
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return world->GetNetMode() == NM_Client ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_OK;
+    }
+
     static bool IsFiniteTransform(const uec_transform& value)
     {
         return IsFiniteVector(value.translation) && IsFiniteVector(value.scale) &&
