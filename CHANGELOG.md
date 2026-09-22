@@ -243,6 +243,8 @@ development; they do not imply a published or runtime-verified release.
   text readback; container adapters now live in a dedicated reflection unit.
 - ABI minor 105 adds writable actor and UObject soft object/class path
   properties with reflected access checks and text import validation.
+- ABI minor 106 adds one-level nested reflected-struct field text readback for
+  actor and UObject properties.
 - All subscription categories now have a 1024-entry bound and return
   `UEC_RESULT_QUEUE_FULL` instead of growing without limit.
 - Level travel now cancels world-owned timers and tick subscriptions and

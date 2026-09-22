@@ -471,3 +471,67 @@
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return ImportSoftPropertyPath(object, propertyName, path);
     }
+
+    static uec_result ExportStructFieldText(UObject* owner,
+                                            uec_string_view propertyName,
+                                            uec_string_view fieldName,
+                                            char* buffer,
+                                            size_t bufferSize,
+                                            size_t* requiredSize,
+                                            uec_property_kind* outKind)
+    {
+        if (requiredSize == nullptr || outKind == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *requiredSize = 0; *outKind = UEC_PROPERTY_UNKNOWN;
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0 ||
+            !IsValidStringView(fieldName) || fieldName.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
+        FStructProperty* structProperty = CastField<FStructProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (structProperty == nullptr || structProperty->Struct == nullptr) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        FProperty* field = structProperty->Struct->FindPropertyByName(FName(*ToFString(fieldName)));
+        if (field == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        void* structValue = structProperty->ContainerPtrToValuePtr<void>(owner);
+        void* fieldValue = field->ContainerPtrToValuePtr<void>(structValue);
+        if (fieldValue == nullptr) return UEC_RESULT_UNSUPPORTED;
+        *outKind = GetPropertyKind(field);
+        FString text;
+        if (!field->ExportTextItem_Direct(text, fieldValue, nullptr, owner, PPF_None, owner)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        return CopyFStringToUtf8(text, buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL GetActorPropertyStructFieldText(uec_actor* rawActor,
+                                                        uec_string_view propertyName,
+                                                        uec_string_view fieldName,
+                                                        char* buffer,
+                                                        size_t bufferSize,
+                                                        size_t* requiredSize,
+                                                        uec_property_kind* outKind)
+    {
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ExportStructFieldText(actor, propertyName, fieldName, buffer, bufferSize,
+                                     requiredSize, outKind);
+    }
+
+    uec_result UEC_CALL GetObjectPropertyStructFieldText(uec_object* rawObject,
+                                                         uec_string_view propertyName,
+                                                         uec_string_view fieldName,
+                                                         char* buffer,
+                                                         size_t bufferSize,
+                                                         size_t* requiredSize,
+                                                         uec_property_kind* outKind)
+    {
+        auto* objectHandle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(objectHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = objectHandle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ExportStructFieldText(object, propertyName, fieldName, buffer, bufferSize,
+                                     requiredSize, outKind);
+    }

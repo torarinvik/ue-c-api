@@ -563,6 +563,44 @@ static uec_result UEC_CALL StubSetObjectPropertySoftPath(uec_object* object,
     return UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetActorPropertyStructFieldText(
+    uec_actor* actor,
+    uec_string_view propertyName,
+    uec_string_view fieldName,
+    char* buffer,
+    size_t bufferSize,
+    size_t* requiredSize,
+    uec_property_kind* outKind)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)fieldName;
+    (void)buffer;
+    (void)bufferSize;
+    if (requiredSize != NULL) *requiredSize = 0u;
+    if (outKind != NULL) *outKind = UEC_PROPERTY_UNKNOWN;
+    return requiredSize == NULL || outKind == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetObjectPropertyStructFieldText(
+    uec_object* object,
+    uec_string_view propertyName,
+    uec_string_view fieldName,
+    char* buffer,
+    size_t bufferSize,
+    size_t* requiredSize,
+    uec_property_kind* outKind)
+{
+    (void)object;
+    (void)propertyName;
+    (void)fieldName;
+    (void)buffer;
+    (void)bufferSize;
+    if (requiredSize != NULL) *requiredSize = 0u;
+    if (outKind != NULL) *outKind = UEC_PROPERTY_UNKNOWN;
+    return requiredSize == NULL || outKind == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -625,6 +663,8 @@ static const uec_api g_api = {
     .get_actor_property_set_element_text = &StubGetActorPropertySetElementText,
     .set_actor_property_soft_path = &StubSetActorPropertySoftPath,
     .set_object_property_soft_path = &StubSetObjectPropertySoftPath,
+    .get_actor_property_struct_field_text = &StubGetActorPropertyStructFieldText,
+    .get_object_property_struct_field_text = &StubGetObjectPropertyStructFieldText,
     .run_on_game_thread = &StubRunOnGameThread
 };
 
