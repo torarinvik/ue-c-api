@@ -372,6 +372,7 @@
     static void InvalidateWorldHandles(UWorld* world)
     {
         if (world == nullptr) return;
+        CancelActorSubscriptionsForWorld(world);
         for (const FUECWorld* candidate : GWorlds)
         {
             if (candidate == nullptr || candidate->Value.Get() != world) continue;

@@ -79,6 +79,31 @@
         }
     }
 
+    static void CancelActorSubscriptionsForWorld(UWorld* world)
+    {
+        if (world == nullptr) return;
+        TSet<AActor*> actors;
+        for (const TPair<uint64, TSharedPtr<FUECCollisionSubscription>>& pair : GCollisionSubscriptions)
+        {
+            if (!pair.Value.IsValid()) continue;
+            UPrimitiveComponent* component = pair.Value->Component.Get();
+            if (component != nullptr && component->GetWorld() == world && component->GetOwner() != nullptr)
+            {
+                actors.Add(component->GetOwner());
+            }
+        }
+        for (const TPair<uint64, TSharedPtr<FUECInputBinding>>& pair : GInputBindings)
+        {
+            if (!pair.Value.IsValid()) continue;
+            UEnhancedInputComponent* component = pair.Value->Component.Get();
+            if (component != nullptr && component->GetWorld() == world && component->GetOwner() != nullptr)
+            {
+                actors.Add(component->GetOwner());
+            }
+        }
+        for (AActor* actor : actors) CancelActorSubscriptions(actor);
+    }
+
     /* Actor lifetime and transform operations. */
     uec_result UEC_CALL SpawnActor(uec_world* rawWorld, uec_string_view classPath,
                                    const uec_transform* transform, uec_actor** outActor)

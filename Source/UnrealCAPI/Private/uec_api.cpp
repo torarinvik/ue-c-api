@@ -47,7 +47,6 @@
 #include "UObject/UObjectGlobals.h"
 #include "UObject/StrongObjectPtrTemplates.h"
 #include "UObject/StructOnScope.h"
-
 namespace
 {
     constexpr char kModuleName[] = "UnrealCAPI";
@@ -72,6 +71,7 @@ namespace
     static uint64 AllocateHandleGeneration();
     static bool InitializeHandle(FUECHandleHeader& header, EUECHandleKind kind);
     static void CancelActorSubscriptions(AActor* actor);
+    static void CancelActorSubscriptionsForWorld(UWorld* world);
 
     static bool AllocateMonotonicId(uint64& nextId, uint64& outId)
     {
