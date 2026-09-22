@@ -183,6 +183,8 @@ development; they do not imply a published or runtime-verified release.
   shutdown admission.
 - Class and object handle release now follows the documented Unreal game-thread
   boundary before clearing weak or strong engine references.
+- One-shot widget, audio, and component-hit callbacks now avoid touching a raw
+  Unreal delegate after cancellation or destruction from inside the callback.
 - Asynchronous object-load completions now use the shared gated object-handle
   constructor instead of maintaining a separate registry insertion path.
 - Default and indexed world lookup now share one gated world-handle constructor,

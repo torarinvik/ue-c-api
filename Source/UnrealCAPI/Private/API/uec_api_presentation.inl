@@ -113,10 +113,13 @@
                 current->InCallback = true;
                 current->Callback(current->Id, current->UserData);
                 current->InCallback = false;
-                current->Cancelled = true;
-                if (UButton* button = current->Button.Get())
+                if (!current->Cancelled && !IsShuttingDown())
                 {
-                    button->OnClicked.Remove(current->Handle);
+                    current->Cancelled = true;
+                    if (UButton* button = current->Button.Get())
+                    {
+                        button->OnClicked.Remove(current->Handle);
+                    }
                 }
                 GWidgetSubscriptions.Remove(current->Id);
             });
@@ -268,17 +271,20 @@
         subscription->UserData = userData;
         TWeakPtr<FUECAudioSubscription> weakSubscription = subscription;
         subscription->Handle = audio->OnAudioFinishedNative.AddLambda(
-            [weakSubscription](UAudioComponent* audio)
+            [weakSubscription](UAudioComponent*)
             {
                 TSharedPtr<FUECAudioSubscription> current = weakSubscription.Pin();
                 if (!current.IsValid() || current->Cancelled || IsShuttingDown()) return;
                 current->InCallback = true;
                 current->Callback(current->Id, current->UserData);
                 current->InCallback = false;
-                current->Cancelled = true;
-                if (audio != nullptr)
+                if (!current->Cancelled && !IsShuttingDown())
                 {
-                    audio->OnAudioFinishedNative.Remove(current->Handle);
+                    current->Cancelled = true;
+                    if (UAudioComponent* finishedAudio = current->Component.Get())
+                    {
+                        finishedAudio->OnAudioFinishedNative.Remove(current->Handle);
+                    }
                 }
                 GAudioSubscriptions.Remove(current->Id);
             });

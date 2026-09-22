@@ -615,7 +615,7 @@
         subscription->UserData = userData;
         TWeakPtr<FUECCollisionSubscription> weakSubscription = subscription;
         subscription->Handle = component->OnComponentHit().AddLambda(
-            [weakSubscription](UPrimitiveComponent* hitComponent, AActor* otherActor,
+            [weakSubscription](UPrimitiveComponent*, AActor* otherActor,
                                UPrimitiveComponent*, FVector normalImpulse, const FHitResult&)
             {
                 TSharedPtr<FUECCollisionSubscription> current = weakSubscription.Pin();
@@ -633,10 +633,13 @@
                                   {normalImpulse.X, normalImpulse.Y, normalImpulse.Z},
                                   current->UserData);
                 current->InCallback = false;
-                current->Cancelled = true;
-                if (hitComponent != nullptr)
+                if (!current->Cancelled && !IsShuttingDown())
                 {
-                    hitComponent->OnComponentHit().Remove(current->Handle);
+                    current->Cancelled = true;
+                    if (UPrimitiveComponent* component = current->Component.Get())
+                    {
+                        component->OnComponentHit().Remove(current->Handle);
+                    }
                 }
                 GCollisionSubscriptions.Remove(current->Id);
             });
