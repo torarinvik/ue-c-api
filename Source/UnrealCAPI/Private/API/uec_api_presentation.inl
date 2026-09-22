@@ -111,6 +111,7 @@
                 TSharedPtr<FUECWidgetSubscription> current = weakSubscription.Pin();
                 if (!current.IsValid() || current->Cancelled || IsShuttingDown()) return;
                 current->InCallback = true;
+                FUECCallbackScope callbackScope;
                 current->Callback(current->Id, current->UserData);
                 current->InCallback = false;
                 current->Cancelled = true;
@@ -273,6 +274,7 @@
                 TSharedPtr<FUECAudioSubscription> current = weakSubscription.Pin();
                 if (!current.IsValid() || current->Cancelled || IsShuttingDown()) return;
                 current->InCallback = true;
+                FUECCallbackScope callbackScope;
                 current->Callback(current->Id, current->UserData);
                 current->InCallback = false;
                 current->Cancelled = true;
@@ -483,6 +485,7 @@
                 if (current->WasPlaying && !isPlaying)
                 {
                     current->InCallback = true;
+                    FUECCallbackScope callbackScope;
                     current->Callback(current->Id, current->UserData);
                     current->InCallback = false;
                     current->Cancelled = true;

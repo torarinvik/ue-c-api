@@ -46,6 +46,18 @@ static uec_result UEC_CALL StubReleaseContext(uec_context* context)
     return context == &g_context ? UEC_RESULT_OK : UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubGetRuntimeStats(uec_context* context,
+                                               uec_runtime_stats* outStats)
+{
+    if (outStats == NULL || outStats->struct_size < sizeof(*outStats)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    outStats->active_subscriptions = 0u;
+    outStats->pending_requests = 0u;
+    outStats->active_callbacks = 0u;
+    return context == &g_context ? UEC_RESULT_OK : UEC_RESULT_INVALID_HANDLE;
+}
+
 static uec_result UEC_CALL StubRunOnGameThread(uec_context* context,
                                                uec_game_thread_callback callback,
                                                void* userData,
@@ -67,6 +79,7 @@ static const uec_api g_api = {
     .get_last_error = &StubGetLastError,
     .log = &StubLog,
     .release_context = &StubReleaseContext,
+    .get_runtime_stats = &StubGetRuntimeStats,
     .run_on_game_thread = &StubRunOnGameThread
 };
 

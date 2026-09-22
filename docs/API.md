@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.81`.
+The current runtime slice is intentionally small and versioned as ABI `1.82`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -34,6 +34,12 @@ collision, retained-object, identity, configuration, widget, audio, camera,
 animation, object, save-game, path-query, and queued-request adapters.
 A failed call with a non-null output pointer therefore leaves a null handle,
 `UEC_FALSE`, zero, or an empty value instead of preserving stale caller data.
+
+`get_runtime_stats` is a game-thread-only drain diagnostic. It reports the
+number of registered subscriptions, pending asynchronous or game-thread
+requests, and consumer callbacks currently executing. Before unloading code
+that owns callback functions, stop submitting work, cancel or unsubscribe
+everything, and wait for all three counts to reach zero.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

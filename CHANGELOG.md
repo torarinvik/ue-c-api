@@ -192,6 +192,8 @@ development; they do not imply a published or runtime-verified release.
   Unreal component.
 - Shutdown object-load cancellation now snapshots requests before canceling
   streamable handles, remaining safe if cancellation completes immediately.
+- ABI minor 82 adds `get_runtime_stats`, a game-thread drain diagnostic for
+  subscriptions, pending requests, and callbacks before consumer unload.
 - One-shot widget, audio, and component-hit callbacks now avoid touching a raw
   Unreal delegate after cancellation or destruction from inside the callback.
 - Asynchronous object-load completions now use the shared gated object-handle

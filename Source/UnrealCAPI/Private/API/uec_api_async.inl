@@ -159,6 +159,7 @@
                     GObjectLoadRequests.Remove(current->Id);
                     if (!IsShuttingDown())
                     {
+                        FUECCallbackScope callbackScope;
                         current->Callback(current->Id, UEC_RESULT_INTERNAL_ERROR, nullptr,
                                           current->UserData);
                     }
@@ -177,6 +178,7 @@
                 }
                 return;
             }
+            FUECCallbackScope callbackScope;
             current->Callback(current->Id, result, objectHandle, current->UserData);
         });
         request->Handle = UAssetManager::Get().GetStreamableManager().RequestAsyncLoad(path, completed);
@@ -321,7 +323,11 @@
                 userDataToRun = request->UserData;
                 GGameThreadRequests.Remove(request->Id);
             }
-            if (!IsShuttingDown()) callbackToRun(userDataToRun);
+            if (!IsShuttingDown())
+            {
+                FUECCallbackScope callbackScope;
+                callbackToRun(userDataToRun);
+            }
         });
         return UEC_RESULT_OK;
     }
@@ -334,6 +340,37 @@
         if (requestPtr == nullptr || !requestPtr->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
         (*requestPtr)->Cancelled = true;
         GGameThreadRequests.Remove(requestId);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetRuntimeStats(uec_context* rawContext,
+                                        uec_runtime_stats* outStats)
+    {
+        if (outStats == nullptr || outStats->struct_size < sizeof(uec_runtime_stats)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        outStats->active_subscriptions = 0;
+        outStats->pending_requests = 0;
+        outStats->active_callbacks = 0;
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        FScopeLock lock(&GHandleMutex);
+        const uint64 subscriptions = static_cast<uint64>(GTimers.Num()) +
+            static_cast<uint64>(GTickSubscriptions.Num()) +
+            static_cast<uint64>(GAudioSubscriptions.Num()) +
+            static_cast<uint64>(GWidgetSubscriptions.Num()) +
+            static_cast<uint64>(GAnimationSubscriptions.Num()) +
+            static_cast<uint64>(GCollisionSubscriptions.Num()) +
+            static_cast<uint64>(GInputBindings.Num());
+        const uint64 requests = static_cast<uint64>(GObjectLoadRequests.Num()) +
+            static_cast<uint64>(GGameThreadRequests.Num()) +
+            static_cast<uint64>(GSaveGameRequests.Num());
+        if (subscriptions > UINT32_MAX || requests > UINT32_MAX || GActiveCallbacks < 0) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        outStats->active_subscriptions = static_cast<uint32>(subscriptions);
+        outStats->pending_requests = static_cast<uint32>(requests);
+        outStats->active_callbacks = static_cast<uint32>(GActiveCallbacks);
         return UEC_RESULT_OK;
     }
 
@@ -388,6 +425,7 @@
                     GSaveGameRequests.Remove(current->Id);
                     if (!IsShuttingDown())
                     {
+                        FUECCallbackScope callbackScope;
                         current->Callback(current->Id,
                                           success ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR,
                                           nullptr,
@@ -447,6 +485,7 @@
                         }
                         return;
                     }
+                    FUECCallbackScope callbackScope;
                     current->Callback(current->Id,
                                       success ? UEC_RESULT_OK : UEC_RESULT_NOT_INITIALIZED,
                                       objectHandle,

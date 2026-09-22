@@ -22,7 +22,7 @@
 #endif
 
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 81u
+#define UEC_ABI_MINOR 82u
 
 #ifdef __cplusplus
 extern "C" {
@@ -204,6 +204,13 @@ typedef struct uec_input_action_value {
     uint8_t reserved[3];
     uec_vector3 axis;
 } uec_input_action_value;
+
+typedef struct uec_runtime_stats {
+    uint32_t struct_size;
+    uint32_t active_subscriptions;
+    uint32_t pending_requests;
+    uint32_t active_callbacks;
+} uec_runtime_stats;
 
 typedef void (UEC_CALL *uec_input_action_callback)(uint64_t binding_id,
                                                    uec_input_action_value value,
@@ -766,6 +773,8 @@ typedef struct uec_api {
     uec_result (UEC_CALL *set_actor_tag)(uec_actor* actor,
                                          uec_string_view tag,
                                          uec_bool enabled);
+    uec_result (UEC_CALL *get_runtime_stats)(uec_context* context,
+                                             uec_runtime_stats* out_stats);
 } uec_api;
 
 /* Bootstrap entry point. The returned function table remains valid until the

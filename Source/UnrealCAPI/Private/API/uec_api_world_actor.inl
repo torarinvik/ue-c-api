@@ -500,6 +500,7 @@
                 GTimers.Remove(current->Id);
                 return;
             }
+            FUECCallbackScope callbackScope;
             current->Callback(current->Id, current->UserData);
             if (!current->Looping)
             {
@@ -576,6 +577,7 @@
                     return false;
                 }
                 current->InCallback = true;
+                FUECCallbackScope callbackScope;
                 current->Callback(current->Id, static_cast<double>(deltaSeconds), current->UserData);
                 current->InCallback = false;
                 if (current->Cancelled || IsShuttingDown())

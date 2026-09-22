@@ -417,6 +417,7 @@
                 uec_input_action_value value{};
                 if (!WriteInputActionValue(inputValue, value)) return;
                 current->InCallback = true;
+                FUECCallbackScope callbackScope;
                 current->Callback(current->Id, value, current->UserData);
                 current->InCallback = false;
                 if (current->Cancelled || IsShuttingDown())

@@ -30,6 +30,12 @@ table. Before calling an optional entry, compare its byte offset with
 `abi_major`, `abi_minor`, and `struct_size` fields identify the table that was
 actually returned.
 
+The appended `get_runtime_stats` entry is available in ABI minor 82. It is a
+game-thread drain check for consumers that may unload callback code: after
+stopping new work and canceling requests or subscriptions, poll its
+`active_subscriptions`, `pending_requests`, and `active_callbacks` fields until
+all are zero.
+
 The public header is C11-compatible and the table contains only fixed-width
 integers, opaque handles, callbacks, and POD values. Keep the header in the
 consumer's build without adding Unreal include paths.

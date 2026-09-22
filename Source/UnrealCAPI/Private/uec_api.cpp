@@ -225,6 +225,12 @@ namespace
     TMap<uint64, TSharedPtr<FUECGameThreadRequest>> GGameThreadRequests;
     TMap<uint64, TSharedPtr<FUECSaveGameRequest>> GSaveGameRequests;
     TMap<uint64, TSharedPtr<FUECInputBinding>> GInputBindings;
+    int32 GActiveCallbacks = 0;
+    struct FUECCallbackScope final
+    {
+        FUECCallbackScope() { ++GActiveCallbacks; }
+        ~FUECCallbackScope() { --GActiveCallbacks; }
+    };
     uint64 GNextObjectLoadRequestId = 1;
     uint64 GNextGameThreadRequestId = 1;
     uint64 GNextTimerId = 1;
@@ -284,7 +290,6 @@ namespace
             actor->Header.Kind == EUECHandleKind::Actor && actor->Header.Generation != 0 &&
             !actor->Header.bReleased && actor->Value.IsValid();
     }
-
     static bool IsValidComponent(const FUECSceneComponent* component)
     {
         FScopeLock lock(&GHandleMutex);
@@ -293,7 +298,6 @@ namespace
             component->Header.Generation != 0 && !component->Header.bReleased &&
             component->Value.IsValid();
     }
-
     static bool IsValidClass(const FUECClass* klass)
     {
         FScopeLock lock(&GHandleMutex);
@@ -301,7 +305,6 @@ namespace
             klass->Header.Kind == EUECHandleKind::Class && klass->Header.Generation != 0 &&
             !klass->Header.bReleased && klass->Value.IsValid();
     }
-
     static bool IsValidObject(const FUECObject* object)
     {
         FScopeLock lock(&GHandleMutex);
@@ -309,7 +312,6 @@ namespace
             object->Header.Kind == EUECHandleKind::Object && object->Header.Generation != 0 &&
             !object->Header.bReleased && object->Value.IsValid();
     }
-
     static uec_property_kind GetPropertyKind(const FProperty* property)
     {
         if (CastField<FBoolProperty>(property)) return UEC_PROPERTY_BOOL;
@@ -332,7 +334,6 @@ namespace
         if (CastField<FSetProperty>(property)) return UEC_PROPERTY_SET;
         return UEC_PROPERTY_UNKNOWN;
     }
-
     static bool IsWritableProperty(const FProperty* property)
     {
         return property != nullptr &&
@@ -638,8 +639,6 @@ namespace
             GAnimationSubscriptions.Num(), GCollisionSubscriptions.Num(), GInputBindings.Num(),
             GObjectLoadRequests.Num(), GGameThreadRequests.Num(), GSaveGameRequests.Num());
     }
-
-
     #include "API/uec_api_world_actor.inl"
     #include "API/uec_api_actor_component.inl"
     #include "API/uec_api_reflection.inl"
@@ -722,7 +721,8 @@ namespace
         &UnbindComponentHit,
         &SweepTraceFiltered,
         &OverlapShapeFiltered,
-        &SetActorTag
+        &SetActorTag,
+        &GetRuntimeStats
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

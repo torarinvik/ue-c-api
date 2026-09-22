@@ -630,6 +630,7 @@
                         otherHandle = reinterpret_cast<uec_actor*>(handle);
                     }
                 }
+                FUECCallbackScope callbackScope;
                 current->Callback(current->Id,
                                   otherHandle,
                                   {normalImpulse.X, normalImpulse.Y, normalImpulse.Z},
