@@ -44,6 +44,7 @@
     {
         auto* handle = reinterpret_cast<FUECObject*>(rawObject);
         if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         TombstoneHandle(handle->Header);
         handle->Value.Reset();
         handle->StrongValue.Reset();

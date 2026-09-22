@@ -181,6 +181,8 @@ development; they do not imply a published or runtime-verified release.
 - Asynchronous object-load and save-game requests now register through a gated
   helper that applies queue limits and monotonic request ids atomically with
   shutdown admission.
+- Class and object handle release now follows the documented Unreal game-thread
+  boundary before clearing weak or strong engine references.
 - Asynchronous object-load completions now use the shared gated object-handle
   constructor instead of maintaining a separate registry insertion path.
 - Default and indexed world lookup now share one gated world-handle constructor,
