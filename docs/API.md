@@ -22,8 +22,9 @@ destroys or unloads that object. Typed validation checks the underlying weak
 object reference before every operation, including metadata-only queries, and
 reports `UEC_RESULT_INVALID_HANDLE` when the referenced object is no longer
 valid.
-Releasing a handle releases the bridge handle; it does not destroy an Unreal
-object. `destroy_actor` destroys the actor and tombstones its actor handle.
+Releasing a handle releases the bridge handle even when its Unreal object has
+expired; it does not destroy an Unreal object. `destroy_actor` destroys the
+actor and tombstones its actor handle.
 
 `get_last_error` requires a valid context and a non-null required-size output;
 it returns the calling thread's latest bounded diagnostic string using the same

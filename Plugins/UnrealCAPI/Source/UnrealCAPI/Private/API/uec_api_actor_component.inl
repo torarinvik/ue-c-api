@@ -74,7 +74,10 @@
     uec_result UEC_CALL ReleaseActor(uec_actor* rawActor)
     {
         auto* handle = reinterpret_cast<FUECActor*>(rawActor);
-        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsRegisteredHandle(handle, GActors, EUECHandleKind::Actor,
+                                TEXT("Invalid or stale actor handle"))) {
+            return UEC_RESULT_INVALID_HANDLE;
+        }
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         TombstoneHandle(handle->Header);
         handle->Value.Reset();
@@ -284,7 +287,10 @@
     uec_result UEC_CALL ReleaseSceneComponent(uec_scene_component* rawComponent)
     {
         auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsRegisteredHandle(handle, GComponents, EUECHandleKind::SceneComponent,
+                                TEXT("Invalid or stale scene-component handle"))) {
+            return UEC_RESULT_INVALID_HANDLE;
+        }
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         TombstoneHandle(handle->Header);
         handle->Value.Reset();

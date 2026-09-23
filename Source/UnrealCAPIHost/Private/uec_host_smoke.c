@@ -130,6 +130,7 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
 {
     static const char actorClassPath[] = "/Script/Engine.Actor";
     static const char eventText[] = "bridge-smoke";
+    const uec_string_view destroyFunction = {"K2_DestroyActor", sizeof("K2_DestroyActor") - 1};
     const uec_string_view classPath = {actorClassPath, sizeof(actorClassPath) - 1};
     const uec_string_view text = {eventText, sizeof(eventText) - 1};
     const uec_transform initialTransform = {
@@ -156,6 +157,7 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL ||
         api->get_runtime_stats == NULL || api->get_capabilities == NULL ||
         api->get_default_world == NULL || api->release_world == NULL ||
+        api->release_actor == NULL || api->invoke_actor_function == NULL ||
         api->line_trace == NULL || api->sweep_trace == NULL ||
         api->get_component_transform == NULL || api->get_widget_enabled == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
@@ -295,7 +297,9 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         goto cleanup;
     }
     uec_actor* destroyedActor = actor;
-    result = api->destroy_actor(actor);
+    result = api->invoke_actor_function(actor, destroyFunction);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->release_actor(actor);
     if (result != UEC_RESULT_OK) goto cleanup;
     actor = NULL;
     if (api->destroy_actor(destroyedActor) != UEC_RESULT_INVALID_HANDLE) {

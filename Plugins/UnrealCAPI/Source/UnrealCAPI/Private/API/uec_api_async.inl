@@ -61,7 +61,10 @@
     uec_result UEC_CALL ReleaseObject(uec_object* rawObject)
     {
         auto* handle = reinterpret_cast<FUECObject*>(rawObject);
-        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsRegisteredHandle(handle, GObjects, EUECHandleKind::Object,
+                                TEXT("Invalid or stale object handle"))) {
+            return UEC_RESULT_INVALID_HANDLE;
+        }
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         TombstoneHandle(handle->Header);
         handle->Value.Reset();

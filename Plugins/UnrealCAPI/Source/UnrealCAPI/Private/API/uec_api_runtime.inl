@@ -83,6 +83,18 @@
         if (!valid) SetLastErrorMessage(TEXT("Invalid or stale context handle"));
         return valid;
     }
+    // Release checks registry identity without requiring the weak UObject to remain valid.
+    template <typename THandle, typename TRegistry>
+    static bool IsRegisteredHandle(const THandle* handle, const TRegistry& registry,
+                                   EUECHandleKind kind, const TCHAR* invalidMessage)
+    {
+        FScopeLock lock(&GHandleMutex);
+        const bool valid = handle != nullptr && !GShuttingDown && registry.Contains(handle) &&
+            handle->Header.Kind == kind && handle->Header.Generation != 0 &&
+            !handle->Header.bReleased;
+        if (!valid) SetLastErrorMessage(invalidMessage);
+        return valid;
+    }
     static bool IsValidWorld(const FUECWorld* world)
     {
         FScopeLock lock(&GHandleMutex);

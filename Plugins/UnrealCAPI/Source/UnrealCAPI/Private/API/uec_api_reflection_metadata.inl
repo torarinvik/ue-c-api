@@ -42,7 +42,10 @@
     uec_result UEC_CALL ReleaseClass(uec_class* rawClass)
     {
         auto* handle = reinterpret_cast<FUECClass*>(rawClass);
-        if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsRegisteredHandle(handle, GClasses, EUECHandleKind::Class,
+                                TEXT("Invalid or stale class handle"))) {
+            return UEC_RESULT_INVALID_HANDLE;
+        }
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         TombstoneHandle(handle->Header);
         handle->Value.Reset();

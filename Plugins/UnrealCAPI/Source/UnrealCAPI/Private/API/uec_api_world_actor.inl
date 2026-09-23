@@ -493,7 +493,10 @@
     uec_result UEC_CALL ReleaseWorld(uec_world* rawWorld)
     {
         auto* world = reinterpret_cast<FUECWorld*>(rawWorld);
-        if (!IsValidWorld(world)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsRegisteredHandle(world, GWorlds, EUECHandleKind::World,
+                                TEXT("Invalid or stale world handle"))) {
+            return UEC_RESULT_INVALID_HANDLE;
+        }
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         TombstoneHandle(world->Header);
         world->Value.Reset();
