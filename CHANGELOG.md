@@ -28,6 +28,9 @@ development; they do not imply a published or runtime-verified release.
   race is tombstoned instead of being delivered or left live.
 - World-kind selection now documents and probes rejection of the declared
   `UEC_WORLD_KIND_UNKNOWN` sentinel as well as undeclared values.
+- Game-thread callback dispatch now uses a module-owned core-ticker drain,
+  capped at 64 callbacks per tick, so shutdown removes the dispatcher and
+  cancels pending work without leaving task-graph closures behind.
 
 ### Added
 

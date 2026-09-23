@@ -650,8 +650,10 @@ retain the sound handle, and does not expose playback completion or replication.
 
 `run_on_game_thread` accepts worker-thread callers and invokes the borrowed
 callback on the game thread. At most 1024 callbacks can be queued at once;
-submissions beyond that bound return `UEC_RESULT_QUEUE_FULL`. Cancellation
-removes a pending callback before it runs, and module shutdown cancels all
+submissions beyond that bound return `UEC_RESULT_QUEUE_FULL`. Requests are
+delivered in submission order, with at most 64 callbacks started per engine
+tick to bound frame work. Cancellation removes a pending callback before it
+runs, and module shutdown cancels all
 remaining callbacks. A callback that has just been dequeued is still
 suppressed if shutdown begins before consumer code is entered.
 
@@ -705,10 +707,11 @@ object handle; retain it if it must survive beyond the callback.
 
 `run_on_game_thread` queues a borrowed callback and user pointer for execution
 on Unreal's game thread and returns a request id. `cancel_game_thread_request`
-can cancel a queued callback from any thread; cancellation wins if it races
-with dispatch. The callback owns any handles it receives and must not retain
-the borrowed user pointer after it returns. Module shutdown cancels queued
-callbacks without invoking them.
+can cancel a queued callback from any thread. A successful cancellation
+suppresses the callback; if dispatch has already dequeued the request, cancel
+returns `UEC_RESULT_INVALID_ARGUMENT`. The callback owns any handles it
+receives and must not retain the borrowed user pointer after it returns.
+Module shutdown cancels queued callbacks without invoking them.
 
 `add_pawn_movement_input` forwards a world-space direction and scale to an
 `APawn`; base pawns only accumulate input, while movement-capable subclasses

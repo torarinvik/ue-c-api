@@ -1,7 +1,6 @@
 #include "uec_api.h"
 #include "CoreMinimal.h"
 #include "Math/NumericLimits.h"
-#include "Async/Async.h"
 #include "Containers/Ticker.h"
 #include "Engine/AssetManager.h"
 #include "Engine/Engine.h"
@@ -244,6 +243,8 @@ namespace
     TSet<const FUECObject*> GObjects;
     TMap<uint64, TSharedPtr<FUECObjectLoadRequest>> GObjectLoadRequests;
     TMap<uint64, TSharedPtr<FUECGameThreadRequest>> GGameThreadRequests;
+    TArray<uint64> GGameThreadRequestOrder;
+    int32 GGameThreadRequestOrderHead = 0;
     TMap<uint64, TSharedPtr<FUECTravelRequest>> GTravelRequests;
     TMap<uint64, TSharedPtr<FUECSaveGameRequest>> GSaveGameRequests;
     TMap<uint64, TSharedPtr<FUECInputBinding>> GInputBindings;
@@ -381,16 +382,23 @@ namespace
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
-{ FDelegateHandle WorldCleanupHandle; FDelegateHandle PostLoadMapHandle;
+{
+    FDelegateHandle WorldCleanupHandle;
+    FDelegateHandle PostLoadMapHandle;
+    FTSTicker::FDelegateHandle GameThreadDispatchHandle;
 public:
     void StartupModule() override
     {
         {
             FScopeLock lock(&GHandleMutex);
             GShuttingDown = false;
+            GGameThreadRequests.Reserve(MaxQueuedGameThreadRequests);
+            GGameThreadRequestOrder.Reserve(MaxQueuedGameThreadRequests);
         }
         WorldCleanupHandle = FWorldDelegates::OnWorldCleanup.AddStatic(&HandleWorldCleanup);
         PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddStatic(&HandlePostLoadMap);
+        GameThreadDispatchHandle = FTSTicker::GetCoreTicker().AddTicker(
+            FTickerDelegate::CreateStatic(&DispatchGameThreadRequests), 0.0f);
         UE_LOG(LogTemp, Log, TEXT("%s runtime module started (ABI %u.%u)"),
             UTF8_TO_TCHAR(kModuleName), UEC_ABI_MAJOR, UEC_ABI_MINOR);
     }
@@ -401,6 +409,10 @@ public:
         {
             FScopeLock lock(&GHandleMutex);
             GShuttingDown = true;
+        }
+        if (GameThreadDispatchHandle.IsValid()) {
+            FTSTicker::GetCoreTicker().RemoveTicker(GameThreadDispatchHandle);
+            GameThreadDispatchHandle.Reset();
         }
         LogOutstandingResources();
         ClearAllTimers();

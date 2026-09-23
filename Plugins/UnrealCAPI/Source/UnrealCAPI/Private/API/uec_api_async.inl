@@ -372,6 +372,56 @@
         return UEC_RESULT_OK;
     }
 
+    constexpr int32 MaxGameThreadCallbacksPerTick = 64;
+
+    static void CompactGameThreadRequestOrder()
+    {
+        if (GGameThreadRequestOrderHead >= GGameThreadRequestOrder.Num())
+        {
+            GGameThreadRequestOrder.Reset();
+            GGameThreadRequestOrderHead = 0;
+        }
+        else if (GGameThreadRequestOrderHead >= 256 &&
+                 GGameThreadRequestOrderHead * 2 >= GGameThreadRequestOrder.Num())
+        {
+            GGameThreadRequestOrder.RemoveAt(
+                0, GGameThreadRequestOrderHead, EAllowShrinking::No);
+            GGameThreadRequestOrderHead = 0;
+        }
+    }
+
+    bool DispatchGameThreadRequests(float)
+    {
+        int32 dispatched = 0;
+        while (dispatched < MaxGameThreadCallbacksPerTick)
+        {
+            TSharedPtr<FUECGameThreadRequest> request;
+            {
+                FScopeLock lock(&GHandleMutex);
+                if (GShuttingDown) return true;
+                if (GGameThreadRequestOrderHead >= GGameThreadRequestOrder.Num()) break;
+
+                const uint64 requestId =
+                    GGameThreadRequestOrder[GGameThreadRequestOrderHead++];
+                TSharedPtr<FUECGameThreadRequest>* requestPtr =
+                    GGameThreadRequests.Find(requestId);
+                if (requestPtr != nullptr && requestPtr->IsValid())
+                {
+                    request = *requestPtr;
+                    GGameThreadRequests.Remove(requestId);
+                }
+                CompactGameThreadRequestOrder();
+            }
+            if (!request.IsValid()) continue;
+            if (request->Cancelled || IsShuttingDown()) continue;
+
+            FUECCallbackScope callbackScope;
+            request->Callback(request->UserData);
+            ++dispatched;
+        }
+        return true;
+    }
+
     uec_result UEC_CALL RunOnGameThread(uec_context* rawContext,
                                         uec_game_thread_callback callback,
                                         void* userData,
@@ -394,29 +444,9 @@
                 return UEC_RESULT_INTERNAL_ERROR;
             }
             GGameThreadRequests.Add(request->Id, request);
+            GGameThreadRequestOrder.Add(request->Id);
         }
         *outRequestId = request->Id;
-        AsyncTask(ENamedThreads::GameThread, [request]()
-        {
-            uec_game_thread_callback callbackToRun = nullptr;
-            void* userDataToRun = nullptr;
-            {
-                FScopeLock lock(&GHandleMutex);
-                if (request->Cancelled)
-                {
-                    GGameThreadRequests.Remove(request->Id);
-                    return;
-                }
-                callbackToRun = request->Callback;
-                userDataToRun = request->UserData;
-                GGameThreadRequests.Remove(request->Id);
-            }
-            if (!IsShuttingDown())
-            {
-                FUECCallbackScope callbackScope;
-                callbackToRun(userDataToRun);
-            }
-        });
         return UEC_RESULT_OK;
     }
 
@@ -426,8 +456,19 @@
         FScopeLock lock(&GHandleMutex);
         TSharedPtr<FUECGameThreadRequest>* requestPtr = GGameThreadRequests.Find(requestId);
         if (requestPtr == nullptr || !requestPtr->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
+        int32 queueIndex = INDEX_NONE;
+        for (int32 index = GGameThreadRequestOrderHead;
+             index < GGameThreadRequestOrder.Num(); ++index) {
+            if (GGameThreadRequestOrder[index] == requestId) {
+                queueIndex = index;
+                break;
+            }
+        }
+        if (queueIndex == INDEX_NONE) return UEC_RESULT_INTERNAL_ERROR;
         (*requestPtr)->Cancelled = true;
         GGameThreadRequests.Remove(requestId);
+        GGameThreadRequestOrder.RemoveAt(queueIndex, 1, EAllowShrinking::No);
+        CompactGameThreadRequestOrder();
         return UEC_RESULT_OK;
     }
 
@@ -661,6 +702,8 @@
             if (pair.Value.IsValid()) pair.Value->Cancelled = true;
         }
         GGameThreadRequests.Empty();
+        GGameThreadRequestOrder.Empty();
+        GGameThreadRequestOrderHead = 0;
     }
 
     static void CancelAllSaveGameRequests()
