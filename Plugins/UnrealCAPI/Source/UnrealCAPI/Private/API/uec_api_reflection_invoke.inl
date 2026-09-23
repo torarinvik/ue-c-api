@@ -133,7 +133,7 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
         if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net) ||
+        if (IsLatentFunction(function) || function->HasAnyFunctionFlags(FUNC_Net) ||
             (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly) &&
              actor->GetWorld() != nullptr && actor->GetWorld()->GetNetMode() == NM_Client))
         {
@@ -232,7 +232,7 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
         if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net) ||
+        if (IsLatentFunction(function) || function->HasAnyFunctionFlags(FUNC_Net) ||
             (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly) &&
              actor->GetWorld() != nullptr && actor->GetWorld()->GetNetMode() == NM_Client)) {
             return UEC_RESULT_UNSUPPORTED;
@@ -354,7 +354,7 @@
             UFunction* function = *iterator;
             *outParameterCount = 0;
             *outHasReturnValue = UEC_FALSE;
-            *outIsLatent = function->HasAnyFunctionFlags(FUNC_Latent) ? UEC_TRUE : UEC_FALSE;
+            *outIsLatent = IsLatentFunction(function) ? UEC_TRUE : UEC_FALSE;
             for (TFieldIterator<FProperty> propertyIterator(function); propertyIterator; ++propertyIterator)
             {
                 FProperty* property = *propertyIterator;

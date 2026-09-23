@@ -381,10 +381,7 @@
             subscription->Cancelled = true;
             if (!subscription->InCallback)
             {
-                if (UPrimitiveComponent* component = subscription->Component.Get())
-                {
-                    component->OnComponentHit().Remove(subscription->Handle);
-                }
+                RemoveCollisionSubscription(subscription);
             }
             GCollisionSubscriptions.Remove(subscriptionId);
         }

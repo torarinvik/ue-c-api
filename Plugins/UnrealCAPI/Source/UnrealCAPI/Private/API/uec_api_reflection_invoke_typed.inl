@@ -84,7 +84,8 @@
             {
                 outValue->kind = CastField<FFloatProperty>(property)
                     ? UEC_PROPERTY_FLOAT : UEC_PROPERTY_DOUBLE;
-                outValue->real_value = numericProperty->GetFloatingPointPropertyValue_InContainer(container);
+                outValue->real_value = numericProperty->GetFloatingPointPropertyValue(
+                    numericProperty->ContainerPtrToValuePtr<void>(container));
                 return UEC_RESULT_OK;
             }
             if (numericProperty->IsInteger())
@@ -257,7 +258,7 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
         if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net) ||
+        if (IsLatentFunction(function) || function->HasAnyFunctionFlags(FUNC_Net) ||
             (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly) &&
              actor->GetWorld() != nullptr && actor->GetWorld()->GetNetMode() == NM_Client)) {
             return UEC_RESULT_UNSUPPORTED;
@@ -323,7 +324,7 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
         if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net) ||
+        if (IsLatentFunction(function) || function->HasAnyFunctionFlags(FUNC_Net) ||
             (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly) &&
              actor->GetWorld() != nullptr && actor->GetWorld()->GetNetMode() == NM_Client)) {
             return UEC_RESULT_UNSUPPORTED;
@@ -591,7 +592,7 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
         if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net) ||
+        if (IsLatentFunction(function) || function->HasAnyFunctionFlags(FUNC_Net) ||
             (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly) &&
              actor->GetWorld() != nullptr && actor->GetWorld()->GetNetMode() == NM_Client)) {
             return UEC_RESULT_UNSUPPORTED;

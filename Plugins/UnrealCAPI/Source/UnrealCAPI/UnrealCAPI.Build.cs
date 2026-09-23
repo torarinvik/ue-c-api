@@ -18,7 +18,6 @@ public class UnrealCAPI : ModuleRules
             "CoreUObject",
             "InputCore",
             "EnhancedInput",
-            "AssetManager",
             "UMG"
         });
 

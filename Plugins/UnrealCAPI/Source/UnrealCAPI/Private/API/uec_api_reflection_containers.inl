@@ -73,10 +73,8 @@
         }
         *outKind = GetPropertyKind(property);
         FString path;
-        if (!property->ExportTextItem_Direct(path, property->ContainerPtrToValuePtr<void>(owner),
-                                             nullptr, owner, PPF_None, owner)) {
-            return UEC_RESULT_UNSUPPORTED;
-        }
+        property->ExportTextItem_Direct(path, property->ContainerPtrToValuePtr<void>(owner),
+                                        nullptr, owner, PPF_None, owner);
         return CopyFStringToUtf8(path, buffer, bufferSize, requiredSize);
     }
 
@@ -330,9 +328,7 @@
         if (fieldValue == nullptr) return UEC_RESULT_UNSUPPORTED;
         *outKind = GetPropertyKind(field);
         FString text;
-        if (!field->ExportTextItem_Direct(text, fieldValue, nullptr, owner, PPF_None, owner)) {
-            return UEC_RESULT_UNSUPPORTED;
-        }
+        field->ExportTextItem_Direct(text, fieldValue, nullptr, owner, PPF_None, owner);
         return CopyFStringToUtf8(text, buffer, bufferSize, requiredSize);
     }
 

@@ -12,10 +12,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FUECEventBridgeBlueprintEvent,
                                                double, RealValue,
                                                const FString&, TextValue);
 DECLARE_MULTICAST_DELEGATE_FourParams(FUECEventBridgeNativeEvent,
-                                      int64, EventId,
-                                      int64, IntegerValue,
-                                      double, RealValue,
-                                      const FString&, TextValue);
+                                      int64, int64, double, const FString&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FUECEventBridgeNativeDestroyed,
                                     UECEventBridgeComponent*);
 

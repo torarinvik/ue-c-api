@@ -1,7 +1,10 @@
 /* Shared runtime validation, conversion, lifecycle, and diagnostics helpers. */
     static void CancelActorSubscriptions(AActor* actor);
     static void CancelActorSubscriptionsForWorld(UWorld* world);
+    static void EnsureActorDestroyedHandler(UWorld* world);
     static void RemoveActorDestroyedHandler(UWorld* world);
+    static void RemoveCollisionSubscription(
+        const TSharedPtr<FUECCollisionSubscription>& subscription);
     static void RemoveAllActorDestroyedHandlers(); static void ClearAllActorDestroyedSubscriptions();
     static void HandleWorldCleanup(UWorld* world, bool sessionEnded, bool cleanupResources);
     static void HandlePostLoadMap(UWorld* world); static void CancelAllTravelRequests(); static void CancelAllStreamingRequests(); static void CancelStreamingRequestsFor(UWorld* world);
@@ -10,6 +13,18 @@
         if (nextId == 0) return false;
         outId = nextId++;
         return true;
+    }
+    static bool IsLatentFunction(const UFunction* function)
+    {
+        if (function == nullptr) return false;
+        for (TFieldIterator<FProperty> propertyIterator(function); propertyIterator;
+             ++propertyIterator)
+        {
+            const FStructProperty* structProperty = CastField<FStructProperty>(*propertyIterator);
+            if (structProperty != nullptr &&
+                structProperty->Struct == FLatentActionInfo::StaticStruct()) return true;
+        }
+        return false;
     }
     struct FUECCallbackScope final
     {
@@ -156,8 +171,7 @@
         if (CastField<FIntProperty>(property) || CastField<FInt64Property>(property) ||
             CastField<FUInt32Property>(property) || CastField<FUInt64Property>(property) ||
             CastField<FByteProperty>(property) || CastField<FInt16Property>(property) ||
-            CastField<FUInt16Property>(property) || CastField<FInt8Property>(property) ||
-            CastField<FUInt8Property>(property)) return UEC_PROPERTY_INTEGER;
+            CastField<FUInt16Property>(property) || CastField<FInt8Property>(property)) return UEC_PROPERTY_INTEGER;
         if (CastField<FFloatProperty>(property)) return UEC_PROPERTY_FLOAT; if (CastField<FDoubleProperty>(property)) return UEC_PROPERTY_DOUBLE;
         if (CastField<FEnumProperty>(property)) return UEC_PROPERTY_ENUM;
         if (CastField<FStrProperty>(property)) return UEC_PROPERTY_STRING;
@@ -181,7 +195,7 @@
     }
     static bool IsUnsignedIntegerProperty(const FProperty* property)
     {
-        return CastField<FByteProperty>(property) || CastField<FUInt8Property>(property) ||
+        return CastField<FByteProperty>(property) ||
             CastField<FUInt16Property>(property) || CastField<FUInt32Property>(property) ||
             CastField<FUInt64Property>(property);
     }
@@ -206,7 +220,7 @@
         {
             if (value < 0) return false;
             const uint64 unsignedValue = static_cast<uint64>(value);
-            if (CastField<FByteProperty>(property) || CastField<FUInt8Property>(property))
+            if (CastField<FByteProperty>(property))
                 return unsignedValue <= TNumericLimits<uint8>::Max();
             if (CastField<FUInt16Property>(property))
                 return unsignedValue <= TNumericLimits<uint16>::Max();

@@ -320,7 +320,7 @@
             }
             if (function->HasAnyFunctionFlags(FUNC_Native)) *outFlags |= UEC_FUNCTION_FLAG_NATIVE;
             if (function->HasAnyFunctionFlags(FUNC_BlueprintEvent)) *outFlags |= UEC_FUNCTION_FLAG_EVENT;
-            if (function->HasAnyFunctionFlags(FUNC_Latent)) *outFlags |= UEC_FUNCTION_FLAG_LATENT;
+            if (IsLatentFunction(function)) *outFlags |= UEC_FUNCTION_FLAG_LATENT;
             if (function->HasAnyFunctionFlags(FUNC_Net)) *outFlags |= UEC_FUNCTION_FLAG_NETWORK;
             if (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly)) {
                 *outFlags |= UEC_FUNCTION_FLAG_AUTHORITY_ONLY;

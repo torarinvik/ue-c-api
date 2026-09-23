@@ -89,7 +89,7 @@
             underlying->SetIntPropertyValue(data, value->integer_value);
             return UEC_RESULT_OK;
         }
-        if (FNumericProperty* numeric = CastField<FNumericProperty>(property)) {
+        if (const FNumericProperty* numeric = CastField<FNumericProperty>(property)) {
             if (numeric->IsFloatingPoint()) {
                 if ((value->kind != UEC_PROPERTY_FLOAT && value->kind != UEC_PROPERTY_DOUBLE) ||
                     !FMath::IsFinite(value->real_value) ||
@@ -153,7 +153,8 @@
         {
             if (numericProperty->IsFloatingPoint())
             {
-                outValue->real_value = numericProperty->GetFloatingPointPropertyValue_InContainer(actor);
+                outValue->real_value = numericProperty->GetFloatingPointPropertyValue(
+                    numericProperty->ContainerPtrToValuePtr<void>(actor));
                 return UEC_RESULT_OK;
             }
             if (numericProperty->IsInteger())
@@ -352,7 +353,8 @@
         {
             if (numericProperty->IsFloatingPoint())
             {
-                outValue->real_value = numericProperty->GetFloatingPointPropertyValue_InContainer(object);
+                outValue->real_value = numericProperty->GetFloatingPointPropertyValue(
+                    numericProperty->ContainerPtrToValuePtr<void>(object));
                 return UEC_RESULT_OK;
             }
             if (numericProperty->IsInteger())

@@ -244,6 +244,24 @@
         return UEC_RESULT_OK;
     }
 
+    static void RemoveWidgetSubscription(const TSharedPtr<FUECWidgetSubscription>& subscription)
+    {
+        if (!subscription.IsValid()) return;
+        if (UButton* button = subscription->Button.Get())
+        {
+            if (UECButtonClickBridge* bridge = subscription->Bridge.Get())
+            {
+                button->OnClicked.RemoveDynamic(
+                    bridge, &UECButtonClickBridge::HandleButtonClicked);
+            }
+        }
+        if (UECButtonClickBridge* bridge = subscription->Bridge.Get())
+        {
+            bridge->GetNativeClickedEvent().Remove(subscription->Handle);
+        }
+        subscription->Bridge.Reset();
+    }
+
     uec_result UEC_CALL BindButtonClicked(uec_object* rawButton,
                                           uec_widget_event_callback callback,
                                           void* userData,
@@ -270,8 +288,12 @@
         subscription->Button = button;
         subscription->Callback = callback;
         subscription->UserData = userData;
+        UECButtonClickBridge* bridge = NewObject<UECButtonClickBridge>(button);
+        if (bridge == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        subscription->Bridge.Reset(bridge);
+        button->OnClicked.AddDynamic(bridge, &UECButtonClickBridge::HandleButtonClicked);
         TWeakPtr<FUECWidgetSubscription> weakSubscription = subscription;
-        subscription->Handle = button->OnClicked.AddLambda(
+        subscription->Handle = bridge->GetNativeClickedEvent().AddLambda(
             [weakSubscription]()
             {
                 TSharedPtr<FUECWidgetSubscription> current = weakSubscription.Pin();
@@ -281,15 +303,12 @@
                 current->Callback(current->Id, current->UserData);
                 current->InCallback = false;
                 current->Cancelled = true;
-                if (UButton* button = current->Button.Get())
-                {
-                    button->OnClicked.Remove(current->Handle);
-                }
+                RemoveWidgetSubscription(current);
                 GWidgetSubscriptions.Remove(current->Id);
             });
         if (IsShuttingDown())
         {
-            button->OnClicked.Remove(subscription->Handle);
+            RemoveWidgetSubscription(subscription);
             subscription->Cancelled = true;
             return UEC_RESULT_SHUTTING_DOWN;
         }
@@ -312,10 +331,7 @@
         subscription->Cancelled = true;
         if (!subscription->InCallback)
         {
-            if (UButton* button = subscription->Button.Get())
-            {
-                button->OnClicked.Remove(subscription->Handle);
-            }
+            RemoveWidgetSubscription(subscription);
         }
         GWidgetSubscriptions.Remove(subscriptionId);
         return UEC_RESULT_OK;
@@ -556,10 +572,7 @@
         {
             if (!pair.Value.IsValid()) continue;
             pair.Value->Cancelled = true;
-            if (UButton* button = pair.Value->Button.Get())
-            {
-                button->OnClicked.Remove(pair.Value->Handle);
-            }
+            RemoveWidgetSubscription(pair.Value);
         }
         GWidgetSubscriptions.Empty();
     }

@@ -24,6 +24,7 @@
 #include "InputMappingContext.h"
 #include "Kismet/GameplayStatics.h"
 #include "CollisionShape.h"
+#include "Engine/OverlapResult.h"
 #include "Components/SceneComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -40,6 +41,8 @@
 #include "Components/CheckBox.h"
 #include "Components/ProgressBar.h"
 #include "UECEventBridgeComponent.h"
+#include "UECButtonClickBridge.h"
+#include "UECComponentHitBridge.h"
 #include "UECVersionedDataSaveGame.h"
 #include "UECLatentCallProxy.h"
 #include "Engine/LatentActionManager.h"
@@ -128,6 +131,7 @@ namespace
     {
         uint64 Id = 0;
         TWeakObjectPtr<UButton> Button;
+        TStrongObjectPtr<UECButtonClickBridge> Bridge;
         FDelegateHandle Handle;
         uec_widget_event_callback Callback = nullptr;
         void* UserData = nullptr;
@@ -149,6 +153,7 @@ namespace
     {
         uint64 Id = 0;
         TWeakObjectPtr<UPrimitiveComponent> Component;
+        TStrongObjectPtr<UECComponentHitBridge> Bridge;
         FDelegateHandle Handle;
         uec_component_hit_callback Callback = nullptr;
         void* UserData = nullptr;

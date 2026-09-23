@@ -65,7 +65,7 @@
         if (!IsValidStringView(functionName) || functionName.size == 0) return UEC_RESULT_INVALID_ARGUMENT;
         UFunction* function = actor->FindFunction(FName(*ToFString(functionName)));
         if (function == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (function->HasAnyFunctionFlags(FUNC_Latent | FUNC_Net) ||
+        if (IsLatentFunction(function) || function->HasAnyFunctionFlags(FUNC_Net) ||
             (function->HasAnyFunctionFlags(FUNC_BlueprintAuthorityOnly) &&
              actor->GetWorld() != nullptr && actor->GetWorld()->GetNetMode() == NM_Client))
         {
@@ -298,6 +298,25 @@
         return UEC_RESULT_OK;
     }
 
+    static void RemoveCollisionSubscription(
+        const TSharedPtr<FUECCollisionSubscription>& subscription)
+    {
+        if (!subscription.IsValid()) return;
+        if (UPrimitiveComponent* component = subscription->Component.Get())
+        {
+            if (UECComponentHitBridge* bridge = subscription->Bridge.Get())
+            {
+                component->OnComponentHit.RemoveDynamic(
+                    bridge, &UECComponentHitBridge::HandleComponentHit);
+            }
+        }
+        if (UECComponentHitBridge* bridge = subscription->Bridge.Get())
+        {
+            bridge->GetNativeHitEvent().Remove(subscription->Handle);
+        }
+        subscription->Bridge.Reset();
+    }
+
     uec_result UEC_CALL BindComponentHit(uec_scene_component* rawComponent,
                                          uec_component_hit_callback callback,
                                          void* userData,
@@ -324,8 +343,13 @@
         subscription->Component = component;
         subscription->Callback = callback;
         subscription->UserData = userData;
+        UECComponentHitBridge* bridge = NewObject<UECComponentHitBridge>(component);
+        if (bridge == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        subscription->Bridge.Reset(bridge);
+        component->OnComponentHit.AddDynamic(
+            bridge, &UECComponentHitBridge::HandleComponentHit);
         TWeakPtr<FUECCollisionSubscription> weakSubscription = subscription;
-        subscription->Handle = component->OnComponentHit().AddLambda(
+        subscription->Handle = bridge->GetNativeHitEvent().AddLambda(
             [weakSubscription](UPrimitiveComponent*, AActor* otherActor,
                                UPrimitiveComponent*, FVector normalImpulse, const FHitResult&)
             {
@@ -346,15 +370,12 @@
                                   current->UserData);
                 current->InCallback = false;
                 current->Cancelled = true;
-                if (UPrimitiveComponent* component = current->Component.Get())
-                {
-                    component->OnComponentHit().Remove(current->Handle);
-                }
+                RemoveCollisionSubscription(current);
                 GCollisionSubscriptions.Remove(current->Id);
             });
         if (IsShuttingDown())
         {
-            component->OnComponentHit().Remove(subscription->Handle);
+            RemoveCollisionSubscription(subscription);
             subscription->Cancelled = true;
             return UEC_RESULT_SHUTTING_DOWN;
         }
@@ -377,10 +398,7 @@
         subscription->Cancelled = true;
         if (!subscription->InCallback)
         {
-            if (UPrimitiveComponent* component = subscription->Component.Get())
-            {
-                component->OnComponentHit().Remove(subscription->Handle);
-            }
+            RemoveCollisionSubscription(subscription);
         }
         GCollisionSubscriptions.Remove(subscriptionId);
         return UEC_RESULT_OK;
@@ -392,10 +410,7 @@
         {
             if (pair.Value.IsValid())
             {
-                if (UPrimitiveComponent* component = pair.Value->Component.Get())
-                {
-                    component->OnComponentHit().Remove(pair.Value->Handle);
-                }
+                RemoveCollisionSubscription(pair.Value);
                 pair.Value->Cancelled = true;
             }
         }

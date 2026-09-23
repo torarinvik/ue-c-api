@@ -108,7 +108,7 @@
         }
         UWorld* world = actor->GetWorld();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        if (!function->HasAnyFunctionFlags(FUNC_Latent) ||
+        if (!IsLatentFunction(function) ||
             function->HasAnyFunctionFlags(FUNC_Net)) {
             return UEC_RESULT_UNSUPPORTED;
         }
