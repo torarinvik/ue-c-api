@@ -93,7 +93,8 @@ static void UEC_CALL SelfUnbindEventBridgeCallback(uint64_t subscriptionId,
 
 uec_result UEC_CALL uec_host_event_bridge_smoke(void)
 {
-    static const char actorClassPath[] = "/Script/Engine.Actor";
+    /* This built-in actor has a scene component for the handle-count probe. */
+    static const char actorClassPath[] = "/Script/Engine.StaticMeshActor";
     static const char eventText[] = "bridge-smoke";
     const uec_string_view destroyFunction = {"K2_DestroyActor", sizeof("K2_DestroyActor") - 1};
     const uec_string_view classPath = {actorClassPath, sizeof(actorClassPath) - 1};
@@ -101,11 +102,15 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     const uec_transform initialTransform = {
         {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
     const uec_api* api = NULL;
+    const uec_api* probeApi = NULL;
     uec_context* context = NULL;
+    uec_context* probeContext = NULL;
     uec_world* world = NULL;
     uec_world* probeWorld = NULL;
     uec_actor* actor = NULL;
     uec_actor* observedDestroyedActor = NULL;
+    uec_scene_component* component = NULL;
+    uec_class* klass = NULL;
     uec_object* bridge = NULL;
     uint64_t subscriptionId = 0;
     uint64_t actorDestroySubscriptionId = 0;
@@ -125,6 +130,10 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL ||
         api->get_runtime_stats == NULL || api->get_capabilities == NULL ||
         api->get_default_world == NULL || api->release_world == NULL ||
+        api->release_context == NULL ||
+        api->get_actor_component_count == NULL || api->get_actor_component_at == NULL ||
+        api->release_scene_component == NULL || api->find_class == NULL ||
+        api->release_class == NULL ||
         api->spawn_actor == NULL || api->destroy_actor == NULL || api->release_actor == NULL ||
         api->invoke_actor_function == NULL || api->bind_actor_destroyed == NULL ||
         api->unbind_actor_destroyed == NULL ||
@@ -141,9 +150,34 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     }
     result = api->get_runtime_stats(context, &baselineStats);
     if (result != UEC_RESULT_OK) goto cleanup;
-    if (baselineStats.live_worlds == UINT32_MAX ||
-        baselineStats.live_actors == UINT32_MAX || baselineStats.live_objects == UINT32_MAX) {
+    if (baselineStats.live_contexts == UINT32_MAX ||
+        baselineStats.live_worlds == UINT32_MAX ||
+        baselineStats.live_actors == UINT32_MAX ||
+        baselineStats.live_components == UINT32_MAX ||
+        baselineStats.live_classes == UINT32_MAX ||
+        baselineStats.live_objects == UINT32_MAX) {
         result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &probeApi, &probeContext);
+    if (result != UEC_RESULT_OK || probeApi == NULL || probeContext == NULL ||
+        probeApi->release_context == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK ||
+        observedStats.live_contexts != baselineStats.live_contexts + 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = probeApi->release_context(probeContext);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    probeContext = NULL;
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK ||
+        observedStats.live_contexts != baselineStats.live_contexts) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
     result = api->get_default_world(context, &probeWorld);
@@ -191,6 +225,52 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     if (result != UEC_RESULT_OK) goto cleanup;
     result = api->get_runtime_stats(context, &observedStats);
     if (result != UEC_RESULT_OK || observedStats.live_actors != baselineStats.live_actors + 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    uint32_t componentCount = 0;
+    result = api->get_actor_component_count(actor, &componentCount);
+    if (result != UEC_RESULT_OK || componentCount == 0u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_component_at(actor, 0u, &component);
+    if (result != UEC_RESULT_OK || component == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK ||
+        observedStats.live_components != baselineStats.live_components + 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->release_scene_component(component);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    component = NULL;
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK ||
+        observedStats.live_components != baselineStats.live_components) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->find_class(context, classPath, &klass);
+    if (result != UEC_RESULT_OK || klass == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK ||
+        observedStats.live_classes != baselineStats.live_classes + 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->release_class(klass);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    klass = NULL;
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK ||
+        observedStats.live_classes != baselineStats.live_classes) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -292,13 +372,19 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    result = api->release_actor(observedDestroyedActor);
+    if (result != UEC_RESULT_OK) goto cleanup;
     observedDestroyedActor = NULL;
     actorDestroySubscriptionId = 0;
     result = api->get_runtime_stats(context, &observedStats);
     if (result != UEC_RESULT_OK ||
         observedStats.active_subscriptions != baselineStats.active_subscriptions ||
         observedStats.active_callbacks != baselineStats.active_callbacks ||
+        observedStats.live_contexts != baselineStats.live_contexts ||
+        observedStats.live_worlds != baselineStats.live_worlds + 1u ||
         observedStats.live_actors != baselineStats.live_actors ||
+        observedStats.live_components != baselineStats.live_components ||
+        observedStats.live_classes != baselineStats.live_classes ||
         observedStats.live_objects != baselineStats.live_objects ||
         state.callback_stats_valid != UEC_TRUE ||
         state.callback_count != 2 || state.actor_destroy_callback_count != 1u ||
@@ -316,6 +402,14 @@ cleanup:
     if (api != NULL && bridge != NULL) {
         const uec_result cleanupResult = api->destroy_actor_event_bridge(bridge);
         if (cleanupResult != UEC_RESULT_OK) (void)api->release_object(bridge);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    if (api != NULL && component != NULL) {
+        const uec_result cleanupResult = api->release_scene_component(component);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    if (api != NULL && klass != NULL) {
+        const uec_result cleanupResult = api->release_class(klass);
         if (result == UEC_RESULT_OK) result = cleanupResult;
     }
     if (api != NULL && actorDestroySubscriptionId != 0 && context != NULL) {
@@ -339,6 +433,10 @@ cleanup:
     }
     if (api != NULL && world != NULL) {
         const uec_result cleanupResult = api->release_world(world);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    if (probeApi != NULL && probeContext != NULL) {
+        const uec_result cleanupResult = probeApi->release_context(probeContext);
         if (result == UEC_RESULT_OK) result = cleanupResult;
     }
     if (api != NULL && context != NULL) {

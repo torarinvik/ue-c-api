@@ -9,12 +9,14 @@ development; they do not imply a published or runtime-verified release.
 
 - Runtime statistics now exclude released handle tombstones from live handle
   counts, while continuing to count unreleased handles whose Unreal objects
-  have expired. The packaged-host smoke checks acquisition and release or
-  destruction accounting for world, actor, and object handles. All typed
-  `release_*` operations can now tombstone their registered handle after the
-  underlying Unreal object expires; the host smoke exercises this with an
-  actor destroyed through reflected Unreal behavior. The event-bridge and
-  actor-destroyed callback smoke checks that in-flight callbacks appear in
+  have expired. The packaged-host smoke checks acquisition and release
+  accounting for all six handle kinds: contexts, worlds, actors, scene
+  components, classes, and objects. The actor-destroyed callback probe releases
+  its expired actor handle before verifying that counts return to baseline.
+  All typed `release_*` operations can now tombstone their registered handle
+  after the underlying Unreal object expires; the host smoke exercises this
+  with an actor destroyed through reflected Unreal behavior. The event-bridge
+  and actor-destroyed callback smoke checks that in-flight callbacks appear in
   `active_callbacks` and that actor-destroyed subscriptions are drained.
 - Actor-destroyed and post-load travel callbacks now recheck the shutdown gate
   before entering consumer code; a travel world handle created during a gate
