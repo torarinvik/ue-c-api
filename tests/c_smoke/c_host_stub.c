@@ -52,6 +52,17 @@ static uec_result UEC_CALL StubSetCheckBoxState(uec_object* checkBox,
     return checkBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubReleaseObject(uec_object* object)
+{
+    return object == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetTextBlockText(uec_object* textBlock, uec_string_view text)
+{
+    (void)text;
+    return textBlock == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetWidgetChild(uec_object* userWidget,
                                               uec_string_view childName,
                                               uec_object** outChild)

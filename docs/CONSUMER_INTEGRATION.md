@@ -273,7 +273,9 @@ unchecked before validation; both calls require the game thread.
 ABI minor 142 adds `get_widget_child` to obtain a weak handle to a named child
 of a `UUserWidget`. Use that handle with the type-specific widget operations,
 and release it like any other object handle. A child absent from the current
-widget tree returns `UEC_RESULT_NOT_INITIALIZED`.
+widget tree returns `UEC_RESULT_NOT_INITIALIZED`. The
+[named UMG child example](../examples/c_widget_ui/README.md) shows lookup,
+text update, and handle release in C.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.
@@ -377,8 +379,8 @@ sh tests/run_checks.sh
 ```
 
 This checks the C11 and C++17 public header, links and runs the current and
-old-minor consumers against an explicit host stub, checks the C gameplay
-example, descriptor JSON, and private source-unit line budgets. The stub
+old-minor consumers against an explicit host stub, checks the C gameplay and
+named UMG child examples, descriptor JSON, and private source-unit line budgets. The stub
 exercises the bootstrap and append-only table prefix without pretending to be
 an Unreal runtime. A real integration is complete only after the host project
 is built against the latest available

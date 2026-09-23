@@ -9,6 +9,8 @@ layout_consumer="$repo_dir/tests/c_smoke/c_smoke_layout.c"
 compat_consumer="$repo_dir/tests/c_smoke/c_compat.c"
 host_stub="$repo_dir/tests/c_smoke/c_host_stub.c"
 gameplay_example="$repo_dir/examples/c_gameplay/c_gameplay.c"
+widget_ui_example="$repo_dir/examples/c_widget_ui/c_widget_ui.c"
+widget_ui_example_dir="$repo_dir/examples/c_widget_ui"
 host_consumer="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_smoke.c"
 host_abi_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_abi_smoke.c"
 host_event_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_event_bridge_smoke.c"
@@ -19,14 +21,20 @@ private_dir="$plugin_dir/Source/UnrealCAPI/Private"
 
 git -C "$repo_dir" diff --check
 
-"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$consumer"
-"${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -x c++ -fsyntax-only "$consumer"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$widget_ui_example_dir" -fsyntax-only "$consumer"
+"${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$widget_ui_example_dir" -x c++ -fsyntax-only "$consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$layout_consumer"
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -x c++ -fsyntax-only "$layout_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$compat_consumer"
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -x c++ -fsyntax-only "$compat_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$repo_dir/examples/c_gameplay" -fsyntax-only "$gameplay_example"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$widget_ui_example_dir" -fsyntax-only "$widget_ui_example"
+"${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$widget_ui_example_dir" -x c++ -fsyntax-only "$widget_ui_example"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$repo_dir/examples/c_gameplay" -fsyntax-only "$gameplay_header_consumer"
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
@@ -45,9 +53,10 @@ if [ "${UEC_SANITIZE:-0}" = 1 ]; then
     sanitizer_flags='-fsanitize=address,undefined -fno-omit-frame-pointer'
 fi
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
-    ${sanitizer_flags} -I "$repo_dir/examples/c_gameplay" "$consumer" "$layout_consumer" \
+    ${sanitizer_flags} -I "$repo_dir/examples/c_gameplay" -I "$widget_ui_example_dir" \
+    "$consumer" "$layout_consumer" \
     "$host_stub" "$host_consumer" "$host_abi_consumer" "$host_event_consumer" \
-    "$gameplay_example" "$host_gameplay_consumer" \
+    "$gameplay_example" "$widget_ui_example" "$host_gameplay_consumer" \
     -o "$stub_build_dir/c_smoke"
 "$stub_build_dir/c_smoke" >/dev/null
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \

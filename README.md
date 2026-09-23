@@ -22,8 +22,9 @@ GitHub Actions runs these checks on Linux and macOS for pushes and pull requests
 They check header syntax, selected layouts, and descriptor JSON; Unreal module
 compilation and runtime tests still need an engine installation. See
 [CONTRIBUTING.md](CONTRIBUTING.md) to participate and [CHANGELOG.md](CHANGELOG.md)
-for changes in development. The self-cleaning C host example is in
-[examples/c_gameplay/README.md](examples/c_gameplay/README.md).
+for changes in development. C examples are in
+[examples/c_gameplay/README.md](examples/c_gameplay/README.md) and
+[examples/c_widget_ui/README.md](examples/c_widget_ui/README.md).
 
 When Unreal Engine is installed locally, `UE_ROOT=/path/to/UnrealEngine sh
 tests/run_unreal_build.sh` compiles, cooks, stages, and packages the host project.

@@ -1,4 +1,5 @@
 #include "uec_api.h"
+#include "c_widget_ui.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -10,7 +11,6 @@ static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
     (void)user_data;
 }
-
 static void UEC_CALL NoopLatentFunctionCallback(uint64_t request_id,
                                                 uec_result result,
                                                 void* user_data)
@@ -361,7 +361,7 @@ int main(void)
     if (api->get_widget_visibility(NULL, &widget_visibility) != UEC_RESULT_UNSUPPORTED ||
         widget_visibility != UEC_WIDGET_VISIBLE ||
         api->set_widget_visibility(NULL, (uec_widget_visibility)99) != UEC_RESULT_INVALID_ARGUMENT ||
-        api->set_widget_visibility(NULL, UEC_WIDGET_SELF_HIT_TEST_INVISIBLE) != UEC_RESULT_INVALID_HANDLE || api->get_widget_child(NULL, latent_function, &event_bridge) != UEC_RESULT_INVALID_HANDLE || event_bridge != NULL || api->get_widget_child(NULL, latent_function, NULL) != UEC_RESULT_INVALID_ARGUMENT || api->get_widget_child(NULL, empty_function_name, &event_bridge) != UEC_RESULT_INVALID_ARGUMENT || event_bridge != NULL ||
+        api->set_widget_visibility(NULL, UEC_WIDGET_SELF_HIT_TEST_INVISIBLE) != UEC_RESULT_INVALID_HANDLE || api->get_widget_child(NULL, latent_function, &event_bridge) != UEC_RESULT_INVALID_HANDLE || event_bridge != NULL || api->get_widget_child(NULL, latent_function, NULL) != UEC_RESULT_INVALID_ARGUMENT || api->get_widget_child(NULL, empty_function_name, &event_bridge) != UEC_RESULT_INVALID_ARGUMENT || event_bridge != NULL || uec_widget_set_text_child(api, NULL, latent_function, latent_function) != UEC_RESULT_INVALID_HANDLE ||
         api->get_widget_enabled(NULL, &widget_enabled) != UEC_RESULT_INVALID_HANDLE || widget_enabled != UEC_FALSE ||
         api->get_widget_enabled(NULL, NULL) != UEC_RESULT_INVALID_ARGUMENT || api->get_checkbox_state(NULL, NULL) != UEC_RESULT_INVALID_ARGUMENT ||
         api->set_widget_enabled(NULL, (uec_bool)2u) != UEC_RESULT_INVALID_ARGUMENT || api->set_checkbox_state(NULL, (uec_checkbox_state)99) != UEC_RESULT_INVALID_ARGUMENT ||
