@@ -38,6 +38,8 @@ development; they do not imply a published or runtime-verified release.
 - Game-thread request admission and cancellation now validate the context
   under the same registry lock as the queue operation, so context release cannot
   race a stale-context submission into the queue.
+- The packaged queue smoke races submission against context release and accepts
+  only atomic admission or stale-context rejection outcomes.
 
 ### Added
 

@@ -123,6 +123,10 @@ namespace
         }
     }
 
+    void UEC_CALL IgnoreQueuedCallback(void*)
+    {
+    }
+
     bool ReleasedContextSubmissionIsRejected(FQueueSmokeState& state)
     {
         const uec_api* probeApi = nullptr;
@@ -146,6 +150,57 @@ namespace
             return false;
         }
         return submitResult == UEC_RESULT_INVALID_HANDLE && staleRequestId == 0u;
+    }
+
+    bool ConcurrentContextReleaseSubmissionIsAtomic(FQueueSmokeState& state)
+    {
+        const uec_api* probeApi = nullptr;
+        uec_context* probeContext = nullptr;
+        if (uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR,
+                        &probeApi, &probeContext) != UEC_RESULT_OK ||
+            probeApi == nullptr || probeContext == nullptr || probeApi != state.Api) {
+            if (probeContext != nullptr && probeApi != nullptr &&
+                probeApi->release_context != nullptr) {
+                probeApi->release_context(probeContext);
+            }
+            return false;
+        }
+
+        FEvent* raceStart = FPlatformProcess::GetSynchEventFromPool(true);
+        FEvent* submissionComplete = FPlatformProcess::GetSynchEventFromPool(true);
+        if (raceStart == nullptr || submissionComplete == nullptr) {
+            if (raceStart != nullptr) FPlatformProcess::ReturnSynchEventToPool(raceStart);
+            if (submissionComplete != nullptr) {
+                FPlatformProcess::ReturnSynchEventToPool(submissionComplete);
+            }
+            probeApi->release_context(probeContext);
+            return false;
+        }
+
+        uec_result submitResult = UEC_RESULT_INTERNAL_ERROR;
+        uint64_t requestId = 42;
+        TFuture<void> submitter = Async(EAsyncExecution::ThreadPool,
+            [probeApi, probeContext, raceStart, submissionComplete,
+             &submitResult, &requestId]()
+            {
+                raceStart->Wait();
+                submitResult = probeApi->run_on_game_thread(
+                    probeContext, &IgnoreQueuedCallback, nullptr, &requestId);
+                submissionComplete->Trigger();
+            });
+        raceStart->Trigger();
+        const uec_result releaseResult = probeApi->release_context(probeContext);
+        submissionComplete->Wait();
+        submitter.Get();
+        FPlatformProcess::ReturnSynchEventToPool(raceStart);
+        FPlatformProcess::ReturnSynchEventToPool(submissionComplete);
+
+        if (releaseResult != UEC_RESULT_OK) return false;
+        if (submitResult == UEC_RESULT_INVALID_HANDLE) return requestId == 0u;
+        if (submitResult != UEC_RESULT_OK || requestId == 0u) return false;
+        const uec_result cancelResult = state.Api->cancel_game_thread_request(
+            state.Context, requestId);
+        return cancelResult == UEC_RESULT_OK || cancelResult == UEC_RESULT_INVALID_ARGUMENT;
     }
 }
 
@@ -304,6 +359,7 @@ extern "C" uec_bool UEC_CALL uec_host_queue_smoke_poll(uec_result* outResult)
             state.CancelledCount == CancellationBatch &&
             state.CancelAfterDispatchChecks == 1u &&
             ReleasedContextSubmissionIsRejected(state) &&
+            ConcurrentContextReleaseSubmissionIsAtomic(state) &&
             HasRuntimeStatsReturnedToBaseline(state);
         FinishQueueSmoke(state,
                          valid ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR,
