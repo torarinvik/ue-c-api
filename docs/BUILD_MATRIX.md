@@ -21,10 +21,12 @@ scalar-kind rejection, typed FVector/FQuat/FTransform round trips and mismatch
 rejection, short text-output sizing and retry, invalid world-kind handling,
 completion, cancellation, signature rejection, explicit and cross-world
 context handling, stale actor and bridge handle rejection, and pending request
-counts. After those complete, a travel probe reloads the configured OpenWorld
-map and checks immediate old-world handle invalidation, post-load callback
-delivery, request drainage, and release of the callback's new world handle, so
-Unreal Build Tool does not need to synthesize temporary targets
+counts. After latent invocation, the packaged host runs the documented C
+gameplay example through three timer-driven actor moves and validates each
+event-bridge callback. It then runs a travel probe that reloads the configured
+OpenWorld map and checks immediate old-world handle invalidation, post-load
+callback delivery, request drainage, and release of the callback's new world
+handle, so Unreal Build Tool does not need to synthesize temporary targets
 before compiling the plugin and its first C consumer. `Config/DefaultEngine.ini`
 selects Unreal's OpenWorld template for editor, game, and server startup so the
 packaged host enters a runtime world and can execute its world-scoped C smoke.
@@ -48,7 +50,7 @@ With an installed engine, run `UE_ROOT=/path/to/UnrealEngine
 sh tests/run_unreal_build.sh` to compile, cook, stage, and package the minimal
 host project for the current platform. A same-platform Development build then
 launches the packaged host with NullRHI and waits for successful bootstrap,
-event-bridge, latent-call, and travel C smoke messages; failures and timeouts
+event-bridge, latent-call, gameplay-example, and travel C smoke messages; failures and timeouts
 fail the gate with recent host output. Set `UEC_UNREAL_CONFIGURATION=Shipping` to repeat
 the build in Shipping mode; runtime smoke is limited to Development builds.
 Set `UEC_UNREAL_PLATFORM=Win64` (or

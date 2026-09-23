@@ -22,12 +22,14 @@ GitHub Actions runs these checks on Linux and macOS for pushes and pull requests
 They check header syntax, selected layouts, and descriptor JSON; Unreal module
 compilation and runtime tests still need an engine installation. See
 [CONTRIBUTING.md](CONTRIBUTING.md) to participate and [CHANGELOG.md](CHANGELOG.md)
-for changes in development.
+for changes in development. The self-cleaning C host example is in
+[examples/c_gameplay/README.md](examples/c_gameplay/README.md).
 
 When Unreal Engine is installed locally, `UE_ROOT=/path/to/UnrealEngine sh
 tests/run_unreal_build.sh` compiles, cooks, stages, and packages the host project.
 For a same-platform Development build, it launches the packaged host and waits
-for the C bootstrap, event-bridge, latent-call, and world-travel smoke checks.
+for the C bootstrap, event-bridge, latent-call, gameplay-example, and
+world-travel smoke checks.
 Set `UEC_UNREAL_CONFIGURATION=Shipping` for a Shipping package; runtime smoke is
 limited to Development builds.
 

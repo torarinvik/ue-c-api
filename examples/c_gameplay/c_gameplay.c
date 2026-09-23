@@ -1,22 +1,7 @@
-#include "uec_api.h"
+#include "c_gameplay.h"
 
 #include <stddef.h>
 #include <stdint.h>
-
-/* The host must keep this state and its context alive until done is true. */
-typedef struct uec_gameplay_example_state {
-    const uec_api* api;
-    uec_context* context;
-    uec_world* world;
-    uec_actor* actor;
-    uec_object* event_bridge;
-    uint64_t timer_id;
-    uint64_t event_subscription_id;
-    uint32_t ticks;
-    uint32_t events_received;
-    uec_result last_result;
-    uec_bool done;
-} uec_gameplay_example_state;
 
 static void RecordExampleResult(uec_gameplay_example_state* state,
                                 uec_result result)
@@ -160,11 +145,11 @@ static void UEC_CALL MoveActorOnTimer(uint64_t timer_id, void* raw_state)
  * alive until state->done becomes true. Each timer tick moves the actor, emits
  * an event through its bridge component, receives the callback synchronously,
  * and terminates after three validated event deliveries. */
-uec_result uec_gameplay_example_start(const uec_api* api,
-                                      uec_context* context,
-                                      uec_string_view actor_class_path,
-                                      const uec_transform* initial_transform,
-                                      uec_gameplay_example_state* state)
+uec_result UEC_CALL uec_gameplay_example_start(const uec_api* api,
+                                               uec_context* context,
+                                               uec_string_view actor_class_path,
+                                               const uec_transform* initial_transform,
+                                               uec_gameplay_example_state* state)
 {
     if (api == NULL || context == NULL || initial_transform == NULL || state == NULL)
     {
@@ -230,4 +215,10 @@ uec_result uec_gameplay_example_start(const uec_api* api,
         return state->last_result;
     }
     return UEC_RESULT_OK;
+}
+
+void UEC_CALL uec_gameplay_example_cancel(uec_gameplay_example_state* state)
+{
+    if (state == NULL || state->done == UEC_TRUE) return;
+    FinishGameplayExample(state);
 }

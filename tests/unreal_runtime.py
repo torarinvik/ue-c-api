@@ -17,12 +17,14 @@ SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
     "C event bridge smoke completed",
     "C latent invocation smoke completed",
+    "C gameplay example smoke completed",
     "C travel smoke completed",
 )
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C event bridge smoke failed",
     "C latent invocation smoke failed",
+    "C gameplay example smoke failed",
     "C travel smoke failed",
 )
 
@@ -131,7 +133,7 @@ def main(argv: list[str]) -> int:
     except RuntimeError as error:
         print(error, file=sys.stderr)
         return 1
-    print("Packaged Development host completed the C bootstrap, event, latent, and travel smoke checks.")
+    print("Packaged Development host completed the C bootstrap, event, latent, gameplay, and travel smoke checks.")
     return 0
 
 

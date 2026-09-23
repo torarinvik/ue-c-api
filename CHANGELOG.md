@@ -36,6 +36,9 @@ development; they do not imply a published or runtime-verified release.
 - The packaged Development host smoke now performs async travel through the
   configured OpenWorld map and checks old-world invalidation, post-load callback
   delivery, request drainage, and release of the callback's new world handle.
+- The C gameplay example now has a public example header, a game-thread cancel
+  entry point, and a packaged-host smoke that runs its timer, actor movement,
+  synchronous event callback, and handle cleanup flow.
 - Standard `Plugins/UnrealCAPI` project-plugin layout with tracked host Game and
   Editor targets for Unreal Build Tool discovery.
 - A tracked C host bootstrap probe that exercises table negotiation, capability
@@ -47,8 +50,9 @@ development; they do not imply a published or runtime-verified release.
 - Cross-platform Unreal build requests now skip rebuilding the local Editor
   target while preserving the host-platform default.
 - The Unreal build gate now launches same-platform Development packages and
-  requires the host C bootstrap, event-bridge, latent-call, and travel smoke
-  checks to complete; Shipping and cross-platform runs remain package-only.
+  requires the host C bootstrap, event-bridge, latent-call, gameplay-example,
+  and travel smoke checks to complete; Shipping and cross-platform runs remain
+  package-only.
 - `get_last_error` now preserves the diagnostic during a null-buffer size query,
   so a single correctly sized retry returns the original message.
 - The Unreal-host C ABI smoke checks early rejection of undeclared collision-
