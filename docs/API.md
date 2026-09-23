@@ -107,7 +107,11 @@ ABI minor 90 adds `travel_world_async` and `cancel_travel_request`. Travel
 invalidates handles and world-owned subscriptions before submitting
 `OpenLevel`; a one-shot callback receives the loaded world handle after
 Unreal's post-load delegate fires. Travel callbacks run on the game thread,
-borrow `user_data`, and are removed on cancellation or module shutdown.
+borrow `user_data`, and must release the received world handle. Cancellation
+removes the completion callback and request tracking; it does not stop an
+`OpenLevel` request that has already been submitted or restore handles already
+invalidated for the old world. Module shutdown also removes pending completion
+callbacks.
 
 ABI minor 91 adds `get_component_visible` and `get_component_active`, matching
 the existing component setters with game-thread-only readback and deterministic
@@ -442,7 +446,9 @@ means the request was submitted, not that loading has completed. The bridge
 cancels timers, world-tick subscriptions, and actor-scoped collision/input
 subscriptions owned by that world and immediately invalidates its world, actor,
 component, and world-bound object handles; global asset handles remain valid.
-Reacquire a world after travel and reacquire objects from the new world.
+Reacquire a world after travel and reacquire objects from the new world. The
+same invalidation occurs for `travel_world_async` before its `OpenLevel`
+submission, even if the completion callback is later canceled.
 
 Collision and Enhanced Input subscriptions also install one actor-destruction
 listener per owning world. If Unreal destroys an actor outside the bridge, its

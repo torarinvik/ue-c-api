@@ -83,8 +83,11 @@ full object paths and never loads or retains an object. Treat
 async request explicitly when loading is intended.
 ABI 90 adds `travel_world_async`; the callback runs on the game thread after
 the post-load map delegate, receives a newly created world handle, and borrows
-`user_data`. Cancel the request through `cancel_travel_request` before the
-callback fires; module shutdown cancels all remaining travel requests.
+`user_data`. Release the world handle received by the callback. Calling
+`cancel_travel_request` removes the completion callback and request tracking,
+but does not stop an `OpenLevel` submission that has already started or restore
+the old world's invalidated handles. Module shutdown removes all remaining
+travel completion callbacks.
 ABI 91 adds component visibility and activation readback; both functions clear
 their boolean output before validating the component and require the game
 thread.

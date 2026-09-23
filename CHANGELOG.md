@@ -7,6 +7,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Changed
 
+- Clarified that `cancel_travel_request` suppresses and removes the completion
+  callback after `OpenLevel` has been submitted; it does not stop the travel or
+  restore old-world handles already invalidated by submission. The callback
+  owns a new world handle and must release it.
 - Runtime statistics now exclude released handle tombstones from live handle
   counts, while continuing to count unreleased handles whose Unreal objects
   have expired. The packaged-host smoke checks acquisition and release
@@ -257,8 +261,8 @@ development; they do not imply a published or runtime-verified release.
   for the return value and every out parameter.
 - ABI minor 89 adds non-loading full-path object lookup with an explicit
   `UEC_RESULT_NOT_INITIALIZED` cache-miss result.
-- ABI minor 90 adds cancellable level-travel requests with post-load world
-  callbacks and automatic cleanup during module shutdown.
+- ABI minor 90 adds level-travel requests with cancellable completion tracking,
+  post-load world callbacks, and automatic cleanup during module shutdown.
 - ABI minor 91 adds component visibility and activation readback adapters.
 - ABI minor 92 adds reflected function capability flags for callable, native,
   event, latent, network, and authority-only functions.
