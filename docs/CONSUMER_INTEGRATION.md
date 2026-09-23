@@ -306,6 +306,10 @@ queues work. A worker thread should submit a borrowed callback with
 request completes or cancellation succeeds. If `cancel_game_thread_request`
 returns `UEC_RESULT_INVALID_ARGUMENT`, dispatch has already dequeued the request
 and its callback may still run; keep the user-data storage alive until then.
+Queue admission is serialized with `release_context`: a submission rejected
+after context release returns `UEC_RESULT_INVALID_HANDLE` and a zero request id.
+Requests already accepted are independent of that context handle, so retain a
+live context for cancellation and runtime drain checks until they finish.
 
 Timer, tick, input, audio, widget, and primitive-component hit subscriptions
 return tokens. Unsubscribe with the matching context before releasing consumer

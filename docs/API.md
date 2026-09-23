@@ -707,7 +707,13 @@ object handle; retain it if it must survive beyond the callback.
 
 `run_on_game_thread` queues a borrowed callback and user pointer for execution
 on Unreal's game thread and returns a request id. `cancel_game_thread_request`
-can cancel a queued callback from any thread. A successful cancellation
+can cancel a queued callback from any thread. Submission, cancellation, and
+context release share one registry lock: a submission rejected because its
+context was released clears the request id and returns
+`UEC_RESULT_INVALID_HANDLE`. A request accepted before context release remains
+valid and is not canceled by context release; its callback may still run. Keep
+its `user_data` alive and retain another live context if you need to cancel it
+or query drain statistics. A successful cancellation
 suppresses the callback; if dispatch has already dequeued the request, cancel
 returns `UEC_RESULT_INVALID_ARGUMENT` and the callback may still run. Treat
 that result as too late to reclaim `user_data`; keep it alive until callback

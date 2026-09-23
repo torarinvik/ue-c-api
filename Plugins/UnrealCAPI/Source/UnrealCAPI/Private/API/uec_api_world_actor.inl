@@ -52,11 +52,12 @@
     uec_result UEC_CALL ReleaseContext(uec_context* rawContext)
     {
         auto* context = reinterpret_cast<FUECContext*>(rawContext);
-        if (!IsValidContext(rawContext))
-        {
+        FScopeLock lock(&GHandleMutex);
+        if (GShuttingDown || !IsValidContextNoLock(context)) {
+            SetLastErrorMessage(TEXT("Invalid or stale context handle"));
             return UEC_RESULT_INVALID_HANDLE;
         }
-        TombstoneHandle(context->Header);
+        context->Header.bReleased = true;
         return UEC_RESULT_OK;
     }
 

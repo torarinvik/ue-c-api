@@ -429,13 +429,17 @@
     {
         if (outRequestId != nullptr) *outRequestId = 0;
         if (callback == nullptr || outRequestId == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         auto request = MakeShared<FUECGameThreadRequest>();
         request->Callback = callback;
         request->UserData = userData;
+        const auto* context = reinterpret_cast<const FUECContext*>(rawContext);
         {
             FScopeLock lock(&GHandleMutex);
             if (GShuttingDown) return UEC_RESULT_SHUTTING_DOWN;
+            if (!IsValidContextNoLock(context)) {
+                SetLastErrorMessage(TEXT("Invalid or stale context handle"));
+                return UEC_RESULT_INVALID_HANDLE;
+            }
             if (GGameThreadRequests.Num() >= MaxQueuedGameThreadRequests)
             {
                 return UEC_RESULT_QUEUE_FULL;
@@ -452,8 +456,13 @@
 
     uec_result UEC_CALL CancelGameThreadRequest(uec_context* rawContext, uint64_t requestId)
     {
-        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        const auto* context = reinterpret_cast<const FUECContext*>(rawContext);
         FScopeLock lock(&GHandleMutex);
+        if (GShuttingDown) return UEC_RESULT_SHUTTING_DOWN;
+        if (!IsValidContextNoLock(context)) {
+            SetLastErrorMessage(TEXT("Invalid or stale context handle"));
+            return UEC_RESULT_INVALID_HANDLE;
+        }
         TSharedPtr<FUECGameThreadRequest>* requestPtr = GGameThreadRequests.Find(requestId);
         if (requestPtr == nullptr || !requestPtr->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
         int32 queueIndex = INDEX_NONE;

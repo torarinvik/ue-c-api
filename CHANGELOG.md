@@ -35,6 +35,9 @@ development; they do not imply a published or runtime-verified release.
   a successful cancel suppresses dispatch, while `UEC_RESULT_INVALID_ARGUMENT`
   means the callback has already been dequeued and borrowed user data must stay
   alive until it returns.
+- Game-thread request admission and cancellation now validate the context
+  under the same registry lock as the queue operation, so context release cannot
+  race a stale-context submission into the queue.
 
 ### Added
 

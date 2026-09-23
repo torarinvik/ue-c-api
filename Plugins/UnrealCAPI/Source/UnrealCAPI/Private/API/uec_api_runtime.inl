@@ -73,13 +73,17 @@
         FScopeLock lock(&GHandleMutex);
         return GShuttingDown;
     }
+    static bool IsValidContextNoLock(const FUECContext* context)
+    {
+        return context != nullptr && GContexts.Contains(context) &&
+            context->Header.Kind == EUECHandleKind::Context &&
+            context->Header.Generation != 0 && !context->Header.bReleased;
+    }
     static bool IsValidContext(uec_context* rawContext)
     {
         const auto* context = reinterpret_cast<const FUECContext*>(rawContext);
         FScopeLock lock(&GHandleMutex);
-        const bool valid = context != nullptr && !GShuttingDown && GContexts.Contains(context) &&
-            context->Header.Kind == EUECHandleKind::Context &&
-            context->Header.Generation != 0 && !context->Header.bReleased;
+        const bool valid = !GShuttingDown && IsValidContextNoLock(context);
         if (!valid) SetLastErrorMessage(TEXT("Invalid or stale context handle"));
         return valid;
     }

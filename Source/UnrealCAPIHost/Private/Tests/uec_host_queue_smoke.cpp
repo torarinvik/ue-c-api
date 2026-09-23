@@ -122,6 +122,31 @@ namespace
             }
         }
     }
+
+    bool ReleasedContextSubmissionIsRejected(FQueueSmokeState& state)
+    {
+        const uec_api* probeApi = nullptr;
+        uec_context* probeContext = nullptr;
+        if (uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR,
+                        &probeApi, &probeContext) != UEC_RESULT_OK ||
+            probeApi == nullptr || probeContext == nullptr || probeApi != state.Api) {
+            if (probeContext != nullptr && probeApi != nullptr &&
+                probeApi->release_context != nullptr) {
+                probeApi->release_context(probeContext);
+            }
+            return false;
+        }
+        if (probeApi->release_context(probeContext) != UEC_RESULT_OK) return false;
+
+        uint64_t staleRequestId = 42;
+        const uec_result submitResult = state.Api->run_on_game_thread(
+            probeContext, &CountQueuedCallback, nullptr, &staleRequestId);
+        if (submitResult == UEC_RESULT_OK && staleRequestId != 0u) {
+            state.Api->cancel_game_thread_request(state.Context, staleRequestId);
+            return false;
+        }
+        return submitResult == UEC_RESULT_INVALID_HANDLE && staleRequestId == 0u;
+    }
 }
 
 extern "C" uec_result UEC_CALL uec_host_queue_smoke_start(void)
@@ -278,6 +303,7 @@ extern "C" uec_bool UEC_CALL uec_host_queue_smoke_poll(uec_result* outResult)
             state.RejectedCount == static_cast<uint32>(ExtraSubmissions) &&
             state.CancelledCount == CancellationBatch &&
             state.CancelAfterDispatchChecks == 1u &&
+            ReleasedContextSubmissionIsRejected(state) &&
             HasRuntimeStatsReturnedToBaseline(state);
         FinishQueueSmoke(state,
                          valid ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR,
