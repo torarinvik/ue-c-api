@@ -13,7 +13,8 @@ development; they do not imply a published or runtime-verified release.
   destruction accounting for world, actor, and object handles. All typed
   `release_*` operations can now tombstone their registered handle after the
   underlying Unreal object expires; the host smoke exercises this with an
-  actor destroyed through reflected Unreal behavior.
+  actor destroyed through reflected Unreal behavior. The event callback smoke
+  also checks that in-flight callbacks appear in `active_callbacks`.
 
 ### Added
 

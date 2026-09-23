@@ -32,8 +32,9 @@ translation unit, checks the C gameplay example and Unreal descriptor JSON,
 and enforces the 400–800 line budget for private implementation units and the
 tracked primary C host smoke translation unit. Focused probes under
 `Source/UnrealCAPIHost/Private/Tests/` are test fixtures and stay small by
-design. The host stub proves consumer-side
-bootstrap, table calls, and the append-only prefix;
+design. The event-bridge fixture also queries runtime statistics from inside
+consumer callbacks to verify `active_callbacks` includes in-flight code. The
+host stub proves consumer-side bootstrap, table calls, and the append-only prefix;
 the CI matrix also repeats those linked consumers with AddressSanitizer and
 UndefinedBehaviorSanitizer. These checks do not compile the Unreal module or
 run PIE.
