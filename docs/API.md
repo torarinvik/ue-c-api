@@ -641,16 +641,20 @@ weak actor handle and must be released with `release_actor`.
 
 `line_trace_filtered` adds a caller-owned array of actor handles to ignore.
 Every ignored handle must be valid for the duration of the call; the array is
-borrowed and is never retained. It also rejects non-finite endpoints before
-submitting the query.
+borrowed and is never retained. Each ignored-actor array is limited to
+`UEC_MAX_COLLISION_QUERY_ACTORS` entries. It also rejects non-finite endpoints
+before submitting the query.
 
 `sweep_trace` applies a world-aligned sphere, box, or capsule shape between two
 points and returns the first blocking hit using the same channel and hit-record
 rules as `line_trace`. `sweep_trace_filtered` has the same behavior while
 ignoring a borrowed array of valid actor handles. `overlap_shape` tests one of
 those shapes at a point, deduplicates actors, and copies at most `max_hits`
-handles into the caller's array. `out_count` is the number of handles written,
-so it is always no greater than `max_hits`; passing zero leaves the count at
+handles into the caller's array. Both `max_hits` and the ignored-actor count
+must be no greater than `UEC_MAX_COLLISION_QUERY_ACTORS`; a larger value returns
+`UEC_RESULT_INVALID_ARGUMENT`. An oversized `max_hits` clears `out_count` but
+does not access the output array. Otherwise, `out_count` is the number of handles
+written and is no greater than `max_hits`; passing zero leaves the count at
 zero. `overlap_shape_filtered` applies the same bounded result contract while
 ignoring a borrowed actor array. Overlap ordering is unspecified and every
 copied handle must be released.

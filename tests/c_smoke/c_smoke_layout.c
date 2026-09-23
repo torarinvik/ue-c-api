@@ -59,6 +59,8 @@ UEC_TEST_ASSERT(UEC_RESULT_OK == 0 && UEC_RESULT_INVALID_ARGUMENT == 1 &&
                    UEC_RESULT_UNSUPPORTED == 6 && UEC_RESULT_SHUTTING_DOWN == 7 &&
                    UEC_RESULT_INTERNAL_ERROR == 8 && UEC_RESULT_QUEUE_FULL == 9,
                "result code ABI values changed");
+UEC_TEST_ASSERT(UEC_MAX_COLLISION_QUERY_ACTORS == 1024u,
+               "collision query input bound changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
 UEC_TEST_ASSERT(UEC_ABI_MINOR == 142u, "ABI minor must include widget child lookup");
 UEC_TEST_ASSERT(UEC_CHECKBOX_UNCHECKED == 0 && UEC_CHECKBOX_CHECKED == 1 &&

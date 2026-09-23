@@ -44,6 +44,92 @@ static uec_result UEC_CALL StubGetCheckBoxState(uec_object* checkBox,
     return checkBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubLineTraceFiltered(
+    uec_world* world,
+    uec_vector3 start,
+    uec_vector3 end,
+    uec_trace_channel channel,
+    uec_bool traceComplex,
+    const uec_actor* const* ignoredActors,
+    uint32_t ignoredActorCount,
+    uec_hit_result* outHit)
+{
+    (void)world; (void)start; (void)end; (void)channel; (void)traceComplex;
+    (void)ignoredActors;
+    if (outHit != NULL) *outHit = (uec_hit_result){0};
+    if (outHit == NULL || ignoredActorCount > UEC_MAX_COLLISION_QUERY_ACTORS ||
+        (ignoredActorCount != 0u && ignoredActors == NULL)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    return UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubTraceDetailedFiltered(
+    uec_world* world,
+    uec_vector3 start,
+    uec_vector3 end,
+    const uec_collision_shape* shape,
+    uec_trace_channel channel,
+    uec_bool traceComplex,
+    const uec_actor* const* ignoredActors,
+    uint32_t ignoredActorCount,
+    uec_hit_result_details* outHit)
+{
+    const uec_result result = StubTraceDetailed(
+        world, start, end, shape, channel, traceComplex, outHit);
+    if (result == UEC_RESULT_INVALID_ARGUMENT) return result;
+    if (ignoredActorCount > UEC_MAX_COLLISION_QUERY_ACTORS ||
+        (ignoredActorCount != 0u && ignoredActors == NULL)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    return result;
+}
+
+static uec_result StubResetOverlapOutputs(uint32_t maxHits,
+                                          uec_actor** outActors,
+                                          uint32_t* outCount)
+{
+    if (outCount != NULL) *outCount = 0u;
+    if (maxHits > UEC_MAX_COLLISION_QUERY_ACTORS) return UEC_RESULT_INVALID_ARGUMENT;
+    if (outActors == NULL && maxHits != 0u) return UEC_RESULT_INVALID_ARGUMENT;
+    for (uint32_t index = 0; index < maxHits; ++index) outActors[index] = NULL;
+    return outCount == NULL ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_OK;
+}
+
+static uec_result UEC_CALL StubOverlapShape(uec_world* world,
+                                            uec_vector3 center,
+                                            const uec_collision_shape* shape,
+                                            uec_trace_channel channel,
+                                            uint32_t maxHits,
+                                            uec_actor** outActors,
+                                            uint32_t* outCount)
+{
+    (void)world; (void)center; (void)shape; (void)channel;
+    const uec_result resetResult = StubResetOverlapOutputs(maxHits, outActors, outCount);
+    return resetResult == UEC_RESULT_OK ? UEC_RESULT_UNSUPPORTED : resetResult;
+}
+
+static uec_result UEC_CALL StubOverlapShapeFiltered(
+    uec_world* world,
+    uec_vector3 center,
+    const uec_collision_shape* shape,
+    uec_trace_channel channel,
+    uint32_t maxHits,
+    const uec_actor* const* ignoredActors,
+    uint32_t ignoredActorCount,
+    uec_actor** outActors,
+    uint32_t* outCount)
+{
+    (void)world; (void)center; (void)shape; (void)channel;
+    const uec_result resetResult = StubResetOverlapOutputs(maxHits, outActors, outCount);
+    if (resetResult != UEC_RESULT_OK) return resetResult;
+    if (ignoredActorCount > UEC_MAX_COLLISION_QUERY_ACTORS ||
+        (ignoredActorCount != 0u && ignoredActors == NULL)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubSetCheckBoxState(uec_object* checkBox,
                                                 uec_checkbox_state state)
 {

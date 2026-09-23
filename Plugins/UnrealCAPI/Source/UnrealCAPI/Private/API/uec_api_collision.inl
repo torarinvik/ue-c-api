@@ -1,4 +1,6 @@
 /* Collision queries and collision response adapters. */
+    static constexpr uint32_t MaxCollisionQueryActors = UEC_MAX_COLLISION_QUERY_ACTORS;
+
     static void ResetHitResult(uec_hit_result* outHit)
     {
         if (outHit != nullptr) *outHit = {};
@@ -12,7 +14,7 @@
     static void ResetActorOutputs(uec_actor** outActors, uint32_t maxHits, uint32_t* outCount)
     {
         if (outCount != nullptr) *outCount = 0;
-        if (outActors == nullptr) return;
+        if (outActors == nullptr || maxHits > MaxCollisionQueryActors) return;
         for (uint32_t index = 0; index < maxHits; ++index) outActors[index] = nullptr;
     }
 
@@ -21,6 +23,9 @@
                                        uec_actor** outActors,
                                        uint32_t* outCount)
     {
+        if (maxHits > MaxCollisionQueryActors || outActors == nullptr || outCount == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         const uint32_t resultLimit = FMath::Min(maxHits, static_cast<uint32_t>(actors.Num()));
         TArray<FUECActor*> handles;
         handles.Reserve(static_cast<int32>(resultLimit));
@@ -64,6 +69,10 @@
                                        const uec_actor* const* ignoredActors,
                                        uint32_t ignoredActorCount)
     {
+        if (ignoredActorCount > MaxCollisionQueryActors ||
+            (ignoredActorCount != 0 && ignoredActors == nullptr)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
         for (uint32_t index = 0; index < ignoredActorCount; ++index)
         {
             const auto* actorHandle = reinterpret_cast<const FUECActor*>(ignoredActors[index]);
@@ -173,7 +182,8 @@
                                      uint32_t* outCount)
     {
         ResetActorOutputs(outActors, maxHits, outCount);
-        if (outCount == nullptr || (maxHits != 0 && outActors == nullptr))
+        if (outCount == nullptr || maxHits > MaxCollisionQueryActors ||
+            (maxHits != 0 && outActors == nullptr))
         {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -188,6 +198,7 @@
         if (shapeResult != UEC_RESULT_OK) return shapeResult;
         ECollisionChannel collisionChannel;
         if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
+        if (maxHits == 0) return UEC_RESULT_OK;
 
         TArray<FOverlapResult> overlaps;
         FCollisionQueryParams queryParams;
@@ -205,6 +216,7 @@
         for (const FOverlapResult& overlap : overlaps)
         {
             if (AActor* actor = overlap.GetActor()) actors.Add(actor);
+            if (static_cast<uint32_t>(actors.Num()) >= maxHits) break;
         }
         return CopyActorHandles(actors, maxHits, outActors, outCount);
     }
@@ -325,7 +337,8 @@
                                           uec_hit_result* outHit)
     {
         ResetHitResult(outHit);
-        if (outHit == nullptr || (ignoredActorCount != 0 && ignoredActors == nullptr) ||
+        if (outHit == nullptr || ignoredActorCount > MaxCollisionQueryActors ||
+            (ignoredActorCount != 0 && ignoredActors == nullptr) ||
             !IsValidTraceEndpoints(start, end, traceComplex)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -363,7 +376,8 @@
                                            uec_hit_result* outHit)
     {
         ResetHitResult(outHit);
-        if (outHit == nullptr || (ignoredActorCount != 0 && ignoredActors == nullptr) ||
+        if (outHit == nullptr || ignoredActorCount > MaxCollisionQueryActors ||
+            (ignoredActorCount != 0 && ignoredActors == nullptr) ||
             !IsValidTraceEndpoints(start, end, traceComplex)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -404,12 +418,13 @@
                                              uec_actor** outActors,
                                              uint32_t* outCount)
     {
-        if (outCount != nullptr) *outCount = 0;
-        if (outCount == nullptr || (maxHits != 0 && outActors == nullptr) ||
+        ResetActorOutputs(outActors, maxHits, outCount);
+        if (outCount == nullptr || maxHits > MaxCollisionQueryActors ||
+            ignoredActorCount > MaxCollisionQueryActors ||
+            (maxHits != 0 && outActors == nullptr) ||
             (ignoredActorCount != 0 && ignoredActors == nullptr) || !IsFiniteVector(center)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
-        for (uint32_t index = 0; index < maxHits; ++index) outActors[index] = nullptr;
         auto* worldHandle = reinterpret_cast<FUECWorld*>(rawWorld);
         if (!IsValidWorld(worldHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
@@ -423,6 +438,7 @@
         FCollisionQueryParams queryParams;
         const uec_result ignoredResult = AddIgnoredActors(queryParams, ignoredActors, ignoredActorCount);
         if (ignoredResult != UEC_RESULT_OK) return ignoredResult;
+        if (maxHits == 0) return UEC_RESULT_OK;
         TArray<FOverlapResult> overlaps;
         const bool hasOverlap = world->OverlapMultiByChannel(
             overlaps,
@@ -437,6 +453,7 @@
         for (const FOverlapResult& overlap : overlaps)
         {
             if (AActor* actor = overlap.GetActor()) actors.Add(actor);
+            if (static_cast<uint32_t>(actors.Num()) >= maxHits) break;
         }
         return CopyActorHandles(actors, maxHits, outActors, outCount);
     }
@@ -507,6 +524,7 @@
         const uec_result outputResult = PrepareHitResultDetails(outHit);
         if (outputResult != UEC_RESULT_OK) return outputResult;
         if (!IsValidTraceEndpoints(start, end, traceComplex) ||
+            ignoredActorCount > MaxCollisionQueryActors ||
             (ignoredActorCount != 0 && ignoredActors == nullptr)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }

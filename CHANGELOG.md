@@ -7,6 +7,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Changed
 
+- Collision trace filters and overlap outputs now enforce the public
+  `UEC_MAX_COLLISION_QUERY_ACTORS` bound. Overlap queries stop collecting once
+  the requested number of unique actors is reached, and reject oversized
+  capacities before touching the output array.
 - Collision overlap results and detailed hit records now stage newly allocated
   actor/component handles and publish them only after the full result succeeds.
   Handle-creation failure rolls back temporary handles and preserves cleared

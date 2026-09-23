@@ -34,6 +34,51 @@ static uec_result CheckWidgetChildValidation(const uec_api* api, uec_context* co
     return UEC_RESULT_OK;
 }
 
+static uec_result CheckCollisionQueryBounds(const uec_api* api, uec_context* context)
+{
+    const uint32_t tooMany = UEC_MAX_COLLISION_QUERY_ACTORS + 1u;
+    const uec_vector3 start = {0.0, 0.0, 0.0};
+    const uec_vector3 end = {1.0, 0.0, 0.0};
+    const uec_actor* ignoredActors[1] = {(const uec_actor*)context};
+    uec_actor* outputActors[UEC_MAX_COLLISION_QUERY_ACTORS];
+    uec_actor* filteredOutputs[2] = {(uec_actor*)context, (uec_actor*)context};
+    uec_hit_result hit = {0};
+    uec_hit_result_details detailedHit = {0};
+    uint32_t outCount = UINT32_MAX;
+    for (uint32_t index = 0u; index < UEC_MAX_COLLISION_QUERY_ACTORS; ++index) {
+        outputActors[index] = (uec_actor*)context;
+    }
+
+    hit.actor = (uec_actor*)context;
+    if (api->line_trace_filtered(NULL, start, end, UEC_TRACE_VISIBILITY, UEC_FALSE,
+                                 ignoredActors, tooMany, &hit) != UEC_RESULT_INVALID_ARGUMENT ||
+        hit.actor != NULL) return UEC_RESULT_INTERNAL_ERROR;
+
+    if (api->overlap_shape(NULL, start, NULL, UEC_TRACE_VISIBILITY, tooMany,
+                           outputActors, &outCount) != UEC_RESULT_INVALID_ARGUMENT ||
+        outCount != 0u) return UEC_RESULT_INTERNAL_ERROR;
+    for (uint32_t index = 0u; index < UEC_MAX_COLLISION_QUERY_ACTORS; ++index) {
+        if (outputActors[index] != (uec_actor*)context) return UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    outCount = UINT32_MAX;
+    if (api->overlap_shape_filtered(NULL, start, NULL, UEC_TRACE_VISIBILITY, 2u,
+                                    ignoredActors, tooMany, filteredOutputs, &outCount) !=
+            UEC_RESULT_INVALID_ARGUMENT || outCount != 0u ||
+        filteredOutputs[0] != NULL || filteredOutputs[1] != NULL) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    detailedHit.struct_size = sizeof(detailedHit);
+    detailedHit.hit.actor = (uec_actor*)context;
+    if (api->trace_detailed_filtered(NULL, start, end, NULL, UEC_TRACE_VISIBILITY,
+                                     UEC_FALSE, ignoredActors, tooMany, &detailedHit) !=
+            UEC_RESULT_INVALID_ARGUMENT || detailedHit.hit.actor != NULL) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    return UEC_RESULT_OK;
+}
+
 uec_result UEC_CALL uec_host_smoke_bootstrap(void)
 {
     const uec_api* api = NULL;
@@ -52,7 +97,9 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
         api->get_widget_child == NULL ||
         api->set_component_collision_enabled == NULL ||
         api->set_component_collision_channel_response == NULL || api->bind_input_action == NULL ||
-        api->inject_input_action_value == NULL) {
+        api->inject_input_action_value == NULL || api->line_trace_filtered == NULL ||
+        api->overlap_shape == NULL || api->overlap_shape_filtered == NULL ||
+        api->trace_detailed_filtered == NULL) {
         api->release_context(context);
         return UEC_RESULT_INTERNAL_ERROR;
     }
@@ -92,7 +139,8 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
              &IgnoreInputActionCallback, NULL, &invalidInputBindingId) != UEC_RESULT_INVALID_ARGUMENT ||
          invalidInputBindingId != 0u ||
          api->inject_input_action_value(NULL, NULL, &invalidInputValue) !=
-             UEC_RESULT_INVALID_ARGUMENT)) {
+             UEC_RESULT_INVALID_ARGUMENT ||
+         CheckCollisionQueryBounds(api, context) != UEC_RESULT_OK)) {
         result = UEC_RESULT_INTERNAL_ERROR;
     }
     if (result == UEC_RESULT_OK) {
