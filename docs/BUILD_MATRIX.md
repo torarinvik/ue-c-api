@@ -25,8 +25,10 @@ counts. After latent invocation, the packaged host submits 1152 game-thread
 callbacks concurrently and verifies that exactly 1024 are admitted, the rest
 report queue-full with cleared request ids, accepted ids are unique, callbacks
 observe in-flight accounting, 128 cancellations suppress their callbacks, and
-all remaining requests drain. It then runs the
-documented C gameplay example through three timer-driven actor moves and
+all remaining requests drain. It then saves and reloads a temporary save-game
+slot asynchronously, validates callback accounting and object-handle cleanup,
+and deletes the slot. The host runs the documented C gameplay example through
+three timer-driven actor moves and
 validates each event-bridge callback. A travel probe reloads the configured
 OpenWorld map and checks immediate old-world handle invalidation, post-load
 callback delivery, request drainage, and release of the callback's new world
@@ -56,8 +58,9 @@ With an installed engine, run `UE_ROOT=/path/to/UnrealEngine
 sh tests/run_unreal_build.sh` to compile, cook, stage, and package the minimal
 host project for the current platform. A same-platform Development build then
 launches the packaged host with NullRHI and waits for successful bootstrap,
-event-bridge, latent-call, concurrent queue, gameplay-example, and travel C
-smoke messages; failures and timeouts fail the gate with recent host output.
+event-bridge, latent-call, concurrent queue, async save/load, gameplay-example,
+and travel C smoke messages; failures and timeouts fail the gate with recent
+host output.
 Set `UEC_UNREAL_CONFIGURATION=Shipping` to repeat
 the build in Shipping mode; runtime smoke is limited to Development builds.
 Set `UEC_UNREAL_PLATFORM=Win64` (or
