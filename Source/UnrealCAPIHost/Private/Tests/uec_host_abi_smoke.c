@@ -83,6 +83,32 @@ static uec_result CheckCollisionQueryBounds(const uec_api* api, uec_context* con
         if (outputActors[index] != NULL) return UEC_RESULT_INTERNAL_ERROR;
     }
 
+    for (uint32_t index = 0u; index < UEC_MAX_COLLISION_QUERY_ACTORS; ++index) {
+        outputActors[index] = (uec_actor*)context;
+    }
+    outCount = UINT32_MAX;
+    if (!IsAcceptedCollisionCountResult(api->overlap_shape_filtered(
+            NULL, start, NULL, UEC_TRACE_VISIBILITY, UEC_MAX_COLLISION_QUERY_ACTORS,
+            NULL, 0u, outputActors, &outCount)) || outCount != 0u) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    for (uint32_t index = 0u; index < UEC_MAX_COLLISION_QUERY_ACTORS; ++index) {
+        if (outputActors[index] != NULL) return UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    for (uint32_t index = 0u; index < UEC_MAX_COLLISION_QUERY_ACTORS; ++index) {
+        outputActors[index] = (uec_actor*)context;
+    }
+    outCount = UINT32_MAX;
+    if (api->overlap_shape_filtered(NULL, start, NULL, UEC_TRACE_VISIBILITY, tooMany,
+                                    NULL, 0u, outputActors, &outCount) !=
+            UEC_RESULT_INVALID_ARGUMENT || outCount != 0u) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    for (uint32_t index = 0u; index < UEC_MAX_COLLISION_QUERY_ACTORS; ++index) {
+        if (outputActors[index] != (uec_actor*)context) return UEC_RESULT_INTERNAL_ERROR;
+    }
+
     outCount = UINT32_MAX;
     if (api->overlap_shape_filtered(NULL, start, NULL, UEC_TRACE_VISIBILITY, 2u,
                                     ignoredActors, tooMany, filteredOutputs, &outCount) !=
