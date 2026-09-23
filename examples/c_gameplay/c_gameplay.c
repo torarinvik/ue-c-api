@@ -141,6 +141,24 @@ static void UEC_CALL MoveActorOnTimer(uint64_t timer_id, void* raw_state)
     FinishGameplayExample(state);
 }
 
+static uec_result ValidateGameplayExampleApi(const uec_api* api)
+{
+    const size_t required_size = offsetof(uec_api, emit_actor_event_bridge) +
+                                 sizeof(api->emit_actor_event_bridge);
+    if (api->struct_size < required_size) return UEC_RESULT_UNSUPPORTED;
+    if (api->get_capabilities == NULL || api->get_default_world == NULL ||
+        api->release_world == NULL || api->spawn_actor == NULL ||
+        api->destroy_actor == NULL || api->release_actor == NULL ||
+        api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
+        api->set_timer == NULL || api->clear_timer == NULL ||
+        api->release_object == NULL || api->get_or_create_actor_event_bridge == NULL ||
+        api->destroy_actor_event_bridge == NULL || api->bind_actor_event_bridge == NULL ||
+        api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    return UEC_RESULT_OK;
+}
+
 /* Starts a small game-thread example. The host keeps both state and context
  * alive until state->done becomes true. Each timer tick moves the actor, emits
  * an event through its bridge component, receives the callback synchronously,
@@ -155,20 +173,19 @@ uec_result UEC_CALL uec_gameplay_example_start(const uec_api* api,
     {
         return UEC_RESULT_INVALID_ARGUMENT;
     }
-
     *state = (uec_gameplay_example_state){0};
     state->api = api;
     state->context = context;
     state->last_result = UEC_RESULT_OK;
+    uec_result result = ValidateGameplayExampleApi(api);
+    if (result != UEC_RESULT_OK) {
+        state->last_result = result;
+        FinishGameplayExample(state);
+        return result;
+    }
 
     uec_capabilities capabilities = 0;
-    if (api->get_capabilities == NULL)
-    {
-        state->last_result = UEC_RESULT_UNSUPPORTED;
-        FinishGameplayExample(state);
-        return state->last_result;
-    }
-    uec_result result = api->get_capabilities(context, &capabilities);
+    result = api->get_capabilities(context, &capabilities);
     if (result != UEC_RESULT_OK || (capabilities & UEC_CAPABILITY_EVENT_BRIDGE) == 0)
     {
         state->last_result = result == UEC_RESULT_OK ? UEC_RESULT_UNSUPPORTED : result;

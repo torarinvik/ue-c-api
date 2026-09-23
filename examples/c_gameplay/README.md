@@ -12,3 +12,8 @@ callbacks run on the game thread. The example uses the same C source in the
 packaged host smoke through a thin C translation-unit wrapper, so contributors
 can see it compile and run against Unreal as well as pass the portable
 `tests/run_checks.sh` gate.
+
+Before reading function pointers, the example checks that the API table reaches
+the `emit_actor_event_bridge` entry and verifies every operation it uses. A
+short table or missing function returns `UEC_RESULT_UNSUPPORTED` and leaves the
+state marked done without starting any work.
