@@ -7,7 +7,7 @@ build, launch, and exercise the C smoke path.
 | Engine | Host platform | Compiler/toolchain | C consumer | Plugin/host status |
 | --- | --- | --- | --- | --- |
 | UE 5.7.4 installed distribution | macOS arm64 local workstation | Unreal Build Tool 5.7.4 | C11/C++17 linked host-stub smoke verified | Compatibility builds attempted with `UEC_ALLOW_ENGINE_MISMATCH=1`; UBT rejected Mac because platform support files are missing and reports Win64 unsupported in this distribution. Neither attempt compiled project code; the engine is also below the UE 5.8.3 target. |
-| UE 5.8.3 target (engine unavailable) | macOS 27 arm64 local workstation | Xcode 27.0; Apple Clang 21.0.0; Python 3.9.6 | C11/C++17 linked host-stub smoke verified | Unreal build pending; `UE_ROOT` is unset, no 5.8.3 installation is available, and this host's OS/Xcode combination is not listed in Epic's UE 5.8 requirements |
+| UE 5.8.3 local installation | macOS 27.0 arm64 | UnrealBuildTool 5.8.3; Xcode 27.0 (27A266a); Apple Clang 21.0.0 / compiler 21.1.6; macOS SDK 27.0 | C11/C++17 linked host-stub smoke verified; Unreal C smoke translation units compiled | Game and Editor Development targets compiled and linked. Full cook, stage, package, and runtime verification is in progress. UAT's generated Xcode finalization failed at `Touch UBT generated tiles`, while direct Xcode finalization succeeded; the current UAT run uses Unreal's `UE_BUILD_FROM_XCODE=1` bypass for that redundant step. |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 
@@ -98,10 +98,11 @@ machines without Unreal installed.
 
 The minimum consumer language standard is C11. The plugin implementation uses
 C++17 through Unreal Build Tool; consumers may compile the public header as C11
-or C++17. The recorded local baseline above is informational until a matching
-UE 5.8.3 installation is available.
+or C++17. The local UE 5.8.3 Game and Editor targets have compiled and linked
+with the recorded toolchain. Epic's published UE 5.8 macOS requirements do not
+list macOS 27 or Xcode 27, so this successful compilation does not establish
+official support for that toolchain combination.
 
-When an engine installation is available, record the exact UE patch, host OS,
-architecture, compiler version, build configuration, and whether the check ran
-in Editor PIE, packaged Development, packaged Shipping, or dedicated-server
-mode. Keep generated engine output and local installation paths ignored.
+Record whether remaining checks ran in Editor PIE, packaged Development,
+packaged Shipping, or dedicated-server mode. Keep generated engine output and
+local installation paths ignored.
