@@ -21,9 +21,12 @@ scalar-kind rejection, typed FVector/FQuat/FTransform round trips and mismatch
 rejection, short text-output sizing and retry, invalid world-kind handling,
 completion, cancellation, signature rejection, explicit and cross-world
 context handling, stale actor and bridge handle rejection, and pending request
-counts. After latent invocation, the packaged host runs the documented C
-gameplay example through three timer-driven actor moves and validates each
-event-bridge callback. It then runs a travel probe that reloads the configured
+counts. After latent invocation, the packaged host submits 1152 game-thread
+callbacks concurrently and verifies that exactly 1024 are admitted, the rest
+report queue-full with cleared request ids, accepted ids are unique, callbacks
+observe in-flight accounting, and all requests drain. It then runs the
+documented C gameplay example through three timer-driven actor moves and
+validates each event-bridge callback. A travel probe reloads the configured
 OpenWorld map and checks immediate old-world handle invalidation, post-load
 callback delivery, request drainage, and release of the callback's new world
 handle, so Unreal Build Tool does not need to synthesize temporary targets
@@ -37,8 +40,10 @@ translation unit, checks the C gameplay example and Unreal descriptor JSON,
 and enforces the 400–800 line budget for private implementation units and the
 tracked primary C host smoke translation unit. Focused probes under
 `Source/UnrealCAPIHost/Private/Tests/` are test fixtures and stay small by
-design. The event-bridge fixture queries runtime statistics from inside event
-and actor-destroyed callbacks to verify `active_callbacks` includes in-flight
+design. The queue fixture checks concurrent admission, output clearing, unique
+request ids, callback reentrancy, and drainage. The event-bridge fixture
+queries runtime statistics from inside event and actor-destroyed callbacks to
+verify `active_callbacks` includes in-flight
 code and subscription counts drain; the travel callback checks the same counter
 while confirming the new world handle is released. The host stub proves
 consumer-side bootstrap, table calls, and the append-only prefix;
@@ -50,8 +55,9 @@ With an installed engine, run `UE_ROOT=/path/to/UnrealEngine
 sh tests/run_unreal_build.sh` to compile, cook, stage, and package the minimal
 host project for the current platform. A same-platform Development build then
 launches the packaged host with NullRHI and waits for successful bootstrap,
-event-bridge, latent-call, gameplay-example, and travel C smoke messages; failures and timeouts
-fail the gate with recent host output. Set `UEC_UNREAL_CONFIGURATION=Shipping` to repeat
+event-bridge, latent-call, concurrent queue, gameplay-example, and travel C
+smoke messages; failures and timeouts fail the gate with recent host output.
+Set `UEC_UNREAL_CONFIGURATION=Shipping` to repeat
 the build in Shipping mode; runtime smoke is limited to Development builds.
 Set `UEC_UNREAL_PLATFORM=Win64` (or
 another platform supplied by the engine installation) to validate a target

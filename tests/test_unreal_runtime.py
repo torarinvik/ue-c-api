@@ -42,6 +42,7 @@ class UnrealRuntimeTests(unittest.TestCase):
             "C consumer bootstrap completed",
             "C event bridge smoke completed",
             "C latent invocation smoke completed",
+            "C game-thread queue smoke completed",
             "C gameplay example smoke completed",
             "C travel smoke completed",
         ])
@@ -60,6 +61,11 @@ class UnrealRuntimeTests(unittest.TestCase):
     def test_surfaces_gameplay_example_smoke_failure(self):
         executable = self.make_host(["C gameplay example smoke failed with result 8"])
         with self.assertRaisesRegex(RuntimeError, "C gameplay example smoke failed"):
+            run_smoke(executable, timeout_seconds=2.0)
+
+    def test_surfaces_game_thread_queue_smoke_failure(self):
+        executable = self.make_host(["C game-thread queue smoke failed with result 8"])
+        with self.assertRaisesRegex(RuntimeError, "C game-thread queue smoke failed"):
             run_smoke(executable, timeout_seconds=2.0)
 
     def test_times_out_if_smoke_never_finishes(self):

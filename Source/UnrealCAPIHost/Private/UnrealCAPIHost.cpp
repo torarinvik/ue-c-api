@@ -10,6 +10,9 @@ extern "C" uec_result UEC_CALL uec_host_event_bridge_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_latent_smoke_start(void);
 extern "C" uec_bool UEC_CALL uec_host_latent_smoke_poll(uec_result* out_result);
 extern "C" void UEC_CALL uec_host_latent_smoke_cancel(void);
+extern "C" uec_result UEC_CALL uec_host_queue_smoke_start(void);
+extern "C" uec_bool UEC_CALL uec_host_queue_smoke_poll(uec_result* out_result);
+extern "C" void UEC_CALL uec_host_queue_smoke_cancel(void);
 extern "C" uec_result UEC_CALL uec_host_gameplay_example_smoke_start(void);
 extern "C" uec_bool UEC_CALL uec_host_gameplay_example_smoke_poll(uec_result* out_result);
 extern "C" void UEC_CALL uec_host_gameplay_example_smoke_cancel(void);
@@ -23,9 +26,11 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
 {
     FTSTicker::FDelegateHandle EventBridgeSmokeHandle;
     FTSTicker::FDelegateHandle LatentSmokeHandle;
+    FTSTicker::FDelegateHandle QueueSmokeHandle;
     FTSTicker::FDelegateHandle GameplayExampleSmokeHandle;
     FTSTicker::FDelegateHandle TravelSmokeHandle;
     float LatentSmokeElapsed = 0.0f;
+    float QueueSmokeElapsed = 0.0f;
     float GameplayExampleSmokeElapsed = 0.0f;
     float TravelSmokeElapsed = 0.0f;
 
@@ -80,6 +85,40 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         }
         if (result == UEC_RESULT_OK) {
             UE_LOG(LogUnrealCAPIHost, Log, TEXT("C latent invocation smoke completed"));
+            const uec_result queueResult = uec_host_queue_smoke_start();
+            if (queueResult == UEC_RESULT_OK) {
+                QueueSmokeElapsed = 0.0f;
+                QueueSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
+                    FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunQueueSmoke),
+                    0.1f);
+            }
+            else {
+                UE_LOG(LogUnrealCAPIHost, Error,
+                    TEXT("C game-thread queue smoke failed to start with result %d"),
+                    static_cast<int32>(queueResult));
+            }
+        }
+        else {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C latent invocation smoke failed with result %d"),
+                static_cast<int32>(result));
+        }
+        LatentSmokeHandle.Reset();
+        return false;
+    }
+
+    bool RunQueueSmoke(float deltaSeconds)
+    {
+        QueueSmokeElapsed += deltaSeconds;
+        uec_result result = UEC_RESULT_NOT_INITIALIZED;
+        const bool complete = uec_host_queue_smoke_poll(&result) == UEC_TRUE;
+        if (!complete && QueueSmokeElapsed < 30.0f) return true;
+        if (!complete) {
+            uec_host_queue_smoke_cancel();
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result == UEC_RESULT_OK) {
+            UE_LOG(LogUnrealCAPIHost, Log, TEXT("C game-thread queue smoke completed"));
             const uec_result exampleResult = uec_host_gameplay_example_smoke_start();
             if (exampleResult == UEC_RESULT_OK) {
                 GameplayExampleSmokeElapsed = 0.0f;
@@ -96,10 +135,10 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         }
         else {
             UE_LOG(LogUnrealCAPIHost, Error,
-                TEXT("C latent invocation smoke failed with result %d"),
+                TEXT("C game-thread queue smoke failed with result %d"),
                 static_cast<int32>(result));
         }
-        LatentSmokeHandle.Reset();
+        QueueSmokeHandle.Reset();
         return false;
     }
 
@@ -183,6 +222,10 @@ public:
         if (LatentSmokeHandle.IsValid()) {
             FTSTicker::GetCoreTicker().RemoveTicker(LatentSmokeHandle);
             uec_host_latent_smoke_cancel();
+        }
+        if (QueueSmokeHandle.IsValid()) {
+            FTSTicker::GetCoreTicker().RemoveTicker(QueueSmokeHandle);
+            uec_host_queue_smoke_cancel();
         }
         if (GameplayExampleSmokeHandle.IsValid()) {
             FTSTicker::GetCoreTicker().RemoveTicker(GameplayExampleSmokeHandle);
