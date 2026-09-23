@@ -19,6 +19,8 @@ development; they do not imply a published or runtime-verified release.
 - Actor-destroyed and post-load travel callbacks now recheck the shutdown gate
   before entering consumer code; a travel world handle created during a gate
   race is tombstoned instead of being delivered or left live.
+- World-kind selection now documents and probes rejection of the declared
+  `UEC_WORLD_KIND_UNKNOWN` sentinel as well as undeclared values.
 
 ### Added
 

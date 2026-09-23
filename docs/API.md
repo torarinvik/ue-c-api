@@ -63,8 +63,8 @@ would exceed its category returns `UEC_RESULT_QUEUE_FULL`.
 ABI minor 83 adds `get_world_count_by_kind` and `get_world_at_by_kind`. These
 explicit context queries enumerate editor, PIE, game-preview, inactive, and
 game world contexts without changing the active Game/PIE convenience lookup.
-Both reject undeclared world-kind values; `get_world_at_by_kind` clears its
-output handle before validation.
+Both reject the `UEC_WORLD_KIND_UNKNOWN` sentinel and undeclared world-kind
+values; `get_world_at_by_kind` clears its output handle before validation.
 
 ABI minor 84 adds `invoke_actor_function_value`. It marshals scalar boolean,
 integer, enum, float, and double arguments into reflected native or Blueprint

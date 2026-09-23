@@ -43,7 +43,11 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
     if (result == UEC_RESULT_OK &&
         (api->get_world_count_by_kind(context, (uec_world_kind)99, &invalidWorldKindCount) !=
              UEC_RESULT_INVALID_ARGUMENT || invalidWorldKindCount != 0u ||
+         api->get_world_count_by_kind(context, UEC_WORLD_KIND_UNKNOWN, &invalidWorldKindCount) !=
+             UEC_RESULT_INVALID_ARGUMENT || invalidWorldKindCount != 0u ||
          api->get_world_at_by_kind(context, (uec_world_kind)99, 0u, &invalidWorldOutput) !=
+             UEC_RESULT_INVALID_ARGUMENT || invalidWorldOutput != NULL ||
+         api->get_world_at_by_kind(context, UEC_WORLD_KIND_UNKNOWN, 0u, &invalidWorldOutput) !=
              UEC_RESULT_INVALID_ARGUMENT || invalidWorldOutput != NULL ||
          api->set_component_collision_channel_response(NULL, UEC_TRACE_VISIBILITY,
              (uec_collision_response)99) != UEC_RESULT_INVALID_ARGUMENT ||
