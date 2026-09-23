@@ -64,6 +64,27 @@ static uec_result UEC_CALL StubLineTraceFiltered(
     return UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubSweepTraceFiltered(
+    uec_world* world,
+    uec_vector3 start,
+    uec_vector3 end,
+    const uec_collision_shape* shape,
+    uec_trace_channel channel,
+    uec_bool traceComplex,
+    const uec_actor* const* ignoredActors,
+    uint32_t ignoredActorCount,
+    uec_hit_result* outHit)
+{
+    (void)world; (void)start; (void)end; (void)shape; (void)channel; (void)traceComplex;
+    (void)ignoredActors;
+    if (outHit != NULL) *outHit = (uec_hit_result){0};
+    if (outHit == NULL || ignoredActorCount > UEC_MAX_COLLISION_QUERY_ACTORS ||
+        (ignoredActorCount != 0u && ignoredActors == NULL)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    return UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubTraceDetailedFiltered(
     uec_world* world,
     uec_vector3 start,

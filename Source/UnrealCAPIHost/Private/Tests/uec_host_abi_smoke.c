@@ -59,6 +59,13 @@ static uec_result CheckCollisionQueryBounds(const uec_api* api, uec_context* con
                                  ignoredActors, tooMany, &hit) != UEC_RESULT_INVALID_ARGUMENT ||
         hit.actor != NULL) return UEC_RESULT_INTERNAL_ERROR;
 
+    hit.actor = (uec_actor*)context;
+    if (api->sweep_trace_filtered(NULL, start, end, NULL, UEC_TRACE_VISIBILITY,
+                                  UEC_FALSE, ignoredActors, tooMany, &hit) !=
+            UEC_RESULT_INVALID_ARGUMENT || hit.actor != NULL) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+
     if (api->overlap_shape(NULL, start, NULL, UEC_TRACE_VISIBILITY, tooMany,
                            outputActors, &outCount) != UEC_RESULT_INVALID_ARGUMENT ||
         outCount != 0u) return UEC_RESULT_INTERNAL_ERROR;
@@ -101,6 +108,13 @@ static uec_result CheckCollisionQueryBounds(const uec_api* api, uec_context* con
         return UEC_RESULT_INTERNAL_ERROR;
     }
 
+    hit.actor = (uec_actor*)context;
+    if (!IsAcceptedCollisionCountResult(api->sweep_trace_filtered(
+            NULL, start, end, NULL, UEC_TRACE_VISIBILITY, UEC_FALSE, ignoredActors,
+            UEC_MAX_COLLISION_QUERY_ACTORS, &hit)) || hit.actor != NULL) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+
     detailedHit.struct_size = sizeof(detailedHit);
     detailedHit.hit.actor = (uec_actor*)context;
     if (api->trace_detailed_filtered(NULL, start, end, NULL, UEC_TRACE_VISIBILITY,
@@ -137,6 +151,7 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
         api->set_component_collision_enabled == NULL ||
         api->set_component_collision_channel_response == NULL || api->bind_input_action == NULL ||
         api->inject_input_action_value == NULL || api->line_trace_filtered == NULL ||
+        api->sweep_trace_filtered == NULL ||
         api->overlap_shape == NULL || api->overlap_shape_filtered == NULL ||
         api->trace_detailed_filtered == NULL) {
         api->release_context(context);
