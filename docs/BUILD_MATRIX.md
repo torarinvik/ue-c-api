@@ -21,7 +21,10 @@ scalar-kind rejection, typed FVector/FQuat/FTransform round trips and mismatch
 rejection, short text-output sizing and retry, invalid world-kind handling,
 completion, cancellation, signature rejection, explicit and cross-world
 context handling, stale actor and bridge handle rejection, and pending request
-counts, so Unreal Build Tool does not need to synthesize temporary targets
+counts. After those complete, a travel probe reloads the configured OpenWorld
+map and checks immediate old-world handle invalidation, post-load callback
+delivery, request drainage, and release of the callback's new world handle, so
+Unreal Build Tool does not need to synthesize temporary targets
 before compiling the plugin and its first C consumer. `Config/DefaultEngine.ini`
 selects Unreal's OpenWorld template for editor, game, and server startup so the
 packaged host enters a runtime world and can execute its world-scoped C smoke.
@@ -32,9 +35,10 @@ translation unit, checks the C gameplay example and Unreal descriptor JSON,
 and enforces the 400–800 line budget for private implementation units and the
 tracked primary C host smoke translation unit. Focused probes under
 `Source/UnrealCAPIHost/Private/Tests/` are test fixtures and stay small by
-design. The event-bridge fixture also queries runtime statistics from inside
-event and actor-destroyed callbacks to verify `active_callbacks` includes
-in-flight code and subscription counts drain. The host stub proves
+design. The event-bridge fixture queries runtime statistics from inside event
+and actor-destroyed callbacks to verify `active_callbacks` includes in-flight
+code and subscription counts drain; the travel callback checks the same counter
+while confirming the new world handle is released. The host stub proves
 consumer-side bootstrap, table calls, and the append-only prefix;
 the CI matrix also repeats those linked consumers with AddressSanitizer and
 UndefinedBehaviorSanitizer. These checks do not compile the Unreal module or
@@ -44,8 +48,8 @@ With an installed engine, run `UE_ROOT=/path/to/UnrealEngine
 sh tests/run_unreal_build.sh` to compile, cook, stage, and package the minimal
 host project for the current platform. A same-platform Development build then
 launches the packaged host with NullRHI and waits for successful bootstrap,
-event-bridge, and latent-call C smoke messages; failures and timeouts fail the
-gate with recent host output. Set `UEC_UNREAL_CONFIGURATION=Shipping` to repeat
+event-bridge, latent-call, and travel C smoke messages; failures and timeouts
+fail the gate with recent host output. Set `UEC_UNREAL_CONFIGURATION=Shipping` to repeat
 the build in Shipping mode; runtime smoke is limited to Development builds.
 Set `UEC_UNREAL_PLATFORM=Win64` (or
 another platform supplied by the engine installation) to validate a target

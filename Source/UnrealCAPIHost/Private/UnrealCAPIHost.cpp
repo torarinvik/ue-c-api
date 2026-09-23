@@ -10,6 +10,9 @@ extern "C" uec_result UEC_CALL uec_host_event_bridge_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_latent_smoke_start(void);
 extern "C" uec_bool UEC_CALL uec_host_latent_smoke_poll(uec_result* out_result);
 extern "C" void UEC_CALL uec_host_latent_smoke_cancel(void);
+extern "C" uec_result UEC_CALL uec_host_travel_smoke_start(void);
+extern "C" uec_bool UEC_CALL uec_host_travel_smoke_poll(uec_result* out_result);
+extern "C" void UEC_CALL uec_host_travel_smoke_cancel(void);
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealCAPIHost, Log, All);
 
@@ -17,7 +20,9 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
 {
     FTSTicker::FDelegateHandle EventBridgeSmokeHandle;
     FTSTicker::FDelegateHandle LatentSmokeHandle;
+    FTSTicker::FDelegateHandle TravelSmokeHandle;
     float LatentSmokeElapsed = 0.0f;
+    float TravelSmokeElapsed = 0.0f;
 
     bool RunEventBridgeSmoke(float)
     {
@@ -70,6 +75,18 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         }
         if (result == UEC_RESULT_OK) {
             UE_LOG(LogUnrealCAPIHost, Log, TEXT("C latent invocation smoke completed"));
+            const uec_result travelResult = uec_host_travel_smoke_start();
+            if (travelResult == UEC_RESULT_OK) {
+                TravelSmokeElapsed = 0.0f;
+                TravelSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
+                    FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunTravelSmoke),
+                    0.1f);
+            }
+            else {
+                UE_LOG(LogUnrealCAPIHost, Error,
+                    TEXT("C travel smoke failed to start with result %d"),
+                    static_cast<int32>(travelResult));
+            }
         }
         else {
             UE_LOG(LogUnrealCAPIHost, Error,
@@ -77,6 +94,27 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
                 static_cast<int32>(result));
         }
         LatentSmokeHandle.Reset();
+        return false;
+    }
+
+    bool RunTravelSmoke(float deltaSeconds)
+    {
+        TravelSmokeElapsed += deltaSeconds;
+        uec_result result = UEC_RESULT_NOT_INITIALIZED;
+        const bool complete = uec_host_travel_smoke_poll(&result) == UEC_TRUE;
+        if (!complete && TravelSmokeElapsed < 30.0f) return true;
+        if (!complete) {
+            uec_host_travel_smoke_cancel();
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result == UEC_RESULT_OK) {
+            UE_LOG(LogUnrealCAPIHost, Log, TEXT("C travel smoke completed"));
+        }
+        else {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C travel smoke failed with result %d"), static_cast<int32>(result));
+        }
+        TravelSmokeHandle.Reset();
         return false;
     }
 
@@ -105,6 +143,10 @@ public:
         if (LatentSmokeHandle.IsValid()) {
             FTSTicker::GetCoreTicker().RemoveTicker(LatentSmokeHandle);
             uec_host_latent_smoke_cancel();
+        }
+        if (TravelSmokeHandle.IsValid()) {
+            FTSTicker::GetCoreTicker().RemoveTicker(TravelSmokeHandle);
+            uec_host_travel_smoke_cancel();
         }
     }
 };

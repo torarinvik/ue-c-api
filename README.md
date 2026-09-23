@@ -27,8 +27,8 @@ for changes in development.
 When Unreal Engine is installed locally, `UE_ROOT=/path/to/UnrealEngine sh
 tests/run_unreal_build.sh` compiles, cooks, stages, and packages the host project.
 For a same-platform Development build, it launches the packaged host and waits
-for the C bootstrap, event-bridge, and latent-call smoke checks. Set
-`UEC_UNREAL_CONFIGURATION=Shipping` for a Shipping package; runtime smoke is
+for the C bootstrap, event-bridge, latent-call, and world-travel smoke checks.
+Set `UEC_UNREAL_CONFIGURATION=Shipping` for a Shipping package; runtime smoke is
 limited to Development builds.
 
 Consumer startup, table compatibility, threading, callback ownership, handle

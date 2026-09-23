@@ -522,3 +522,207 @@ void UEC_CALL uec_host_latent_smoke_cancel(void)
 {
     FinishLatentSmoke(&g_latent_smoke_state, UEC_RESULT_OK, UEC_TRUE);
 }
+
+typedef struct uec_travel_smoke_state {
+    const uec_api* api;
+    uec_context* context;
+    uec_world* old_world;
+    uint64_t request_id;
+    uint32_t baseline_worlds;
+    uint32_t baseline_pending_requests;
+    uint32_t baseline_active_callbacks;
+    uec_result result;
+    uec_bool submitted;
+    uec_bool callback_received;
+    uec_bool started;
+    uec_bool complete;
+} uec_travel_smoke_state;
+
+static uec_travel_smoke_state g_travel_smoke_state;
+
+static void FinishTravelSmoke(uec_travel_smoke_state* state,
+                              uec_result result,
+                              uec_bool cancel_request)
+{
+    if (state == NULL || state->complete == UEC_TRUE) return;
+    if (cancel_request == UEC_TRUE && state->request_id != 0 &&
+        state->callback_received != UEC_TRUE && state->api != NULL &&
+        state->context != NULL && state->api->cancel_travel_request != NULL) {
+        const uec_result cancelResult = state->api->cancel_travel_request(
+            state->context, state->request_id);
+        if (result == UEC_RESULT_OK && cancelResult != UEC_RESULT_OK) {
+            result = cancelResult;
+        }
+    }
+    state->request_id = 0;
+    if (state->old_world != NULL && state->api != NULL) {
+        if (state->api->release_world == NULL) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        } else {
+            const uec_result releaseResult = state->api->release_world(state->old_world);
+            const uec_bool alreadyInvalidated = state->submitted == UEC_TRUE &&
+                releaseResult == UEC_RESULT_INVALID_HANDLE ? UEC_TRUE : UEC_FALSE;
+            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK &&
+                alreadyInvalidated != UEC_TRUE) {
+                result = releaseResult;
+            }
+        }
+    }
+    state->old_world = NULL;
+    if (state->context != NULL && state->api != NULL) {
+        if (state->api->release_context == NULL) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        } else {
+            const uec_result releaseResult = state->api->release_context(state->context);
+            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                result = releaseResult;
+            }
+        }
+    }
+    state->context = NULL;
+    state->result = result;
+    state->complete = UEC_TRUE;
+}
+
+static void UEC_CALL CompleteTravelSmoke(uint64_t requestId,
+                                         uec_result result,
+                                         uec_world* newWorld,
+                                         void* userData)
+{
+    uec_travel_smoke_state* state = (uec_travel_smoke_state*)userData;
+    if (state == NULL) return;
+    if (state->complete == UEC_TRUE || state->callback_received == UEC_TRUE) {
+        if (newWorld != NULL && state->api != NULL) {
+            (void)state->api->release_world(newWorld);
+        }
+        return;
+    }
+    state->callback_received = UEC_TRUE;
+    state->result = UEC_RESULT_INTERNAL_ERROR;
+    if (requestId != state->request_id || result != UEC_RESULT_OK ||
+        newWorld == NULL || state->api == NULL || state->context == NULL) {
+        if (newWorld != NULL && state->api != NULL) {
+            (void)state->api->release_world(newWorld);
+        }
+        return;
+    }
+
+    char mapName[256] = {0};
+    size_t mapNameRequired = 0;
+    const uec_result mapResult = state->api->get_world_name(
+        newWorld, mapName, sizeof(mapName), &mapNameRequired);
+    size_t staleWorldRequired = 1u;
+    const uec_result staleWorldResult = state->api->get_world_name(
+        state->old_world, NULL, 0, &staleWorldRequired);
+    uec_runtime_stats stats = {0};
+    stats.struct_size = sizeof(stats);
+    const uec_result statsResult = state->api->get_runtime_stats(state->context, &stats);
+    if (mapResult != UEC_RESULT_OK || mapNameRequired <= 1u || mapName[0] == '\0' ||
+        staleWorldResult != UEC_RESULT_INVALID_HANDLE || staleWorldRequired != 0u ||
+        statsResult != UEC_RESULT_OK ||
+        state->baseline_active_callbacks == UINT32_MAX ||
+        stats.active_callbacks != state->baseline_active_callbacks + 1u ||
+        stats.pending_requests != state->baseline_pending_requests ||
+        stats.live_worlds != state->baseline_worlds + 1u) {
+        (void)state->api->release_world(newWorld);
+        return;
+    }
+
+    const uec_result releaseResult = state->api->release_world(newWorld);
+    if (releaseResult != UEC_RESULT_OK) return;
+    stats = (uec_runtime_stats){0};
+    stats.struct_size = sizeof(stats);
+    if (state->api->get_runtime_stats(state->context, &stats) != UEC_RESULT_OK ||
+        stats.pending_requests != state->baseline_pending_requests ||
+        stats.live_worlds != state->baseline_worlds) {
+        return;
+    }
+    state->result = UEC_RESULT_OK;
+}
+
+uec_result UEC_CALL uec_host_travel_smoke_start(void)
+{
+    static const char targetMapPath[] = "/Engine/Maps/Templates/OpenWorld";
+    uec_travel_smoke_state* state = &g_travel_smoke_state;
+    if (state->started == UEC_TRUE) return UEC_RESULT_INVALID_ARGUMENT;
+    *state = (uec_travel_smoke_state){0};
+    state->started = UEC_TRUE;
+    state->result = UEC_RESULT_INTERNAL_ERROR;
+    uec_runtime_stats baselineStats = {0};
+    baselineStats.struct_size = sizeof(baselineStats);
+    uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR,
+                                    &state->api, &state->context);
+    if (result != UEC_RESULT_OK) {
+        FinishTravelSmoke(state, result, UEC_FALSE);
+        return result;
+    }
+    if (state->api == NULL || state->context == NULL ||
+        state->api->get_runtime_stats == NULL ||
+        state->api->get_default_world == NULL ||
+        state->api->get_world_name == NULL || state->api->release_world == NULL ||
+        state->api->travel_world_async == NULL ||
+        state->api->cancel_travel_request == NULL ||
+        state->api->release_context == NULL) {
+        FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    result = state->api->get_runtime_stats(state->context, &baselineStats);
+    if (result != UEC_RESULT_OK || baselineStats.live_worlds == UINT32_MAX ||
+        baselineStats.pending_requests == UINT32_MAX) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        FinishTravelSmoke(state, result, UEC_FALSE);
+        return result;
+    }
+    state->baseline_worlds = baselineStats.live_worlds;
+    state->baseline_pending_requests = baselineStats.pending_requests;
+    state->baseline_active_callbacks = baselineStats.active_callbacks;
+    result = state->api->get_default_world(state->context, &state->old_world);
+    if (result != UEC_RESULT_OK || state->old_world == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        FinishTravelSmoke(state, result, UEC_FALSE);
+        return result;
+    }
+    const uec_string_view targetMap = {targetMapPath, sizeof(targetMapPath) - 1u};
+    result = state->api->travel_world_async(state->old_world, targetMap,
+                                            &CompleteTravelSmoke, state,
+                                            &state->request_id);
+    if (result != UEC_RESULT_OK || state->request_id == 0u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        FinishTravelSmoke(state, result, UEC_FALSE);
+        return result;
+    }
+    state->submitted = UEC_TRUE;
+    size_t staleWorldRequired = 1u;
+    if (state->api->get_world_name(state->old_world, NULL, 0, &staleWorldRequired) !=
+            UEC_RESULT_INVALID_HANDLE || staleWorldRequired != 0u) {
+        FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_TRUE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uec_runtime_stats observedStats = {0};
+    observedStats.struct_size = sizeof(observedStats);
+    result = state->api->get_runtime_stats(state->context, &observedStats);
+    if (result != UEC_RESULT_OK ||
+        observedStats.pending_requests != state->baseline_pending_requests + 1u ||
+        observedStats.live_worlds != state->baseline_worlds) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        FinishTravelSmoke(state, result, UEC_TRUE);
+        return result;
+    }
+    return UEC_RESULT_OK;
+}
+
+uec_bool UEC_CALL uec_host_travel_smoke_poll(uec_result* outResult)
+{
+    if (outResult == NULL) return UEC_FALSE;
+    uec_travel_smoke_state* state = &g_travel_smoke_state;
+    if (state->complete != UEC_TRUE && state->callback_received == UEC_TRUE) {
+        FinishTravelSmoke(state, state->result, UEC_FALSE);
+    }
+    *outResult = state->complete == UEC_TRUE ? state->result : UEC_RESULT_NOT_INITIALIZED;
+    return state->complete;
+}
+
+void UEC_CALL uec_host_travel_smoke_cancel(void)
+{
+    FinishTravelSmoke(&g_travel_smoke_state, UEC_RESULT_OK, UEC_TRUE);
+}

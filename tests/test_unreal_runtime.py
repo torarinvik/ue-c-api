@@ -42,12 +42,18 @@ class UnrealRuntimeTests(unittest.TestCase):
             "C consumer bootstrap completed",
             "C event bridge smoke completed",
             "C latent invocation smoke completed",
+            "C travel smoke completed",
         ])
         run_smoke(executable, timeout_seconds=2.0)
 
     def test_surfaces_smoke_failure(self):
         executable = self.make_host(["C event bridge smoke failed with result 8"])
         with self.assertRaisesRegex(RuntimeError, "C event bridge smoke failed"):
+            run_smoke(executable, timeout_seconds=2.0)
+
+    def test_surfaces_travel_smoke_failure(self):
+        executable = self.make_host(["C travel smoke failed with result 8"])
+        with self.assertRaisesRegex(RuntimeError, "C travel smoke failed"):
             run_smoke(executable, timeout_seconds=2.0)
 
     def test_times_out_if_smoke_never_finishes(self):

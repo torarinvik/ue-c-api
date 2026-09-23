@@ -33,6 +33,9 @@ development; they do not imply a published or runtime-verified release.
 
 - Initial Unreal Engine C API runtime plugin scaffold targeting the latest UE
   5.8 release.
+- The packaged Development host smoke now performs async travel through the
+  configured OpenWorld map and checks old-world invalidation, post-load callback
+  delivery, request drainage, and release of the callback's new world handle.
 - Standard `Plugins/UnrealCAPI` project-plugin layout with tracked host Game and
   Editor targets for Unreal Build Tool discovery.
 - A tracked C host bootstrap probe that exercises table negotiation, capability
@@ -44,8 +47,8 @@ development; they do not imply a published or runtime-verified release.
 - Cross-platform Unreal build requests now skip rebuilding the local Editor
   target while preserving the host-platform default.
 - The Unreal build gate now launches same-platform Development packages and
-  requires the host C bootstrap, event-bridge, and latent-call smoke checks to
-  complete; Shipping and cross-platform runs remain package-only.
+  requires the host C bootstrap, event-bridge, latent-call, and travel smoke
+  checks to complete; Shipping and cross-platform runs remain package-only.
 - `get_last_error` now preserves the diagnostic during a null-buffer size query,
   so a single correctly sized retry returns the original message.
 - The Unreal-host C ABI smoke checks early rejection of undeclared collision-
