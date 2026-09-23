@@ -266,6 +266,10 @@ ABI minor 140 adds the `UEC_WIDGET_HIT_TEST_INVISIBLE` and
 `UEC_WIDGET_SELF_HIT_TEST_INVISIBLE` visibility modes. Both remain visible;
 the first also blocks hit testing for child widgets, while the second leaves
 child hit testing enabled.
+ABI minor 141 adds `get_checkbox_state` and `set_checkbox_state` for
+`UCheckBox` widgets. Their `uec_checkbox_state` enum preserves unchecked,
+checked, and indeterminate values. The getter initializes its output to
+unchecked before validation; both calls require the game thread.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

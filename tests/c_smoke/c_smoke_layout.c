@@ -55,7 +55,10 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details A
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 140u, "ABI minor must include full UMG visibility values");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 141u, "ABI minor must include checkbox state access");
+UEC_TEST_ASSERT(UEC_CHECKBOX_UNCHECKED == 0 && UEC_CHECKBOX_CHECKED == 1 &&
+                   UEC_CHECKBOX_UNDETERMINED == 2,
+               "checkbox state enum values changed");
 UEC_TEST_ASSERT(UEC_WIDGET_VISIBLE == 0 && UEC_WIDGET_COLLAPSED == 1 &&
                    UEC_WIDGET_HIDDEN == 2 && UEC_WIDGET_HIT_TEST_INVISIBLE == 3 &&
                    UEC_WIDGET_SELF_HIT_TEST_INVISIBLE == 4,
@@ -524,3 +527,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_widget_enabled) >
 UEC_TEST_ASSERT(offsetof(uec_api, set_widget_enabled) >
                    offsetof(uec_api, get_widget_enabled),
                "widget enabled-state write must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_checkbox_state) >
+                   offsetof(uec_api, set_widget_enabled),
+               "checkbox readback must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_checkbox_state) >
+                   offsetof(uec_api, get_checkbox_state),
+               "checkbox state write must append to uec_api");

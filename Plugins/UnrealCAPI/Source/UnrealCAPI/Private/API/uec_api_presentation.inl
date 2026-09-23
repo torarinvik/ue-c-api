@@ -181,6 +181,46 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetCheckBoxState(uec_object* rawCheckBox,
+                                         uec_checkbox_state* outState)
+    {
+        if (outState != nullptr) *outState = UEC_CHECKBOX_UNCHECKED;
+        if (outState == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECObject*>(rawCheckBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UCheckBox* checkBox = Cast<UCheckBox>(handle->Value.Get());
+        if (checkBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        switch (checkBox->GetCheckedState())
+        {
+        case ECheckBoxState::Unchecked: *outState = UEC_CHECKBOX_UNCHECKED; break;
+        case ECheckBoxState::Checked: *outState = UEC_CHECKBOX_CHECKED; break;
+        case ECheckBoxState::Undetermined: *outState = UEC_CHECKBOX_UNDETERMINED; break;
+        default: return UEC_RESULT_UNSUPPORTED;
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetCheckBoxState(uec_object* rawCheckBox,
+                                         uec_checkbox_state state)
+    {
+        ECheckBoxState engineState;
+        switch (state)
+        {
+        case UEC_CHECKBOX_UNCHECKED: engineState = ECheckBoxState::Unchecked; break;
+        case UEC_CHECKBOX_CHECKED: engineState = ECheckBoxState::Checked; break;
+        case UEC_CHECKBOX_UNDETERMINED: engineState = ECheckBoxState::Undetermined; break;
+        default: return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* handle = reinterpret_cast<FUECObject*>(rawCheckBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UCheckBox* checkBox = Cast<UCheckBox>(handle->Value.Get());
+        if (checkBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        checkBox->SetCheckedState(engineState);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL BindButtonClicked(uec_object* rawButton,
                                           uec_widget_event_callback callback,
                                           void* userData,

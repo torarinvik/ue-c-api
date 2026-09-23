@@ -23,6 +23,7 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
     if (api->abi_major != UEC_ABI_MAJOR || api->abi_minor < UEC_ABI_MINOR ||
         api->get_capabilities == NULL || api->get_world_count_by_kind == NULL ||
         api->get_world_at_by_kind == NULL || api->log == NULL || api->set_widget_visibility == NULL ||
+        api->get_checkbox_state == NULL || api->set_checkbox_state == NULL ||
         api->set_component_collision_enabled == NULL ||
         api->set_component_collision_channel_response == NULL || api->bind_input_action == NULL ||
         api->inject_input_action_value == NULL) {
@@ -40,6 +41,7 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
     uec_input_action_value invalidInputValue = {0};
     invalidInputValue.struct_size = sizeof(invalidInputValue);
     invalidInputValue.kind = (uec_input_action_value_kind)99;
+    uec_checkbox_state invalidCheckboxState = UEC_CHECKBOX_CHECKED;
     if (result == UEC_RESULT_OK &&
         (api->get_world_count_by_kind(context, (uec_world_kind)99, &invalidWorldKindCount) !=
              UEC_RESULT_INVALID_ARGUMENT || invalidWorldKindCount != 0u ||
@@ -54,6 +56,9 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
          api->set_component_collision_channel_response(NULL, (uec_trace_channel)99,
              UEC_COLLISION_RESPONSE_IGNORE) != UEC_RESULT_INVALID_ARGUMENT ||
          api->set_widget_visibility(NULL, (uec_widget_visibility)99) != UEC_RESULT_INVALID_ARGUMENT ||
+         api->get_checkbox_state(NULL, &invalidCheckboxState) != UEC_RESULT_INVALID_HANDLE ||
+         invalidCheckboxState != UEC_CHECKBOX_UNCHECKED ||
+         api->set_checkbox_state(NULL, (uec_checkbox_state)99) != UEC_RESULT_INVALID_ARGUMENT ||
          api->set_component_collision_enabled(NULL, (uec_collision_enabled)99) !=
              UEC_RESULT_INVALID_ARGUMENT ||
          api->bind_input_action(NULL, NULL, (uec_input_trigger_event)99,

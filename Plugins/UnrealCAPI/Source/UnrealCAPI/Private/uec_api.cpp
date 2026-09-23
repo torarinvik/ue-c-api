@@ -37,6 +37,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
+#include "Components/CheckBox.h"
 #include "Components/ProgressBar.h"
 #include "UECEventBridgeComponent.h"
 #include "UECVersionedDataSaveGame.h"
@@ -378,7 +379,8 @@ namespace
         &SaveVersionedApplicationData, &LoadVersionedApplicationData,
         &GetControllerEnhancedInputSubsystem, &SetComponentCollisionChannelResponse,
         &GetProgressBarPercent, &SetProgressBarPercent,
-        &GetWidgetEnabled, &SetWidgetEnabled
+        &GetWidgetEnabled, &SetWidgetEnabled,
+        &GetCheckBoxState, &SetCheckBoxState
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

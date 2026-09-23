@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.140`.
+The current runtime slice is intentionally small and versioned as ABI `1.141`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -381,6 +381,11 @@ ABI minor 140 adds `UEC_WIDGET_HIT_TEST_INVISIBLE` and
 the existing enum values. The first makes the widget and its children visible
 but non-interactive; the second makes only the widget non-interactive while
 leaving its children hit-testable.
+ABI minor 141 appends `get_checkbox_state` and `set_checkbox_state` for
+`UCheckBox` handles. The `uec_checkbox_state` values represent unchecked,
+checked, and indeterminate states without collapsing Unreal's three-state
+model. Reads initialize the output to unchecked on failure, writes reject
+undeclared values, and both require the game thread.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

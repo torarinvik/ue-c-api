@@ -43,6 +43,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 141 adds game-thread `UCheckBox` state read/write calls, preserving
+  unchecked, checked, and indeterminate states with deterministic output on
+  failed reads.
 - Initial Unreal Engine C API runtime plugin scaffold targeting the latest UE
   5.8 release.
 - The packaged Development host smoke now performs async travel through the

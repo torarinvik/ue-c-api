@@ -36,4 +36,20 @@ static uec_result UEC_CALL StubInjectInputActionValue(
     return UEC_RESULT_INVALID_HANDLE;
 }
 
+static uec_result UEC_CALL StubGetCheckBoxState(uec_object* checkBox,
+                                                uec_checkbox_state* outState)
+{
+    if (outState != NULL) *outState = UEC_CHECKBOX_UNCHECKED;
+    if (outState == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return checkBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetCheckBoxState(uec_object* checkBox,
+                                                uec_checkbox_state state)
+{
+    if (state < UEC_CHECKBOX_UNCHECKED || state > UEC_CHECKBOX_UNDETERMINED)
+        return UEC_RESULT_INVALID_ARGUMENT;
+    return checkBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 #include "c_host_stub_reflection.inl"
