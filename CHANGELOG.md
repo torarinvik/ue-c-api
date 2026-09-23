@@ -7,6 +7,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Changed
 
+- Collision overlap results and detailed hit records now stage newly allocated
+  actor/component handles and publish them only after the full result succeeds.
+  Handle-creation failure rolls back temporary handles and preserves cleared
+  outputs instead of exposing partial results.
 - Clarified that `cancel_travel_request` suppresses and removes the completion
   callback after `OpenLevel` has been submitted; it does not stop the travel or
   restore old-world handles already invalidated by submission. The callback

@@ -73,6 +73,10 @@
         FScopeLock lock(&GHandleMutex);
         return GShuttingDown;
     }
+    static uec_result HandleCreationFailureResult()
+    {
+        return IsShuttingDown() ? UEC_RESULT_SHUTTING_DOWN : UEC_RESULT_INTERNAL_ERROR;
+    }
     static bool IsValidContextNoLock(const FUECContext* context)
     {
         return context != nullptr && GContexts.Contains(context) &&

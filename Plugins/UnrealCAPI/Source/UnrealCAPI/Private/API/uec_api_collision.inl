@@ -16,6 +16,38 @@
         for (uint32_t index = 0; index < maxHits; ++index) outActors[index] = nullptr;
     }
 
+    static uec_result CopyActorHandles(const TSet<AActor*>& actors,
+                                       uint32_t maxHits,
+                                       uec_actor** outActors,
+                                       uint32_t* outCount)
+    {
+        const uint32_t resultLimit = FMath::Min(maxHits, static_cast<uint32_t>(actors.Num()));
+        TArray<FUECActor*> handles;
+        handles.Reserve(static_cast<int32>(resultLimit));
+        for (AActor* actor : actors)
+        {
+            if (handles.Num() >= static_cast<int32>(resultLimit)) break;
+            FUECActor* handle = MakeActorHandle(actor);
+            if (handle == nullptr)
+            {
+                for (FUECActor* createdHandle : handles)
+                {
+                    TombstoneHandle(createdHandle->Header);
+                    createdHandle->Value.Reset();
+                }
+                return HandleCreationFailureResult();
+            }
+            handles.Add(handle);
+        }
+
+        for (int32 index = 0; index < handles.Num(); ++index)
+        {
+            outActors[index] = reinterpret_cast<uec_actor*>(handles[index]);
+        }
+        *outCount = static_cast<uint32_t>(handles.Num());
+        return UEC_RESULT_OK;
+    }
+
     static FCollisionQueryParams MakeTraceQueryParams(uec_bool traceComplex)
     {
         FCollisionQueryParams queryParams;
@@ -46,17 +78,18 @@
     static uec_result CopyHitResult(const FHitResult& hit, uec_hit_result* outHit)
     {
         if (outHit == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        outHit->blocking_hit = hit.bBlockingHit ? UEC_TRUE : UEC_FALSE;
-        outHit->location = {hit.Location.X, hit.Location.Y, hit.Location.Z};
-        outHit->normal = {hit.Normal.X, hit.Normal.Y, hit.Normal.Z};
-        outHit->distance = hit.Distance;
-        outHit->actor = nullptr;
+        uec_hit_result result = {};
+        result.blocking_hit = hit.bBlockingHit ? UEC_TRUE : UEC_FALSE;
+        result.location = {hit.Location.X, hit.Location.Y, hit.Location.Z};
+        result.normal = {hit.Normal.X, hit.Normal.Y, hit.Normal.Z};
+        result.distance = hit.Distance;
         if (AActor* actor = hit.GetActor())
         {
             FUECActor* actorHandle = MakeActorHandle(actor);
-            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
-            outHit->actor = reinterpret_cast<uec_actor*>(actorHandle);
+            if (actorHandle == nullptr) return HandleCreationFailureResult();
+            result.actor = reinterpret_cast<uec_actor*>(actorHandle);
         }
+        *outHit = result;
         return UEC_RESULT_OK;
     }
 
@@ -173,16 +206,7 @@
         {
             if (AActor* actor = overlap.GetActor()) actors.Add(actor);
         }
-        uint32_t copied = 0;
-        for (AActor* actor : actors)
-        {
-            if (copied == maxHits) break;
-            FUECActor* actorHandle = MakeActorHandle(actor);
-            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
-            outActors[copied++] = reinterpret_cast<uec_actor*>(actorHandle);
-            *outCount = copied;
-        }
-        return UEC_RESULT_OK;
+        return CopyActorHandles(actors, maxHits, outActors, outCount);
     }
 
     uec_result UEC_CALL SetComponentCollisionEnabled(uec_scene_component* rawComponent,
@@ -414,16 +438,7 @@
         {
             if (AActor* actor = overlap.GetActor()) actors.Add(actor);
         }
-        uint32_t copied = 0;
-        for (AActor* actor : actors)
-        {
-            if (copied == maxHits) break;
-            FUECActor* actorHandle = MakeActorHandle(actor);
-            if (actorHandle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
-            outActors[copied++] = reinterpret_cast<uec_actor*>(actorHandle);
-            *outCount = copied;
-        }
-        return UEC_RESULT_OK;
+        return CopyActorHandles(actors, maxHits, outActors, outCount);
     }
 
     static uec_result PrepareHitResultDetails(uec_hit_result_details* outHit)
@@ -448,29 +463,33 @@
     static uec_result CopyHitResultDetails(const FHitResult& hit,
                                            uec_hit_result_details* outHit)
     {
-        const uec_result baseResult = CopyHitResult(hit, &outHit->hit);
+        uec_hit_result_details result = {};
+        result.struct_size = sizeof(result);
+        result.item = -1;
+        result.face_index = -1;
+        const uec_result baseResult = CopyHitResult(hit, &result.hit);
         if (baseResult != UEC_RESULT_OK) return baseResult;
-        outHit->impact_point = {hit.ImpactPoint.X, hit.ImpactPoint.Y, hit.ImpactPoint.Z};
-        outHit->impact_normal = {hit.ImpactNormal.X, hit.ImpactNormal.Y, hit.ImpactNormal.Z};
-        outHit->trace_start = {hit.TraceStart.X, hit.TraceStart.Y, hit.TraceStart.Z};
-        outHit->trace_end = {hit.TraceEnd.X, hit.TraceEnd.Y, hit.TraceEnd.Z};
-        outHit->penetration_depth = hit.PenetrationDepth;
-        outHit->item = hit.Item;
-        outHit->face_index = hit.FaceIndex;
+        result.impact_point = {hit.ImpactPoint.X, hit.ImpactPoint.Y, hit.ImpactPoint.Z};
+        result.impact_normal = {hit.ImpactNormal.X, hit.ImpactNormal.Y, hit.ImpactNormal.Z};
+        result.trace_start = {hit.TraceStart.X, hit.TraceStart.Y, hit.TraceStart.Z};
+        result.trace_end = {hit.TraceEnd.X, hit.TraceEnd.Y, hit.TraceEnd.Z};
+        result.penetration_depth = hit.PenetrationDepth;
+        result.item = hit.Item;
+        result.face_index = hit.FaceIndex;
         if (UPrimitiveComponent* component = hit.GetComponent())
         {
             FUECSceneComponent* componentHandle = MakeSceneComponentHandle(component);
             if (componentHandle == nullptr)
             {
-                if (outHit->hit.actor != nullptr)
+                if (result.hit.actor != nullptr)
                 {
-                    ReleaseActor(outHit->hit.actor);
-                    outHit->hit.actor = nullptr;
+                    ReleaseActor(result.hit.actor);
                 }
-                return UEC_RESULT_INTERNAL_ERROR;
+                return HandleCreationFailureResult();
             }
-            outHit->component = reinterpret_cast<uec_scene_component*>(componentHandle);
+            result.component = reinterpret_cast<uec_scene_component*>(componentHandle);
         }
+        *outHit = result;
         return UEC_RESULT_OK;
     }
 
