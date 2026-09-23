@@ -5,6 +5,12 @@ development; they do not imply a published or runtime-verified release.
 
 ## Unreleased
 
+### Changed
+
+- Runtime statistics now exclude released handle tombstones from live handle
+  counts, while continuing to count unreleased handles whose Unreal objects
+  have expired.
+
 ### Added
 
 - Initial Unreal Engine C API runtime plugin scaffold targeting the latest UE

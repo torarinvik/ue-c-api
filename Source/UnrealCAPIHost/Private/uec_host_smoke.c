@@ -137,6 +137,7 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     const uec_api* api = NULL;
     uec_context* context = NULL;
     uec_world* world = NULL;
+    uec_world* probeWorld = NULL;
     uec_actor* actor = NULL;
     uec_object* bridge = NULL;
     uint64_t subscriptionId = 0;
@@ -154,6 +155,7 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         api->destroy_actor_event_bridge == NULL || api->bind_actor_event_bridge == NULL ||
         api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL ||
         api->get_runtime_stats == NULL || api->get_capabilities == NULL ||
+        api->get_default_world == NULL || api->release_world == NULL ||
         api->line_trace == NULL || api->sweep_trace == NULL ||
         api->get_component_transform == NULL || api->get_widget_enabled == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
@@ -167,6 +169,28 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     }
     result = api->get_runtime_stats(context, &baselineStats);
     if (result != UEC_RESULT_OK) goto cleanup;
+    if (baselineStats.live_worlds == UINT32_MAX) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_default_world(context, &probeWorld);
+    if (result != UEC_RESULT_OK || probeWorld == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK || observedStats.live_worlds != baselineStats.live_worlds + 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->release_world(probeWorld);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    probeWorld = NULL;
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK || observedStats.live_worlds != baselineStats.live_worlds) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
     result = api->get_default_world(context, &world);
     if (result != UEC_RESULT_OK) goto cleanup;
     uec_hit_result invalidHit = {0};
@@ -289,6 +313,10 @@ cleanup:
     if (api != NULL && actor != NULL) {
         const uec_result cleanupResult = api->destroy_actor(actor);
         if (cleanupResult != UEC_RESULT_OK) (void)api->release_actor(actor);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    if (api != NULL && probeWorld != NULL) {
+        const uec_result cleanupResult = api->release_world(probeWorld);
         if (result == UEC_RESULT_OK) result = cleanupResult;
     }
     if (api != NULL && world != NULL) {

@@ -471,12 +471,32 @@
         outStats->pending_requests = static_cast<uint32>(requests);
         outStats->active_callbacks = static_cast<uint32>(GActiveCallbacks);
         if (outStats->struct_size >= sizeof(uec_runtime_stats)) {
-            outStats->live_contexts = static_cast<uint32>(GContexts.Num());
-            outStats->live_worlds = static_cast<uint32>(GWorlds.Num());
-            outStats->live_actors = static_cast<uint32>(GActors.Num());
-            outStats->live_components = static_cast<uint32>(GComponents.Num());
-            outStats->live_classes = static_cast<uint32>(GClasses.Num());
-            outStats->live_objects = static_cast<uint32>(GObjects.Num());
+            const auto countLiveHandles = [](const auto& registry) -> uint64
+            {
+                uint64 count = 0;
+                for (const auto* handle : registry)
+                {
+                    if (handle != nullptr && handle->Header.Generation != 0 &&
+                        !handle->Header.bReleased) ++count;
+                }
+                return count;
+            };
+            const uint64 contexts = countLiveHandles(GContexts);
+            const uint64 worlds = countLiveHandles(GWorlds);
+            const uint64 actors = countLiveHandles(GActors);
+            const uint64 components = countLiveHandles(GComponents);
+            const uint64 classes = countLiveHandles(GClasses);
+            const uint64 objects = countLiveHandles(GObjects);
+            if (contexts > UINT32_MAX || worlds > UINT32_MAX || actors > UINT32_MAX ||
+                components > UINT32_MAX || classes > UINT32_MAX || objects > UINT32_MAX) {
+                return UEC_RESULT_INTERNAL_ERROR;
+            }
+            outStats->live_contexts = static_cast<uint32>(contexts);
+            outStats->live_worlds = static_cast<uint32>(worlds);
+            outStats->live_actors = static_cast<uint32>(actors);
+            outStats->live_components = static_cast<uint32>(components);
+            outStats->live_classes = static_cast<uint32>(classes);
+            outStats->live_objects = static_cast<uint32>(objects);
         }
         return UEC_RESULT_OK;
     }

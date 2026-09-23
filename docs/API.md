@@ -50,9 +50,12 @@ undersized allocation can fault the process.
 `get_runtime_stats` is a game-thread-only drain diagnostic. It reports the
 number of registered subscriptions, pending asynchronous or game-thread
 requests, consumer callbacks currently executing, and live bridge handles by
-kind. Before unloading code that owns callback functions, stop submitting
-work, cancel or unsubscribe everything, and wait for the first three counts to
-reach zero; use the handle counts to find unreleased bridge ownership.
+kind. Handle counts include unreleased bridge handles even when their Unreal
+objects have expired, and exclude released tombstones retained internally to
+reject stale pointers. Before unloading code that owns callback functions,
+stop submitting work, cancel or unsubscribe everything, and wait for the first
+three counts to reach zero; use the handle counts to find unreleased bridge
+ownership.
 Each subscription category is bounded at 1024 active entries; a bind that
 would exceed its category returns `UEC_RESULT_QUEUE_FULL`.
 
