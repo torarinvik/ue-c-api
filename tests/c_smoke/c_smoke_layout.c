@@ -53,7 +53,12 @@ UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI chan
 UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
-UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
+UEC_TEST_ASSERT(UEC_RESULT_OK == 0 && UEC_RESULT_INVALID_ARGUMENT == 1 &&
+                   UEC_RESULT_INVALID_HANDLE == 2 && UEC_RESULT_BUFFER_TOO_SMALL == 3 &&
+                   UEC_RESULT_NOT_INITIALIZED == 4 && UEC_RESULT_WRONG_THREAD == 5 &&
+                   UEC_RESULT_UNSUPPORTED == 6 && UEC_RESULT_SHUTTING_DOWN == 7 &&
+                   UEC_RESULT_INTERNAL_ERROR == 8 && UEC_RESULT_QUEUE_FULL == 9,
+               "result code ABI values changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
 UEC_TEST_ASSERT(UEC_ABI_MINOR == 142u, "ABI minor must include widget child lookup");
 UEC_TEST_ASSERT(UEC_CHECKBOX_UNCHECKED == 0 && UEC_CHECKBOX_CHECKED == 1 &&
