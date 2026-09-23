@@ -32,8 +32,9 @@ for the C bootstrap, event-bridge, latent-call, concurrent and cancellable
 game-thread queue, asynchronous save/load, asynchronous object load,
 gameplay-example, and world-travel smoke checks. The persistence check verifies
 callback accounting and removes its temporary save slot; the object-load check
-resolves the native `Actor` class and verifies the returned path and handle
-accounting.
+first cancels a request for the already-loaded native `Actor` class to verify
+callback suppression, then resolves it and verifies the returned path and
+handle accounting.
 Set `UEC_UNREAL_CONFIGURATION=Shipping` for a Shipping package; runtime smoke is
 limited to Development builds.
 

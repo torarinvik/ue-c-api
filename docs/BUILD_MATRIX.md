@@ -27,9 +27,11 @@ report queue-full with cleared request ids, accepted ids are unique, callbacks
 observe in-flight accounting, 128 cancellations suppress their callbacks, and
 all remaining requests drain. It then saves and reloads a temporary save-game
 slot asynchronously, validates callback accounting and object-handle cleanup,
-and deletes the slot. An async asset probe then resolves the native Engine
-`Actor` class and checks its returned object path, callback accounting, and
-handle release. The host runs the documented C gameplay example through three
+and deletes the slot. An async asset probe cancels a request for the already
+loaded Engine `Actor` class and checks request drainage and callback
+suppression, then resolves the class and checks its returned object path,
+callback accounting, and handle release. The host runs the documented C
+gameplay example through three
 timer-driven actor moves and
 validates each event-bridge callback. A travel probe reloads the configured
 OpenWorld map and checks immediate old-world handle invalidation, post-load
