@@ -13,8 +13,9 @@ development; they do not imply a published or runtime-verified release.
   destruction accounting for world, actor, and object handles. All typed
   `release_*` operations can now tombstone their registered handle after the
   underlying Unreal object expires; the host smoke exercises this with an
-  actor destroyed through reflected Unreal behavior. The event callback smoke
-  also checks that in-flight callbacks appear in `active_callbacks`.
+  actor destroyed through reflected Unreal behavior. The event-bridge and
+  actor-destroyed callback smoke checks that in-flight callbacks appear in
+  `active_callbacks` and that actor-destroyed subscriptions are drained.
 - Actor-destroyed and post-load travel callbacks now recheck the shutdown gate
   before entering consumer code; a travel world handle created during a gate
   race is tombstoned instead of being delivered or left live.

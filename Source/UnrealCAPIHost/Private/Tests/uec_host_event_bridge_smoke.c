@@ -4,9 +4,12 @@
 
 typedef struct uec_event_bridge_smoke_state {
     uint64_t subscription_id;
+    uint64_t actor_destroy_subscription_id;
     uint32_t callback_count;
+    uint32_t actor_destroy_callback_count;
     uec_bool payload_valid;
     uec_bool callback_stats_valid;
+    uec_bool actor_destroy_callback_valid;
     const uec_api* api;
     uec_context* context;
     uec_result self_unbind_result;
@@ -22,6 +25,18 @@ static uec_bool EventCallbackCountIsAccurate(const uec_event_bridge_smoke_state*
         return UEC_FALSE;
     }
     return stats.active_callbacks == 1u ? UEC_TRUE : UEC_FALSE;
+}
+
+static void UEC_CALL VerifyActorDestroyedCallback(uint64_t subscriptionId, void* userData)
+{
+    uec_event_bridge_smoke_state* state = (uec_event_bridge_smoke_state*)userData;
+    if (state == NULL) return;
+    ++state->actor_destroy_callback_count;
+    state->actor_destroy_callback_valid =
+        subscriptionId == state->actor_destroy_subscription_id ? UEC_TRUE : UEC_FALSE;
+    if (EventCallbackCountIsAccurate(state) != UEC_TRUE) {
+        state->callback_stats_valid = UEC_FALSE;
+    }
 }
 
 static void UEC_CALL VerifyEventBridgeCallback(uint64_t subscriptionId,
@@ -90,8 +105,10 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     uec_world* world = NULL;
     uec_world* probeWorld = NULL;
     uec_actor* actor = NULL;
+    uec_actor* observedDestroyedActor = NULL;
     uec_object* bridge = NULL;
     uint64_t subscriptionId = 0;
+    uint64_t actorDestroySubscriptionId = 0;
     uec_runtime_stats baselineStats = {sizeof(uec_runtime_stats), 0u, 0u, 0u, 0u,
                                        0u, 0u, 0u, 0u, 0u};
     uec_runtime_stats observedStats = {sizeof(uec_runtime_stats), 0u, 0u, 0u, 0u,
@@ -108,7 +125,9 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         api->unbind_actor_event_bridge == NULL || api->emit_actor_event_bridge == NULL ||
         api->get_runtime_stats == NULL || api->get_capabilities == NULL ||
         api->get_default_world == NULL || api->release_world == NULL ||
-        api->release_actor == NULL || api->invoke_actor_function == NULL ||
+        api->spawn_actor == NULL || api->destroy_actor == NULL || api->release_actor == NULL ||
+        api->invoke_actor_function == NULL || api->bind_actor_destroyed == NULL ||
+        api->unbind_actor_destroyed == NULL ||
         api->line_trace == NULL || api->sweep_trace == NULL ||
         api->get_component_transform == NULL || api->get_widget_enabled == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
@@ -257,6 +276,24 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    result = api->spawn_actor(world, classPath, &initialTransform, &observedDestroyedActor);
+    if (result != UEC_RESULT_OK || observedDestroyedActor == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->bind_actor_destroyed(observedDestroyedActor, &VerifyActorDestroyedCallback,
+                                       &state, &actorDestroySubscriptionId);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    state.actor_destroy_subscription_id = actorDestroySubscriptionId;
+    result = api->invoke_actor_function(observedDestroyedActor, destroyFunction);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    if (state.actor_destroy_callback_count != 1u ||
+        state.actor_destroy_callback_valid != UEC_TRUE) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    observedDestroyedActor = NULL;
+    actorDestroySubscriptionId = 0;
     result = api->get_runtime_stats(context, &observedStats);
     if (result != UEC_RESULT_OK ||
         observedStats.active_subscriptions != baselineStats.active_subscriptions ||
@@ -264,7 +301,8 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         observedStats.live_actors != baselineStats.live_actors ||
         observedStats.live_objects != baselineStats.live_objects ||
         state.callback_stats_valid != UEC_TRUE ||
-        state.callback_count != 2) {
+        state.callback_count != 2 || state.actor_destroy_callback_count != 1u ||
+        state.actor_destroy_callback_valid != UEC_TRUE) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -278,6 +316,16 @@ cleanup:
     if (api != NULL && bridge != NULL) {
         const uec_result cleanupResult = api->destroy_actor_event_bridge(bridge);
         if (cleanupResult != UEC_RESULT_OK) (void)api->release_object(bridge);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    if (api != NULL && actorDestroySubscriptionId != 0 && context != NULL) {
+        const uec_result cleanupResult = api->unbind_actor_destroyed(
+            context, actorDestroySubscriptionId);
+        if (result == UEC_RESULT_OK) result = cleanupResult;
+    }
+    if (api != NULL && observedDestroyedActor != NULL) {
+        const uec_result cleanupResult = api->destroy_actor(observedDestroyedActor);
+        if (cleanupResult != UEC_RESULT_OK) (void)api->release_actor(observedDestroyedActor);
         if (result == UEC_RESULT_OK) result = cleanupResult;
     }
     if (api != NULL && actor != NULL) {
