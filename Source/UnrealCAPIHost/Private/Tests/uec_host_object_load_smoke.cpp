@@ -7,6 +7,8 @@ namespace
     enum class EObjectLoadSmokeStage : uint8
     {
         ObserveCancellation,
+        FailingLoad,
+        StartSuccessfulLoad,
         Loading,
         ConfirmCancellation
     };
@@ -105,6 +107,29 @@ namespace
             return;
         }
         state->RequestId = 0;
+
+        if (state->Stage == EObjectLoadSmokeStage::FailingLoad) {
+            const bool validFailure = result == UEC_RESULT_INTERNAL_ERROR &&
+                loadedObject == nullptr && CallbackStatsAreValid(*state, nullptr);
+            if (loadedObject != nullptr && state->Api != nullptr) {
+                state->Api->release_object(loadedObject);
+            }
+            if (!validFailure) {
+                FinishObjectLoadSmoke(*state, UEC_RESULT_INTERNAL_ERROR);
+                return;
+            }
+            state->PendingResult = UEC_RESULT_OK;
+            state->PollsInStage = 0;
+            state->Stage = EObjectLoadSmokeStage::StartSuccessfulLoad;
+            return;
+        }
+        if (state->Stage != EObjectLoadSmokeStage::Loading) {
+            if (loadedObject != nullptr && state->Api != nullptr) {
+                state->Api->release_object(loadedObject);
+            }
+            FinishObjectLoadSmoke(*state, UEC_RESULT_INTERNAL_ERROR);
+            return;
+        }
 
         FTCHARToUTF8 expectedPath(TEXT("/Script/Engine.Actor"));
         char pathBuffer[128]{};
@@ -213,6 +238,30 @@ static uec_result StartVerifiedObjectLoad(FObjectLoadSmokeState& state)
     return UEC_RESULT_OK;
 }
 
+static void StartMissingObjectLoad(FObjectLoadSmokeState& state)
+{
+    const FString path = FString::Printf(
+        TEXT("/UECAPI/Smoke_%s.Missing"), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+    FTCHARToUTF8 objectPathUtf8(*path);
+    const uec_string_view objectPath{objectPathUtf8.Get(),
+                                     static_cast<size_t>(objectPathUtf8.Length())};
+    const uec_result result = state.Api->request_object_load(
+        state.Context, objectPath, &OnObjectLoadSmokeComplete, &state, &state.RequestId);
+    if (result == UEC_RESULT_OK && state.RequestId != 0) {
+        state.Stage = EObjectLoadSmokeStage::FailingLoad;
+        state.PollsInStage = 0;
+        return;
+    }
+    if (result == UEC_RESULT_INTERNAL_ERROR && RuntimeStatsReturnedToBaseline(state)) {
+        state.Stage = EObjectLoadSmokeStage::StartSuccessfulLoad;
+        state.PendingResult = UEC_RESULT_OK;
+        state.PollsInStage = 0;
+        return;
+    }
+    FinishObjectLoadSmoke(
+        state, result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
+}
+
 extern "C" uec_bool UEC_CALL uec_host_object_load_smoke_poll(uec_result* outResult)
 {
     if (outResult == nullptr) return UEC_FALSE;
@@ -221,6 +270,10 @@ extern "C" uec_bool UEC_CALL uec_host_object_load_smoke_poll(uec_result* outResu
         ++state.PollsInStage;
         if (state.Stage == EObjectLoadSmokeStage::ObserveCancellation &&
             state.PollsInStage >= 2u) {
+            StartMissingObjectLoad(state);
+        }
+        else if (state.Stage == EObjectLoadSmokeStage::StartSuccessfulLoad &&
+                 state.PollsInStage >= 1u) {
             StartVerifiedObjectLoad(state);
         }
         else if (state.Stage == EObjectLoadSmokeStage::ConfirmCancellation &&

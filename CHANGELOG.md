@@ -61,6 +61,9 @@ development; they do not imply a published or runtime-verified release.
   asynchronous save/load, asynchronous object-load, gameplay-example, and
   travel smoke checks to complete; Shipping and cross-platform runs remain
   package-only.
+- The packaged async object-load probe now checks immediate cancellation
+  drainage and callback suppression, verifies error reporting for a missing
+  asset, and follows the failure path with a successful load.
 - `get_last_error` now preserves the diagnostic during a null-buffer size query,
   so a single correctly sized retry returns the original message.
 - The Unreal-host C ABI smoke checks early rejection of undeclared collision-

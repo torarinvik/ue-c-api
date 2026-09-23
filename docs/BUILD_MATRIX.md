@@ -29,8 +29,10 @@ all remaining requests drain. It then saves and reloads a temporary save-game
 slot asynchronously, validates callback accounting and object-handle cleanup,
 and deletes the slot. An async asset probe cancels a request for the already
 loaded Engine `Actor` class and checks request drainage and callback
-suppression, then resolves the class and checks its returned object path,
-callback accounting, and handle release. The host runs the documented C
+suppression. It then requests a GUID-named missing asset and verifies the
+failure result and request drainage before resolving the class and checking its
+returned object path, callback accounting, and handle release. The host runs
+the documented C
 gameplay example through three
 timer-driven actor moves and
 validates each event-bridge callback. A travel probe reloads the configured
