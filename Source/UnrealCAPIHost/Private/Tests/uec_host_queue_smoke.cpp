@@ -18,9 +18,10 @@ namespace
     {
         FQueueSmokeState* Owner = nullptr;
         uec_result Result = UEC_RESULT_INTERNAL_ERROR;
-        uint64 RequestId = 42;
+        uint64_t RequestId = 42;
         bool Cancelled = false;
         bool CallbackExecuted = false;
+        bool TestCancelAfterDispatch = false;
     };
 
     struct FQueueSmokeState
@@ -34,6 +35,7 @@ namespace
         uint32 AcceptedCount = 0;
         uint32 RejectedCount = 0;
         uint32 CancelledCount = 0;
+        uint32 CancelAfterDispatchChecks = 0;
         uint32 ExpectedCallbackCount = 0;
         uint32 CallbackCount = 0;
         bool CallbackStatsValid = true;
@@ -109,6 +111,15 @@ namespace
             observed.live_contexts != state->Baseline.live_contexts ||
             submission->Cancelled) {
             state->CallbackStatsValid = false;
+        }
+        if (submission->TestCancelAfterDispatch) {
+            ++state->CancelAfterDispatchChecks;
+            if (state->Api == nullptr || state->Context == nullptr ||
+                state->Api->cancel_game_thread_request == nullptr ||
+                state->Api->cancel_game_thread_request(
+                    state->Context, submission->RequestId) != UEC_RESULT_INVALID_ARGUMENT) {
+                state->CallbackStatsValid = false;
+            }
         }
     }
 }
@@ -218,6 +229,15 @@ extern "C" uec_result UEC_CALL uec_host_queue_smoke_start(void)
         result = UEC_RESULT_INTERNAL_ERROR;
     }
     state.ExpectedCallbackCount = state.AcceptedCount - state.CancelledCount;
+    FQueueSubmission* dispatchedCancellationProbe = nullptr;
+    for (FQueueSubmission& submission : state.Submissions) {
+        if (submission.Result == UEC_RESULT_OK && !submission.Cancelled) {
+            dispatchedCancellationProbe = &submission;
+            submission.TestCancelAfterDispatch = true;
+            break;
+        }
+    }
+    if (dispatchedCancellationProbe == nullptr) result = UEC_RESULT_INTERNAL_ERROR;
     if (result == UEC_RESULT_OK && state.CallbackCount != 0u) {
         result = UEC_RESULT_INTERNAL_ERROR;
     }
@@ -257,6 +277,7 @@ extern "C" uec_bool UEC_CALL uec_host_queue_smoke_poll(uec_result* outResult)
             state.AcceptedCount == static_cast<uint32>(QueueCapacity) &&
             state.RejectedCount == static_cast<uint32>(ExtraSubmissions) &&
             state.CancelledCount == CancellationBatch &&
+            state.CancelAfterDispatchChecks == 1u &&
             HasRuntimeStatsReturnedToBaseline(state);
         FinishQueueSmoke(state,
                          valid ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR,

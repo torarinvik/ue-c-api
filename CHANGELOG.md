@@ -31,6 +31,10 @@ development; they do not imply a published or runtime-verified release.
 - Game-thread callback dispatch now uses a module-owned core-ticker drain,
   capped at 64 callbacks per tick, so shutdown removes the dispatcher and
   cancels pending work without leaving task-graph closures behind.
+- Game-thread request documentation now spells out the cancellation boundary:
+  a successful cancel suppresses dispatch, while `UEC_RESULT_INVALID_ARGUMENT`
+  means the callback has already been dequeued and borrowed user data must stay
+  alive until it returns.
 
 ### Added
 

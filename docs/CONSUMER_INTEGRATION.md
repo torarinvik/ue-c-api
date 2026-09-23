@@ -303,7 +303,9 @@ operations run on the Unreal game thread unless their API entry explicitly
 queues work. A worker thread should submit a borrowed callback with
 `run_on_game_thread` or use an asynchronous request API. The callback's
 `user_data` pointer is not copied or retained; keep its storage alive until the
-request completes or is canceled.
+request completes or cancellation succeeds. If `cancel_game_thread_request`
+returns `UEC_RESULT_INVALID_ARGUMENT`, dispatch has already dequeued the request
+and its callback may still run; keep the user-data storage alive until then.
 
 Timer, tick, input, audio, widget, and primitive-component hit subscriptions
 return tokens. Unsubscribe with the matching context before releasing consumer

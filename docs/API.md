@@ -709,9 +709,9 @@ object handle; retain it if it must survive beyond the callback.
 on Unreal's game thread and returns a request id. `cancel_game_thread_request`
 can cancel a queued callback from any thread. A successful cancellation
 suppresses the callback; if dispatch has already dequeued the request, cancel
-returns `UEC_RESULT_INVALID_ARGUMENT`. The callback owns any handles it
-receives and must not retain the borrowed user pointer after it returns.
-Module shutdown cancels queued callbacks without invoking them.
+returns `UEC_RESULT_INVALID_ARGUMENT` and the callback may still run. Treat
+that result as too late to reclaim `user_data`; keep it alive until callback
+completion. Module shutdown cancels queued callbacks without invoking them.
 
 `add_pawn_movement_input` forwards a world-space direction and scale to an
 `APawn`; base pawns only accumulate input, while movement-capable subclasses
