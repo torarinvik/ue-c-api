@@ -169,7 +169,8 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     }
     result = api->get_runtime_stats(context, &baselineStats);
     if (result != UEC_RESULT_OK) goto cleanup;
-    if (baselineStats.live_worlds == UINT32_MAX) {
+    if (baselineStats.live_worlds == UINT32_MAX ||
+        baselineStats.live_actors == UINT32_MAX || baselineStats.live_objects == UINT32_MAX) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -216,6 +217,11 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     }
     result = api->spawn_actor(world, classPath, &initialTransform, &actor);
     if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK || observedStats.live_actors != baselineStats.live_actors + 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
     uec_transform zeroTransform = {0};
     uec_bool wrongKindEnabled = UEC_TRUE;
     uec_transform wrongKindTransform = {
@@ -230,6 +236,11 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     }
     result = api->get_or_create_actor_event_bridge(actor, &bridge);
     if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK || observedStats.live_objects != baselineStats.live_objects + 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
     result = api->bind_actor_event_bridge(bridge, &VerifyEventBridgeCallback,
                                           &state, &subscriptionId);
     if (result != UEC_RESULT_OK) goto cleanup;
@@ -294,6 +305,8 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     result = api->get_runtime_stats(context, &observedStats);
     if (result != UEC_RESULT_OK ||
         observedStats.active_subscriptions != baselineStats.active_subscriptions ||
+        observedStats.live_actors != baselineStats.live_actors ||
+        observedStats.live_objects != baselineStats.live_objects ||
         state.callback_count != 2) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;

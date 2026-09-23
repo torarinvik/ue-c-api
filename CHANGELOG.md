@@ -9,7 +9,8 @@ development; they do not imply a published or runtime-verified release.
 
 - Runtime statistics now exclude released handle tombstones from live handle
   counts, while continuing to count unreleased handles whose Unreal objects
-  have expired.
+  have expired. The packaged-host smoke checks acquisition and release or
+  destruction accounting for world, actor, and object handles.
 
 ### Added
 
