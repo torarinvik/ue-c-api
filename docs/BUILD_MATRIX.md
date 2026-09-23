@@ -7,9 +7,16 @@ build, launch, and exercise the C smoke path.
 | Engine | Host platform | Compiler/toolchain | C consumer | Plugin/host status |
 | --- | --- | --- | --- | --- |
 | UE 5.7.4 installed distribution | macOS arm64 local workstation | Unreal Build Tool 5.7.4 | C11/C++17 linked host-stub smoke verified | Compatibility builds attempted with `UEC_ALLOW_ENGINE_MISMATCH=1`; UBT rejected Mac because platform support files are missing and reports Win64 unsupported in this distribution. Neither attempt compiled project code; the engine is also below the UE 5.8.3 target. |
-| UE 5.8.3 target (engine unavailable) | macOS 27 arm64 local workstation | Apple Clang 21.0.0; Python 3.9.6 | C11/C++17 linked host-stub smoke verified | Unreal build pending; `UE_ROOT` is unset and no 5.8.3 installation is available |
+| UE 5.8.3 target (engine unavailable) | macOS 27 arm64 local workstation | Xcode 27.0; Apple Clang 21.0.0; Python 3.9.6 | C11/C++17 linked host-stub smoke verified | Unreal build pending; `UE_ROOT` is unset, no 5.8.3 installation is available, and this host's OS/Xcode combination is not listed in Epic's UE 5.8 requirements |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
+
+Epic's [UE 5.8 macOS requirements](https://dev.epicgames.com/documentation/en-us/unreal-engine/macos-development-requirements-for-unreal-engine)
+list macOS Sonoma 14.5 as the minimum, Sequoia 15 as recommended, Xcode 26.0
+as the minimum, and Xcode 26.1.1 as recommended; they explicitly say Xcode
+26.4 is incompatible. This workstation runs macOS 27 with Xcode 27.0, which
+is not listed in that compatibility row, so the local combination remains
+unverified until a UE 5.8.3 build proves it works.
 
 The project plugin lives under `Plugins/UnrealCAPI/`, which is the standard
 project-plugin layout Unreal uses to discover the descriptor and module source.
