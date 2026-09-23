@@ -101,7 +101,7 @@
             {
                 FUECWorld* handle = MakeWorldHandle(
                     world, worldContext.WorldType, worldContext.PIEInstance);
-                if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+                if (handle == nullptr) return HandleCreationFailureResult();
                 *outWorld = reinterpret_cast<uec_world*>(handle);
                 return UEC_RESULT_OK;
             }
@@ -146,7 +146,7 @@
             if (current++ != index) continue;
             FUECWorld* handle = MakeWorldHandle(
                 world, worldContext.WorldType, worldContext.PIEInstance);
-            if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            if (handle == nullptr) return HandleCreationFailureResult();
             *outWorld = reinterpret_cast<uec_world*>(handle);
             return UEC_RESULT_OK;
         }
@@ -196,7 +196,7 @@
             if (current++ != index) continue;
             FUECWorld* handle = MakeWorldHandle(
                 world, worldContext.WorldType, worldContext.PIEInstance);
-            if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            if (handle == nullptr) return HandleCreationFailureResult();
             *outWorld = reinterpret_cast<uec_world*>(handle);
             return UEC_RESULT_OK;
         }
@@ -270,7 +270,7 @@
         AGameModeBase* gameMode = world->GetAuthGameMode();
         if (gameMode == nullptr) return UEC_RESULT_UNSUPPORTED;
         FUECObject* handle = MakeObjectHandle(gameMode);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outGameMode = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -287,7 +287,7 @@
         AGameStateBase* gameState = world->GetGameState();
         if (gameState == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         FUECObject* handle = MakeObjectHandle(gameState);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outGameState = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -449,7 +449,7 @@
         UGameInstance* gameInstance = world->GetGameInstance();
         if (gameInstance == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         FUECObject* handle = MakeObjectHandle(gameInstance);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outGameInstance = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -464,8 +464,9 @@
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         APlayerController* controller = UGameplayStatics::GetPlayerController(world, 0);
+        if (controller == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         FUECActor* handle = MakeActorHandle(controller);
-        if (handle == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outController = reinterpret_cast<uec_actor*>(handle);
         return UEC_RESULT_OK;
     }
@@ -485,8 +486,9 @@
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         APlayerController* controller = UGameplayStatics::GetPlayerController(
             world, static_cast<int32>(playerIndex));
+        if (controller == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         FUECActor* handle = MakeActorHandle(controller);
-        if (handle == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outController = reinterpret_cast<uec_actor*>(handle);
         return UEC_RESULT_OK;
     }

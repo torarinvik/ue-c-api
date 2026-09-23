@@ -7,8 +7,10 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
         if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        FUECActor* handle = MakeActorHandle(controller->GetPawn());
-        if (handle == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        APawn* pawn = controller->GetPawn();
+        if (pawn == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        FUECActor* handle = MakeActorHandle(pawn);
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outPawn = reinterpret_cast<uec_actor*>(handle);
         return UEC_RESULT_OK;
     }
@@ -131,7 +133,7 @@
         if (subsystem == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         FUECObject* handle = MakeObjectHandle(subsystem);
         if (handle == nullptr) {
-            return IsShuttingDown() ? UEC_RESULT_SHUTTING_DOWN : UEC_RESULT_INTERNAL_ERROR;
+            return HandleCreationFailureResult();
         }
         *outSubsystem = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;

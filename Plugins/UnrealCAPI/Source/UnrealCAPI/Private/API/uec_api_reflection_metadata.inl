@@ -448,7 +448,7 @@
         UClass* value = Cast<UClass>(property->GetObjectPropertyValue_InContainer(actor));
         if (value == nullptr) return UEC_RESULT_OK;
         FUECClass* handle = MakeClassPropertyHandle(value);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outClass = reinterpret_cast<uec_class*>(handle);
         return UEC_RESULT_OK;
     }
@@ -497,7 +497,7 @@
         UClass* value = Cast<UClass>(property->GetObjectPropertyValue_InContainer(object));
         if (value == nullptr) return UEC_RESULT_OK;
         FUECClass* handle = MakeClassPropertyHandle(value);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outClass = reinterpret_cast<uec_class*>(handle);
         return UEC_RESULT_OK;
     }

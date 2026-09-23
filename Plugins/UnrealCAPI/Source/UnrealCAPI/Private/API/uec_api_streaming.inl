@@ -151,7 +151,7 @@
                 world, world->WorldType, GetPIEInstanceForWorld(world));
             uec_result result = UEC_RESULT_OK;
             if (worldHandle == nullptr) {
-                result = IsShuttingDown() ? UEC_RESULT_SHUTTING_DOWN : UEC_RESULT_INTERNAL_ERROR;
+                result = HandleCreationFailureResult();
             } else {
                 rawWorld = reinterpret_cast<uec_world*>(worldHandle);
             }

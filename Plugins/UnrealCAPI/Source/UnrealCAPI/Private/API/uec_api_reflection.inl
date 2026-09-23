@@ -434,7 +434,7 @@
         UObject* value = objectProperty->GetObjectPropertyValue_InContainer(actor);
         if (value == nullptr) return UEC_RESULT_OK;
         FUECObject* handle = MakeObjectHandle(value);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outObject = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -486,7 +486,7 @@
         UObject* value = objectProperty->GetObjectPropertyValue_InContainer(owner);
         if (value == nullptr) return UEC_RESULT_OK;
         FUECObject* handle = MakeObjectHandle(value);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outValue = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }

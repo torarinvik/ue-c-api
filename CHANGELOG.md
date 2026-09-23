@@ -11,6 +11,11 @@ development; they do not imply a published or runtime-verified release.
   actor/component handles and publish them only after the full result succeeds.
   Handle-creation failure rolls back temporary handles and preserves cleared
   outputs instead of exposing partial results.
+- Handle-returning API calls now report `UEC_RESULT_SHUTTING_DOWN` when handle
+  registration is blocked by module teardown, while missing actors, pawns, or
+  other engine objects keep their existing availability results. Async object
+  and save-game callbacks also distinguish registration failure from a missing
+  load result.
 - Clarified that `cancel_travel_request` suppresses and removes the completion
   callback after `OpenLevel` has been submitted; it does not stop the travel or
   restore old-world handles already invalidated by submission. The callback

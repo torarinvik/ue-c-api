@@ -404,10 +404,12 @@ gate is active. Consumers must stop submitting work and release their context
 before unloading the plugin; callbacks already pending at teardown are
 suppressed. Handle constructors also recheck the gate while registering world,
 actor, component, class, and object handles, so late callbacks cannot publish
-new live handles during teardown. Timer and native delegate registration also
-rolls back its engine-side binding if shutdown begins before the bridge registry
-entry is published. Asynchronous object-load and save-game requests perform the
-same gated registry insertion before dispatch.
+new live handles during teardown. If this gate rejects a handle registration,
+the handle-returning call reports `UEC_RESULT_SHUTTING_DOWN`; missing engine
+objects retain their operation-specific result. Timer and native delegate
+registration also rolls back its engine-side binding if shutdown begins before
+the bridge registry entry is published. Asynchronous object-load and save-game
+requests perform the same gated registry insertion before dispatch.
 
 The module also listens for Unreal world cleanup. External teardown, PIE
 restart, and non-bridge travel reuse the same timer, subscription, and

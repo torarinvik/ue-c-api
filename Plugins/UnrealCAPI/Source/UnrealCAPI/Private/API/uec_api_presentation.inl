@@ -19,7 +19,7 @@
         if (widgetClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         UUserWidget* widget = CreateWidget<UUserWidget>(controller, widgetClass);
         FUECObject* handle = MakeObjectHandle(widget);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outWidget = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -238,7 +238,7 @@
         if (child == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         FUECObject* childHandle = MakeObjectHandle(child);
         if (childHandle == nullptr) {
-            return IsShuttingDown() ? UEC_RESULT_SHUTTING_DOWN : UEC_RESULT_INTERNAL_ERROR;
+            return HandleCreationFailureResult();
         }
         *outChild = reinterpret_cast<uec_object*>(childHandle);
         return UEC_RESULT_OK;
@@ -391,7 +391,7 @@
         if (handle == nullptr)
         {
             audio->DestroyComponent();
-            return UEC_RESULT_INTERNAL_ERROR;
+            return HandleCreationFailureResult();
         }
         *outAudioComponent = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;

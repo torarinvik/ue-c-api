@@ -47,7 +47,7 @@
         if (handle == nullptr)
         {
             if (created) component->DestroyComponent();
-            return UEC_RESULT_INTERNAL_ERROR;
+            return HandleCreationFailureResult();
         }
         *outBridge = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;

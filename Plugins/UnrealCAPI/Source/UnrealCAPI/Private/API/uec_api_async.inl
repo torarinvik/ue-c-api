@@ -35,7 +35,7 @@
         UObject* object = LoadObject<UObject>(nullptr, *ToFString(objectPath));
         if (object == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         auto* handle = MakeObjectHandle(object);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outObject = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -53,7 +53,7 @@
         UObject* object = FindObject<UObject>(nullptr, *ToFString(objectPath));
         if (object == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         auto* handle = MakeObjectHandle(object);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outObject = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -178,10 +178,11 @@
                 if (handle == nullptr)
                 {
                     GObjectLoadRequests.Remove(current->Id);
+                    const uec_result failureResult = HandleCreationFailureResult();
                     if (!IsShuttingDown())
                     {
                         FUECCallbackScope callbackScope;
-                        current->Callback(current->Id, UEC_RESULT_INTERNAL_ERROR, nullptr,
+                        current->Callback(current->Id, failureResult, nullptr,
                                           current->UserData);
                     }
                     return;
@@ -238,7 +239,7 @@
         if (saveClass == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         USaveGame* saveGame = UGameplayStatics::CreateSaveGameObject(saveClass);
         FUECObject* handle = MakeObjectHandle(saveGame);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outSaveGame = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -283,7 +284,7 @@
         if (saveGame == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         if (!saveGame->IsA(saveClass)) return UEC_RESULT_INVALID_ARGUMENT;
         FUECObject* handle = MakeObjectHandle(saveGame);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outSaveGame = reinterpret_cast<uec_object*>(handle);
         return UEC_RESULT_OK;
     }
@@ -653,7 +654,10 @@
                         FUECObject* handle = MakeObjectHandle(saveGame);
                         if (handle != nullptr) objectHandle = reinterpret_cast<uec_object*>(handle);
                     }
-                    const bool success = saveGame != nullptr && objectHandle != nullptr;
+                    uec_result result = UEC_RESULT_OK;
+                    if (saveGame == nullptr) result = UEC_RESULT_NOT_INITIALIZED;
+                    else if (objectHandle == nullptr) result = HandleCreationFailureResult();
+                    const bool success = result == UEC_RESULT_OK;
                     GSaveGameRequests.Remove(current->Id);
                     if (IsShuttingDown())
                     {
@@ -667,7 +671,7 @@
                     }
                     FUECCallbackScope callbackScope;
                     current->Callback(current->Id,
-                                      success ? UEC_RESULT_OK : UEC_RESULT_NOT_INITIALIZED,
+                                      result,
                                       objectHandle,
                                       success ? UEC_TRUE : UEC_FALSE,
                                       current->UserData);

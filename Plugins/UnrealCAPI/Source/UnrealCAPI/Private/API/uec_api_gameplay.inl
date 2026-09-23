@@ -94,7 +94,7 @@
         UObject* object = objectHandle->Value.Get();
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
         FUECObject* retained = MakeRetainedObjectHandle(object);
-        if (retained == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (retained == nullptr) return HandleCreationFailureResult();
         *outRetainedObject = reinterpret_cast<uec_object*>(retained);
         return UEC_RESULT_OK;
     }

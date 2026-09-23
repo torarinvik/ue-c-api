@@ -50,7 +50,7 @@
         if (handle == nullptr)
         {
             actor->Destroy();
-            return UEC_RESULT_INTERNAL_ERROR;
+            return HandleCreationFailureResult();
         }
         *outActor = reinterpret_cast<uec_actor*>(handle);
         return UEC_RESULT_OK;
@@ -186,7 +186,7 @@
         USceneComponent* component = actor->GetRootComponent();
         if (component == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         auto* handle = MakeSceneComponentHandle(component);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outComponent = reinterpret_cast<uec_scene_component*>(handle);
         return UEC_RESULT_OK;
     }
@@ -224,7 +224,7 @@
         USceneComponent* component = components[static_cast<int32>(index)];
         if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
         auto* handle = MakeSceneComponentHandle(component);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outComponent = reinterpret_cast<uec_scene_component*>(handle);
         return UEC_RESULT_OK;
     }
@@ -277,7 +277,7 @@
             if (component == nullptr || !component->IsA(componentClass)) continue;
             if (current++ != index) continue;
             FUECSceneComponent* handle = MakeSceneComponentHandle(component);
-            if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            if (handle == nullptr) return HandleCreationFailureResult();
             *outComponent = reinterpret_cast<uec_scene_component*>(handle);
             return UEC_RESULT_OK;
         }
@@ -457,7 +457,7 @@
             if (!actor->IsA(actorClass)) continue;
             if (current++ != index) continue;
             FUECActor* handle = MakeActorHandle(actor);
-            if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+            if (handle == nullptr) return HandleCreationFailureResult();
             *outActor = reinterpret_cast<uec_actor*>(handle);
             return UEC_RESULT_OK;
         }
@@ -539,7 +539,7 @@
         AActor* start = gameMode->FindPlayerStart(controller, FString());
         if (start == nullptr) return UEC_RESULT_NOT_INITIALIZED;
         FUECActor* handle = MakeActorHandle(start);
-        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        if (handle == nullptr) return HandleCreationFailureResult();
         *outStart = reinterpret_cast<uec_actor*>(handle);
         return UEC_RESULT_OK;
     }

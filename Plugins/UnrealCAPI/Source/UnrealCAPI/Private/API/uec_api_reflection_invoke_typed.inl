@@ -727,7 +727,7 @@
                     MakeObjectHandle(objectValues[static_cast<int32>(index)]);
                 if (createdObjects[static_cast<int32>(index)] == nullptr) {
                     for (FUECObject* handle : createdObjects) DiscardInvocationObjectHandle(handle);
-                    return UEC_RESULT_INTERNAL_ERROR;
+                    return HandleCreationFailureResult();
                 }
             }
             if (outputKinds[static_cast<int32>(index)] == 3 &&
@@ -737,7 +737,7 @@
                 if (createdClasses[static_cast<int32>(index)] == nullptr) {
                     for (FUECObject* handle : createdObjects) DiscardInvocationObjectHandle(handle);
                     for (FUECClass* handle : createdClasses) DiscardInvocationClassHandle(handle);
-                    return UEC_RESULT_INTERNAL_ERROR;
+                    return HandleCreationFailureResult();
                 }
             }
         }
