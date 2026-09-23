@@ -325,7 +325,8 @@
         for (uint64 id : completedIds) GActorDestroyedSubscriptions.Remove(id);
         for (const TSharedPtr<FUECActorDestroyedSubscription>& subscription : completed)
         {
-            if (!subscription.IsValid() || subscription->Cancelled || subscription->Callback == nullptr) continue;
+            if (!subscription.IsValid() || subscription->Cancelled ||
+                subscription->Callback == nullptr || IsShuttingDown()) continue;
             subscription->InCallback = true; FUECCallbackScope callbackScope;
             subscription->Callback(subscription->Id, subscription->UserData);
             subscription->InCallback = false; subscription->Cancelled = true;

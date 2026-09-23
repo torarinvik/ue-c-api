@@ -155,6 +155,15 @@
             } else {
                 rawWorld = reinterpret_cast<uec_world*>(worldHandle);
             }
+            if (IsShuttingDown())
+            {
+                if (worldHandle != nullptr)
+                {
+                    TombstoneHandle(worldHandle->Header);
+                    worldHandle->Value.Reset();
+                }
+                continue;
+            }
             FUECCallbackScope callbackScope;
             request->Callback(request->Id, result, rawWorld, request->UserData);
         }

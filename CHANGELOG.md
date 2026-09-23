@@ -15,6 +15,9 @@ development; they do not imply a published or runtime-verified release.
   underlying Unreal object expires; the host smoke exercises this with an
   actor destroyed through reflected Unreal behavior. The event callback smoke
   also checks that in-flight callbacks appear in `active_callbacks`.
+- Actor-destroyed and post-load travel callbacks now recheck the shutdown gate
+  before entering consumer code; a travel world handle created during a gate
+  race is tombstoned instead of being delivered or left live.
 
 ### Added
 
