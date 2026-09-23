@@ -24,7 +24,8 @@ context handling, stale actor and bridge handle rejection, and pending request
 counts. After latent invocation, the packaged host submits 1152 game-thread
 callbacks concurrently and verifies that exactly 1024 are admitted, the rest
 report queue-full with cleared request ids, accepted ids are unique, callbacks
-observe in-flight accounting, and all requests drain. It then runs the
+observe in-flight accounting, 128 cancellations suppress their callbacks, and
+all remaining requests drain. It then runs the
 documented C gameplay example through three timer-driven actor moves and
 validates each event-bridge callback. A travel probe reloads the configured
 OpenWorld map and checks immediate old-world handle invalidation, post-load
@@ -41,7 +42,7 @@ and enforces the 400–800 line budget for private implementation units and the
 tracked primary C host smoke translation unit. Focused probes under
 `Source/UnrealCAPIHost/Private/Tests/` are test fixtures and stay small by
 design. The queue fixture checks concurrent admission, output clearing, unique
-request ids, callback reentrancy, and drainage. The event-bridge fixture
+request ids, cancellation suppression, callback reentrancy, and drainage. The event-bridge fixture
 queries runtime statistics from inside event and actor-destroyed callbacks to
 verify `active_callbacks` includes in-flight
 code and subscription counts drain; the travel callback checks the same counter

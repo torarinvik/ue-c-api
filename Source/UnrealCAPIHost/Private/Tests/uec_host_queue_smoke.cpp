@@ -10,11 +10,17 @@ namespace
 {
     constexpr int32 QueueCapacity = 1024;
     constexpr int32 ExtraSubmissions = 128;
+    constexpr uint32 CancellationBatch = 128;
+
+    struct FQueueSmokeState;
 
     struct FQueueSubmission
     {
+        FQueueSmokeState* Owner = nullptr;
         uec_result Result = UEC_RESULT_INTERNAL_ERROR;
         uint64 RequestId = 42;
+        bool Cancelled = false;
+        bool CallbackExecuted = false;
     };
 
     struct FQueueSmokeState
@@ -27,6 +33,8 @@ namespace
         uec_result Result = UEC_RESULT_NOT_INITIALIZED;
         uint32 AcceptedCount = 0;
         uint32 RejectedCount = 0;
+        uint32 CancelledCount = 0;
+        uint32 ExpectedCallbackCount = 0;
         uint32 CallbackCount = 0;
         bool CallbackStatsValid = true;
         bool Started = false;
@@ -85,8 +93,11 @@ namespace
 
     void UEC_CALL CountQueuedCallback(void* userData)
     {
-        auto* state = static_cast<FQueueSmokeState*>(userData);
+        auto* submission = static_cast<FQueueSubmission*>(userData);
+        if (submission == nullptr || submission->Owner == nullptr) return;
+        FQueueSmokeState* state = submission->Owner;
         if (state == nullptr || state->Complete) return;
+        submission->CallbackExecuted = true;
         ++state->CallbackCount;
         uec_runtime_stats observed{};
         observed.struct_size = sizeof(observed);
@@ -95,7 +106,8 @@ namespace
             state->Api->get_runtime_stats(state->Context, &observed) != UEC_RESULT_OK ||
             state->Baseline.active_callbacks == UINT32_MAX ||
             observed.active_callbacks != state->Baseline.active_callbacks + 1u ||
-            observed.live_contexts != state->Baseline.live_contexts) {
+            observed.live_contexts != state->Baseline.live_contexts ||
+            submission->Cancelled) {
             state->CallbackStatsValid = false;
         }
     }
@@ -143,9 +155,10 @@ extern "C" uec_result UEC_CALL uec_host_queue_smoke_start(void)
         ParallelFor(state.Submissions.Num(), [&state](int32 index)
         {
             FQueueSubmission& submission = state.Submissions[index];
+            submission.Owner = &state;
             submission.RequestId = 42;
             submission.Result = state.Api->run_on_game_thread(
-                state.Context, &CountQueuedCallback, &state, &submission.RequestId);
+                state.Context, &CountQueuedCallback, &submission, &submission.RequestId);
         });
         submissionsComplete->Trigger();
     });
@@ -154,7 +167,7 @@ extern "C" uec_result UEC_CALL uec_host_queue_smoke_start(void)
     FPlatformProcess::ReturnSynchEventToPool(submissionsComplete);
 
     state.AcceptedIds.Reserve(QueueCapacity);
-    for (const FQueueSubmission& submission : state.Submissions) {
+    for (FQueueSubmission& submission : state.Submissions) {
         if (submission.Result == UEC_RESULT_OK) {
             if (submission.RequestId == 0u) {
                 result = UEC_RESULT_INTERNAL_ERROR;
@@ -187,13 +200,35 @@ extern "C" uec_result UEC_CALL uec_host_queue_smoke_start(void)
         result = UEC_RESULT_INTERNAL_ERROR;
     }
 
+    for (FQueueSubmission& submission : state.Submissions) {
+        if (result != UEC_RESULT_OK || submission.Result != UEC_RESULT_OK ||
+            state.CancelledCount == CancellationBatch) {
+            continue;
+        }
+        const uec_result cancelResult = state.Api->cancel_game_thread_request(
+            state.Context, submission.RequestId);
+        if (cancelResult != UEC_RESULT_OK) {
+            result = cancelResult;
+            break;
+        }
+        submission.Cancelled = true;
+        ++state.CancelledCount;
+    }
+    if (result == UEC_RESULT_OK && state.CancelledCount != CancellationBatch) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    state.ExpectedCallbackCount = state.AcceptedCount - state.CancelledCount;
+    if (result == UEC_RESULT_OK && state.CallbackCount != 0u) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+
     uec_runtime_stats observed{};
     observed.struct_size = sizeof(observed);
     if (result == UEC_RESULT_OK) {
         result = state.Api->get_runtime_stats(state.Context, &observed);
         if (result == UEC_RESULT_OK &&
             observed.pending_requests != state.Baseline.pending_requests +
-                static_cast<uint32>(QueueCapacity)) {
+                state.ExpectedCallbackCount) {
             result = UEC_RESULT_INTERNAL_ERROR;
         }
     }
@@ -208,10 +243,20 @@ extern "C" uec_bool UEC_CALL uec_host_queue_smoke_poll(uec_result* outResult)
 {
     if (outResult == nullptr) return UEC_FALSE;
     FQueueSmokeState& state = GQueueSmokeState;
-    if (!state.Complete && state.CallbackCount == state.AcceptedCount) {
-        const bool valid = state.CallbackStatsValid &&
+    if (!state.Complete && state.CallbackCount >= state.ExpectedCallbackCount) {
+        bool callbacksMatchExpectedSubmissions = true;
+        for (const FQueueSubmission& submission : state.Submissions) {
+            if (submission.Result == UEC_RESULT_OK &&
+                submission.Cancelled == submission.CallbackExecuted) {
+                callbacksMatchExpectedSubmissions = false;
+                break;
+            }
+        }
+        const bool valid = state.CallbackCount == state.ExpectedCallbackCount &&
+            callbacksMatchExpectedSubmissions && state.CallbackStatsValid &&
             state.AcceptedCount == static_cast<uint32>(QueueCapacity) &&
             state.RejectedCount == static_cast<uint32>(ExtraSubmissions) &&
+            state.CancelledCount == CancellationBatch &&
             HasRuntimeStatsReturnedToBaseline(state);
         FinishQueueSmoke(state,
                          valid ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR,

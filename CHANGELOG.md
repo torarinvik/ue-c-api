@@ -38,7 +38,8 @@ development; they do not imply a published or runtime-verified release.
   delivery, request drainage, and release of the callback's new world handle.
 - The packaged Development host now submits 1152 game-thread callbacks from
   worker tasks, verifies the 1024-request queue limit and queue-full outputs,
-  checks unique request ids and callback accounting, and waits for full drainage.
+  cancels 128 requests before dispatch, checks suppression and unique request
+  ids plus callback accounting, and waits for full drainage.
 - The C gameplay example now has a public example header, a game-thread cancel
   entry point, and a packaged-host smoke that runs its timer, actor movement,
   synchronous event callback, and handle cleanup flow.
