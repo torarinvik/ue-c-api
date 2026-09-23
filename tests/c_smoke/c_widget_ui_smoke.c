@@ -1,5 +1,7 @@
 #include "c_widget_ui.h"
 
+#include <stddef.h>
+
 static int gLookupCalls;
 static int gSetCalls;
 static int gReleaseCalls;
@@ -62,6 +64,7 @@ int uec_widget_ui_smoke_test(void)
     const uec_string_view nameView = {childName, sizeof(childName) - 1u};
     const uec_string_view textView = {text, sizeof(text) - 1u};
     uec_api api = {0};
+    api.struct_size = (uint32_t)sizeof(api);
     api.get_widget_child = &MockGetWidgetChild;
     api.set_text_block_text = &MockSetTextBlockText;
     api.release_object = &MockReleaseObject;
@@ -93,9 +96,16 @@ int uec_widget_ui_smoke_test(void)
         gSetCalls != 0 || gReleaseCalls != 0) return 4;
 
     ResetMocks();
-    api.release_object = NULL;
+    api.struct_size = (uint32_t)offsetof(uec_api, get_widget_child);
     if (uec_widget_set_text_child(&api, gExpectedWidget, nameView, textView) !=
             UEC_RESULT_UNSUPPORTED || gLookupCalls != 0 || gSetCalls != 0 ||
         gReleaseCalls != 0) return 5;
+
+    ResetMocks();
+    api.struct_size = (uint32_t)sizeof(api);
+    api.release_object = NULL;
+    if (uec_widget_set_text_child(&api, gExpectedWidget, nameView, textView) !=
+            UEC_RESULT_UNSUPPORTED || gLookupCalls != 0 || gSetCalls != 0 ||
+        gReleaseCalls != 0) return 6;
     return 0;
 }

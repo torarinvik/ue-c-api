@@ -1,11 +1,17 @@
 #include "c_widget_ui.h"
 
+#include <stddef.h>
+
 uec_result UEC_CALL uec_widget_set_text_child(const uec_api* api,
                                               uec_object* user_widget,
                                               uec_string_view child_name,
                                               uec_string_view text)
 {
     if (api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, get_widget_child) +
+                               sizeof(api->get_widget_child)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
     if (api->get_widget_child == NULL || api->set_text_block_text == NULL ||
         api->release_object == NULL) {
         return UEC_RESULT_UNSUPPORTED;
