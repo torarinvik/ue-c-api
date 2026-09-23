@@ -17,7 +17,7 @@ namespace
         uec_object* SaveObject = nullptr;
         FString SlotName;
         uec_runtime_stats Baseline{};
-        uint64 RequestId = 0;
+        uint64_t RequestId = 0;
         ESaveSmokeStage Stage = ESaveSmokeStage::Saving;
         uec_result Result = UEC_RESULT_NOT_INITIALIZED;
         bool Started = false;
@@ -26,7 +26,7 @@ namespace
 
     FAsyncSaveSmokeState GAsyncSaveSmokeState;
 
-    void UEC_CALL OnAsyncSaveSmokeComplete(uint64 requestId,
+    void UEC_CALL OnAsyncSaveSmokeComplete(uint64_t requestId,
                                           uec_result result,
                                           uec_object* saveGame,
                                           uec_bool success,
@@ -97,7 +97,7 @@ namespace
         }
     }
 
-    void UEC_CALL OnAsyncSaveSmokeComplete(uint64 requestId,
+    void UEC_CALL OnAsyncSaveSmokeComplete(uint64_t requestId,
                                           uec_result result,
                                           uec_object* saveGame,
                                           uec_bool success,

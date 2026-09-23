@@ -58,8 +58,9 @@ development; they do not imply a published or runtime-verified release.
   target while preserving the host-platform default.
 - The Unreal build gate now launches same-platform Development packages and
   requires the host C bootstrap, event-bridge, latent-call, concurrent queue,
-  asynchronous save/load, gameplay-example, and travel smoke checks to
-  complete; Shipping and cross-platform runs remain package-only.
+  asynchronous save/load, asynchronous object-load, gameplay-example, and
+  travel smoke checks to complete; Shipping and cross-platform runs remain
+  package-only.
 - `get_last_error` now preserves the diagnostic during a null-buffer size query,
   so a single correctly sized retry returns the original message.
 - The Unreal-host C ABI smoke checks early rejection of undeclared collision-

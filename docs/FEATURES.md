@@ -49,7 +49,7 @@ that can run without the Unreal Engine 5.8.3 toolchain in this repository.
 | Audio completion subscriptions | Runtime implemented / Unreal integration pending | One-shot native finished callbacks with unsubscribe tokens and component-destruction cleanup |
 | C gameplay example | Portable source/header verified / packaged Unreal run pending | Spawn, timer-driven movement, synchronous event-bridge callback, and actor/component/handle cleanup flow |
 | Synchronous object loading and lookup | Runtime implemented / Unreal integration pending | Non-loading full-path lookup plus weak path-loaded UObject handles, names, full object paths, class paths, and type checks |
-| Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, game-thread callbacks, and a 1024-request bound |
+| Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, game-thread callbacks, and a 1024-request bound; packaged host resolves the native Engine `Actor` class and checks callback accounting and handle release |
 | Level travel | Runtime implemented / Unreal integration pending | Map name queries, immediate and callback-based game-thread `OpenLevel` requests, cancellation of completion callbacks, world-owned timer/tick and actor-scoped subscription cancellation, and invalidation of old-world handles |
 | Player flow | Runtime implemented / Unreal integration pending | Indexed local controller lookup, player-start lookup, world game-instance, game-mode, and game-state access, possession, and view-target selection |
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |

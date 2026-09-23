@@ -29,9 +29,11 @@ When Unreal Engine is installed locally, `UE_ROOT=/path/to/UnrealEngine sh
 tests/run_unreal_build.sh` compiles, cooks, stages, and packages the host project.
 For a same-platform Development build, it launches the packaged host and waits
 for the C bootstrap, event-bridge, latent-call, concurrent and cancellable
-game-thread queue, asynchronous save/load, gameplay-example, and world-travel
-smoke checks. The save/load check verifies callback accounting and removes its
-temporary save slot.
+game-thread queue, asynchronous save/load, asynchronous object load,
+gameplay-example, and world-travel smoke checks. The persistence check verifies
+callback accounting and removes its temporary save slot; the object-load check
+resolves the native `Actor` class and verifies the returned path and handle
+accounting.
 Set `UEC_UNREAL_CONFIGURATION=Shipping` for a Shipping package; runtime smoke is
 limited to Development builds.
 
