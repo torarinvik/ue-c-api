@@ -46,3 +46,24 @@ jobs:
           CXX: ${{ matrix.cxx }}
           UEC_SANITIZE: "1"
         run: sh tests/run_checks.sh
+
+  windows-abi:
+    name: Windows x64 C ABI exports and imports
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install MinGW-w64 cross compilers
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes \
+            binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
+      - name: Build and inspect the Windows C ABI DLL and consumers
+        env:
+          MINGW_CC: x86_64-w64-mingw32-gcc
+          MINGW_CXX: x86_64-w64-mingw32-g++
+          MINGW_OBJDUMP: x86_64-w64-mingw32-objdump
+        run: sh tests/run_windows_abi_checks.sh

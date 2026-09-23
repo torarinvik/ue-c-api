@@ -211,7 +211,8 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         goto cleanup;
     }
     const uec_collision_shape invalidShape = {
-        sizeof(uec_collision_shape), (uec_collision_shape_kind)99, 0u, 0.0, {0}, 0.0};
+        sizeof(uec_collision_shape), (uec_collision_shape_kind)99, 0u, 0.0,
+        {0.0, 0.0, 0.0}, 0.0};
     invalidHit.blocking_hit = UEC_TRUE;
     invalidHit.distance = 1.0;
     if (api->sweep_trace(world, (uec_vector3){0}, (uec_vector3){0}, &invalidShape,

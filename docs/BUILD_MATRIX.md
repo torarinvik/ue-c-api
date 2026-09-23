@@ -60,6 +60,12 @@ the CI matrix also repeats those linked consumers with AddressSanitizer and
 UndefinedBehaviorSanitizer. These checks do not compile the Unreal module or
 run PIE.
 
+The separate Windows x64 ABI job cross-compiles the host stub as a DLL,
+verifies that `uec_get_api` is exported, and links the current C smoke consumer
+and an older C++ consumer against the DLL import library. This exercises
+Windows C/C++ header layout and DLL import/export behavior; it does not count
+as an Unreal plugin build or declare a Windows engine target supported.
+
 With an installed engine, run `UE_ROOT=/path/to/UnrealEngine
 sh tests/run_unreal_build.sh` to compile, cook, stage, and package the minimal
 host project for the current platform. A same-platform Development build then
