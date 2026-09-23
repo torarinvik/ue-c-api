@@ -106,9 +106,10 @@
     static bool TravelPathMatches(const FString& requestedPath, UWorld* world)
     {
         if (world == nullptr) return false;
-        const FString mapName = world->GetMapName();
+        const FString mapName = UWorld::RemovePIEPrefix(world->GetMapName());
         const UPackage* package = world->GetOutermost();
-        const FString packageName = package == nullptr ? FString() : package->GetName();
+        const FString packageName = package == nullptr
+            ? FString() : UWorld::RemovePIEPrefix(package->GetName());
         return requestedPath == mapName || requestedPath == packageName ||
             (!packageName.IsEmpty() && requestedPath.StartsWith(packageName + TEXT(".")));
     }

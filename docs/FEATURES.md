@@ -1,8 +1,8 @@
 # Feature matrix
 
 This matrix describes the current implementation against the roadmap. “Runtime
-implemented” means code exists in the plugin; “verified” is limited to checks
-that can run without the Unreal Engine 5.8.3 toolchain in this repository.
+implemented” means code exists in the plugin; verification reflects only the
+checks explicitly recorded for each feature in the Unreal build matrix.
 
 | Area | Status | Current boundary |
 | --- | --- | --- |
@@ -47,10 +47,10 @@ that can run without the Unreal Engine 5.8.3 toolchain in this repository.
 | Asset path queries | Runtime implemented / Unreal integration pending | Check whether soft object and class paths currently resolve in memory |
 | Attached audio playback | Runtime implemented / Unreal integration pending | Spawn, stop, playing-state readback, destroy, and release non-auto-destroying audio components on scene components |
 | Audio completion subscriptions | Runtime implemented / Unreal integration pending | One-shot native finished callbacks with unsubscribe tokens and component-destruction cleanup |
-| C gameplay example | Portable source/header verified / packaged Unreal run pending | Spawn, timer-driven movement, synchronous event-bridge callback, and actor/component/handle cleanup flow |
+| C gameplay example | Packaged Development and Editor PIE smoke verified | Spawn, timer-driven movement, synchronous event-bridge callback, and actor/component/handle cleanup flow |
 | Synchronous object loading and lookup | Runtime implemented / Unreal integration pending | Non-loading full-path lookup plus weak path-loaded UObject handles, names, full object paths, class paths, and type checks |
 | Asynchronous object loading | Runtime implemented / Unreal integration pending | Streamable-manager requests, cancellation, game-thread callbacks, and a 1024-request bound; packaged host checks cancellation drainage and callback suppression, reports failure for a GUID-named missing asset, and completes a native `Actor` load with path, callback, and handle accounting |
-| Level travel | Runtime implemented / Unreal integration pending | Map name queries, immediate and callback-based game-thread `OpenLevel` requests, cancellation of completion callbacks, world-owned timer/tick and actor-scoped subscription cancellation, and invalidation of old-world handles |
+| Level travel | Packaged Development and Editor PIE smoke verified | Map name queries, immediate and callback-based game-thread `OpenLevel` requests, cancellation of completion callbacks, PIE-prefixed destination matching, world-owned timer/tick and actor-scoped subscription cancellation, and invalidation of old-world handles |
 | Player flow | Runtime implemented / Unreal integration pending | Indexed local controller lookup, player-start lookup, world game-instance, game-mode, and game-state access, possession, and view-target selection |
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |
 | Basic physics | Runtime implemented / Unreal integration pending | Finite-validated actor and primitive-component linear/angular velocity, impulse, force, torque, and angular-impulse operations on simulating primitive roots |
@@ -60,5 +60,6 @@ that can run without the Unreal Engine 5.8.3 toolchain in this repository.
 | Multiplayer and replication | Partial | Network-mode and authority queries plus authority-gated actor, possession, transform, and physics mutators; replication/RPC adapters remain planned |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
 
-The Unreal-dependent statuses require an actual UE 5.8.3 build, PIE run, and
-packaged Development run before they can become verified release features.
+The shared host smoke now runs in a UE 5.8.3 Editor PIE world and a packaged
+Development build. Those runs verify only the operations the smoke exercises;
+other Unreal-dependent features still need focused probes before release.

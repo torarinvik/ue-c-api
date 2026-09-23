@@ -5,6 +5,12 @@ development; they do not imply a published or runtime-verified release.
 
 ## Unreleased
 
+### Fixed
+
+- Callback-based level travel now matches PIE-prefixed destination package names
+  after Unreal loads the new world, so the travel completion callback is
+  delivered in Editor PIE as well as packaged Development.
+
 ### Changed
 
 - Collision trace filters and overlap outputs now enforce the public
