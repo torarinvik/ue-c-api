@@ -251,7 +251,7 @@ int main(void)
     }
     uec_property_value invocation_result = {sizeof(invocation_result), UEC_PROPERTY_UNKNOWN,
                                             UEC_FALSE, {0u, 0u, 0u}, 0, 0.0};
-    const uec_string_view empty_function_name = {NULL, 0u};
+    const uec_string_view empty_function_name = {NULL, 0u}; const uec_string_view null_data_widget_name = {NULL, 1u};
     result = api->invoke_actor_function_value(NULL, empty_function_name, NULL, 0,
                                               &invocation_result);
     if (result != UEC_RESULT_UNSUPPORTED || invocation_result.kind != UEC_PROPERTY_UNKNOWN)
@@ -361,7 +361,7 @@ int main(void)
     if (api->get_widget_visibility(NULL, &widget_visibility) != UEC_RESULT_UNSUPPORTED ||
         widget_visibility != UEC_WIDGET_VISIBLE ||
         api->set_widget_visibility(NULL, (uec_widget_visibility)99) != UEC_RESULT_INVALID_ARGUMENT ||
-        api->set_widget_visibility(NULL, UEC_WIDGET_SELF_HIT_TEST_INVISIBLE) != UEC_RESULT_INVALID_HANDLE || api->get_widget_child(NULL, latent_function, &event_bridge) != UEC_RESULT_INVALID_HANDLE || event_bridge != NULL || api->get_widget_child(NULL, latent_function, NULL) != UEC_RESULT_INVALID_ARGUMENT || api->get_widget_child(NULL, empty_function_name, &event_bridge) != UEC_RESULT_INVALID_ARGUMENT || event_bridge != NULL || uec_widget_set_text_child(api, NULL, latent_function, latent_function) != UEC_RESULT_INVALID_HANDLE ||
+        api->set_widget_visibility(NULL, UEC_WIDGET_SELF_HIT_TEST_INVISIBLE) != UEC_RESULT_INVALID_HANDLE || api->get_widget_child(NULL, latent_function, &event_bridge) != UEC_RESULT_INVALID_HANDLE || event_bridge != NULL || api->get_widget_child(NULL, latent_function, NULL) != UEC_RESULT_INVALID_ARGUMENT || api->get_widget_child(NULL, empty_function_name, &event_bridge) != UEC_RESULT_INVALID_ARGUMENT || event_bridge != NULL || api->get_widget_child(NULL, null_data_widget_name, &event_bridge) != UEC_RESULT_INVALID_ARGUMENT || event_bridge != NULL || uec_widget_set_text_child(api, NULL, latent_function, latent_function) != UEC_RESULT_INVALID_HANDLE ||
         api->get_widget_enabled(NULL, &widget_enabled) != UEC_RESULT_INVALID_HANDLE || widget_enabled != UEC_FALSE ||
         api->get_widget_enabled(NULL, NULL) != UEC_RESULT_INVALID_ARGUMENT || api->get_checkbox_state(NULL, NULL) != UEC_RESULT_INVALID_ARGUMENT ||
         api->set_widget_enabled(NULL, (uec_bool)2u) != UEC_RESULT_INVALID_ARGUMENT || api->set_checkbox_state(NULL, (uec_checkbox_state)99) != UEC_RESULT_INVALID_ARGUMENT ||

@@ -16,6 +16,7 @@ static uec_result CheckWidgetChildValidation(const uec_api* api, uec_context* co
     const uec_string_view childName = {childNameData, sizeof(childNameData) - 1u};
     const uec_string_view embeddedNulName = {embeddedNulData, sizeof(embeddedNulData)};
     const uec_string_view emptyName = {NULL, 0u};
+    const uec_string_view nullDataName = {NULL, 1u};
     uec_object* child = (uec_object*)context;
 
     if (api->get_widget_child(NULL, childName, &child) != UEC_RESULT_INVALID_HANDLE ||
@@ -25,6 +26,9 @@ static uec_result CheckWidgetChildValidation(const uec_api* api, uec_context* co
             UEC_RESULT_INVALID_ARGUMENT || child != NULL) return UEC_RESULT_INTERNAL_ERROR;
     child = (uec_object*)context;
     if (api->get_widget_child(NULL, emptyName, &child) != UEC_RESULT_INVALID_ARGUMENT ||
+        child != NULL) return UEC_RESULT_INTERNAL_ERROR;
+    child = (uec_object*)context;
+    if (api->get_widget_child(NULL, nullDataName, &child) != UEC_RESULT_INVALID_ARGUMENT ||
         child != NULL || api->get_widget_child(NULL, childName, NULL) !=
             UEC_RESULT_INVALID_ARGUMENT) return UEC_RESULT_INTERNAL_ERROR;
     return UEC_RESULT_OK;
