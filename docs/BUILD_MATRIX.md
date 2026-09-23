@@ -6,8 +6,8 @@ build, launch, and exercise the C smoke path.
 
 | Engine | Host platform | Compiler/toolchain | C consumer | Plugin/host status |
 | --- | --- | --- | --- | --- |
-| UE 5.7.4 installed distribution | macOS arm64 local workstation | Unreal Build Tool target discovery | C11/C++17 linked host-stub smoke verified | Plugin discovery and tracked host targets verified; build unavailable because the distribution does not support the requested Mac/Win64 target platforms |
-| UE 5.8.3 target (engine unavailable) | macOS 27 arm64 local workstation | Apple Clang 21.0.0; Python 3.9.6 | C11/C++17 linked host-stub smoke verified | Unreal build pending (`UE_ROOT` unavailable) |
+| UE 5.7.4 installed distribution | macOS arm64 local workstation | Unreal Build Tool 5.7.4 | C11/C++17 linked host-stub smoke verified | Compatibility build attempted with `UEC_ALLOW_ENGINE_MISMATCH=1`; UBT rejected Mac as an invalid target because this distribution lacks Mac platform support files. The engine is also below the UE 5.8.3 target. |
+| UE 5.8.3 target (engine unavailable) | macOS 27 arm64 local workstation | Apple Clang 21.0.0; Python 3.9.6 | C11/C++17 linked host-stub smoke verified | Unreal build pending; `UE_ROOT` is unset and no 5.8.3 installation is available |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 

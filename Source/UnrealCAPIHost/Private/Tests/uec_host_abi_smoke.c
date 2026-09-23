@@ -9,6 +9,27 @@ static void UEC_CALL IgnoreInputActionCallback(uint64_t bindingId,
     (void)bindingId; (void)value; (void)userData;
 }
 
+static uec_result CheckWidgetChildValidation(const uec_api* api, uec_context* context)
+{
+    const char childNameData[] = "Missing";
+    const char embeddedNulData[] = {'A', '\0', 'B'};
+    const uec_string_view childName = {childNameData, sizeof(childNameData) - 1u};
+    const uec_string_view embeddedNulName = {embeddedNulData, sizeof(embeddedNulData)};
+    const uec_string_view emptyName = {NULL, 0u};
+    uec_object* child = (uec_object*)context;
+
+    if (api->get_widget_child(NULL, childName, &child) != UEC_RESULT_INVALID_HANDLE ||
+        child != NULL) return UEC_RESULT_INTERNAL_ERROR;
+    child = (uec_object*)context;
+    if (api->get_widget_child(NULL, embeddedNulName, &child) !=
+            UEC_RESULT_INVALID_ARGUMENT || child != NULL) return UEC_RESULT_INTERNAL_ERROR;
+    child = (uec_object*)context;
+    if (api->get_widget_child(NULL, emptyName, &child) != UEC_RESULT_INVALID_ARGUMENT ||
+        child != NULL || api->get_widget_child(NULL, childName, NULL) !=
+            UEC_RESULT_INVALID_ARGUMENT) return UEC_RESULT_INTERNAL_ERROR;
+    return UEC_RESULT_OK;
+}
+
 uec_result UEC_CALL uec_host_smoke_bootstrap(void)
 {
     const uec_api* api = NULL;
@@ -43,9 +64,6 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
     invalidInputValue.struct_size = sizeof(invalidInputValue);
     invalidInputValue.kind = (uec_input_action_value_kind)99;
     uec_checkbox_state invalidCheckboxState = UEC_CHECKBOX_CHECKED;
-    uec_object* invalidWidgetChild = (uec_object*)context;
-    const char childNameData[] = "Missing";
-    const uec_string_view childName = {childNameData, sizeof(childNameData) - 1u};
     if (result == UEC_RESULT_OK &&
         (api->get_world_count_by_kind(context, (uec_world_kind)99, &invalidWorldKindCount) !=
              UEC_RESULT_INVALID_ARGUMENT || invalidWorldKindCount != 0u ||
@@ -63,8 +81,7 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
          api->get_checkbox_state(NULL, &invalidCheckboxState) != UEC_RESULT_INVALID_HANDLE ||
          invalidCheckboxState != UEC_CHECKBOX_UNCHECKED ||
          api->set_checkbox_state(NULL, (uec_checkbox_state)99) != UEC_RESULT_INVALID_ARGUMENT ||
-         api->get_widget_child(NULL, childName, &invalidWidgetChild) != UEC_RESULT_INVALID_HANDLE ||
-         invalidWidgetChild != NULL ||
+         CheckWidgetChildValidation(api, context) != UEC_RESULT_OK ||
          api->set_component_collision_enabled(NULL, (uec_collision_enabled)99) !=
              UEC_RESULT_INVALID_ARGUMENT ||
          api->bind_input_action(NULL, NULL, (uec_input_trigger_event)99,
