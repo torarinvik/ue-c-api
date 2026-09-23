@@ -245,15 +245,6 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
-    result = api->release_scene_component(component);
-    if (result != UEC_RESULT_OK) goto cleanup;
-    component = NULL;
-    result = api->get_runtime_stats(context, &observedStats);
-    if (result != UEC_RESULT_OK ||
-        observedStats.live_components != baselineStats.live_components) {
-        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
-    }
     result = api->find_class(context, classPath, &klass);
     if (result != UEC_RESULT_OK || klass == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
@@ -354,6 +345,15 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
     actor = NULL;
     if (api->destroy_actor(destroyedActor) != UEC_RESULT_INVALID_HANDLE) {
         result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->release_scene_component(component);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    component = NULL;
+    result = api->get_runtime_stats(context, &observedStats);
+    if (result != UEC_RESULT_OK ||
+        observedStats.live_components != baselineStats.live_components) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
     result = api->spawn_actor(world, classPath, &initialTransform, &observedDestroyedActor);
