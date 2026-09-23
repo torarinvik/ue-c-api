@@ -24,6 +24,7 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
         api->get_capabilities == NULL || api->get_world_count_by_kind == NULL ||
         api->get_world_at_by_kind == NULL || api->log == NULL || api->set_widget_visibility == NULL ||
         api->get_checkbox_state == NULL || api->set_checkbox_state == NULL ||
+        api->get_widget_child == NULL ||
         api->set_component_collision_enabled == NULL ||
         api->set_component_collision_channel_response == NULL || api->bind_input_action == NULL ||
         api->inject_input_action_value == NULL) {
@@ -42,6 +43,9 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
     invalidInputValue.struct_size = sizeof(invalidInputValue);
     invalidInputValue.kind = (uec_input_action_value_kind)99;
     uec_checkbox_state invalidCheckboxState = UEC_CHECKBOX_CHECKED;
+    uec_object* invalidWidgetChild = (uec_object*)context;
+    const char childNameData[] = "Missing";
+    const uec_string_view childName = {childNameData, sizeof(childNameData) - 1u};
     if (result == UEC_RESULT_OK &&
         (api->get_world_count_by_kind(context, (uec_world_kind)99, &invalidWorldKindCount) !=
              UEC_RESULT_INVALID_ARGUMENT || invalidWorldKindCount != 0u ||
@@ -59,6 +63,8 @@ uec_result UEC_CALL uec_host_smoke_bootstrap(void)
          api->get_checkbox_state(NULL, &invalidCheckboxState) != UEC_RESULT_INVALID_HANDLE ||
          invalidCheckboxState != UEC_CHECKBOX_UNCHECKED ||
          api->set_checkbox_state(NULL, (uec_checkbox_state)99) != UEC_RESULT_INVALID_ARGUMENT ||
+         api->get_widget_child(NULL, childName, &invalidWidgetChild) != UEC_RESULT_INVALID_HANDLE ||
+         invalidWidgetChild != NULL ||
          api->set_component_collision_enabled(NULL, (uec_collision_enabled)99) !=
              UEC_RESULT_INVALID_ARGUMENT ||
          api->bind_input_action(NULL, NULL, (uec_input_trigger_event)99,

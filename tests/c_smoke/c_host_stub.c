@@ -52,4 +52,16 @@ static uec_result UEC_CALL StubSetCheckBoxState(uec_object* checkBox,
     return checkBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetWidgetChild(uec_object* userWidget,
+                                              uec_string_view childName,
+                                              uec_object** outChild)
+{
+    if (outChild != NULL) *outChild = NULL;
+    if (outChild == NULL || childName.data == NULL || childName.size == 0u ||
+        memchr(childName.data, '\0', childName.size) != NULL) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    return userWidget == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 #include "c_host_stub_reflection.inl"

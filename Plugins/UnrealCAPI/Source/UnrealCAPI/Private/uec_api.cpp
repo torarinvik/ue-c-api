@@ -380,7 +380,7 @@ namespace
         &GetControllerEnhancedInputSubsystem, &SetComponentCollisionChannelResponse,
         &GetProgressBarPercent, &SetProgressBarPercent,
         &GetWidgetEnabled, &SetWidgetEnabled,
-        &GetCheckBoxState, &SetCheckBoxState
+        &GetCheckBoxState, &SetCheckBoxState, &GetWidgetChild
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

@@ -270,6 +270,10 @@ ABI minor 141 adds `get_checkbox_state` and `set_checkbox_state` for
 `UCheckBox` widgets. Their `uec_checkbox_state` enum preserves unchecked,
 checked, and indeterminate values. The getter initializes its output to
 unchecked before validation; both calls require the game thread.
+ABI minor 142 adds `get_widget_child` to obtain a weak handle to a named child
+of a `UUserWidget`. Use that handle with the type-specific widget operations,
+and release it like any other object handle. A child absent from the current
+widget tree returns `UEC_RESULT_NOT_INITIALIZED`.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

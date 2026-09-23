@@ -81,7 +81,7 @@ int main(void)
         api->load_versioned_application_data == NULL ||
         api->get_controller_enhanced_input_subsystem == NULL ||
         api->set_component_collision_channel_response == NULL ||
-        api->get_progress_bar_percent == NULL || api->set_progress_bar_percent == NULL || api->get_widget_enabled == NULL || api->set_widget_enabled == NULL || api->get_checkbox_state == NULL || api->set_checkbox_state == NULL ||
+        api->get_progress_bar_percent == NULL || api->set_progress_bar_percent == NULL || api->get_widget_enabled == NULL || api->set_widget_enabled == NULL || api->get_checkbox_state == NULL || api->set_checkbox_state == NULL || api->get_widget_child == NULL ||
         api->get_or_create_actor_event_bridge == NULL || api->destroy_actor_event_bridge == NULL ||
         api->bind_actor_event_bridge == NULL || api->unbind_actor_event_bridge == NULL ||
         api->emit_actor_event_bridge == NULL ||
@@ -361,7 +361,7 @@ int main(void)
     if (api->get_widget_visibility(NULL, &widget_visibility) != UEC_RESULT_UNSUPPORTED ||
         widget_visibility != UEC_WIDGET_VISIBLE ||
         api->set_widget_visibility(NULL, (uec_widget_visibility)99) != UEC_RESULT_INVALID_ARGUMENT ||
-        api->set_widget_visibility(NULL, UEC_WIDGET_SELF_HIT_TEST_INVISIBLE) != UEC_RESULT_INVALID_HANDLE ||
+        api->set_widget_visibility(NULL, UEC_WIDGET_SELF_HIT_TEST_INVISIBLE) != UEC_RESULT_INVALID_HANDLE || api->get_widget_child(NULL, latent_function, &event_bridge) != UEC_RESULT_INVALID_HANDLE || event_bridge != NULL || api->get_widget_child(NULL, latent_function, NULL) != UEC_RESULT_INVALID_ARGUMENT || api->get_widget_child(NULL, empty_function_name, &event_bridge) != UEC_RESULT_INVALID_ARGUMENT || event_bridge != NULL ||
         api->get_widget_enabled(NULL, &widget_enabled) != UEC_RESULT_INVALID_HANDLE || widget_enabled != UEC_FALSE ||
         api->get_widget_enabled(NULL, NULL) != UEC_RESULT_INVALID_ARGUMENT || api->get_checkbox_state(NULL, NULL) != UEC_RESULT_INVALID_ARGUMENT ||
         api->set_widget_enabled(NULL, (uec_bool)2u) != UEC_RESULT_INVALID_ARGUMENT || api->set_checkbox_state(NULL, (uec_checkbox_state)99) != UEC_RESULT_INVALID_ARGUMENT ||

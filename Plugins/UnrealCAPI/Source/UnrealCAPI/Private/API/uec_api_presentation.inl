@@ -221,6 +221,29 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetWidgetChild(uec_object* rawUserWidget,
+                                       uec_string_view childName,
+                                       uec_object** outChild)
+    {
+        if (outChild != nullptr) *outChild = nullptr;
+        if (outChild == nullptr || !IsValidStringView(childName) || childName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* handle = reinterpret_cast<FUECObject*>(rawUserWidget);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UUserWidget* userWidget = Cast<UUserWidget>(handle->Value.Get());
+        if (userWidget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        UWidget* child = userWidget->GetWidgetFromName(FName(*ToFString(childName)));
+        if (child == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        FUECObject* childHandle = MakeObjectHandle(child);
+        if (childHandle == nullptr) {
+            return IsShuttingDown() ? UEC_RESULT_SHUTTING_DOWN : UEC_RESULT_INTERNAL_ERROR;
+        }
+        *outChild = reinterpret_cast<uec_object*>(childHandle);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL BindButtonClicked(uec_object* rawButton,
                                           uec_widget_event_callback callback,
                                           void* userData,

@@ -780,7 +780,7 @@ static const uec_api g_api = {
     .run_on_game_thread = &StubRunOnGameThread, .bind_input_action = &StubBindInputAction, .inject_input_action_value = &StubInjectInputActionValue,
     .set_component_collision_enabled = &StubSetComponentCollisionEnabled, .set_component_collision_channel_response = &StubSetComponentCollisionChannelResponse,
     .get_progress_bar_percent = &StubGetProgressBarPercent,
-    .set_progress_bar_percent = &StubSetProgressBarPercent, .get_widget_enabled = &StubGetWidgetEnabled, .set_widget_enabled = &StubSetWidgetEnabled, .get_checkbox_state = &StubGetCheckBoxState, .set_checkbox_state = &StubSetCheckBoxState
+    .set_progress_bar_percent = &StubSetProgressBarPercent, .get_widget_enabled = &StubGetWidgetEnabled, .set_widget_enabled = &StubSetWidgetEnabled, .get_checkbox_state = &StubGetCheckBoxState, .set_checkbox_state = &StubSetCheckBoxState, .get_widget_child = &StubGetWidgetChild
 };
 
 UEC_API uec_result UEC_CALL uec_get_api(uint32_t requestedMajor,

@@ -43,6 +43,8 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 142 adds named `UUserWidget` child lookup and returns a weak object
+  handle that consumers release through the standard object API.
 - ABI minor 141 adds game-thread `UCheckBox` state read/write calls, preserving
   unchecked, checked, and indeterminate states with deterministic output on
   failed reads.

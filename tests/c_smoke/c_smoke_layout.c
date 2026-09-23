@@ -55,7 +55,7 @@ UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details A
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
 UEC_TEST_ASSERT(UEC_RESULT_QUEUE_FULL == 9, "queue-full result code changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 141u, "ABI minor must include checkbox state access");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 142u, "ABI minor must include widget child lookup");
 UEC_TEST_ASSERT(UEC_CHECKBOX_UNCHECKED == 0 && UEC_CHECKBOX_CHECKED == 1 &&
                    UEC_CHECKBOX_UNDETERMINED == 2,
                "checkbox state enum values changed");
@@ -533,3 +533,6 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_checkbox_state) >
 UEC_TEST_ASSERT(offsetof(uec_api, set_checkbox_state) >
                    offsetof(uec_api, get_checkbox_state),
                "checkbox state write must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_widget_child) >
+                   offsetof(uec_api, set_checkbox_state),
+               "UMG child lookup must append to uec_api");
