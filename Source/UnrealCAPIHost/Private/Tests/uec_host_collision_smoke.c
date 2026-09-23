@@ -66,6 +66,8 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         api->release_scene_component == NULL || api->release_actor == NULL ||
         api->set_component_collision_enabled == NULL ||
         api->get_component_collision_enabled == NULL ||
+        api->set_component_simulating_physics == NULL ||
+        api->get_component_simulating_physics == NULL ||
         api->set_component_collision_channel_response == NULL ||
         api->get_component_collision_response == NULL || api->line_trace == NULL ||
         api->line_trace_filtered == NULL || api->sweep_trace_filtered == NULL ||
@@ -186,6 +188,27 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
+
+    result = api->set_component_collision_enabled(component,
+                                                  UEC_COLLISION_QUERY_AND_PHYSICS);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->set_component_simulating_physics(component, UEC_TRUE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    uec_bool simulating = UEC_FALSE;
+    result = api->get_component_simulating_physics(component, &simulating);
+    if (result != UEC_RESULT_OK || simulating != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->set_component_simulating_physics(component, UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_simulating_physics(component, &simulating);
+    if (result != UEC_RESULT_OK || simulating != UEC_FALSE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->set_component_collision_enabled(component, UEC_COLLISION_QUERY_ONLY);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
     result = UEC_RESULT_OK;
 
 cleanup:

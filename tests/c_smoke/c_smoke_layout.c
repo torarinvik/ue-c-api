@@ -62,7 +62,7 @@ UEC_TEST_ASSERT(UEC_RESULT_OK == 0 && UEC_RESULT_INVALID_ARGUMENT == 1 &&
 UEC_TEST_ASSERT(UEC_MAX_COLLISION_QUERY_ACTORS == 1024u,
                "collision query input bound changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 142u, "ABI minor must include widget child lookup");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 143u, "ABI minor must include component physics simulation controls");
 UEC_TEST_ASSERT(UEC_CHECKBOX_UNCHECKED == 0 && UEC_CHECKBOX_CHECKED == 1 &&
                    UEC_CHECKBOX_UNDETERMINED == 2,
                "checkbox state enum values changed");
@@ -543,3 +543,9 @@ UEC_TEST_ASSERT(offsetof(uec_api, set_checkbox_state) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_widget_child) >
                    offsetof(uec_api, set_checkbox_state),
                "UMG child lookup must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_component_simulating_physics) >
+                   offsetof(uec_api, get_widget_child),
+               "physics simulation setter must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_component_simulating_physics) >
+                   offsetof(uec_api, set_component_simulating_physics),
+               "physics simulation readback must append to uec_api");

@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 143 adds game-thread component physics-simulation controls. Enabling
+  simulation requires a movable primitive component and a collision mode that
+  includes physics; the getter reports deterministic false output on failure.
 - Added an `UnrealCAPIHostServer` target definition for source-built Unreal
   distributions that support dedicated-server targets. The installed UE 5.8.3
   Mac distribution rejects server builds before compiling project code.

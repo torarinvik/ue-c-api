@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-uec_result UEC_CALL uec_host_smoke_bootstrap(void); int uec_widget_ui_smoke_test(void); int uec_gameplay_example_table_smoke(void);
+uec_result UEC_CALL uec_host_smoke_bootstrap(void); int uec_widget_ui_smoke_test(void); int uec_gameplay_example_table_smoke(void); int uec_physics_simulation_smoke_test(void);
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -81,7 +81,7 @@ int main(void)
         api->load_versioned_application_data == NULL ||
         api->get_controller_enhanced_input_subsystem == NULL ||
         api->set_component_collision_channel_response == NULL ||
-        api->get_progress_bar_percent == NULL || api->set_progress_bar_percent == NULL || api->get_widget_enabled == NULL || api->set_widget_enabled == NULL || api->get_checkbox_state == NULL || api->set_checkbox_state == NULL || api->get_widget_child == NULL || uec_widget_ui_smoke_test() != 0 || uec_gameplay_example_table_smoke() != 0 ||
+        api->get_progress_bar_percent == NULL || api->set_progress_bar_percent == NULL || api->get_widget_enabled == NULL || api->set_widget_enabled == NULL || api->get_checkbox_state == NULL || api->set_checkbox_state == NULL || api->get_widget_child == NULL || api->set_component_simulating_physics == NULL || api->get_component_simulating_physics == NULL || uec_widget_ui_smoke_test() != 0 || uec_gameplay_example_table_smoke() != 0 || uec_physics_simulation_smoke_test() != 0 ||
         api->get_or_create_actor_event_bridge == NULL || api->destroy_actor_event_bridge == NULL ||
         api->bind_actor_event_bridge == NULL || api->unbind_actor_event_bridge == NULL ||
         api->emit_actor_event_bridge == NULL ||

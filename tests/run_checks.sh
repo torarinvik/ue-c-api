@@ -20,6 +20,7 @@ host_gameplay_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_g
 host_gameplay_translation_unit="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_gameplay_example.c"
 gameplay_header_consumer="$repo_dir/tests/c_smoke/c_gameplay_header.c"
 gameplay_example_smoke="$repo_dir/tests/c_smoke/c_gameplay_example_smoke.c"
+physics_simulation_smoke="$repo_dir/tests/c_smoke/c_physics_simulation_smoke.c"
 private_dir="$plugin_dir/Source/UnrealCAPI/Private"
 
 git -C "$repo_dir" diff --check
@@ -46,6 +47,8 @@ git -C "$repo_dir" diff --check
     -I "$repo_dir/examples/c_gameplay" -x c++ -fsyntax-only "$gameplay_header_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$repo_dir/examples/c_gameplay" -fsyntax-only "$gameplay_example_smoke"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -fsyntax-only "$physics_simulation_smoke"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_abi_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_collision_consumer"
@@ -63,6 +66,7 @@ fi
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     ${sanitizer_flags} -I "$repo_dir/examples/c_gameplay" -I "$widget_ui_example_dir" \
     "$consumer" "$layout_consumer" "$widget_ui_smoke" "$gameplay_example_smoke" \
+    "$physics_simulation_smoke" \
     "$host_stub" "$host_consumer" "$host_abi_consumer" "$host_event_consumer" \
     "$gameplay_example" "$widget_ui_example" "$host_gameplay_consumer" \
     -o "$stub_build_dir/c_smoke"

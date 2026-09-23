@@ -276,6 +276,12 @@ and release it like any other object handle. A child absent from the current
 widget tree returns `UEC_RESULT_NOT_INITIALIZED`. The
 [named UMG child example](../examples/c_widget_ui/README.md) shows lookup,
 text update, and handle release in C.
+ABI minor 143 adds `set_component_simulating_physics` and
+`get_component_simulating_physics` for primitive components. They require the
+game thread; the setter accepts only the declared boolean values and requires
+world authority. Enabling simulation also requires movable mobility and a
+collision mode that includes physics. The getter clears its output to false on
+failure and reports false for a valid component that is not simulating.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

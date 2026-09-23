@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.142`.
+The current runtime slice is intentionally small and versioned as ABI `1.143`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -390,6 +390,14 @@ ABI minor 142 appends `get_widget_child`. It looks up a named descendant of a
 `UUserWidget` using Unreal's widget-tree name lookup and returns a weak object
 handle for the child. The lookup requires the game thread, clears the output on
 failure, and returns `UEC_RESULT_NOT_INITIALIZED` until the named child exists.
+ABI minor 143 appends `set_component_simulating_physics` and
+`get_component_simulating_physics` for primitive scene components. Both require
+the game thread; reads initialize the output to false and report the current
+state, including false for a valid non-simulating component. Writes accept only
+`UEC_FALSE` or `UEC_TRUE` and require world authority. Enabling simulation
+requires movable component mobility and a collision mode that includes physics
+(`UEC_COLLISION_QUERY_AND_PHYSICS` or `UEC_COLLISION_PHYSICS_ONLY`). Unreal
+refusal or unmet prerequisites return `UEC_RESULT_UNSUPPORTED`.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
