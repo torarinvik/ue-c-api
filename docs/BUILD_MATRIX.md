@@ -7,7 +7,7 @@ build, launch, and exercise the C smoke path.
 | Engine | Host platform | Compiler/toolchain | C consumer | Plugin/host status |
 | --- | --- | --- | --- | --- |
 | UE 5.7.4 installed distribution | macOS arm64 local workstation | Unreal Build Tool 5.7.4 | C11/C++17 linked host-stub smoke verified | Compatibility builds attempted with `UEC_ALLOW_ENGINE_MISMATCH=1`; UBT rejected Mac because platform support files are missing and reports Win64 unsupported in this distribution. Neither attempt compiled project code; the engine is also below the UE 5.8.3 target. |
-| UE 5.8.3 local installation | macOS 27.0 arm64 | UnrealBuildTool 5.8.3; Xcode 27.0 (27A266a); Apple Clang 21.0.0 / compiler 21.1.6; macOS SDK 27.0; Metal Toolchain 27A266a | C11/C++17 linked host-stub smoke verified; Unreal C smoke translation units compiled and executed | Game and Editor Development targets compile and link. Full Mac Development build, cook, stage, pak, and archive pass. The staged app and a NullRHI Editor PIE world pass bootstrap, event, latent, queue, save/load, object-load, gameplay, and travel C smoke. The host explicitly stages Unreal's TBB runtime dylibs. Packaged smoke launches the UAT staged app; UAT's temporary archive action selects the intermediate Binaries app. `UE_BUILD_FROM_XCODE=1` bypasses UAT's failing generated `Touch UBT generated tiles` pre-action; direct Xcode finalization succeeds. This toolchain combination is not listed in Epic's supported UE 5.8 macOS row. |
+| UE 5.8.3 local installation | macOS 27.0 arm64 | UnrealBuildTool 5.8.3; Xcode 27.0 (27A266a); Apple Clang 21.0.0 / compiler 21.1.6; macOS SDK 27.0; Metal Toolchain 27A266a | C11/C++17 linked host-stub smoke verified; Unreal C smoke translation units compiled and executed | Game and Editor Development targets compile and link. Full Mac Development build, cook, stage, pak, and archive pass. The staged app and a NullRHI Editor PIE world pass bootstrap, event, latent, queue, save/load, object-load, gameplay, and travel C smoke. The Game Shipping target compiles and cooks, but a clean full Shipping gate remains blocked by UBT's skipped/missing app-bundle finalization and the generated Xcode `Touch UBT generated tiles` pre-action. After a manual finalization and stage-only run, the staged Shipping app remained running for a startup check; that run did not emit the Development C smoke markers. A Mac dedicated-server build is rejected by this installed distribution before project compilation. The host explicitly stages Unreal's TBB runtime dylibs. `UE_BUILD_FROM_XCODE=1` bypasses UAT's failing generated `Touch UBT generated tiles` pre-action for Development. This toolchain combination is not listed in Epic's supported UE 5.8 macOS row. |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 
@@ -21,8 +21,9 @@ support for macOS 27 or Xcode 27.
 
 The project plugin lives under `Plugins/UnrealCAPI/`, which is the standard
 project-plugin layout Unreal uses to discover the descriptor and module source.
-The host project includes tracked Game and Editor target files plus a minimal
-primary module, a C bootstrap probe, and a native latent-test actor fixture
+The host project includes tracked Game and Editor target files plus a
+dedicated-server target definition that this Mac distribution cannot build,
+along with a minimal primary module, a C bootstrap probe, and a native latent-test actor fixture
 that exercises scalar and text-backed mixed invocation, output-capacity
 preflight, pure out-parameter ordering, mixed-call argument-count and
 scalar-kind rejection, typed FVector/FQuat/FTransform round trips and mismatch
@@ -83,8 +84,11 @@ waits for successful bootstrap,
 event-bridge, latent-call, concurrent queue, async save/load, async object-load,
 gameplay-example, and travel C smoke messages; failures and timeouts fail the
 gate with recent host output.
-Set `UEC_UNREAL_CONFIGURATION=Shipping` to repeat
-the build in Shipping mode; runtime smoke is limited to Development builds.
+Set `UEC_UNREAL_CONFIGURATION=Shipping` to repeat the build in Shipping mode.
+The repeatable runtime marker smoke currently covers Development only; on this
+Mac toolchain the clean Shipping package gate has the finalization limitation
+recorded in the matrix above.
+After a Shipping app has been staged, `python3 tests/unreal_runtime.py <app-executable> --startup-only` checks that the executable remains running through engine startup without relying on Development log markers.
 Set `UEC_UNREAL_PLATFORM=Win64` (or
 another platform supplied by the engine installation) to validate a target
 different from the host platform; cross-platform requests skip rebuilding the
@@ -98,6 +102,11 @@ hotfixes are accepted, while older patches are rejected. Use
 script exits with status 2 when the engine path, version metadata, or requested
 platform is unavailable, so the portable gate remains usable on contributors'
 machines without Unreal installed.
+
+`Source/UnrealCAPIHostServer.Target.cs` declares the host's dedicated-server
+target for engine distributions that support it. The installed UE 5.8.3 Mac
+distribution reports that server targets are unsupported before compiling the
+project, so this workstation does not claim dedicated-server verification.
 
 The minimum consumer language standard is C11. The plugin implementation uses
 C++17 through Unreal Build Tool; consumers may compile the public header as C11

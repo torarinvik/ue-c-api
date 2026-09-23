@@ -37,6 +37,8 @@ FAILURE_MARKERS = (
 
 def find_host_executable(archive: Path) -> Path:
     """Find the packaged host executable across UAT archive layouts."""
+    if archive.is_file():
+        return archive
     name = "UnrealCAPIHost.exe" if os.name == "nt" else "UnrealCAPIHost"
     candidates = [path for path in archive.rglob(name) if path.is_file()]
     if len(candidates) != 1:
@@ -55,10 +57,15 @@ def _stop_process(process: subprocess.Popen[str]) -> None:
             process.wait()
 
 
-def run_smoke(executable: Path, timeout_seconds: float = 90.0) -> None:
-    """Launch a packaged Development host and require every C smoke marker."""
+def run_smoke(
+    executable: Path,
+    timeout_seconds: float = 90.0,
+    startup_only: bool = False,
+) -> None:
+    """Launch a packaged host and require smoke markers or sustained startup."""
     if timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
+    executable = executable.resolve()
     command = [
         str(executable),
         "-unattended",
@@ -97,7 +104,31 @@ def run_smoke(executable: Path, timeout_seconds: float = 90.0) -> None:
     deadline = time.monotonic() + timeout_seconds
     failure: str | None = None
     try:
-        while len(completed) != len(SUCCESS_MARKERS):
+        startup_deadline = time.monotonic() + min(10.0, timeout_seconds)
+        while startup_only and time.monotonic() < startup_deadline:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                failure = "Packaged host did not remain running through its startup check."
+                break
+            try:
+                line = output.get(timeout=min(0.1, remaining))
+            except queue.Empty:
+                continue
+            if line is None:
+                failure = (
+                    f"Packaged host exited with status {process.returncode} "
+                    "during its startup check."
+                )
+                break
+            if line:
+                tail.append(line)
+            if process.poll() is not None:
+                failure = (
+                    f"Packaged host exited with status {process.returncode} "
+                    "during its startup check."
+                )
+                break
+        while not startup_only and len(completed) != len(SUCCESS_MARKERS):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 failure = f"Packaged host did not complete smoke checks within {timeout_seconds:g}s."
@@ -129,16 +160,23 @@ def run_smoke(executable: Path, timeout_seconds: float = 90.0) -> None:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 2:
-        print(f"Usage: {Path(argv[0]).name} <packaged-archive>", file=sys.stderr)
+    if len(argv) not in (2, 3) or (len(argv) == 3 and argv[2] != "--startup-only"):
+        print(
+            f"Usage: {Path(argv[0]).name} <packaged-archive-or-executable> [--startup-only]",
+            file=sys.stderr,
+        )
         return 2
     archive = Path(argv[1])
+    startup_only = len(argv) == 3
     try:
         executable = find_host_executable(archive)
-        run_smoke(executable)
+        run_smoke(executable, startup_only=startup_only)
     except RuntimeError as error:
         print(error, file=sys.stderr)
         return 1
+    if startup_only:
+        print("Packaged host remained running through its Shipping startup check.")
+        return 0
     print("Packaged Development host completed the C bootstrap, event, latent, queue, async save/load, async object load, gameplay, and travel smoke checks.")
     return 0
 

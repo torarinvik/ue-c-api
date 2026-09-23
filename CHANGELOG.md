@@ -5,6 +5,12 @@ development; they do not imply a published or runtime-verified release.
 
 ## Unreleased
 
+### Added
+
+- Added an `UnrealCAPIHostServer` target definition for source-built Unreal
+  distributions that support dedicated-server targets. The installed UE 5.8.3
+  Mac distribution rejects server builds before compiling project code.
+
 ### Fixed
 
 - Callback-based level travel now matches PIE-prefixed destination package names
