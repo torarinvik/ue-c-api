@@ -379,13 +379,9 @@ uec_result UEC_CALL uec_host_event_bridge_smoke(void)
         result = UEC_RESULT_INTERNAL_ERROR;
         UEC_EVENT_BRIDGE_FAIL();
     }
-    /* The destruction callback tombstones its actor handle before returning. */
+    /* The expired actor handle remains releasable after its destruction callback. */
     result = api->release_actor(observedDestroyedActor);
-    if (result != UEC_RESULT_INVALID_HANDLE) {
-        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        UEC_EVENT_BRIDGE_FAIL();
-    }
-    result = UEC_RESULT_OK;
+    if (result != UEC_RESULT_OK) UEC_EVENT_BRIDGE_FAIL();
     observedDestroyedActor = NULL;
     actorDestroySubscriptionId = 0;
     result = api->get_runtime_stats(context, &observedStats);

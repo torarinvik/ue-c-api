@@ -290,7 +290,6 @@
         {
             if (candidate == nullptr || candidate->Value.Get() != actor) continue;
             auto* mutableCandidate = const_cast<FUECActor*>(candidate);
-            TombstoneHandle(mutableCandidate->Header);
             mutableCandidate->Value.Reset();
         }
         for (const FUECSceneComponent* candidate : GComponents)
@@ -298,7 +297,6 @@
             USceneComponent* component = candidate == nullptr ? nullptr : candidate->Value.Get();
             if (component == nullptr || component->GetOwner() != actor) continue;
             auto* mutableCandidate = const_cast<FUECSceneComponent*>(candidate);
-            TombstoneHandle(mutableCandidate->Header);
             mutableCandidate->Value.Reset();
         }
         for (const FUECObject* candidate : GObjects)
@@ -307,7 +305,6 @@
             UActorComponent* component = object == nullptr ? nullptr : Cast<UActorComponent>(object);
             if (object != actor && (component == nullptr || component->GetOwner() != actor)) continue;
             auto* mutableCandidate = const_cast<FUECObject*>(candidate);
-            TombstoneHandle(mutableCandidate->Header);
             mutableCandidate->Value.Reset();
             mutableCandidate->StrongValue.Reset();
         }

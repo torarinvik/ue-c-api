@@ -33,6 +33,32 @@ static int RuntimeStatsMatch(const uec_runtime_stats* expected,
         expected->live_objects == actual->live_objects;
 }
 
+typedef struct uec_hit_smoke_capture {
+    const uec_api* api;
+    uint64_t expected_subscription_id;
+    uint32_t callback_count;
+    uec_bool subscription_id_matched;
+    uec_actor* other_actor;
+} uec_hit_smoke_capture;
+
+static void UEC_CALL CaptureComponentHit(uint64_t subscriptionId,
+                                         uec_actor* otherActor,
+                                         uec_vector3 normalImpulse,
+                                         void* userData)
+{
+    (void)normalImpulse;
+    uec_hit_smoke_capture* capture = (uec_hit_smoke_capture*)userData;
+    if (capture == NULL) return;
+    ++capture->callback_count;
+    capture->subscription_id_matched = subscriptionId == capture->expected_subscription_id
+        ? UEC_TRUE : UEC_FALSE;
+    if (capture->callback_count == 1u) {
+        capture->other_actor = otherActor;
+    } else if (otherActor != NULL && capture->api != NULL) {
+        (void)capture->api->release_actor(otherActor);
+    }
+}
+
 uec_result UEC_CALL uec_host_collision_smoke(void)
 {
     static const char actorClassPath[] =
@@ -41,6 +67,12 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     const uec_vector3 center = {12000.0, -24000.0, 50000.0};
     const uec_vector3 start = {center.x - 250.0, center.y, center.z};
     const uec_vector3 end = {center.x + 250.0, center.y, center.z};
+    const uec_transform movingTransform = {
+        {center.x - 300.0, center.y, center.z}, {0.0, 0.0, 0.0, 1.0},
+        {1.0, 1.0, 1.0}};
+    const uec_transform sweptTransform = {
+        {center.x + 300.0, center.y, center.z}, {0.0, 0.0, 0.0, 1.0},
+        {1.0, 1.0, 1.0}};
     const uec_collision_shape sphere = {
         sizeof(uec_collision_shape), UEC_COLLISION_SHAPE_SPHERE, 0u,
         20.0, {0.0, 0.0, 0.0}, 0.0};
@@ -48,14 +80,18 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     uec_context* context = NULL;
     uec_world* world = NULL;
     uec_actor* actor = NULL;
+    uec_actor* movingActor = NULL;
     uec_scene_component* component = NULL;
+    uec_scene_component* movingComponent = NULL;
     uec_hit_result hit = {0};
     uec_hit_result_details details = {0};
     uec_actor* overlaps[4] = {0};
     uec_actor* ignored[1] = {0};
     uec_runtime_stats baseline = {0};
     uec_runtime_stats observed = {0};
+    uec_hit_smoke_capture hitCapture = {0};
     uint32_t overlapCount = 0u;
+    uint64_t hitSubscriptionId = 0u;
     int failureLine = 0;
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
     if (result != UEC_RESULT_OK) return result;
@@ -66,6 +102,7 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         api->release_scene_component == NULL || api->release_actor == NULL ||
         api->set_component_collision_enabled == NULL ||
         api->get_component_collision_enabled == NULL ||
+        api->bind_component_hit == NULL || api->unbind_component_hit == NULL ||
         api->set_component_simulating_physics == NULL ||
         api->get_component_simulating_physics == NULL ||
         api->set_component_collision_channel_response == NULL ||
@@ -209,6 +246,48 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     }
     result = api->set_component_collision_enabled(component, UEC_COLLISION_QUERY_ONLY);
     if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+
+    result = api->spawn_actor(world, classPath, &movingTransform, &movingActor);
+    if (result != UEC_RESULT_OK || movingActor == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->get_actor_root_component(movingActor, &movingComponent);
+    if (result != UEC_RESULT_OK || movingComponent == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->set_component_collision_channel_response(
+        component, UEC_TRACE_WORLD_DYNAMIC, UEC_COLLISION_RESPONSE_BLOCK);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->set_component_collision_channel_response(
+        movingComponent, UEC_TRACE_WORLD_DYNAMIC, UEC_COLLISION_RESPONSE_BLOCK);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    hitCapture.api = api;
+    result = api->bind_component_hit(movingComponent, &CaptureComponentHit,
+                                      &hitCapture, &hitSubscriptionId);
+    if (result != UEC_RESULT_OK || hitSubscriptionId == 0u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    hitCapture.expected_subscription_id = hitSubscriptionId;
+    result = api->set_actor_transform(movingActor, &sweptTransform, UEC_TRUE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    if (hitCapture.callback_count != 1u ||
+        hitCapture.subscription_id_matched != UEC_TRUE ||
+        hitCapture.other_actor == NULL || !IsAt(api, hitCapture.other_actor, center)) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->release_actor(hitCapture.other_actor);
+    hitCapture.other_actor = NULL;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->unbind_component_hit(context, hitSubscriptionId);
+    if (result != UEC_RESULT_INVALID_ARGUMENT) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    hitSubscriptionId = 0u;
     result = UEC_RESULT_OK;
 
 cleanup:
@@ -218,6 +297,19 @@ cleanup:
         if (details.component != NULL) (void)api->release_scene_component(details.component);
         for (uint32_t index = 0u; index < overlapCount; ++index) {
             if (overlaps[index] != NULL) (void)api->release_actor(overlaps[index]);
+        }
+        if (hitCapture.other_actor != NULL) {
+            (void)api->release_actor(hitCapture.other_actor);
+        }
+        if (hitSubscriptionId != 0u && context != NULL &&
+            api->unbind_component_hit != NULL) {
+            (void)api->unbind_component_hit(context, hitSubscriptionId);
+        }
+        if (movingComponent != NULL) (void)api->release_scene_component(movingComponent);
+        if (movingActor != NULL) {
+            const uec_result destroyResult = api->destroy_actor(movingActor);
+            if (destroyResult != UEC_RESULT_OK) (void)api->release_actor(movingActor);
+            else movingActor = NULL;
         }
         if (component != NULL) (void)api->release_scene_component(component);
         if (actor != NULL) {

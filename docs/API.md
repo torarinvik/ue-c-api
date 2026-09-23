@@ -540,7 +540,9 @@ it never loads the class and therefore is safe for cook/dependency preflight.
 The callback receives a borrowed event token, an optional caller-owned weak actor
 handle for the other actor, and the normal impulse. Unbind explicitly or the
 subscription removes itself after the first hit; module shutdown removes all
-remaining native delegates.
+remaining native delegates. Release any returned actor handle with
+`release_actor`, including after Unreal has destroyed the actor; the bridge
+invalidates its weak reference while keeping the expired handle releasable.
 
 `get_actor_bounds` reports a caller-owned world-space origin and box extent for
 an actor. `find_player_start` selects the start actor for an explicit local

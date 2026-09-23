@@ -16,6 +16,11 @@ development; they do not imply a published or runtime-verified release.
 
 ### Fixed
 
+- Actor-destroyed notifications now invalidate actor, component, and object
+  handles by clearing their weak references without pre-releasing them, so
+  consumers can still release handles after Unreal destroys their objects.
+- The Unreal C smoke now exercises one-shot primitive hit delivery through a
+  swept blocking move in both Editor PIE and packaged Development.
 - Callback-based level travel now matches PIE-prefixed destination package names
   after Unreal loads the new world, so the travel completion callback is
   delivered in Editor PIE as well as packaged Development.
