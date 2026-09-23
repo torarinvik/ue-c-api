@@ -6,6 +6,7 @@
 #include "uec_api.h"
 
 extern "C" uec_result UEC_CALL uec_host_smoke_bootstrap(void);
+extern "C" uec_result UEC_CALL uec_host_collision_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_event_bridge_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_latent_smoke_start(void);
 extern "C" uec_bool UEC_CALL uec_host_latent_smoke_poll(uec_result* out_result);
@@ -58,6 +59,16 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             }
         }
         if (!hasRuntimeWorld) return true;
+
+        const uec_result collisionResult = uec_host_collision_smoke();
+        if (collisionResult != UEC_RESULT_OK) {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C collision smoke failed with result %d"),
+                static_cast<int32>(collisionResult));
+            EventBridgeSmokeHandle.Reset();
+            return false;
+        }
+        UE_LOG(LogUnrealCAPIHost, Log, TEXT("C collision smoke completed"));
 
         const uec_result result = uec_host_event_bridge_smoke();
         if (result == UEC_RESULT_OK) {

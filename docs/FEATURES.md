@@ -26,8 +26,8 @@ checks explicitly recorded for each feature in the Unreal build matrix.
 | Reflected container schema metadata | Runtime implemented / Unreal integration pending | ABI 122 reports array/set element kinds and map key/value kinds; ABI 130 adds typed scalar map-key reads; non-container properties return unsupported |
 | Reflected set mutation | Runtime implemented / Unreal integration pending | ABI 123 replaces existing text or scalar set elements with duplicate rejection and rehashing |
 | Reflected soft references | Runtime implemented / Unreal integration pending | ABI 129 provides typed soft object/class path reads and kind-checked writes for actor and UObject properties |
-| Collision line traces | Runtime implemented / Unreal integration pending | Game-thread traces with stable channel mapping, ignored-actor filtering, and ABI 124 detailed hit readback |
-| Collision sweeps and overlaps | Runtime implemented / Unreal integration pending | World-aligned sphere, box, and capsule queries with up to 1024 ignored actors and up to 1024 unique overlap results |
+| Collision line traces | Packaged Development and Editor PIE smoke verified | Game-thread traces with stable channel mapping, ignored-actor filtering, and ABI 124 detailed hit readback; smoke checks blocking hits, detailed component/actor handles, and ignored-actor filtering |
+| Collision sweeps and overlaps | Packaged Development and Editor PIE smoke verified | World-aligned sphere, box, and capsule queries with up to 1024 ignored actors and up to 1024 unique overlap results; smoke checks blocking sweeps, overlap output handles, and ignored-actor filtering |
 | Collision event callbacks | Runtime implemented / Unreal integration pending | One-shot primitive-component hit callbacks with unsubscribe tokens and shutdown cleanup |
 | One-shot spatial audio | Runtime implemented / Unreal integration pending | Fire-and-forget `USoundBase` playback at a world location |
 | Basic UMG widgets | Runtime implemented / Unreal integration pending | Create a `UUserWidget` class, obtain weak handles to named tree children (ABI 142; `examples/c_widget_ui/` includes a C text-update helper with mocked handle-release coverage), add or remove it from the viewport, set/read five visibility modes and enabled state, update/read `UTextBlock` text, read/write normalized `UProgressBar` percent and all three `UCheckBox` states, and receive one-shot button clicks |
@@ -60,6 +60,7 @@ checks explicitly recorded for each feature in the Unreal build matrix.
 | Multiplayer and replication | Partial | Network-mode and authority queries plus authority-gated actor, possession, transform, and physics mutators; replication/RPC adapters remain planned |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
 
-The shared host smoke now runs in a UE 5.8.3 Editor PIE world and a packaged
-Development build. Those runs verify only the operations the smoke exercises;
+The shared host smoke now runs collision line traces, sweeps, overlaps, and
+detailed hit queries in a UE 5.8.3 Editor PIE world and a packaged Development
+build. Those runs verify only the operations the smoke exercises;
 other Unreal-dependent features still need focused probes before release.

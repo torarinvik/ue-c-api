@@ -82,6 +82,10 @@ development; they do not imply a published or runtime-verified release.
   worker tasks, verifies the 1024-request queue limit and queue-full outputs,
   cancels 128 requests before dispatch, checks suppression and unique request
   ids plus callback accounting, and waits for full drainage.
+- A deterministic Unreal host fixture now exercises blocking and filtered line
+  traces, sphere sweeps and overlaps, detailed hit actor/component handles,
+  collision setting readback, and handle cleanup through the C ABI in both PIE
+  and packaged Development runs.
 - The C gameplay example now has a public example header, a game-thread cancel
   entry point, and a packaged-host smoke that runs its timer, actor movement,
   synchronous event callback, and handle cleanup flow.
@@ -96,10 +100,10 @@ development; they do not imply a published or runtime-verified release.
 - Cross-platform Unreal build requests now skip rebuilding the local Editor
   target while preserving the host-platform default.
 - The Unreal build gate now launches same-platform Development packages and
-  requires the host C bootstrap, event-bridge, latent-call, concurrent queue,
-  asynchronous save/load, asynchronous object-load, gameplay-example, and
-  travel smoke checks to complete; Shipping and cross-platform runs remain
-  package-only.
+  requires the host C bootstrap, collision-query, event-bridge, latent-call,
+  concurrent queue, asynchronous save/load, asynchronous object-load,
+  gameplay-example, and travel smoke checks to complete; Shipping and
+  cross-platform runs remain package-only.
 - The packaged async object-load probe now checks immediate cancellation
   drainage and callback suppression, verifies error reporting for a missing
   asset, and follows the failure path with a successful load.

@@ -7,7 +7,7 @@ build, launch, and exercise the C smoke path.
 | Engine | Host platform | Compiler/toolchain | C consumer | Plugin/host status |
 | --- | --- | --- | --- | --- |
 | UE 5.7.4 installed distribution | macOS arm64 local workstation | Unreal Build Tool 5.7.4 | C11/C++17 linked host-stub smoke verified | Compatibility builds attempted with `UEC_ALLOW_ENGINE_MISMATCH=1`; UBT rejected Mac because platform support files are missing and reports Win64 unsupported in this distribution. Neither attempt compiled project code; the engine is also below the UE 5.8.3 target. |
-| UE 5.8.3 local installation | macOS 27.0 arm64 | UnrealBuildTool 5.8.3; Xcode 27.0 (27A266a); Apple Clang 21.0.0 / compiler 21.1.6; macOS SDK 27.0; Metal Toolchain 27A266a | C11/C++17 linked host-stub smoke verified; Unreal C smoke translation units compiled and executed | Game and Editor Development targets compile and link. Full Mac Development build, cook, stage, pak, and archive pass. The staged app and a NullRHI Editor PIE world pass bootstrap, event, latent, queue, save/load, object-load, gameplay, and travel C smoke. The Game Shipping target compiles and cooks, but a clean full Shipping gate remains blocked by UBT's skipped/missing app-bundle finalization and the generated Xcode `Touch UBT generated tiles` pre-action. After a manual finalization and stage-only run, the staged Shipping app remained running for a startup check; that run did not emit the Development C smoke markers. A Mac dedicated-server build is rejected by this installed distribution before project compilation. The host explicitly stages Unreal's TBB runtime dylibs. `UE_BUILD_FROM_XCODE=1` bypasses UAT's failing generated `Touch UBT generated tiles` pre-action for Development. This toolchain combination is not listed in Epic's supported UE 5.8 macOS row. |
+| UE 5.8.3 local installation | macOS 27.0 arm64 | UnrealBuildTool 5.8.3; Xcode 27.0 (27A266a); Apple Clang 21.0.0 / compiler 21.1.6; macOS SDK 27.0; Metal Toolchain 27A266a | C11/C++17 linked host-stub smoke verified; Unreal C smoke translation units compiled and executed | Game and Editor Development targets compile and link. Full Mac Development build, cook, stage, pak, and archive pass. The staged app and a NullRHI Editor PIE world pass bootstrap, collision traces/sweeps/overlaps, event, latent, queue, save/load, object-load, gameplay, and travel C smoke. The Game Shipping target compiles and cooks, but clean UAT app finalization still fails at the generated Xcode `Touch UBT generated tiles` pre-action (exit 65), even after installing Metal Toolchain 27A266a. A prior manual finalization and stage-only run produced a staged Shipping app that remained running for a startup check; that run did not emit the Development C smoke markers. A Mac dedicated-server build is rejected by this installed distribution before project compilation. The host explicitly stages Unreal's TBB runtime dylibs. `UE_BUILD_FROM_XCODE=1` bypasses UAT's failing generated `Touch UBT generated tiles` pre-action for Development. This toolchain combination is not listed in Epic's supported UE 5.8 macOS row. |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 
@@ -58,7 +58,10 @@ translation unit, checks the C gameplay example and Unreal descriptor JSON,
 and enforces the 400–800 line budget for private implementation units and the
 tracked primary C host smoke translation unit. Focused probes under
 `Source/UnrealCAPIHost/Private/Tests/` are test fixtures and stay small by
-design. The queue fixture checks concurrent admission, output clearing, unique
+design. The collision fixture executes line, filtered line, sweep, filtered
+sweep, overlap, filtered overlap, and detailed-hit calls against a known
+query-only box, then checks collision settings and handle drainage. The queue
+fixture checks concurrent admission, output clearing, unique
 request ids, cancellation suppression, callback reentrancy, and drainage. The event-bridge fixture
 queries runtime statistics from inside event and actor-destroyed callbacks to
 verify `active_callbacks` includes in-flight
@@ -80,8 +83,8 @@ sh tests/run_unreal_build.sh` to compile, cook, stage, and package the minimal
 host project for the current platform. A same-platform Mac Development build
 first runs the host C smoke in an Editor PIE world with NullRHI, then launches
 the staged app bundle. Other hosts launch the archived executable. Each run
-waits for successful bootstrap,
-event-bridge, latent-call, concurrent queue, async save/load, async object-load,
+waits for successful bootstrap, collision, event-bridge, latent-call,
+concurrent queue, async save/load, async object-load,
 gameplay-example, and travel C smoke messages; failures and timeouts fail the
 gate with recent host output.
 Set `UEC_UNREAL_CONFIGURATION=Shipping` to repeat the build in Shipping mode.

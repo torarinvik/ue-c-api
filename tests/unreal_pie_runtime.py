@@ -15,6 +15,7 @@ from pathlib import Path
 
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
+    "C collision smoke completed",
     "C event bridge smoke completed",
     "C latent invocation smoke completed",
     "C game-thread queue smoke completed",
@@ -25,6 +26,7 @@ SUCCESS_MARKERS = (
 )
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
+    "C collision smoke failed",
     "C event bridge smoke failed",
     "C latent invocation smoke failed",
     "C game-thread queue smoke failed",
@@ -163,7 +165,7 @@ def main(argv: list[str]) -> int:
         print(error, file=sys.stderr)
         return 1
     print(
-        "Editor PIE completed the C bootstrap, event, latent, queue, async save/load, "
+        "Editor PIE completed the C bootstrap, collision, event, latent, queue, async save/load, "
         "async object load, gameplay, and travel smoke checks."
     )
     return 0

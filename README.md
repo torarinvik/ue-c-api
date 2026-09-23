@@ -29,9 +29,11 @@ for changes in development. C examples are in
 When Unreal Engine is installed locally, `UE_ROOT=/path/to/UnrealEngine sh
 tests/run_unreal_build.sh` compiles, cooks, stages, and packages the host project.
 For a same-platform Development build, it launches the packaged host and waits
-for the C bootstrap, event-bridge, latent-call, concurrent and cancellable
-game-thread queue, asynchronous save/load, asynchronous object load,
-gameplay-example, and world-travel smoke checks. The persistence check verifies
+for the C bootstrap, collision queries, event-bridge, latent-call, concurrent
+and cancellable game-thread queue, asynchronous save/load, asynchronous object
+load, gameplay-example, and world-travel smoke checks. The collision probe
+checks filtered traces, sweeps, overlaps, detailed hit handles, and cleanup.
+The persistence check verifies
 callback accounting and removes its temporary save slot; the object-load check
 first cancels a request for the already-loaded native `Actor` class to verify
 callback suppression, checks a missing-asset failure result and request

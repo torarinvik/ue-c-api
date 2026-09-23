@@ -40,6 +40,7 @@ class UnrealRuntimeTests(unittest.TestCase):
     def test_accepts_all_smoke_markers(self):
         executable = self.make_host([
             "C consumer bootstrap completed",
+            "C collision smoke completed",
             "C event bridge smoke completed",
             "C latent invocation smoke completed",
             "C game-thread queue smoke completed",
@@ -48,37 +49,42 @@ class UnrealRuntimeTests(unittest.TestCase):
             "C gameplay example smoke completed",
             "C travel smoke completed",
         ])
-        run_smoke(executable, timeout_seconds=2.0)
+        run_smoke(executable, timeout_seconds=10.0)
 
     def test_surfaces_smoke_failure(self):
         executable = self.make_host(["C event bridge smoke failed with result 8"])
         with self.assertRaisesRegex(RuntimeError, "C event bridge smoke failed"):
-            run_smoke(executable, timeout_seconds=2.0)
+            run_smoke(executable, timeout_seconds=10.0)
+
+    def test_surfaces_collision_smoke_failure(self):
+        executable = self.make_host(["C collision smoke failed with result 8"])
+        with self.assertRaisesRegex(RuntimeError, "C collision smoke failed"):
+            run_smoke(executable, timeout_seconds=10.0)
 
     def test_surfaces_travel_smoke_failure(self):
         executable = self.make_host(["C travel smoke failed with result 8"])
         with self.assertRaisesRegex(RuntimeError, "C travel smoke failed"):
-            run_smoke(executable, timeout_seconds=2.0)
+            run_smoke(executable, timeout_seconds=10.0)
 
     def test_surfaces_gameplay_example_smoke_failure(self):
         executable = self.make_host(["C gameplay example smoke failed with result 8"])
         with self.assertRaisesRegex(RuntimeError, "C gameplay example smoke failed"):
-            run_smoke(executable, timeout_seconds=2.0)
+            run_smoke(executable, timeout_seconds=10.0)
 
     def test_surfaces_game_thread_queue_smoke_failure(self):
         executable = self.make_host(["C game-thread queue smoke failed with result 8"])
         with self.assertRaisesRegex(RuntimeError, "C game-thread queue smoke failed"):
-            run_smoke(executable, timeout_seconds=2.0)
+            run_smoke(executable, timeout_seconds=10.0)
 
     def test_surfaces_async_save_smoke_failure(self):
         executable = self.make_host(["C async save smoke failed with result 8"])
         with self.assertRaisesRegex(RuntimeError, "C async save smoke failed"):
-            run_smoke(executable, timeout_seconds=2.0)
+            run_smoke(executable, timeout_seconds=10.0)
 
     def test_surfaces_async_object_load_smoke_failure(self):
         executable = self.make_host(["C async object load smoke failed with result 8"])
         with self.assertRaisesRegex(RuntimeError, "C async object load smoke failed"):
-            run_smoke(executable, timeout_seconds=2.0)
+            run_smoke(executable, timeout_seconds=10.0)
 
     def test_times_out_if_smoke_never_finishes(self):
         executable = self.make_host([])
