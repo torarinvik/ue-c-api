@@ -197,11 +197,13 @@ extern "C" uec_result UEC_CALL uec_host_async_save_smoke_start(void)
         return UEC_RESULT_INTERNAL_ERROR;
     }
 
-    FTCHARToUTF8 classUtf8(TEXT("/Script/Engine.SaveGame"));
+    FTCHARToUTF8 classUtf8(TEXT("/Script/UnrealCAPIHost.UECAPIHostSaveGame"));
     const uec_string_view classPath{classUtf8.Get(),
                                     static_cast<size_t>(classUtf8.Length())};
     result = state.Api->create_save_game(state.Context, classPath, &state.SaveObject);
     if (result != UEC_RESULT_OK) {
+        UE_LOG(LogTemp, Error, TEXT("Async save smoke create failed: %d"),
+               static_cast<int32>(result));
         FinishAsyncSaveSmoke(state, result);
         return result;
     }
@@ -209,6 +211,10 @@ extern "C" uec_result UEC_CALL uec_host_async_save_smoke_start(void)
     result = state.Api->get_runtime_stats(state.Context, &state.Baseline);
     if (result != UEC_RESULT_OK || state.Baseline.pending_requests != 0u ||
         state.Baseline.active_callbacks != 0u) {
+        UE_LOG(LogTemp, Error,
+               TEXT("Async save smoke baseline failed: result=%d requests=%u callbacks=%u"),
+               static_cast<int32>(result), state.Baseline.pending_requests,
+               state.Baseline.active_callbacks);
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         FinishAsyncSaveSmoke(state, result);
         return result;
@@ -221,6 +227,8 @@ extern "C" uec_result UEC_CALL uec_host_async_save_smoke_start(void)
         state.SaveObject, slotName, 0, &OnAsyncSaveSmokeComplete, &state,
         &state.RequestId);
     if (result != UEC_RESULT_OK) {
+        UE_LOG(LogTemp, Error, TEXT("Async save smoke request failed: %d"),
+               static_cast<int32>(result));
         FinishAsyncSaveSmoke(state, result);
         return result;
     }

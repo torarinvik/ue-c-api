@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/SaveGame.h"
 #include "Engine/LatentActionManager.h"
 #include "UECAPIHostLatentSmokeActor.generated.h"
 
@@ -45,4 +46,10 @@ public:
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke",
               meta=(WorldContext="WorldContextObject"))
     void WorldContextSmokeCall(UObject* WorldContextObject);
+};
+
+UCLASS()
+class UUECAPIHostSaveGame final : public USaveGame
+{
+    GENERATED_BODY()
 };

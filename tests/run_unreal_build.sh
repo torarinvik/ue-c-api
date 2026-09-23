@@ -73,7 +73,12 @@ trap 'rm -rf "$build_dir"' EXIT HUP INT TERM
 
 printf 'Unreal %s %s build, cook, stage, and package completed.\n' "$platform" "$configuration"
 if [ "$platform" = "$host_platform" ] && [ "$configuration" = Development ]; then
-    python3 "$repo_dir/tests/unreal_runtime.py" "$build_dir/archive"
+    if [ "$host_platform" = Mac ]; then
+        runtime_output="$repo_dir/Saved/StagedBuilds/Mac/UnrealCAPIHost.app/Contents/MacOS"
+    else
+        runtime_output="$build_dir/archive"
+    fi
+    python3 "$repo_dir/tests/unreal_runtime.py" "$runtime_output"
 else
     printf 'Packaged runtime smoke skipped for %s %s target on %s host.\n' \
         "$platform" "$configuration" "$host_platform"

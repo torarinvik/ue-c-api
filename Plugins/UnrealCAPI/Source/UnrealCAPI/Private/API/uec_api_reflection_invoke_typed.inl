@@ -474,6 +474,15 @@
         if (expectedKind == UEC_PROPERTY_UNKNOWN || argument.kind != expectedKind ||
             !IsValidStringView(argument.text_value)) return UEC_RESULT_INVALID_ARGUMENT;
         const FString text = ToFString(argument.text_value);
+        if (FStrProperty* stringProperty = CastField<FStrProperty>(property))
+        {
+            FString value;
+            int32 consumedCharacters = 0;
+            if (!FParse::QuotedString(*text, value, &consumedCharacters) ||
+                consumedCharacters != text.Len()) return UEC_RESULT_INVALID_ARGUMENT;
+            stringProperty->SetPropertyValue_InContainer(container, value);
+            return UEC_RESULT_OK;
+        }
         return property->ImportText_InContainer(*text, container, actor, PPF_None, GWarn) != nullptr
             ? UEC_RESULT_OK : UEC_RESULT_INVALID_ARGUMENT;
     }

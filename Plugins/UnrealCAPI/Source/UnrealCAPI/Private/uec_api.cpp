@@ -1,6 +1,7 @@
 #include "uec_api.h"
 #include "CoreMinimal.h"
 #include "Math/NumericLimits.h"
+#include "Misc/Parse.h"
 #include "Containers/Ticker.h"
 #include "Engine/AssetManager.h"
 #include "Engine/Engine.h"
