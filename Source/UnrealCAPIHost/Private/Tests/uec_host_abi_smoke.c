@@ -34,12 +34,17 @@ static uec_result CheckWidgetChildValidation(const uec_api* api, uec_context* co
     return UEC_RESULT_OK;
 }
 
+static int IsAcceptedCollisionCountResult(uec_result result)
+{
+    return result == UEC_RESULT_INVALID_HANDLE || result == UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result CheckCollisionQueryBounds(const uec_api* api, uec_context* context)
 {
     const uint32_t tooMany = UEC_MAX_COLLISION_QUERY_ACTORS + 1u;
     const uec_vector3 start = {0.0, 0.0, 0.0};
     const uec_vector3 end = {1.0, 0.0, 0.0};
-    const uec_actor* ignoredActors[1] = {(const uec_actor*)context};
+    const uec_actor* ignoredActors[UEC_MAX_COLLISION_QUERY_ACTORS] = {0};
     uec_actor* outputActors[UEC_MAX_COLLISION_QUERY_ACTORS];
     uec_actor* filteredOutputs[2] = {(uec_actor*)context, (uec_actor*)context};
     uec_hit_result hit = {0};
@@ -62,10 +67,37 @@ static uec_result CheckCollisionQueryBounds(const uec_api* api, uec_context* con
     }
 
     outCount = UINT32_MAX;
+    if (!IsAcceptedCollisionCountResult(api->overlap_shape(
+            NULL, start, NULL, UEC_TRACE_VISIBILITY, UEC_MAX_COLLISION_QUERY_ACTORS,
+            outputActors, &outCount)) || outCount != 0u) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    for (uint32_t index = 0u; index < UEC_MAX_COLLISION_QUERY_ACTORS; ++index) {
+        if (outputActors[index] != NULL) return UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    outCount = UINT32_MAX;
     if (api->overlap_shape_filtered(NULL, start, NULL, UEC_TRACE_VISIBILITY, 2u,
                                     ignoredActors, tooMany, filteredOutputs, &outCount) !=
             UEC_RESULT_INVALID_ARGUMENT || outCount != 0u ||
         filteredOutputs[0] != NULL || filteredOutputs[1] != NULL) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    filteredOutputs[0] = (uec_actor*)context;
+    filteredOutputs[1] = (uec_actor*)context;
+    outCount = UINT32_MAX;
+    if (!IsAcceptedCollisionCountResult(api->overlap_shape_filtered(
+            NULL, start, NULL, UEC_TRACE_VISIBILITY, 2u, ignoredActors,
+            UEC_MAX_COLLISION_QUERY_ACTORS, filteredOutputs, &outCount)) ||
+        outCount != 0u || filteredOutputs[0] != NULL || filteredOutputs[1] != NULL) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    hit.actor = (uec_actor*)context;
+    if (!IsAcceptedCollisionCountResult(api->line_trace_filtered(
+            NULL, start, end, UEC_TRACE_VISIBILITY, UEC_FALSE, ignoredActors,
+            UEC_MAX_COLLISION_QUERY_ACTORS, &hit)) || hit.actor != NULL) {
         return UEC_RESULT_INTERNAL_ERROR;
     }
 
@@ -74,6 +106,13 @@ static uec_result CheckCollisionQueryBounds(const uec_api* api, uec_context* con
     if (api->trace_detailed_filtered(NULL, start, end, NULL, UEC_TRACE_VISIBILITY,
                                      UEC_FALSE, ignoredActors, tooMany, &detailedHit) !=
             UEC_RESULT_INVALID_ARGUMENT || detailedHit.hit.actor != NULL) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    detailedHit.hit.actor = (uec_actor*)context;
+    if (!IsAcceptedCollisionCountResult(api->trace_detailed_filtered(
+            NULL, start, end, NULL, UEC_TRACE_VISIBILITY, UEC_FALSE, ignoredActors,
+            UEC_MAX_COLLISION_QUERY_ACTORS, &detailedHit)) ||
+        detailedHit.hit.actor != NULL) {
         return UEC_RESULT_INTERNAL_ERROR;
     }
     return UEC_RESULT_OK;
