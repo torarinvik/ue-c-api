@@ -82,6 +82,9 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_transform transformAfter = {0};
     uec_transform childTransformBeforeAttach = {0};
     uec_transform childTransformAfterAttach = {0};
+    uec_transform childTransformBeforeRelativeAttach = {0};
+    uec_transform childTransformAfterRelativeAttach = {0};
+    uec_transform relativeExpectedTransform = {0};
     uec_transform childTransformAfterParentMove = {0};
     uec_transform childTransformAfterDetach = {0};
     uec_transform childTransformAfterDetachedParentMove = {0};
@@ -420,6 +423,32 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     if (result != UEC_RESULT_OK) goto cleanup;
     result = api->get_component_transform(childComponent, &transformAfter);
     if (result != UEC_RESULT_OK || !IsSameTransform(transformAfter, attemptedTransform)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
+    childTransformBeforeRelativeAttach = transformAfter;
+    result = api->get_actor_transform(actor, &transformBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->attach_scene_component(childComponent, parentComponent,
+                                         UEC_FALSE, emptySocket);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(childComponent,
+                                          &childTransformAfterRelativeAttach);
+    relativeExpectedTransform = childTransformBeforeRelativeAttach;
+    relativeExpectedTransform.translation.x += transformBefore.translation.x;
+    relativeExpectedTransform.translation.y += transformBefore.translation.y;
+    relativeExpectedTransform.translation.z += transformBefore.translation.z;
+    if (result != UEC_RESULT_OK ||
+        !IsSameTransform(childTransformAfterRelativeAttach, relativeExpectedTransform)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->detach_scene_component(childComponent, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(childComponent, &transformAfter);
+    if (result != UEC_RESULT_OK ||
+        !IsSameTransform(transformAfter, childTransformBeforeRelativeAttach)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
