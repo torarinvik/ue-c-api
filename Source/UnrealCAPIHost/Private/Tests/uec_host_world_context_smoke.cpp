@@ -14,6 +14,7 @@ namespace
     uec_world* GEditorWorld = nullptr;
     uec_world* GOldWorld = nullptr;
     uec_actor* GOldActor = nullptr;
+    uec_actor* GLatentSmokeActor = nullptr;
     uec_object* GOldWorldGameInstance = nullptr;
     uec_actor* GWorldOwnedActor = nullptr;
     uec_scene_component* GWorldOwnedComponent = nullptr;
@@ -23,7 +24,9 @@ namespace
     TWeakObjectPtr<UWorld> GCapturedWorld;
     uint64_t GTickCallbackCount = 0;
     uint64_t GTickCallbackCountAtCleanup = 0;
+    uint64_t GLatentSmokeRequestId = 0;
     bool GWorldCleanupObserved = false;
+    bool GLatentSmokeCallbackExecuted = false;
 #if WITH_EDITOR
     FDelegateHandle GWorldCleanupDelegate;
 #endif
@@ -31,6 +34,12 @@ namespace
     void UEC_CALL CountWorldTicks(uint64_t, double, void*)
     {
         if (GTickCallbackCount != UINT64_MAX) ++GTickCallbackCount;
+    }
+
+    void UEC_CALL ObserveLatentCompletion(uint64_t, uec_result, void* userData)
+    {
+        bool* callbackExecuted = static_cast<bool*>(userData);
+        if (callbackExecuted != nullptr) *callbackExecuted = true;
     }
 
 #if WITH_EDITOR
@@ -115,6 +124,9 @@ namespace
         if (GApi != nullptr && GOldActor != nullptr) {
             (void)GApi->release_actor(GOldActor);
         }
+        if (GApi != nullptr && GLatentSmokeActor != nullptr) {
+            (void)GApi->release_actor(GLatentSmokeActor);
+        }
         if (GApi != nullptr && GOldWorld != nullptr) {
             (void)GApi->release_world(GOldWorld);
         }
@@ -126,6 +138,9 @@ namespace
         }
         GCapturedWorld.Reset();
         GOldActor = nullptr;
+        GLatentSmokeActor = nullptr;
+        GLatentSmokeRequestId = 0;
+        GLatentSmokeCallbackExecuted = false;
         GOldWorld = nullptr;
         GEditorWorld = nullptr;
         GContext = nullptr;
@@ -228,6 +243,8 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
 #else
     if (world == nullptr || GContext != nullptr) return UEC_RESULT_INVALID_ARGUMENT;
     GWorldCleanupObserved = false;
+    GLatentSmokeCallbackExecuted = false;
+    GLatentSmokeRequestId = 0;
     GTickCallbackCount = 0;
     GTickCallbackCountAtCleanup = 0;
     uint32_t editorWorldCount = 0;
@@ -243,7 +260,8 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
         GApi->get_actor_property_object == nullptr || GApi->get_actor_transform == nullptr ||
         GApi->get_component_transform == nullptr || GApi->get_component_visible == nullptr ||
         GApi->get_object_path == nullptr || GApi->retain_object == nullptr ||
-        GApi->subscribe_world_tick == nullptr || GApi->release_actor == nullptr ||
+        GApi->subscribe_world_tick == nullptr || GApi->invoke_actor_function_latent == nullptr ||
+        GApi->release_actor == nullptr ||
         GApi->release_scene_component == nullptr || GApi->release_object == nullptr ||
         GApi->release_world == nullptr || GApi->release_context == nullptr) {
         result = UEC_RESULT_INTERNAL_ERROR;
@@ -377,6 +395,48 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
             goto cleanup;
         }
     }
+    {
+        static constexpr char latentActorPathData[] =
+            "/Script/UnrealCAPIHost.UECAPIHostLatentSmokeActor";
+        static constexpr char latentFunctionNameData[] = "WaitForSmokeDuration";
+        const uec_string_view latentActorPath{
+            latentActorPathData, sizeof(latentActorPathData) - 1u};
+        const uec_string_view latentFunctionName{
+            latentFunctionNameData, sizeof(latentFunctionNameData) - 1u};
+        const uec_transform transform{
+            {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
+        result = GApi->spawn_actor(
+            GOldWorld, latentActorPath, &transform, &GLatentSmokeActor);
+        if (result != UEC_RESULT_OK || GLatentSmokeActor == nullptr) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+
+        uec_function_argument latentArguments[2]{};
+        latentArguments[0].struct_size = sizeof(latentArguments[0]);
+        latentArguments[0].kind = UEC_PROPERTY_OBJECT;
+        latentArguments[0].world_value = GOldWorld;
+        latentArguments[1].struct_size = sizeof(latentArguments[1]);
+        latentArguments[1].kind = UEC_PROPERTY_FLOAT;
+        latentArguments[1].real_value = 3600.0;
+        result = GApi->invoke_actor_function_latent(
+            GLatentSmokeActor, latentFunctionName, latentArguments,
+            2u, &ObserveLatentCompletion, &GLatentSmokeCallbackExecuted,
+            &GLatentSmokeRequestId);
+        if (result != UEC_RESULT_OK || GLatentSmokeRequestId == 0u) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+
+        uec_runtime_stats pending{};
+        pending.struct_size = sizeof(pending);
+        result = GApi->get_runtime_stats(GContext, &pending);
+        if (result != UEC_RESULT_OK ||
+            pending.pending_requests != GBaseline.pending_requests + 1u) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+    }
 
     GCapturedWorld = world;
     GWorldCleanupDelegate = FWorldDelegates::OnWorldCleanup.AddStatic(&ObserveWorldCleanup);
@@ -407,12 +467,16 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void)
         GWorldOwnedActor == nullptr || GWorldOwnedComponent == nullptr ||
         GWorldOwnedObject == nullptr || GWorldOwnedRetainedObject == nullptr ||
         GOldWorldGameInstance == nullptr ||
+        GLatentSmokeActor == nullptr || GLatentSmokeRequestId == 0u ||
+        GLatentSmokeCallbackExecuted ||
         GTickCallbackCount == 0u || GTickCallbackCount != GTickCallbackCountAtCleanup) {
         UE_LOG(LogTemp, Error,
-            TEXT("PIE restart cleanup invariant failed: cleanup=%d tick=%llu atCleanup=%llu api=%d context=%d world=%d actor=%d"),
+            TEXT("PIE restart cleanup invariant failed: cleanup=%d tick=%llu atCleanup=%llu latentRequest=%llu latentCallback=%d api=%d context=%d world=%d actor=%d"),
             GWorldCleanupObserved,
             static_cast<unsigned long long>(GTickCallbackCount),
             static_cast<unsigned long long>(GTickCallbackCountAtCleanup),
+            static_cast<unsigned long long>(GLatentSmokeRequestId),
+            GLatentSmokeCallbackExecuted,
             GApi != nullptr, GContext != nullptr, GOldWorld != nullptr, GOldActor != nullptr);
         goto cleanup;
     }
