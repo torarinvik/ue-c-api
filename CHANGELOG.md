@@ -47,6 +47,9 @@ development; they do not imply a published or runtime-verified release.
   invalidation; the async travel smoke verifies widget and audio token
   cancellation plus stale audio-component invalidation before the travel call
   returns.
+- The three-cycle PIE restart smoke now fills the 1,024-entry world-tick limit,
+  checks that the next subscription returns `UEC_RESULT_QUEUE_FULL` with a zeroed
+  id, and verifies cleanup retires every accepted token without late callbacks.
 - Actor-destroyed notifications now invalidate actor, component, and object
   handles by clearing their weak references without pre-releasing them, so
   consumers can still release handles after Unreal destroys their objects.

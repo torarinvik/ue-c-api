@@ -7,6 +7,10 @@
 
 #include "uec_api.h"
 
+extern "C" uec_result UEC_CALL uec_host_world_tick_capacity_capture(uec_world*, const uec_api*, uec_context*, uec_tick_callback, void*, uint32_t);
+extern "C" bool UEC_CALL uec_host_world_tick_capacity_verify();
+extern "C" void UEC_CALL uec_host_world_tick_capacity_cancel();
+
 namespace
 {
     const uec_api* GApi = nullptr;
@@ -43,12 +47,10 @@ namespace
     {
         if (GTickCallbackCount != UINT64_MAX) ++GTickCallbackCount;
     }
-
     void UEC_CALL CountWidgetCleanupClicks(uint64_t, void*)
     {
         if (GWidgetCleanupCallbackCount != UINT64_MAX) ++GWidgetCleanupCallbackCount;
     }
-
     void UEC_CALL CountAudioCleanupCallbacks(uint64_t, void*)
     {
         if (GAudioCleanupCallbackCount != UINT64_MAX) ++GAudioCleanupCallbackCount;
@@ -178,6 +180,7 @@ namespace
     void ReleaseCapturedHandles()
     {
         RemoveWorldCleanupObserver();
+        uec_host_world_tick_capacity_cancel();
         if (GApi != nullptr && GContext != nullptr &&
             GWidgetCleanupSubscriptionId != 0u &&
             GApi->unbind_button_clicked != nullptr) {
@@ -187,10 +190,8 @@ namespace
             GApi->unbind_audio_finished != nullptr) {
             (void)GApi->unbind_audio_finished(GContext, GAudioCleanupSubscriptionId);
         }
-        GWidgetCleanupSubscriptionId = 0u;
-        GWidgetCleanupCallbackCount = 0u;
-        GAudioCleanupSubscriptionId = 0u;
-        GAudioCleanupCallbackCount = 0u;
+        GWidgetCleanupSubscriptionId = GAudioCleanupSubscriptionId = 0u;
+        GWidgetCleanupCallbackCount = GAudioCleanupCallbackCount = 0u;
         (void)ReleaseWorldOwnedHandles();
         if (GApi != nullptr && GOldActor != nullptr) {
             (void)GApi->release_actor(GOldActor);
@@ -389,11 +390,11 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
-
     GBaseline.struct_size = sizeof(GBaseline);
     result = GApi->get_runtime_stats(GContext, &GBaseline);
     if (result != UEC_RESULT_OK || GBaseline.active_callbacks != 0u ||
-        GBaseline.pending_requests != 0u) {
+        GBaseline.pending_requests != 0u ||
+        GBaseline.active_subscriptions > UINT32_MAX - 1026u) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -549,15 +550,10 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
             goto cleanup;
         }
     }
-    {
-        uint64_t subscriptionId = 0;
-        result = GApi->subscribe_world_tick(
-            GOldWorld, &CountWorldTicks, nullptr, &subscriptionId);
-        if (result != UEC_RESULT_OK || subscriptionId == 0u) {
-            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-            goto cleanup;
-        }
-    }
+    result = uec_host_world_tick_capacity_capture(
+        GOldWorld, GApi, GContext, &CountWorldTicks, nullptr,
+        GBaseline.active_subscriptions + 1u);
+    if (result != UEC_RESULT_OK) goto cleanup;
     {
         static constexpr char audioActorPathData[] =
             "/Script/UnrealCAPIHost.UECAPIHostPlayerFlowPawn";
@@ -591,7 +587,7 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
         audioBoundStats.struct_size = sizeof(audioBoundStats);
         result = GApi->get_runtime_stats(GContext, &audioBoundStats);
         if (result != UEC_RESULT_OK ||
-            audioBoundStats.active_subscriptions != GBaseline.active_subscriptions + 3u) {
+            audioBoundStats.active_subscriptions != GBaseline.active_subscriptions + 1026u) {
             if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
             goto cleanup;
         }
@@ -692,6 +688,10 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void)
         goto cleanup;
     }
     GWidgetCleanupSubscriptionId = 0u;
+    if (!uec_host_world_tick_capacity_verify()) {
+        UE_LOG(LogTemp, Error, TEXT("World cleanup did not retire all world-tick tokens"));
+        goto cleanup;
+    }
     if (GApi->unbind_audio_finished(GContext, GAudioCleanupSubscriptionId) !=
         UEC_RESULT_INVALID_ARGUMENT || GAudioCleanupCallbackCount != 0u) {
         UE_LOG(LogTemp, Error,
