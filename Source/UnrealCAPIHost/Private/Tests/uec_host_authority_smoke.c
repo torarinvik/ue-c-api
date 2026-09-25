@@ -53,6 +53,9 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     uec_property_value localValueBefore = {0};
     uec_property_value attemptedLocalValue = {0};
     uec_property_value localValueAfter = {0};
+    uec_property_value containerValueBefore = {0};
+    uec_property_value attemptedContainerValue = {0};
+    uec_property_value containerValueAfter = {0};
     static const char replicatedPropertyText[] = "AuthoritySmokeReplicatedValue";
     const uec_string_view replicatedProperty = {
         replicatedPropertyText, sizeof(replicatedPropertyText) - 1u
@@ -60,6 +63,30 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     static const char localPropertyText[] = "AuthoritySmokeLocalValue";
     const uec_string_view localProperty = {
         localPropertyText, sizeof(localPropertyText) - 1u
+    };
+    static const char replicatedArrayPropertyText[] = "AuthoritySmokeReplicatedArray";
+    const uec_string_view replicatedArrayProperty = {
+        replicatedArrayPropertyText, sizeof(replicatedArrayPropertyText) - 1u
+    };
+    static const char replicatedMapPropertyText[] = "AuthoritySmokeNetMap";
+    const uec_string_view replicatedMapProperty = {
+        replicatedMapPropertyText, sizeof(replicatedMapPropertyText) - 1u
+    };
+    static const char replicatedSetPropertyText[] = "AuthoritySmokeNetSet";
+    const uec_string_view replicatedSetProperty = {
+        replicatedSetPropertyText, sizeof(replicatedSetPropertyText) - 1u
+    };
+    static const char replicatedStructPropertyText[] = "AuthoritySmokeReplicatedStruct";
+    const uec_string_view replicatedStructProperty = {
+        replicatedStructPropertyText, sizeof(replicatedStructPropertyText) - 1u
+    };
+    static const char replicatedStructFieldText[] = "IntegerValue";
+    const uec_string_view replicatedStructField = {
+        replicatedStructFieldText, sizeof(replicatedStructFieldText) - 1u
+    };
+    static const char attemptedTextValue[] = "97";
+    const uec_string_view attemptedText = {
+        attemptedTextValue, sizeof(attemptedTextValue) - 1u
     };
     static const char authorityTagText[] = "UEC_ClientAuthoritySmoke";
     const uec_string_view authorityTag = {
@@ -75,6 +102,18 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->release_world == NULL || api->get_actor_count_by_class == NULL ||
         api->get_actor_at_by_class == NULL || api->release_actor == NULL ||
         api->get_actor_property_value == NULL || api->set_actor_property_value == NULL ||
+        api->get_actor_property_array_element_value == NULL ||
+        api->set_actor_property_array_element_value == NULL ||
+        api->set_actor_property_array_element_text == NULL ||
+        api->get_actor_property_map_value == NULL ||
+        api->set_actor_property_map_value == NULL ||
+        api->set_actor_property_map_value_text == NULL ||
+        api->get_actor_property_set_element_value == NULL ||
+        api->set_actor_property_set_element_value == NULL ||
+        api->set_actor_property_set_element_text == NULL ||
+        api->get_actor_property_struct_field_value == NULL ||
+        api->set_actor_property_struct_field_value == NULL ||
+        api->set_actor_property_struct_field_text == NULL ||
         api->get_actor_root_component == NULL || api->release_scene_component == NULL ||
         api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
         api->get_component_transform == NULL || api->set_component_transform == NULL ||
@@ -167,6 +206,118 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+
+    containerValueBefore.struct_size = sizeof(containerValueBefore);
+    result = api->get_actor_property_array_element_value(
+        actor, replicatedArrayProperty, 0u, &containerValueBefore);
+    if (result != UEC_RESULT_OK || containerValueBefore.kind != UEC_PROPERTY_INTEGER) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    attemptedContainerValue = containerValueBefore;
+    attemptedContainerValue.integer_value++;
+    if (api->set_actor_property_array_element_value(
+            actor, replicatedArrayProperty, 0u, &attemptedContainerValue) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->set_actor_property_array_element_text(
+            actor, replicatedArrayProperty, 0u, attemptedText) != UEC_RESULT_UNSUPPORTED) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    containerValueAfter.struct_size = sizeof(containerValueAfter);
+    result = api->get_actor_property_array_element_value(
+        actor, replicatedArrayProperty, 0u, &containerValueAfter);
+    if (result != UEC_RESULT_OK || containerValueAfter.kind != UEC_PROPERTY_INTEGER ||
+        containerValueAfter.integer_value != containerValueBefore.integer_value) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
+    containerValueBefore = (uec_property_value){0};
+    containerValueBefore.struct_size = sizeof(containerValueBefore);
+    result = api->get_actor_property_map_value(
+        actor, replicatedMapProperty, 0u, &containerValueBefore);
+    if (result != UEC_RESULT_OK || containerValueBefore.kind != UEC_PROPERTY_INTEGER) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    attemptedContainerValue = containerValueBefore;
+    attemptedContainerValue.integer_value++;
+    if (api->set_actor_property_map_value(
+            actor, replicatedMapProperty, 0u, &attemptedContainerValue) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->set_actor_property_map_value_text(
+            actor, replicatedMapProperty, 0u, attemptedText) != UEC_RESULT_UNSUPPORTED) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    containerValueAfter = (uec_property_value){0};
+    containerValueAfter.struct_size = sizeof(containerValueAfter);
+    result = api->get_actor_property_map_value(
+        actor, replicatedMapProperty, 0u, &containerValueAfter);
+    if (result != UEC_RESULT_OK || containerValueAfter.kind != UEC_PROPERTY_INTEGER ||
+        containerValueAfter.integer_value != containerValueBefore.integer_value) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
+    containerValueBefore = (uec_property_value){0};
+    containerValueBefore.struct_size = sizeof(containerValueBefore);
+    result = api->get_actor_property_set_element_value(
+        actor, replicatedSetProperty, 0u, &containerValueBefore);
+    if (result != UEC_RESULT_OK || containerValueBefore.kind != UEC_PROPERTY_INTEGER) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    attemptedContainerValue = containerValueBefore;
+    attemptedContainerValue.integer_value++;
+    if (api->set_actor_property_set_element_value(
+            actor, replicatedSetProperty, 0u, &attemptedContainerValue) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->set_actor_property_set_element_text(
+            actor, replicatedSetProperty, 0u, attemptedText) != UEC_RESULT_UNSUPPORTED) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    containerValueAfter = (uec_property_value){0};
+    containerValueAfter.struct_size = sizeof(containerValueAfter);
+    result = api->get_actor_property_set_element_value(
+        actor, replicatedSetProperty, 0u, &containerValueAfter);
+    if (result != UEC_RESULT_OK || containerValueAfter.kind != UEC_PROPERTY_INTEGER ||
+        containerValueAfter.integer_value != containerValueBefore.integer_value) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
+    containerValueBefore = (uec_property_value){0};
+    containerValueBefore.struct_size = sizeof(containerValueBefore);
+    result = api->get_actor_property_struct_field_value(
+        actor, replicatedStructProperty, replicatedStructField, &containerValueBefore);
+    if (result != UEC_RESULT_OK || containerValueBefore.kind != UEC_PROPERTY_INTEGER) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    attemptedContainerValue = containerValueBefore;
+    attemptedContainerValue.integer_value++;
+    if (api->set_actor_property_struct_field_value(
+            actor, replicatedStructProperty, replicatedStructField,
+            &attemptedContainerValue) != UEC_RESULT_UNSUPPORTED ||
+        api->set_actor_property_struct_field_text(
+            actor, replicatedStructProperty, replicatedStructField,
+            attemptedText) != UEC_RESULT_UNSUPPORTED) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    containerValueAfter = (uec_property_value){0};
+    containerValueAfter.struct_size = sizeof(containerValueAfter);
+    result = api->get_actor_property_struct_field_value(
+        actor, replicatedStructProperty, replicatedStructField, &containerValueAfter);
+    if (result != UEC_RESULT_OK || containerValueAfter.kind != UEC_PROPERTY_INTEGER ||
+        containerValueAfter.integer_value != containerValueBefore.integer_value) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
     localValueBefore.struct_size = sizeof(localValueBefore);
     result = api->get_actor_property_value(actor, localProperty, &localValueBefore);
     if (result != UEC_RESULT_OK || localValueBefore.kind != UEC_PROPERTY_INTEGER) {

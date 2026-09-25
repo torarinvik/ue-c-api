@@ -6,6 +6,17 @@
 AUECAPIHostCollisionSmokeActor::AUECAPIHostCollisionSmokeActor()
 {
     bReplicates = true;
+    AuthoritySmokeNetMap.Add(5, 11);
+    AuthoritySmokeNetSet.Add(13);
+    FProperty* mapProperty = FindFProperty<FProperty>(
+        GetClass(), GET_MEMBER_NAME_CHECKED(AUECAPIHostCollisionSmokeActor,
+                                            AuthoritySmokeNetMap));
+    FProperty* setProperty = FindFProperty<FProperty>(
+        GetClass(), GET_MEMBER_NAME_CHECKED(AUECAPIHostCollisionSmokeActor,
+                                            AuthoritySmokeNetSet));
+    check(mapProperty != nullptr && setProperty != nullptr);
+    mapProperty->SetPropertyFlags(CPF_Net);
+    setProperty->SetPropertyFlags(CPF_Net);
     UBoxComponent* collisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
     SetRootComponent(collisionBox);
     collisionBox->SetMobility(EComponentMobility::Movable);
@@ -21,4 +32,6 @@ void AUECAPIHostCollisionSmokeActor::GetLifetimeReplicatedProps(
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AUECAPIHostCollisionSmokeActor, AuthoritySmokeReplicatedValue);
+    DOREPLIFETIME(AUECAPIHostCollisionSmokeActor, AuthoritySmokeReplicatedArray);
+    DOREPLIFETIME(AUECAPIHostCollisionSmokeActor, AuthoritySmokeReplicatedStruct);
 }

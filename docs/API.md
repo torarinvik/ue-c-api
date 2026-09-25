@@ -453,8 +453,9 @@ physics writes return `UEC_RESULT_UNSUPPORTED` when their world is a client;
 component transform, activation, attachment, detachment, and collision-setting
 writes are also rejected in client worlds. Actor tag writes remain
 authority-gated. Reflected property setters also reject properties marked
-`CPF_Net` in client worlds, including replicated fields nested inside a
-replicated array, map, set, or struct; local-only reflected fields remain
+`CPF_Net` in client worlds. The guard applies to typed and text setters for
+scalar properties, array/map/set elements, soft paths, class references, and
+fields inside a replicated struct; local-only reflected fields remain
 client-writable. Component visibility and local view-target and input-prediction
 operations remain client-usable for presentation and prediction.
 The UE 5.8.3 multiplayer PIE smoke confirms this behavior for all actor and
