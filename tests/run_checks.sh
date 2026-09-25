@@ -77,6 +77,9 @@ git -C "$repo_dir" diff --check
     -I "$repo_dir/examples/c_gameplay" -fsyntax-only "$host_gameplay_translation_unit"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$consumer_drain_example_dir" -fsyntax-only "$host_consumer_drain_translation_unit"
+"${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$consumer_drain_example_dir" -fsyntax-only \
+    "$repo_dir/tests/c_smoke/c_consumer_drain_header_cpp.cpp"
 stub_build_dir=$(mktemp -d)
 trap 'rm -rf "$stub_build_dir"' EXIT HUP INT TERM
 sanitizer_flags=
@@ -95,7 +98,7 @@ fi
     -o "$stub_build_dir/c_smoke"
 "$stub_build_dir/c_smoke" >/dev/null
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
-    ${sanitizer_flags} -I "$consumer_drain_example_dir" \
+    ${sanitizer_flags} -pthread -I "$consumer_drain_example_dir" \
     "$consumer_drain_example" "$consumer_drain_smoke" \
     -o "$stub_build_dir/c_consumer_drain_smoke"
 "$stub_build_dir/c_consumer_drain_smoke" >/dev/null

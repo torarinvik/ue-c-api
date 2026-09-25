@@ -40,11 +40,22 @@ caches. Existing API tables, contexts, and handles must not be reused across a
 module reload. This restart requirement remains until repeated engine reload
 and consumer-lifecycle stress checks establish a safe in-process contract.
 
-A consumer library may manage its own unload separately: stop submissions,
-cancel and unsubscribe its work, poll `uec_consumer_drain_poll` until drained,
-then release its handles and context before unloading its callback code. That
-procedure does not make unloading or reloading the UnrealCAPI runtime module
-safe.
+A consumer library may manage its own unload separately. Route every API path
+that can create callbacks or queued work through the admission gate in
+`examples/c_consumer_drain/`: call `uec_consumer_drain_gate_try_begin` before
+submission and pair a successful admission with `uec_consumer_drain_gate_end`
+when the API call returns. Include submissions initiated from callbacks. Close
+the gate and signal producer threads to stop. Confirm
+`uec_consumer_drain_gate_is_quiescent` before canceling or unsubscribing owned
+work, then poll `uec_consumer_drain_poll_gated` on the game thread until it
+reports drained. That result waits for admitted submissions to return as well
+as zero bridge subscriptions, requests, and callbacks. Ensure producer
+threads have exited before unloading, without blocking the game thread if a
+worker depends on its callbacks. Release remaining handles and context,
+destroy the gate, and then unload the consumer callback code. The gate is
+consumer-local, so calls that bypass it are outside this unload guarantee.
+This procedure does not make unloading or reloading the UnrealCAPI runtime
+module safe.
 The runtime module is built with C++ exceptions disabled, so no C++ exception
 may cross the C ABI. Unreal assertions and fatal errors remain process-level
 failures.
@@ -72,12 +83,11 @@ Canceled async save-game requests remain pending until Unreal invokes their
 completion delegate. The bridge suppresses the consumer callback, then retires
 the request so the drain count does not reach zero while Unreal still owns work.
 
-`examples/c_consumer_drain/` provides a C helper that performs this poll and a
-portable test for each nonzero counter. Call it from the game thread after the
-consumer has stopped submissions and canceled all owned work; keep its API
-table, context, callback code, and user data alive while it reports not
-drained. Once all three counters are zero, release remaining handles and the
-context before unloading the consumer library.
+`examples/c_consumer_drain/` provides the admission gate, game-thread drain
+poll, and portable counter/concurrency tests. Keep its API table, context,
+callback code, and user data alive while it reports not drained. Once all
+three bridge counters are zero and no gate admission is active, release
+remaining handles and the context before unloading the consumer library.
 
 The bridge checks null/count consistency, size-tagged structures, and opaque
 handle membership. It cannot determine whether an arbitrary non-null pointer
