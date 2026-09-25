@@ -4,6 +4,8 @@
 #include <string.h>
 
 static uec_runtime_stats g_reported_stats;
+static uec_result g_stats_result = UEC_RESULT_OK;
+static uint32_t g_returned_stats_size;
 
 static uec_result UEC_CALL FakeGetRuntimeStats(uec_context* context,
                                                 uec_runtime_stats* out_stats)
@@ -16,8 +18,9 @@ static uec_result UEC_CALL FakeGetRuntimeStats(uec_context* context,
     const size_t copy_size = struct_size < sizeof(g_reported_stats) ?
         struct_size : sizeof(g_reported_stats);
     memcpy(out_stats, &g_reported_stats, copy_size);
-    out_stats->struct_size = (uint32_t)struct_size;
-    return UEC_RESULT_OK;
+    out_stats->struct_size = g_returned_stats_size == 0u ?
+        (uint32_t)struct_size : g_returned_stats_size;
+    return g_stats_result;
 }
 
 static int ExpectNotDrained(const uec_api* api, uec_context* context)
@@ -45,6 +48,16 @@ int main(void)
             UEC_RESULT_INVALID_ARGUMENT || drained != UEC_FALSE) {
         return 1;
     }
+    if (uec_consumer_drain_poll(&api, NULL, &drained, NULL) !=
+            UEC_RESULT_INVALID_ARGUMENT || drained != UEC_FALSE) {
+        return 8;
+    }
+    api.get_runtime_stats = NULL;
+    if (uec_consumer_drain_poll(&api, context, &drained, NULL) !=
+            UEC_RESULT_UNSUPPORTED || drained != UEC_FALSE) {
+        return 9;
+    }
+    api.get_runtime_stats = &FakeGetRuntimeStats;
 
     api.struct_size = (uint32_t)offsetof(uec_api, get_runtime_stats);
     if (uec_consumer_drain_poll(&api, context, &drained, NULL) !=
@@ -53,6 +66,25 @@ int main(void)
     }
     api.struct_size = (uint32_t)(offsetof(uec_api, get_runtime_stats) +
                                  sizeof(api.get_runtime_stats));
+
+    observed.struct_size = (uint32_t)(offsetof(uec_runtime_stats, live_contexts) - 1u);
+    if (uec_consumer_drain_poll(&api, context, &drained, &observed) !=
+            UEC_RESULT_INVALID_ARGUMENT || drained != UEC_FALSE) {
+        return 10;
+    }
+    observed.struct_size = sizeof(observed);
+    g_stats_result = UEC_RESULT_WRONG_THREAD;
+    if (uec_consumer_drain_poll(&api, context, &drained, &observed) !=
+            UEC_RESULT_WRONG_THREAD || drained != UEC_FALSE) {
+        return 11;
+    }
+    g_stats_result = UEC_RESULT_OK;
+    g_returned_stats_size = (uint32_t)(offsetof(uec_runtime_stats, live_contexts) - 1u);
+    if (uec_consumer_drain_poll(&api, context, &drained, &observed) !=
+            UEC_RESULT_INTERNAL_ERROR || drained != UEC_FALSE) {
+        return 12;
+    }
+    g_returned_stats_size = 0u;
 
     g_reported_stats.active_subscriptions = 1u;
     if (!ExpectNotDrained(&api, context)) return 3;
