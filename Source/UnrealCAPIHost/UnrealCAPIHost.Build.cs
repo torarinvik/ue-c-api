@@ -7,7 +7,14 @@ public class UnrealCAPIHost : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         PublicDependencyModuleNames.Add("Core");
-        PrivateDependencyModuleNames.AddRange(new[] { "CoreUObject", "Engine", "UnrealCAPI" });
+        PrivateDependencyModuleNames.AddRange(new[]
+        {
+            "CoreUObject",
+            "Engine",
+            "EnhancedInput",
+            "InputCore",
+            "UnrealCAPI"
+        });
         if (Target.bBuildEditor)
         {
             PrivateDependencyModuleNames.Add("UnrealEd");

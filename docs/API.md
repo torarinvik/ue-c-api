@@ -507,6 +507,11 @@ the tagged value and its numeric fields before resolving handles, returning
 `UEC_RESULT_INVALID_ARGUMENT` for undeclared kinds, non-finite or out-of-range
 axes, and noncanonical booleans.
 
+Enhanced Input action polling and injection require the controller to use
+`UEnhancedPlayerInput`; action binding requires the target actor to have an
+`UEnhancedInputComponent`. The host project configures these as Unreal's default
+player-input and input-component classes in `Config/DefaultEngine.ini`.
+
 Physics helpers read actor velocity and operate on a simulating primitive root
 component. `get_component_velocity` also reads the current velocity of any
 primitive scene component. Velocity replacement/addition, impulses, and forces return

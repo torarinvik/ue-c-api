@@ -99,6 +99,7 @@ class UnrealRuntimeTests(unittest.TestCase):
             "C physics smoke completed",
             "C event bridge smoke completed",
             "C latent invocation smoke completed",
+            "C Enhanced Input smoke completed",
             "C game-thread queue smoke completed",
             "C async save smoke completed",
             "C async object load smoke completed",

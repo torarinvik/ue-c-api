@@ -22,6 +22,7 @@ SUCCESS_MARKERS = (
     "C physics smoke completed",
     "C event bridge smoke completed",
     "C latent invocation smoke completed",
+    "C Enhanced Input smoke completed",
     "C game-thread queue smoke completed",
     "C async save smoke completed",
     "C async object load smoke completed",
@@ -41,6 +42,7 @@ FAILURE_MARKERS = (
     "C physics smoke failed to start",
     "C event bridge smoke failed",
     "C latent invocation smoke failed",
+    "C Enhanced Input smoke failed",
     "C game-thread queue smoke failed",
     "C async save smoke failed",
     "C async object load smoke failed",
@@ -312,7 +314,8 @@ def main(argv: list[str]) -> int:
         print("Editor PIE smoke verified explicit world lookup and distinct instance ids across two clients.")
     else:
         print(
-            "Editor PIE completed the C bootstrap, collision, GC lifetime, physics, event, latent, queue, "
+            "Editor PIE completed the C bootstrap, reflection metadata, persistence/configuration, collision, "
+            "GC lifetime, physics, event, latent, Enhanced Input, queue, "
             "async save/load, async object load, gameplay, and travel smoke checks."
         )
     return 0

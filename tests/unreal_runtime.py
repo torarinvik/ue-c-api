@@ -22,6 +22,7 @@ SUCCESS_MARKERS = (
     "C physics smoke completed",
     "C event bridge smoke completed",
     "C latent invocation smoke completed",
+    "C Enhanced Input smoke completed",
     "C game-thread queue smoke completed",
     "C async save smoke completed",
     "C async object load smoke completed",
@@ -39,6 +40,7 @@ FAILURE_MARKERS = (
     "C physics smoke failed to start",
     "C event bridge smoke failed",
     "C latent invocation smoke failed",
+    "C Enhanced Input smoke failed",
     "C game-thread queue smoke failed",
     "C async save smoke failed",
     "C async object load smoke failed",
@@ -227,7 +229,12 @@ def main(argv: list[str]) -> int:
     if shutdown_pending_only:
         print("Packaged host drained pending work without running borrowed callbacks during shutdown.")
         return 0
-    print("Packaged Development host completed the C bootstrap, collision, GC lifetime, physics, event, latent, queue, async save/load, async object load, gameplay, and travel smoke checks.")
+    print(
+        "Packaged Development host completed the C bootstrap, reflection metadata, "
+        "persistence/configuration, collision, GC lifetime, physics, event, latent, "
+        "Enhanced Input, queue, async save/load, async object load, gameplay, and "
+        "travel smoke checks."
+    )
     return 0
 
 

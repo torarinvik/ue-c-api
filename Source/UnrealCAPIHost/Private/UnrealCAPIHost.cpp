@@ -24,6 +24,9 @@ extern "C" uec_result UEC_CALL uec_host_event_bridge_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_latent_smoke_start(void);
 extern "C" uec_bool UEC_CALL uec_host_latent_smoke_poll(uec_result* out_result);
 extern "C" void UEC_CALL uec_host_latent_smoke_cancel(void);
+extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void);
+extern "C" uec_bool UEC_CALL uec_host_input_smoke_poll(uec_result* out_result);
+extern "C" void UEC_CALL uec_host_input_smoke_cancel(void);
 extern "C" uec_result UEC_CALL uec_host_queue_smoke_start(void);
 extern "C" uec_bool UEC_CALL uec_host_queue_smoke_poll(uec_result* out_result);
 extern "C" void UEC_CALL uec_host_queue_smoke_cancel(void);
@@ -53,6 +56,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     FTSTicker::FDelegateHandle EventBridgeSmokeHandle;
     FTSTicker::FDelegateHandle PhysicsSmokeHandle;
     FTSTicker::FDelegateHandle LatentSmokeHandle;
+    FTSTicker::FDelegateHandle InputSmokeHandle;
     FTSTicker::FDelegateHandle QueueSmokeHandle;
     FTSTicker::FDelegateHandle AsyncSaveSmokeHandle;
     FTSTicker::FDelegateHandle ObjectLoadSmokeHandle;
@@ -62,6 +66,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     FTSTicker::FDelegateHandle ExitAfterPIESmokeHandle;
     FDelegateHandle ShutdownPendingPreExitHandle;
     float LatentSmokeElapsed = 0.0f;
+    float InputSmokeElapsed = 0.0f;
     float QueueSmokeElapsed = 0.0f;
     float AsyncSaveSmokeElapsed = 0.0f;
     float ObjectLoadSmokeElapsed = 0.0f;
@@ -393,6 +398,40 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         }
         if (result == UEC_RESULT_OK) {
             UE_LOG(LogUnrealCAPIHost, Log, TEXT("C latent invocation smoke completed"));
+            const uec_result inputResult = uec_host_input_smoke_start();
+            if (inputResult == UEC_RESULT_OK) {
+                InputSmokeElapsed = 0.0f;
+                InputSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
+                    FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunInputSmoke),
+                    0.1f);
+            }
+            else {
+                UE_LOG(LogUnrealCAPIHost, Error,
+                    TEXT("C Enhanced Input smoke failed to start with result %d"),
+                    static_cast<int32>(inputResult));
+            }
+        }
+        else {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C latent invocation smoke failed with result %d"),
+                static_cast<int32>(result));
+        }
+        LatentSmokeHandle.Reset();
+        return false;
+    }
+
+    bool RunInputSmoke(float deltaSeconds)
+    {
+        InputSmokeElapsed += deltaSeconds;
+        uec_result result = UEC_RESULT_NOT_INITIALIZED;
+        const bool complete = uec_host_input_smoke_poll(&result) == UEC_TRUE;
+        if (!complete && InputSmokeElapsed < 10.0f) return true;
+        if (!complete) {
+            uec_host_input_smoke_cancel();
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result == UEC_RESULT_OK) {
+            UE_LOG(LogUnrealCAPIHost, Log, TEXT("C Enhanced Input smoke completed"));
             const uec_result queueResult = uec_host_queue_smoke_start();
             if (queueResult == UEC_RESULT_OK) {
                 QueueSmokeElapsed = 0.0f;
@@ -408,10 +447,10 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         }
         else {
             UE_LOG(LogUnrealCAPIHost, Error,
-                TEXT("C latent invocation smoke failed with result %d"),
+                TEXT("C Enhanced Input smoke failed with result %d"),
                 static_cast<int32>(result));
         }
-        LatentSmokeHandle.Reset();
+        InputSmokeHandle.Reset();
         return false;
     }
 
@@ -632,6 +671,10 @@ public:
         if (LatentSmokeHandle.IsValid()) {
             FTSTicker::GetCoreTicker().RemoveTicker(LatentSmokeHandle);
             uec_host_latent_smoke_cancel();
+        }
+        if (InputSmokeHandle.IsValid()) {
+            FTSTicker::GetCoreTicker().RemoveTicker(InputSmokeHandle);
+            uec_host_input_smoke_cancel();
         }
         if (QueueSmokeHandle.IsValid()) {
             FTSTicker::GetCoreTicker().RemoveTicker(QueueSmokeHandle);
