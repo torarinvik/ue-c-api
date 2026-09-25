@@ -18,6 +18,7 @@ RUNTIME_MODULE_UNLOAD_FAILURE_MARKER = "C runtime module dynamic-unload policy s
 
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
+    "C player-flow and camera smoke completed",
     RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
     "C cooked reflection metadata smoke completed",
     "C persistence and configuration smoke completed",
@@ -40,6 +41,7 @@ SHUTDOWN_PENDING_SUCCESS_MARKER = "C shutdown pending-work smoke completed"
 SHUTDOWN_REGISTRIES_SUCCESS_MARKER = "UEC runtime shutdown registries cleared"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
+    "C player-flow and camera smoke failed",
     RUNTIME_MODULE_UNLOAD_FAILURE_MARKER,
     "C cooked reflection metadata smoke failed",
     "C persistence and configuration smoke failed",

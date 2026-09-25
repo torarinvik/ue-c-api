@@ -5,6 +5,8 @@
 #include "UECAPIHostPlayerFlowPawn.generated.h"
 
 class UCameraComponent;
+class UStaticMesh;
+class UStaticMeshComponent;
 
 UCLASS(NotBlueprintable)
 class AUECAPIHostPlayerFlowPawn final : public APawn
@@ -19,4 +21,10 @@ public:
 
     UPROPERTY()
     TObjectPtr<UCameraComponent> FlowCamera;
+
+    UPROPERTY()
+    TObjectPtr<UStaticMeshComponent> FlowMesh;
+
+    UPROPERTY()
+    TObjectPtr<UStaticMesh> CookedTestMesh;
 };

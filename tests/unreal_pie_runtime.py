@@ -20,6 +20,7 @@ DEDICATED_SERVER_FAILURE_MARKER = "C dedicated-server runtime context smoke fail
 
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
+    "C player-flow and camera smoke completed",
     RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
     "C cooked reflection metadata smoke completed",
     "C persistence and configuration smoke completed",
@@ -47,6 +48,7 @@ PIE_RESTART_SUCCESS_MARKER = "C PIE restart smoke completed"
 MULTI_PIE_SUCCESS_MARKER = "C multi-PIE context smoke completed"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
+    "C player-flow and camera smoke failed",
     RUNTIME_MODULE_UNLOAD_FAILURE_MARKER,
     DEDICATED_SERVER_FAILURE_MARKER,
     "C cooked reflection metadata smoke failed",
@@ -71,6 +73,7 @@ FAILURE_MARKERS = (
 )
 AUTHORITY_FAILURE_MARKERS = (
     RUNTIME_MODULE_UNLOAD_FAILURE_MARKER,
+    "C player-flow and camera smoke failed",
     "C client authority smoke failed",
     "LogPython: Error",
 )
