@@ -7,10 +7,14 @@ typedef struct uec_travel_smoke_state {
     const uec_api* api;
     uec_context* context;
     uec_world* old_world;
+    uec_actor* audio_actor;
+    uec_object* audio_component;
     uec_object* widget;
     uec_object* button;
     uint64_t request_id;
     uint64_t button_subscription_id;
+    uint64_t audio_subscription_id;
+    uint64_t audio_callback_count;
     uint32_t baseline_worlds;
     uint32_t baseline_pending_requests;
     uint32_t baseline_active_callbacks;
@@ -29,6 +33,16 @@ static void UEC_CALL IgnoreTravelSmokeButtonClick(uint64_t subscriptionId,
 {
     (void)subscriptionId;
     (void)userData;
+}
+
+static void UEC_CALL CountTravelSmokeAudioFinished(uint64_t subscriptionId,
+                                                    void* userData)
+{
+    (void)subscriptionId;
+    uec_travel_smoke_state* state = (uec_travel_smoke_state*)userData;
+    if (state != NULL && state->audio_callback_count != UINT64_MAX) {
+        state->audio_callback_count += 1u;
+    }
 }
 
 static void FinishTravelSmoke(uec_travel_smoke_state* state,
@@ -57,6 +71,30 @@ static void FinishTravelSmoke(uec_travel_smoke_state* state,
         }
     }
     state->button_subscription_id = 0;
+    if (state->audio_subscription_id != 0 && state->api != NULL &&
+        state->context != NULL && state->api->unbind_audio_finished != NULL) {
+        const uec_result unbindResult = state->api->unbind_audio_finished(
+            state->context, state->audio_subscription_id);
+        const uec_result expectedResult = state->submitted == UEC_TRUE
+            ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_OK;
+        if (result == UEC_RESULT_OK &&
+            (unbindResult != expectedResult || state->audio_callback_count != 0u)) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+    }
+    state->audio_subscription_id = 0;
+    if (state->audio_component != NULL && state->api != NULL &&
+        state->api->release_object != NULL) {
+        const uec_result releaseResult = state->api->release_object(state->audio_component);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) result = releaseResult;
+    }
+    state->audio_component = NULL;
+    if (state->audio_actor != NULL && state->api != NULL &&
+        state->api->release_actor != NULL) {
+        const uec_result releaseResult = state->api->release_actor(state->audio_actor);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) result = releaseResult;
+    }
+    state->audio_actor = NULL;
     if (state->button != NULL && state->api != NULL &&
         state->api->release_object != NULL) {
         const uec_result releaseResult = state->api->release_object(state->button);
@@ -140,6 +178,7 @@ static void UEC_CALL CompleteTravelSmoke(uint64_t requestId,
         statsResult != UEC_RESULT_OK ||
         state->baseline_active_callbacks == UINT32_MAX ||
         stats.active_callbacks != state->baseline_active_callbacks + 1u ||
+        state->audio_callback_count != 0u ||
         stats.active_subscriptions != state->baseline_active_subscriptions ||
         stats.pending_requests != state->baseline_pending_requests ||
         stats.live_worlds != state->baseline_worlds + 1u) {
@@ -182,9 +221,13 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         state->api->get_world_name == NULL || state->api->release_world == NULL ||
         state->api->create_widget == NULL || state->api->get_widget_child == NULL ||
         state->api->add_widget_to_viewport == NULL ||
+        state->api->spawn_actor == NULL || state->api->get_actor_property_object == NULL ||
+        state->api->bind_audio_finished == NULL ||
+        state->api->unbind_audio_finished == NULL ||
+        state->api->get_audio_component_playing == NULL ||
         state->api->bind_button_clicked == NULL ||
         state->api->unbind_button_clicked == NULL ||
-        state->api->release_object == NULL ||
+        state->api->release_actor == NULL || state->api->release_object == NULL ||
         state->api->travel_world_async == NULL ||
         state->api->cancel_travel_request == NULL ||
         state->api->release_context == NULL) {
@@ -254,6 +297,49 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
             return result;
         }
     }
+    {
+        static const char actorClassPathData[] =
+            "/Script/UnrealCAPIHost.UECAPIHostPlayerFlowPawn";
+        static const char audioPropertyNameData[] = "FlowAudio";
+        const uec_string_view actorClassPath = {
+            actorClassPathData, sizeof(actorClassPathData) - 1u};
+        const uec_string_view audioPropertyName = {
+            audioPropertyNameData, sizeof(audioPropertyNameData) - 1u};
+        const uec_transform transform = {
+            {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
+        result = state->api->spawn_actor(
+            state->old_world, actorClassPath, &transform, &state->audio_actor);
+        if (result != UEC_RESULT_OK || state->audio_actor == NULL) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        result = state->api->get_actor_property_object(
+            state->audio_actor, audioPropertyName, &state->audio_component);
+        if (result != UEC_RESULT_OK || state->audio_component == NULL) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        result = state->api->bind_audio_finished(
+            state->audio_component, &CountTravelSmokeAudioFinished, state,
+            &state->audio_subscription_id);
+        if (result != UEC_RESULT_OK || state->audio_subscription_id == 0u) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        uec_runtime_stats audioBoundStats = {0};
+        audioBoundStats.struct_size = sizeof(audioBoundStats);
+        result = state->api->get_runtime_stats(state->context, &audioBoundStats);
+        if (result != UEC_RESULT_OK ||
+            audioBoundStats.active_subscriptions !=
+                state->baseline_active_subscriptions + 2u) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+    }
     const uec_string_view targetMap = {targetMapPath, sizeof(targetMapPath) - 1u};
     result = state->api->travel_world_async(state->old_world, targetMap,
                                             &CompleteTravelSmoke, state,
@@ -276,6 +362,20 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         return UEC_RESULT_INTERNAL_ERROR;
     }
     state->button_subscription_id = 0;
+    if (state->api->unbind_audio_finished(state->context,
+            state->audio_subscription_id) != UEC_RESULT_INVALID_ARGUMENT ||
+        state->audio_callback_count != 0u) {
+        FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_TRUE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    state->audio_subscription_id = 0;
+    uec_bool audioPlaying = UEC_TRUE;
+    if (state->api->get_audio_component_playing(
+            state->audio_component, &audioPlaying) != UEC_RESULT_INVALID_HANDLE ||
+        audioPlaying != UEC_FALSE) {
+        FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_TRUE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
     uec_runtime_stats observedStats = {0};
     observedStats.struct_size = sizeof(observedStats);
     result = state->api->get_runtime_stats(state->context, &observedStats);
