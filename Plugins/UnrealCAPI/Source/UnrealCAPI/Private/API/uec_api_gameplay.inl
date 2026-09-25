@@ -304,6 +304,21 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL SetConfigBool(uec_context* rawContext, uec_string_view section,
+                                      uec_string_view key, uec_bool value)
+    {
+        if (!IsValidStringView(section) || section.size == 0 ||
+            !IsValidStringView(key) || key.size == 0 || !IsValidBool(value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (GConfig == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        GConfig->SetBool(*ToFString(section), *ToFString(key), value == UEC_TRUE, GGameIni);
+        GConfig->Flush(false, GGameIni);
+        return UEC_RESULT_OK;
+    }
+
     static void RemoveCollisionSubscription(
         const TSharedPtr<FUECCollisionSubscription>& subscription)
     {

@@ -9,7 +9,8 @@ namespace
                                   uec_context* context,
                                   const FString& sectionName)
     {
-        if (GConfig == nullptr || api == nullptr || context == nullptr) {
+        if (GConfig == nullptr || api == nullptr || context == nullptr ||
+            api->set_config_bool == nullptr) {
             return UEC_RESULT_NOT_INITIALIZED;
         }
 
@@ -48,6 +49,30 @@ namespace
         }
 
         uec_bool observedBoolean = UEC_FALSE;
+        result = api->get_config_bool(context, section, booleanKey, &observedBoolean);
+        if (result != UEC_RESULT_OK || observedBoolean != UEC_TRUE) {
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
+
+        result = api->set_config_bool(context, section, booleanKey, UEC_FALSE);
+        if (result != UEC_RESULT_OK) return result;
+        observedBoolean = UEC_TRUE;
+        result = api->get_config_bool(context, section, booleanKey, &observedBoolean);
+        if (result != UEC_RESULT_OK || observedBoolean != UEC_FALSE) {
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
+
+        result = api->set_config_bool(context, section, booleanKey, static_cast<uec_bool>(2u));
+        if (result != UEC_RESULT_INVALID_ARGUMENT) {
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
+        result = api->get_config_bool(context, section, booleanKey, &observedBoolean);
+        if (result != UEC_RESULT_OK || observedBoolean != UEC_FALSE) {
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
+
+        result = api->set_config_bool(context, section, booleanKey, UEC_TRUE);
+        if (result != UEC_RESULT_OK) return result;
         result = api->get_config_bool(context, section, booleanKey, &observedBoolean);
         if (result != UEC_RESULT_OK || observedBoolean != UEC_TRUE) {
             return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;

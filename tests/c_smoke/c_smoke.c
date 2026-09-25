@@ -403,11 +403,18 @@ int main(void)
     }
 
     int64_t config_value = 42;
+    uec_bool config_bool = UEC_TRUE;
     if (api->get_config_integer(context, streaming_package, streaming_package,
                                 &config_value) != UEC_RESULT_UNSUPPORTED ||
         config_value != 0 ||
         api->set_config_integer(context, streaming_package, streaming_package, 1) !=
-            UEC_RESULT_UNSUPPORTED)
+            UEC_RESULT_UNSUPPORTED ||
+        api->get_config_bool(context, streaming_package, streaming_package, &config_bool) !=
+            UEC_RESULT_UNSUPPORTED || config_bool != UEC_FALSE ||
+        api->set_config_bool(context, streaming_package, streaming_package, UEC_TRUE) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->set_config_bool(context, streaming_package, streaming_package, (uec_bool)2u) !=
+            UEC_RESULT_INVALID_ARGUMENT)
     {
         api->release_context(context);
         return 24;
@@ -420,14 +427,6 @@ int main(void)
     {
         api->release_context(context);
         return 25;
-    }
-
-    uec_bool config_bool = UEC_TRUE;
-    if (api->get_config_bool(context, streaming_package, streaming_package, &config_bool) !=
-            UEC_RESULT_UNSUPPORTED || config_bool != UEC_FALSE)
-    {
-        api->release_context(context);
-        return 26;
     }
 
     uint32_t array_count = 42u;

@@ -681,6 +681,17 @@ static uec_result UEC_CALL StubGetConfigBool(uec_context* context,
         (context != &g_context ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_INVALID_ARGUMENT);
 }
 
+static uec_result UEC_CALL StubSetConfigBool(uec_context* context,
+                                             uec_string_view section,
+                                             uec_string_view key,
+                                             uec_bool value)
+{
+    (void)section;
+    (void)key;
+    if (value != UEC_FALSE && value != UEC_TRUE) return UEC_RESULT_INVALID_ARGUMENT;
+    return context == &g_context ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_INVALID_HANDLE;
+}
+
 static uec_result UEC_CALL StubGetActorPropertyArrayCount(uec_actor* actor,
                                                           uec_string_view propertyName,
                                                           uint32_t* outCount)

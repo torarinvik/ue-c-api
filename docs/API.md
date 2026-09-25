@@ -410,6 +410,9 @@ the API's double-precision `uec_vector3`. Both calls require the game thread,
 clear their output before validation, return `UEC_RESULT_INVALID_ARGUMENT` for
 non-mesh components, and return `UEC_RESULT_NOT_INITIALIZED` when no assigned
 material defines a parameter of the requested type.
+ABI minor 147 appends `set_config_bool`. It writes only declared `UEC_FALSE` or
+`UEC_TRUE` values to the game INI, requires the game thread, and flushes the
+updated configuration so a following read observes the new value.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

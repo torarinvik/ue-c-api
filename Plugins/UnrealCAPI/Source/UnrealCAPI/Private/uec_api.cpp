@@ -391,7 +391,8 @@ namespace
         &GetWidgetEnabled, &SetWidgetEnabled,
         &GetCheckBoxState, &SetCheckBoxState, &GetWidgetChild,
         &SetComponentSimulatingPhysics, &GetComponentSimulatingPhysics,
-        &GetComponentMesh, &GetComponentMaterialScalar, &GetComponentMaterialVector
+        &GetComponentMesh, &GetComponentMaterialScalar, &GetComponentMaterialVector,
+        &SetConfigBool
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

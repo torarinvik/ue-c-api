@@ -323,6 +323,9 @@ game thread; the setter accepts only the declared boolean values and requires
 world authority. Enabling simulation also requires movable mobility and a
 collision mode that includes physics. The getter clears its output to false on
 failure and reports false for a valid component that is not simulating.
+ABI minor 147 appends `set_config_bool` for game-INI writes. It accepts only
+`UEC_FALSE` or `UEC_TRUE`, requires the game thread, and flushes the updated
+configuration for subsequent reads.
 Subscription categories are bounded at 1024 active entries and return
 `UEC_RESULT_QUEUE_FULL` when full; unsubscribe before creating replacement
 bindings during bursts.

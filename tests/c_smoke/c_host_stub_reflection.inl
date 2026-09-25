@@ -702,7 +702,7 @@ static const uec_api g_api = {
     .set_config_integer = &StubSetConfigInteger,
     .bind_actor_destroyed = &StubBindActorDestroyed,
     .unbind_actor_destroyed = &StubUnbindActorDestroyed,
-    .get_config_bool = &StubGetConfigBool,
+    .get_config_bool = &StubGetConfigBool, .set_config_bool = &StubSetConfigBool,
     .get_actor_property_array_count = &StubGetActorPropertyArrayCount,
     .get_actor_property_array_element_text = &StubGetActorPropertyArrayElementText,
     .get_object_property_array_count = &StubGetObjectPropertyArrayCount,

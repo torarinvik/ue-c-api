@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 147 adds `set_config_bool` for game-thread game-INI writes and
+  flushes updates. The UE 5.8.3 persistence smoke verifies false/true roundtrips
+  and rejects invalid boolean values without changing the stored setting.
 - ABI minors 145 and 146 add `get_component_material_scalar` and
   `get_component_material_vector`. UE 5.8.3 Editor PIE and packaged Development
   smoke verifies set/readback values against the cooked `Widget3DPassThrough`
