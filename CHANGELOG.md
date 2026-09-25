@@ -15,6 +15,9 @@ development; they do not imply a published or runtime-verified release.
   angular-impulse response, force and torque response over physics ticks, and
   unsupported physics operations with simulation disabled. The runtime test
   host exits normally after its final success marker.
+- A multiplayer PIE authority smoke checks `get_world_has_authority` on a client
+  world and verifies that every actor/component physics mutator returns
+  `UEC_RESULT_UNSUPPORTED` without changing the simulated test body's velocity.
 - Added an `UnrealCAPIHostServer` target definition for source-built Unreal
   distributions that support dedicated-server targets. The installed UE 5.8.3
   Mac distribution rejects server builds before compiling project code.

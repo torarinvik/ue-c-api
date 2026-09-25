@@ -1,15 +1,18 @@
 #include "CoreMinimal.h"
 #include "Containers/Ticker.h"
+#include "Components/PrimitiveComponent.h"
 #include "Engine/Engine.h"
 #include "Modules/ModuleManager.h"
 
 #include "uec_api.h"
+#include "UECAPIHostCollisionSmokeActor.h"
 
 extern "C" uec_result UEC_CALL uec_host_smoke_bootstrap(void);
 extern "C" uec_result UEC_CALL uec_host_collision_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_physics_smoke_start(void);
 extern "C" uec_bool UEC_CALL uec_host_physics_smoke_poll(uec_result* out_result);
 extern "C" void UEC_CALL uec_host_physics_smoke_cancel(void);
+extern "C" uec_result UEC_CALL uec_host_authority_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_event_bridge_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_latent_smoke_start(void);
 extern "C" uec_bool UEC_CALL uec_host_latent_smoke_poll(uec_result* out_result);
@@ -50,6 +53,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     float TravelSmokeElapsed = 0.0f;
     double PhysicsSmokeDeadline = 0.0;
     double PhysicsSmokeNextPollTime = 0.0;
+    double AuthoritySmokeDeadline = 0.0;
 
     void StartEventBridgeSmokeChain()
     {
@@ -89,6 +93,55 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             }
         }
         if (!hasRuntimeWorld) return true;
+
+        if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-authority"))) {
+            const double now = FPlatformTime::Seconds();
+            if (AuthoritySmokeDeadline == 0.0) AuthoritySmokeDeadline = now + 60.0;
+            UWorld* clientWorld = nullptr;
+            for (const FWorldContext& worldContext : GEngine->GetWorldContexts()) {
+                UWorld* world = worldContext.World();
+                if (world != nullptr && worldContext.WorldType == EWorldType::PIE &&
+                    world->GetNetMode() == NM_Client) {
+                    clientWorld = world;
+                    break;
+                }
+            }
+            if (clientWorld == nullptr && now < AuthoritySmokeDeadline) return true;
+
+            uec_result result = UEC_RESULT_OK;
+            if (clientWorld == nullptr) {
+                result = UEC_RESULT_NOT_INITIALIZED;
+            }
+            else {
+                AUECAPIHostCollisionSmokeActor* actor =
+                    clientWorld->SpawnActor<AUECAPIHostCollisionSmokeActor>(
+                        FVector(18000.0, -24000.0, 50000.0), FRotator::ZeroRotator);
+                UPrimitiveComponent* root = actor == nullptr ? nullptr :
+                    Cast<UPrimitiveComponent>(actor->GetRootComponent());
+                if (root == nullptr) {
+                    result = UEC_RESULT_INTERNAL_ERROR;
+                }
+                else {
+                    root->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+                    root->SetSimulatePhysics(true);
+                    if (!root->IsSimulatingPhysics()) result = UEC_RESULT_UNSUPPORTED;
+                    else result = uec_host_authority_smoke();
+                }
+            }
+            if (result == UEC_RESULT_OK) {
+                UE_LOG(LogUnrealCAPIHost, Log, TEXT("C client authority smoke completed"));
+            }
+            else {
+                UE_LOG(LogUnrealCAPIHost, Error,
+                    TEXT("C client authority smoke failed with result %d"),
+                    static_cast<int32>(result));
+            }
+            EventBridgeSmokeHandle.Reset();
+            if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-exit"))) {
+                FPlatformMisc::RequestExit(false);
+            }
+            return false;
+        }
 
         const uec_result collisionResult = uec_host_collision_smoke();
         if (collisionResult != UEC_RESULT_OK) {

@@ -25,6 +25,7 @@ SUCCESS_MARKERS = (
     "C gameplay example smoke completed",
     "C travel smoke completed",
 )
+AUTHORITY_SUCCESS_MARKERS = ("C client authority smoke completed",)
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C collision smoke failed",
@@ -38,6 +39,7 @@ FAILURE_MARKERS = (
     "C gameplay example smoke failed",
     "C travel smoke failed",
 )
+AUTHORITY_FAILURE_MARKERS = ("C client authority smoke failed", "LogPython: Error")
 
 
 def find_editor_executable(engine_root: Path) -> Path:
@@ -68,7 +70,53 @@ def stop_process(process: subprocess.Popen[str]) -> None:
         process.wait(timeout=10)
 
 
-def run_smoke(engine_root: Path, timeout_seconds: float = 150.0) -> None:
+def configure_authority_pie_settings(repo_root: Path) -> tuple[Path, bytes | None]:
+    """Temporarily set the per-project Editor options to run one PIE client."""
+    path = repo_root / "Saved/Config/MacEditor/EditorPerProjectUserSettings.ini"
+    original = path.read_bytes() if path.is_file() else None
+    text = original.decode("utf-8") if original is not None else ""
+    section = "[/Script/UnrealEd.LevelEditorPlaySettings]"
+    updates = {
+        "PlayNetMode": "PIE_Client",
+        "RunUnderOneProcess": "True",
+        "PlayNumberOfClients": "1",
+    }
+    lines = text.splitlines()
+    section_start = next((i for i, line in enumerate(lines) if line.strip() == section), None)
+    if section_start is None:
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.extend((section, *[f"{key}={value}" for key, value in updates.items()]))
+    else:
+        section_end = next(
+            (i for i in range(section_start + 1, len(lines)) if lines[i].lstrip().startswith("[")),
+            len(lines),
+        )
+        remaining = dict(updates)
+        for index in range(section_start + 1, section_end):
+            key, separator, _ = lines[index].partition("=")
+            if separator and key.strip() in remaining:
+                value = remaining.pop(key.strip())
+                lines[index] = f"{key}={value}"
+        lines[section_end:section_end] = [f"{key}={value}" for key, value in remaining.items()]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    return path, original
+
+
+def restore_authority_pie_settings(path: Path, original: bytes | None) -> None:
+    """Restore the user's generated Editor settings after the authority run."""
+    if original is None:
+        path.unlink(missing_ok=True)
+    else:
+        path.write_bytes(original)
+
+
+def run_smoke(
+    engine_root: Path,
+    timeout_seconds: float = 150.0,
+    authority_only: bool = False,
+) -> None:
     """Start PIE with NullRHI and require every C smoke marker."""
     if timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
@@ -84,9 +132,23 @@ def run_smoke(engine_root: Path, timeout_seconds: float = 150.0) -> None:
         "-nop4",
         "-stdout",
         "-FullStdOutLogOutput",
-        "-uec-tests-exit",
-        "-ExecCmds=py unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).editor_request_begin_play()",
     ]
+    if authority_only:
+        command.extend((
+            "-uec-tests-authority",
+            "-uec-tests-exit",
+            "-ExecCmds=py unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).editor_request_begin_play()",
+        ))
+        success_markers = AUTHORITY_SUCCESS_MARKERS
+        failure_markers = AUTHORITY_FAILURE_MARKERS
+    else:
+        command.extend((
+            "-uec-tests-exit",
+            "-ExecCmds=py unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).editor_request_begin_play()",
+        ))
+        success_markers = SUCCESS_MARKERS
+        failure_markers = FAILURE_MARKERS
+    settings_snapshot = configure_authority_pie_settings(repo_root) if authority_only else None
     try:
         process = subprocess.Popen(
             command,
@@ -98,6 +160,8 @@ def run_smoke(engine_root: Path, timeout_seconds: float = 150.0) -> None:
             bufsize=1,
         )
     except OSError as error:
+        if settings_snapshot is not None:
+            restore_authority_pie_settings(*settings_snapshot)
         raise RuntimeError(f"Could not launch Unreal Editor {executable}: {error}") from error
 
     output: queue.Queue[str | None] = queue.Queue()
@@ -115,7 +179,7 @@ def run_smoke(engine_root: Path, timeout_seconds: float = 150.0) -> None:
     deadline = time.monotonic() + timeout_seconds
     failure: str | None = None
     try:
-        while len(completed) != len(SUCCESS_MARKERS):
+        while len(completed) != len(success_markers):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 failure = f"Editor PIE did not complete smoke checks within {timeout_seconds:g}s."
@@ -132,26 +196,32 @@ def run_smoke(engine_root: Path, timeout_seconds: float = 150.0) -> None:
                 break
             if line:
                 tail.append(line)
-                failed_marker = next(
-                    (marker for marker in FAILURE_MARKERS if marker in line), None
-                )
+                failed_marker = next((marker for marker in failure_markers if marker in line), None)
                 if failed_marker is not None:
                     failure = f"Editor PIE reported smoke failure: {line}"
                     break
                 completed.update(
-                    marker for marker in SUCCESS_MARKERS if marker in line
+                    marker for marker in success_markers if marker in line
                 )
-            if process.poll() is not None and len(completed) != len(SUCCESS_MARKERS):
+            if process.poll() is not None and len(completed) != len(success_markers):
                 failure = (
                     f"Unreal Editor exited with status {process.returncode} "
                     "before the PIE smoke completed."
                 )
                 break
     finally:
-        stop_process(process)
-        reader.join(timeout=1)
-        if process.stdout is not None:
+        if failure is None:
+            try:
+                process.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                stop_process(process)
+        else:
+            stop_process(process)
+        reader.join(timeout=5)
+        if process.stdout is not None and not reader.is_alive():
             process.stdout.close()
+        if settings_snapshot is not None:
+            restore_authority_pie_settings(*settings_snapshot)
 
     if failure is not None:
         recent_output = "\n".join(tail)
@@ -160,18 +230,25 @@ def run_smoke(engine_root: Path, timeout_seconds: float = 150.0) -> None:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 2:
-        print(f"Usage: {Path(argv[0]).name} <unreal-engine-root>", file=sys.stderr)
+    if len(argv) not in (2, 3) or (len(argv) == 3 and argv[2] != "--authority-only"):
+        print(
+            f"Usage: {Path(argv[0]).name} <unreal-engine-root> [--authority-only]",
+            file=sys.stderr,
+        )
         return 2
     try:
-        run_smoke(Path(argv[1]))
+        authority_only = len(argv) == 3
+        run_smoke(Path(argv[1]), authority_only=authority_only)
     except (OSError, RuntimeError, ValueError) as error:
         print(error, file=sys.stderr)
         return 1
-    print(
-        "Editor PIE completed the C bootstrap, collision, physics, event, latent, queue, "
-        "async save/load, async object load, gameplay, and travel smoke checks."
-    )
+    if authority_only:
+        print("Editor multiplayer PIE completed the client-world physics authority smoke check.")
+    else:
+        print(
+            "Editor PIE completed the C bootstrap, collision, physics, event, latent, queue, "
+            "async save/load, async object load, gameplay, and travel smoke checks."
+        )
     return 0
 
 

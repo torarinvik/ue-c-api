@@ -7,6 +7,10 @@ import unittest
 from pathlib import Path
 
 from unreal_runtime import find_host_executable, run_smoke
+from unreal_pie_runtime import (
+    configure_authority_pie_settings,
+    restore_authority_pie_settings,
+)
 
 
 class UnrealRuntimeTests(unittest.TestCase):
@@ -32,6 +36,32 @@ class UnrealRuntimeTests(unittest.TestCase):
     def test_finds_packaged_executable(self):
         executable = self.make_host([])
         self.assertEqual(find_host_executable(self.root / "Archive"), executable)
+
+    def test_authority_pie_settings_are_restored(self):
+        settings_path = self.root / "Saved/Config/MacEditor/EditorPerProjectUserSettings.ini"
+        settings_path.parent.mkdir(parents=True)
+        original = (
+            b"[/Script/UnrealEd.LevelEditorPlaySettings]\n"
+            b"PlayNetMode=PIE_Standalone\n"
+            b"RunUnderOneProcess=False\n"
+            b"PlayNumberOfClients=4\n"
+            b"[/Script/UnrealEd.EditorPerProjectUserSettings]\n"
+            b"KeepThis=True\n"
+        )
+        settings_path.write_bytes(original)
+        path, snapshot = configure_authority_pie_settings(self.root)
+        configured = path.read_text(encoding="utf-8")
+        self.assertIn("PlayNetMode=PIE_Client", configured)
+        self.assertIn("RunUnderOneProcess=True", configured)
+        self.assertIn("PlayNumberOfClients=1", configured)
+        restore_authority_pie_settings(path, snapshot)
+        self.assertEqual(path.read_bytes(), original)
+
+    def test_authority_pie_settings_remove_temporary_file(self):
+        path, snapshot = configure_authority_pie_settings(self.root)
+        self.assertTrue(path.exists())
+        restore_authority_pie_settings(path, snapshot)
+        self.assertFalse(path.exists())
 
     def test_requires_unique_executable(self):
         with self.assertRaisesRegex(RuntimeError, "found none"):

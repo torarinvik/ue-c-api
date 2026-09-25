@@ -66,6 +66,7 @@ def run_smoke(
     executable: Path,
     timeout_seconds: float = 90.0,
     startup_only: bool = False,
+    graceful_exit: bool = False,
 ) -> None:
     """Launch a packaged host and require smoke markers or sustained startup."""
     if timeout_seconds <= 0:
@@ -155,9 +156,15 @@ def run_smoke(
                 failure = f"Packaged host exited with status {process.returncode} before smoke completion."
                 break
     finally:
-        _stop_process(process)
-        reader.join(timeout=1)
-        if process.stdout is not None:
+        if failure is None and graceful_exit and not startup_only:
+            try:
+                process.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                _stop_process(process)
+        else:
+            _stop_process(process)
+        reader.join(timeout=5)
+        if process.stdout is not None and not reader.is_alive():
             process.stdout.close()
 
     if failure is not None:
@@ -177,7 +184,7 @@ def main(argv: list[str]) -> int:
     startup_only = len(argv) == 3
     try:
         executable = find_host_executable(archive)
-        run_smoke(executable, startup_only=startup_only)
+        run_smoke(executable, startup_only=startup_only, graceful_exit=not startup_only)
     except RuntimeError as error:
         print(error, file=sys.stderr)
         return 1

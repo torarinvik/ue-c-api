@@ -449,6 +449,10 @@ client worlds. Replication and RPC behavior remain outside this query.
 Actor spawn, destruction, transform writes, possession, and server-side
 physics writes return `UEC_RESULT_UNSUPPORTED` when their world is a client;
 local view-target and input-prediction operations remain client-usable.
+The UE 5.8.3 multiplayer PIE smoke confirms this behavior for all actor and
+component physics mutators, including simulation toggles, velocity writes,
+impulses, forces, and torque, and verifies the test body's velocity is
+unchanged after rejection.
 `get_world_game_mode` returns the authoritative game-mode object when one is
 available; client worlds return `UEC_RESULT_UNSUPPORTED`.
 `get_world_game_state` returns the active world game-state object when one is

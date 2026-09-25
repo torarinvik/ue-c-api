@@ -16,6 +16,7 @@ host_consumer="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_smoke.c"
 host_abi_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_abi_smoke.c"
 host_collision_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_collision_smoke.c"
 host_physics_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_physics_smoke.c"
+host_authority_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_authority_smoke.c"
 host_event_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_event_bridge_smoke.c"
 host_gameplay_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_gameplay_example_smoke.c"
 host_gameplay_translation_unit="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_gameplay_example.c"
@@ -54,6 +55,7 @@ git -C "$repo_dir" diff --check
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_abi_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_collision_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_physics_consumer"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_authority_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_event_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$repo_dir/examples/c_gameplay" -fsyntax-only "$host_gameplay_consumer"
@@ -94,6 +96,7 @@ for map_setting in EditorStartupMap GameDefaultMap ServerDefaultMap; do
 done
 python3 "$repo_dir/tests/test_unreal_version.py" >/dev/null
 python3 "$repo_dir/tests/test_unreal_runtime.py" >/dev/null
+python3 -m py_compile "$repo_dir/tests/unreal_pie_runtime.py"
 sh -n "$repo_dir/tests/run_unreal_build.sh"
 if [ ! -x "$repo_dir/tests/run_unreal_build.sh" ]; then
     printf '%s\n' 'The Unreal build gate must remain executable.' >&2
