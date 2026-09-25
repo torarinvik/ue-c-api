@@ -601,9 +601,10 @@
                 [weakRequest](const FString&, const int32, bool success)
                 {
                     TSharedPtr<FUECSaveGameRequest> current = weakRequest.Pin();
-                    if (!current.IsValid() || current->Cancelled || current->Callback == nullptr ||
-                        IsShuttingDown()) return;
+                    if (!current.IsValid()) return;
                     GSaveGameRequests.Remove(current->Id);
+                    if (current->Cancelled || current->Callback == nullptr ||
+                        IsShuttingDown()) return;
                     if (!IsShuttingDown())
                     {
                         FUECCallbackScope callbackScope;
@@ -646,7 +647,9 @@
                 [weakRequest](const FString&, const int32, USaveGame* saveGame)
                 {
                     TSharedPtr<FUECSaveGameRequest> current = weakRequest.Pin();
-                    if (!current.IsValid() || current->Cancelled || current->Callback == nullptr ||
+                    if (!current.IsValid()) return;
+                    GSaveGameRequests.Remove(current->Id);
+                    if (current->Cancelled || current->Callback == nullptr ||
                         IsShuttingDown()) return;
                     uec_object* objectHandle = nullptr;
                     if (saveGame != nullptr)
@@ -658,7 +661,6 @@
                     if (saveGame == nullptr) result = UEC_RESULT_NOT_INITIALIZED;
                     else if (objectHandle == nullptr) result = HandleCreationFailureResult();
                     const bool success = result == UEC_RESULT_OK;
-                    GSaveGameRequests.Remove(current->Id);
                     if (IsShuttingDown())
                     {
                         if (FUECObject* handle = reinterpret_cast<FUECObject*>(objectHandle))
@@ -686,8 +688,9 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         TSharedPtr<FUECSaveGameRequest>* requestPtr = GSaveGameRequests.Find(requestId);
         if (requestPtr == nullptr || !requestPtr->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
-        (*requestPtr)->Cancelled = true;
-        GSaveGameRequests.Remove(requestId);
+        TSharedPtr<FUECSaveGameRequest> request = *requestPtr;
+        if (request->Cancelled) return UEC_RESULT_INVALID_ARGUMENT;
+        request->Cancelled = true;
         return UEC_RESULT_OK;
     }
 

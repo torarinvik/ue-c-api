@@ -743,8 +743,12 @@ must contain this bridge-owned format; a different save-game class is rejected.
 
 `async_save_game_to_slot` and `async_load_game_from_slot` use Unreal's platform
 save delegates and invoke `uec_save_game_callback` on the game thread. Pending
-requests are bounded at 1024, can be cancelled by request id, and suppress the
-callback when cancelled. A successful async load returns a weak save-game
+requests are bounded at 1024 and can be cancelled by request id. Cancellation
+suppresses the consumer callback, but Unreal's platform operation may continue
+until it completes. A successfully cancelled request remains included in
+`get_runtime_stats.pending_requests` until Unreal's completion delegate retires
+it, so consumers can safely wait for outstanding engine work before unloading
+callback code or user data. A successful async load returns a weak save-game
 object handle; retain it if it must survive beyond the callback.
 
 `run_on_game_thread` queues a borrowed callback and user pointer for execution

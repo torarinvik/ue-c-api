@@ -6,6 +6,7 @@ namespace
 {
     enum class ESaveSmokeStage : uint8
     {
+        CancelledRequestDrain,
         Saving,
         Loading
     };
@@ -16,12 +17,17 @@ namespace
         uec_context* Context = nullptr;
         uec_object* SaveObject = nullptr;
         FString SlotName;
+        FString CancelledSlotName;
         uec_runtime_stats Baseline{};
         uint64_t RequestId = 0;
-        ESaveSmokeStage Stage = ESaveSmokeStage::Saving;
+        uint64_t CancelledRequestId = 0;
+        ESaveSmokeStage Stage = ESaveSmokeStage::CancelledRequestDrain;
         uec_result Result = UEC_RESULT_NOT_INITIALIZED;
         bool Started = false;
         bool Complete = false;
+        bool CancelledRequestCanceled = false;
+        bool CancelledRequestDrained = false;
+        bool CancelledCallbackCalled = false;
     };
 
     FAsyncSaveSmokeState GAsyncSaveSmokeState;
@@ -32,6 +38,21 @@ namespace
                                           uec_bool success,
                                           void* userData);
 
+    void UEC_CALL OnCancelledSaveSmokeComplete(uint64_t,
+                                              uec_result,
+                                              uec_object* saveGame,
+                                              uec_bool,
+                                              void* userData)
+    {
+        auto* state = static_cast<FAsyncSaveSmokeState*>(userData);
+        if (state == nullptr) return;
+        state->CancelledCallbackCalled = true;
+        if (saveGame != nullptr && state->Api != nullptr &&
+            state->Api->release_object != nullptr) {
+            state->Api->release_object(saveGame);
+        }
+    }
+
     void FinishAsyncSaveSmoke(FAsyncSaveSmokeState& state, uec_result result)
     {
         if (state.Complete) return;
@@ -39,6 +60,16 @@ namespace
             state.Api->cancel_save_game_request != nullptr) {
             state.Api->cancel_save_game_request(state.Context, state.RequestId);
             state.RequestId = 0;
+        }
+        if (state.CancelledRequestId != 0 && !state.CancelledRequestCanceled &&
+            state.Api != nullptr && state.Context != nullptr &&
+            state.Api->cancel_save_game_request != nullptr) {
+            const uec_result cancelResult = state.Api->cancel_save_game_request(
+                state.Context, state.CancelledRequestId);
+            if (result == UEC_RESULT_OK && cancelResult != UEC_RESULT_OK) {
+                result = cancelResult;
+            }
+            state.CancelledRequestCanceled = cancelResult == UEC_RESULT_OK;
         }
         if (state.SaveObject != nullptr && state.Api != nullptr &&
             state.Api->release_object != nullptr) {
@@ -52,6 +83,15 @@ namespace
             !state.SlotName.IsEmpty() &&
             state.Api->delete_game_slot != nullptr) {
             FTCHARToUTF8 slotUtf8(*state.SlotName);
+            const uec_string_view slotName{slotUtf8.Get(),
+                                           static_cast<size_t>(slotUtf8.Length())};
+            uec_bool deleted = UEC_FALSE;
+            state.Api->delete_game_slot(state.Context, slotName, 0, &deleted);
+        }
+        if (state.Context != nullptr && state.Api != nullptr &&
+            state.CancelledRequestDrained && !state.CancelledSlotName.IsEmpty() &&
+            state.Api->delete_game_slot != nullptr) {
+            FTCHARToUTF8 slotUtf8(*state.CancelledSlotName);
             const uec_string_view slotName{slotUtf8.Get(),
                                            static_cast<size_t>(slotUtf8.Length())};
             uec_bool deleted = UEC_FALSE;
@@ -95,6 +135,61 @@ namespace
         if (state.Result != UEC_RESULT_OK) {
             FinishAsyncSaveSmoke(state, state.Result);
         }
+    }
+
+    uec_result StartPrimaryAsyncSave(FAsyncSaveSmokeState& state)
+    {
+        state.Stage = ESaveSmokeStage::Saving;
+        FTCHARToUTF8 slotUtf8(*state.SlotName);
+        const uec_string_view slotName{slotUtf8.Get(),
+                                       static_cast<size_t>(slotUtf8.Length())};
+        return state.Api->async_save_game_to_slot(
+            state.SaveObject, slotName, 0, &OnAsyncSaveSmokeComplete, &state,
+            &state.RequestId);
+    }
+
+    uec_result StartCanceledAsyncSaveProbe(FAsyncSaveSmokeState& state)
+    {
+        state.CancelledSlotName = FString::Printf(
+            TEXT("UECAPI_Cancelled_Smoke_%s"),
+            *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+        FTCHARToUTF8 slotUtf8(*state.CancelledSlotName);
+        const uec_string_view slotName{slotUtf8.Get(),
+                                       static_cast<size_t>(slotUtf8.Length())};
+        uec_result result = state.Api->async_save_game_to_slot(
+            state.SaveObject, slotName, 0, &OnCancelledSaveSmokeComplete, &state,
+            &state.CancelledRequestId);
+        if (result != UEC_RESULT_OK || state.CancelledRequestId == 0u) {
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
+        result = state.Api->cancel_save_game_request(
+            state.Context, state.CancelledRequestId);
+        if (result != UEC_RESULT_OK) return result;
+        state.CancelledRequestCanceled = true;
+
+        result = state.Api->cancel_save_game_request(
+            state.Context, state.CancelledRequestId);
+        if (result != UEC_RESULT_INVALID_ARGUMENT) {
+            UE_LOG(LogTemp, Error,
+                TEXT("Repeated async-save cancellation returned %d instead of invalid argument"),
+                static_cast<int32>(result));
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+
+        uec_runtime_stats observed{};
+        observed.struct_size = sizeof(observed);
+        result = state.Api->get_runtime_stats(state.Context, &observed);
+        if (result != UEC_RESULT_OK) return result;
+        if (state.Baseline.pending_requests == UINT32_MAX ||
+            observed.pending_requests != state.Baseline.pending_requests + 1u ||
+            observed.active_callbacks != state.Baseline.active_callbacks) {
+            UE_LOG(LogTemp, Error,
+                TEXT("Canceled async-save request disappeared before its engine delegate drained: requests=%u baseline=%u callbacks=%u baselineCallbacks=%u"),
+                observed.pending_requests, state.Baseline.pending_requests,
+                observed.active_callbacks, state.Baseline.active_callbacks);
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        return UEC_RESULT_OK;
     }
 
     void UEC_CALL OnAsyncSaveSmokeComplete(uint64_t requestId,
@@ -220,14 +315,9 @@ extern "C" uec_result UEC_CALL uec_host_async_save_smoke_start(void)
         return result;
     }
 
-    FTCHARToUTF8 slotUtf8(*state.SlotName);
-    const uec_string_view slotName{slotUtf8.Get(),
-                                   static_cast<size_t>(slotUtf8.Length())};
-    result = state.Api->async_save_game_to_slot(
-        state.SaveObject, slotName, 0, &OnAsyncSaveSmokeComplete, &state,
-        &state.RequestId);
+    result = StartCanceledAsyncSaveProbe(state);
     if (result != UEC_RESULT_OK) {
-        UE_LOG(LogTemp, Error, TEXT("Async save smoke request failed: %d"),
+        UE_LOG(LogTemp, Error, TEXT("Async save cancellation probe failed: %d"),
                static_cast<int32>(result));
         FinishAsyncSaveSmoke(state, result);
         return result;
@@ -238,7 +328,38 @@ extern "C" uec_result UEC_CALL uec_host_async_save_smoke_start(void)
 extern "C" uec_bool UEC_CALL uec_host_async_save_smoke_poll(uec_result* outResult)
 {
     if (outResult == nullptr) return UEC_FALSE;
-    const FAsyncSaveSmokeState& state = GAsyncSaveSmokeState;
+    FAsyncSaveSmokeState& state = GAsyncSaveSmokeState;
+    if (!state.Complete && state.Stage == ESaveSmokeStage::CancelledRequestDrain) {
+        uec_runtime_stats observed{};
+        observed.struct_size = sizeof(observed);
+        const uec_result statsResult = state.Api != nullptr && state.Context != nullptr &&
+                state.Api->get_runtime_stats != nullptr
+            ? state.Api->get_runtime_stats(state.Context, &observed)
+            : UEC_RESULT_INTERNAL_ERROR;
+        if (statsResult != UEC_RESULT_OK) {
+            FinishAsyncSaveSmoke(state, statsResult);
+        }
+        else if (state.CancelledCallbackCalled ||
+                 observed.active_callbacks != state.Baseline.active_callbacks ||
+                 observed.pending_requests < state.Baseline.pending_requests ||
+                 observed.pending_requests > state.Baseline.pending_requests + 1u) {
+            UE_LOG(LogTemp, Error,
+                TEXT("Canceled async-save request drained inconsistently: requests=%u baseline=%u callbacks=%u baselineCallbacks=%u callbackCalled=%s"),
+                observed.pending_requests, state.Baseline.pending_requests,
+                observed.active_callbacks, state.Baseline.active_callbacks,
+                state.CancelledCallbackCalled ? TEXT("true") : TEXT("false"));
+            FinishAsyncSaveSmoke(state, UEC_RESULT_INTERNAL_ERROR);
+        }
+        else if (observed.pending_requests == state.Baseline.pending_requests) {
+            state.CancelledRequestDrained = true;
+            const uec_result startResult = StartPrimaryAsyncSave(state);
+            if (startResult != UEC_RESULT_OK) {
+                UE_LOG(LogTemp, Error, TEXT("Async save smoke request failed: %d"),
+                       static_cast<int32>(startResult));
+                FinishAsyncSaveSmoke(state, startResult);
+            }
+        }
+    }
     *outResult = state.Complete ? state.Result : UEC_RESULT_NOT_INITIALIZED;
     return state.Complete ? UEC_TRUE : UEC_FALSE;
 }

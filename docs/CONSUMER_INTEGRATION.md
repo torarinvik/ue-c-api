@@ -68,6 +68,10 @@ all are zero. ABI 87 appends `live_contexts`, `live_worlds`, `live_actors`,
 bridges. World-invalidated handles are excluded from the live counts but remain
 registered and should still be released by their owners.
 
+Canceled async save-game requests remain pending until Unreal invokes their
+completion delegate. The bridge suppresses the consumer callback, then retires
+the request so the drain count does not reach zero while Unreal still owns work.
+
 `examples/c_consumer_drain/` provides a C helper that performs this poll and a
 portable test for each nonzero counter. Call it from the game thread after the
 consumer has stopped submissions and canceled all owned work; keep its API
