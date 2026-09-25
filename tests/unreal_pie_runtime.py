@@ -17,6 +17,7 @@ SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
     "C cooked reflection metadata smoke completed",
     "C persistence and configuration smoke completed",
+    "C reflected container smoke completed",
     "C collision smoke completed",
     "C GC lifetime smoke completed",
     "C physics smoke completed",
@@ -36,6 +37,7 @@ FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C cooked reflection metadata smoke failed",
     "C persistence and configuration smoke failed",
+    "C reflected container smoke failed",
     "C collision smoke failed",
     "C GC lifetime smoke failed",
     "C physics smoke failed",
@@ -314,7 +316,8 @@ def main(argv: list[str]) -> int:
         print("Editor PIE smoke verified explicit world lookup and distinct instance ids across two clients.")
     else:
         print(
-            "Editor PIE completed the C bootstrap, reflection metadata, persistence/configuration, collision, "
+            "Editor PIE completed the C bootstrap, reflection metadata and containers, "
+            "persistence/configuration, collision, "
             "GC lifetime, physics, event, latent, Enhanced Input, queue, "
             "async save/load, async object load, gameplay, and travel smoke checks."
         )

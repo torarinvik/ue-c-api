@@ -11,6 +11,12 @@ build, launch, and exercise the C smoke path.
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 
+The UE 5.8.3 local Editor PIE and packaged Development runs also verify live
+reflected `TArray<int32>`, `TMap<int32, int32>`, `TSet<int32>`, and nested
+`FVector` field reads and writes. The probe checks typed and text adapters,
+map key/value iteration, duplicate set rejection and rehashing, and actor,
+world, and context cleanup.
+
 Epic's [UE 5.8 macOS requirements](https://dev.epicgames.com/documentation/en-us/unreal-engine/macos-development-requirements-for-unreal-engine)
 list macOS Sonoma 14.5 as the minimum, Sequoia 15 as recommended, Xcode 26.0
 as the minimum, and Xcode 26.1.1 as recommended; they explicitly say Xcode

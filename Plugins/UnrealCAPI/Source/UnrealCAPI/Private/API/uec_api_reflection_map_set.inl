@@ -290,7 +290,7 @@
         }
         if (slot == INDEX_NONE) return UEC_RESULT_INTERNAL_ERROR;
         const FString text = ToFString(value);
-        if (mapProperty->ValueProp->ImportText_InContainer(
+        if (mapProperty->ValueProp->ImportText_Direct(
                 *text, helper.GetValuePtr(slot), owner, PPF_None, GWarn) == nullptr) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
