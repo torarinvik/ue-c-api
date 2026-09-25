@@ -80,6 +80,109 @@ namespace
             observed.live_objects == state.Baseline.live_objects;
     }
 
+    using FGetObjectText = uec_result (UEC_CALL *)(uec_object*, char*, size_t, size_t*);
+
+    bool CheckObjectText(const uec_api* api,
+                         uec_object* object,
+                         FGetObjectText getter,
+                         const char* expected)
+    {
+        char actual[256]{};
+        size_t requiredSize = 0u;
+        if (api == nullptr || object == nullptr || getter == nullptr || expected == nullptr ||
+            getter(object, actual, sizeof(actual), &requiredSize) != UEC_RESULT_OK) {
+            return false;
+        }
+        size_t expectedSize = 1u;
+        while (expected[expectedSize - 1u] != '\0') ++expectedSize;
+        if (requiredSize != expectedSize || requiredSize > sizeof(actual)) return false;
+        for (size_t index = 0u; index < expectedSize; ++index) {
+            if (actual[index] != expected[index]) return false;
+        }
+        return true;
+    }
+
+    bool VerifySynchronousObjectLookup(FObjectLoadSmokeState& state)
+    {
+        static constexpr char actorClassPath[] = "/Script/Engine.Actor";
+        static constexpr char classClassPath[] = "/Script/CoreUObject.Class";
+        const uec_string_view actorClass{
+            actorClassPath, sizeof(actorClassPath) - 1u};
+        const uec_string_view classClass{
+            classClassPath, sizeof(classClassPath) - 1u};
+        const FString missingPath = FString::Printf(
+            TEXT("/UECAPI/SyncLookup_%s.Missing"), *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+        FTCHARToUTF8 missingPathUtf8(*missingPath);
+        const uec_string_view missingObjectPath{
+            missingPathUtf8.Get(), static_cast<size_t>(missingPathUtf8.Length())};
+        uec_object* foundObject = nullptr;
+        uec_object* loadedObject = nullptr;
+        uec_object* missingObject = nullptr;
+        uec_object* invalidOutput = nullptr;
+        uec_bool isClass = UEC_FALSE;
+        uec_runtime_stats observed{};
+        uec_result result = state.Api->find_object(
+            state.Context, actorClass, &foundObject);
+        if (result != UEC_RESULT_OK || foundObject == nullptr ||
+            !CheckObjectText(state.Api, foundObject, state.Api->get_object_name, "Actor") ||
+            !CheckObjectText(state.Api, foundObject, state.Api->get_object_path,
+                             actorClassPath) ||
+            !CheckObjectText(state.Api, foundObject, state.Api->get_object_class_name,
+                             classClassPath)) {
+            goto cleanup;
+        }
+        result = state.Api->object_is_a(foundObject, classClass, &isClass);
+        if (result != UEC_RESULT_OK || isClass != UEC_TRUE) goto cleanup;
+
+        result = state.Api->load_object(state.Context, actorClass, &loadedObject);
+        if (result != UEC_RESULT_OK || loadedObject == nullptr ||
+            !CheckObjectText(state.Api, loadedObject, state.Api->get_object_path,
+                             actorClassPath) ||
+            !CheckObjectText(state.Api, loadedObject, state.Api->get_object_class_name,
+                             classClassPath)) {
+            goto cleanup;
+        }
+        isClass = UEC_FALSE;
+        result = state.Api->object_is_a(loadedObject, classClass, &isClass);
+        if (result != UEC_RESULT_OK || isClass != UEC_TRUE) goto cleanup;
+
+        missingObject = reinterpret_cast<uec_object*>(state.Context);
+        result = state.Api->find_object(
+            state.Context, missingObjectPath, &missingObject);
+        if (result != UEC_RESULT_NOT_INITIALIZED || missingObject != nullptr) {
+            if (missingObject != nullptr &&
+                missingObject != reinterpret_cast<uec_object*>(state.Context)) {
+                (void)state.Api->release_object(missingObject);
+            }
+            missingObject = nullptr;
+            goto cleanup;
+        }
+        invalidOutput = reinterpret_cast<uec_object*>(state.Context);
+        result = state.Api->load_object(
+            state.Context, missingObjectPath, &invalidOutput);
+        if (result != UEC_RESULT_INVALID_ARGUMENT || invalidOutput != nullptr) {
+            if (invalidOutput != nullptr &&
+                invalidOutput != reinterpret_cast<uec_object*>(state.Context)) {
+                (void)state.Api->release_object(invalidOutput);
+            }
+            invalidOutput = nullptr;
+            goto cleanup;
+        }
+
+        result = UEC_RESULT_OK;
+
+cleanup:
+        if (missingObject != nullptr) (void)state.Api->release_object(missingObject);
+        if (loadedObject != nullptr) (void)state.Api->release_object(loadedObject);
+        if (foundObject != nullptr) (void)state.Api->release_object(foundObject);
+        if (result != UEC_RESULT_OK) return false;
+        observed.struct_size = sizeof(observed);
+        return state.Api->get_runtime_stats(state.Context, &observed) == UEC_RESULT_OK &&
+            observed.live_objects == state.Baseline.live_objects &&
+            observed.pending_requests == state.Baseline.pending_requests &&
+            observed.active_callbacks == state.Baseline.active_callbacks;
+    }
+
     void UEC_CALL OnObjectLoadSmokeComplete(uint64_t requestId,
                                             uec_result result,
                                             uec_object* loadedObject,
@@ -178,6 +281,9 @@ extern "C" uec_result UEC_CALL uec_host_object_load_smoke_start(void)
         return result;
     }
     if (state.Api == nullptr || state.Context == nullptr ||
+        state.Api->load_object == nullptr || state.Api->find_object == nullptr ||
+        state.Api->get_object_name == nullptr || state.Api->get_object_path == nullptr ||
+        state.Api->get_object_class_name == nullptr || state.Api->object_is_a == nullptr ||
         state.Api->request_object_load == nullptr ||
         state.Api->cancel_object_load == nullptr ||
         state.Api->get_object_path == nullptr ||
@@ -195,6 +301,10 @@ extern "C" uec_result UEC_CALL uec_host_object_load_smoke_start(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         FinishObjectLoadSmoke(state, result);
         return result;
+    }
+    if (!VerifySynchronousObjectLookup(state)) {
+        FinishObjectLoadSmoke(state, UEC_RESULT_INTERNAL_ERROR);
+        return UEC_RESULT_INTERNAL_ERROR;
     }
 
     FTCHARToUTF8 objectPathUtf8(TEXT("/Script/Engine.Actor"));
