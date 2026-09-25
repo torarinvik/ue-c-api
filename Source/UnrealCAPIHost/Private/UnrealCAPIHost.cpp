@@ -81,6 +81,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     double PhysicsSmokeNextPollTime = 0.0;
     double AuthoritySmokeDeadline = 0.0;
     bool bPIERestartStarted = false;
+    int32 PIERestartCyclesCompleted = 0;
 
     bool FinishTestRunAfterPIE(float)
     {
@@ -284,7 +285,17 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
                 RequestSmokeExit();
                 return false;
             }
-            UE_LOG(LogUnrealCAPIHost, Log, TEXT("C PIE restart smoke completed"));
+            ++PIERestartCyclesCompleted;
+            if (PIERestartCyclesCompleted < 3)
+            {
+                bPIERestartStarted = false;
+                EventBridgeSmokeHandle.Reset();
+                RequestSmokeExit();
+                return false;
+            }
+            UE_LOG(LogUnrealCAPIHost, Log,
+                TEXT("C PIE restart smoke completed after %d cleanup cycles"),
+                PIERestartCyclesCompleted);
             EventBridgeSmokeHandle.Reset();
             RequestSmokeExit();
             return false;

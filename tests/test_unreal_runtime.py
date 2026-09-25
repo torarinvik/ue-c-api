@@ -224,7 +224,7 @@ class UnrealRuntimeTests(unittest.TestCase):
 
     @patch("unreal_pie_runtime.find_editor_executable", return_value=Path("/fake/UnrealEditor"))
     @patch("unreal_pie_runtime.subprocess.Popen")
-    def test_pie_restart_requires_second_session_marker(self, popen, _find_editor):
+    def test_pie_restart_requires_cleanup_stress_marker(self, popen, _find_editor):
         process = popen.return_value
         process.stdout = io.StringIO(
             "\n".join((*SUCCESS_MARKERS, PIE_RESTART_SUCCESS_MARKER)) + "\n"
