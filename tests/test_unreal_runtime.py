@@ -8,7 +8,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from unreal_runtime import find_host_executable, run_smoke
+from unreal_runtime import (
+    SHUTDOWN_PENDING_SUCCESS_MARKER,
+    find_host_executable,
+    run_smoke,
+)
 from unreal_pie_runtime import (
     configure_authority_pie_settings,
     restore_authority_pie_settings,
@@ -87,6 +91,42 @@ class UnrealRuntimeTests(unittest.TestCase):
             "C travel smoke completed",
         ])
         run_smoke(executable, timeout_seconds=10.0)
+
+    @patch("unreal_runtime.subprocess.Popen")
+    def test_shutdown_smoke_requires_marker_and_clean_exit(self, popen):
+        process = popen.return_value
+        process.stdout = io.StringIO(SHUTDOWN_PENDING_SUCCESS_MARKER + "\n")
+        process.poll.return_value = None
+        process.returncode = 0
+        process.wait.return_value = 0
+
+        run_smoke(
+            self.make_host([]),
+            timeout_seconds=1.0,
+            shutdown_pending_only=True,
+            graceful_exit=True,
+        )
+
+        command = popen.call_args.args[0]
+        self.assertIn("-uec-tests-exit", command)
+        self.assertIn("-uec-tests-shutdown-pending", command)
+        process.wait.assert_called_once_with(timeout=15)
+
+    @patch("unreal_runtime.subprocess.Popen")
+    def test_shutdown_smoke_rejects_process_crash_after_marker(self, popen):
+        process = popen.return_value
+        process.stdout = io.StringIO(SHUTDOWN_PENDING_SUCCESS_MARKER + "\n")
+        process.poll.return_value = None
+        process.returncode = 5
+        process.wait.return_value = 5
+
+        with self.assertRaisesRegex(RuntimeError, "exited with status 5 after its final smoke marker"):
+            run_smoke(
+                self.make_host([]),
+                timeout_seconds=1.0,
+                shutdown_pending_only=True,
+                graceful_exit=True,
+            )
 
     def test_surfaces_smoke_failure(self):
         executable = self.make_host(["C event bridge smoke failed with result 8"])

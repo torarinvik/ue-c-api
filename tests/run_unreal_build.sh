@@ -63,13 +63,23 @@ fi
 build_dir=$(mktemp -d "${TMPDIR:-/tmp}/uec-unreal-build.XXXXXX")
 trap 'rm -rf "$build_dir"' EXIT HUP INT TERM
 
-"$uat" BuildCookRun \
-    -project="$repo_dir/UnrealCAPIHost.uproject" \
-    -noP4 -utf8output -unattended \
-    -platform="$platform" -clientconfig="$configuration" \
-    -build -cook -stage -pak -archive \
-    -archivedirectory="$build_dir/archive" \
-    $skip_editor_args
+if [ "$host_platform" = Mac ] && [ "$platform" = Mac ] && [ "$configuration" = Development ]; then
+    UE_BUILD_FROM_XCODE=1 "$uat" BuildCookRun \
+        -project="$repo_dir/UnrealCAPIHost.uproject" \
+        -noP4 -utf8output -unattended \
+        -platform="$platform" -clientconfig="$configuration" \
+        -build -cook -stage -pak -archive \
+        -archivedirectory="$build_dir/archive" \
+        $skip_editor_args
+else
+    "$uat" BuildCookRun \
+        -project="$repo_dir/UnrealCAPIHost.uproject" \
+        -noP4 -utf8output -unattended \
+        -platform="$platform" -clientconfig="$configuration" \
+        -build -cook -stage -pak -archive \
+        -archivedirectory="$build_dir/archive" \
+        $skip_editor_args
+fi
 
 printf 'Unreal %s %s build, cook, stage, and package completed.\n' "$platform" "$configuration"
 if [ "$platform" = "$host_platform" ] && [ "$configuration" = Development ]; then
@@ -83,6 +93,7 @@ if [ "$platform" = "$host_platform" ] && [ "$configuration" = Development ]; the
         runtime_output="$build_dir/archive"
     fi
     python3 "$repo_dir/tests/unreal_runtime.py" "$runtime_output"
+    python3 "$repo_dir/tests/unreal_runtime.py" "$runtime_output" --shutdown-pending-only
 else
     printf 'Packaged runtime smoke skipped for %s %s target on %s host.\n' \
         "$platform" "$configuration" "$host_platform"

@@ -40,6 +40,8 @@ extern "C" void UEC_CALL uec_host_travel_smoke_cancel(void);
 extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world);
 extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void);
 extern "C" void UEC_CALL uec_host_pie_restart_smoke_cancel(void);
+extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_arm(void);
+extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void);
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealCAPIHost, Log, All);
 
@@ -55,6 +57,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     FTSTicker::FDelegateHandle TravelSmokeHandle;
     FTSTicker::FDelegateHandle PIEEndForRestartHandle;
     FTSTicker::FDelegateHandle ExitAfterPIESmokeHandle;
+    FDelegateHandle ShutdownPendingPreExitHandle;
     float LatentSmokeElapsed = 0.0f;
     float QueueSmokeElapsed = 0.0f;
     float AsyncSaveSmokeElapsed = 0.0f;
@@ -158,6 +161,25 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     }
 #endif
 
+    void VerifyPendingWorkBeforeModuleShutdown()
+    {
+        uec_result result = uec_host_shutdown_pending_smoke_arm();
+        if (result == UEC_RESULT_OK) {
+            result = uec_host_shutdown_pending_smoke_verify();
+        }
+        if (result == UEC_RESULT_OK)
+        {
+            UE_LOG(LogUnrealCAPIHost, Log,
+                TEXT("C shutdown pending-work smoke completed"));
+        }
+        else
+        {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C shutdown pending-work smoke failed with result %d"),
+                static_cast<int32>(result));
+        }
+    }
+
     void StartEventBridgeSmokeChain()
     {
         const uec_result result = uec_host_event_bridge_smoke();
@@ -196,6 +218,17 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             }
         }
         if (!hasRuntimeWorld) return true;
+
+        if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-shutdown-pending")))
+        {
+            EventBridgeSmokeHandle.Reset();
+            ShutdownPendingPreExitHandle = FCoreDelegates::OnEnginePreExit.AddRaw(
+                this, &FUnrealCAPIHostModule::VerifyPendingWorkBeforeModuleShutdown);
+            UE_LOG(LogUnrealCAPIHost, Log,
+                TEXT("C shutdown pending-work smoke scheduled"));
+            FPlatformMisc::RequestExit(false);
+            return false;
+        }
 
         if (bPIERestartStarted)
         {
@@ -538,6 +571,9 @@ public:
 
     void ShutdownModule() override
     {
+        if (ShutdownPendingPreExitHandle.IsValid()) {
+            FCoreDelegates::OnEnginePreExit.Remove(ShutdownPendingPreExitHandle);
+        }
         if (EventBridgeSmokeHandle.IsValid()) {
             FTSTicker::GetCoreTicker().RemoveTicker(EventBridgeSmokeHandle);
         }

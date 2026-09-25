@@ -26,6 +26,7 @@ SUCCESS_MARKERS = (
     "C gameplay example smoke completed",
     "C travel smoke completed",
 )
+SHUTDOWN_PENDING_SUCCESS_MARKER = "C shutdown pending-work smoke completed"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C collision smoke failed",
@@ -39,6 +40,7 @@ FAILURE_MARKERS = (
     "C async object load smoke failed",
     "C gameplay example smoke failed",
     "C travel smoke failed",
+    "C shutdown pending-work smoke failed",
 )
 
 
@@ -69,10 +71,13 @@ def run_smoke(
     timeout_seconds: float = 90.0,
     startup_only: bool = False,
     graceful_exit: bool = False,
+    shutdown_pending_only: bool = False,
 ) -> None:
     """Launch a packaged host and require smoke markers or sustained startup."""
     if timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
+    if startup_only and shutdown_pending_only:
+        raise ValueError("startup-only and shutdown-pending-only modes cannot be combined")
     executable = executable.resolve()
     command = [
         str(executable),
@@ -86,6 +91,12 @@ def run_smoke(
     ]
     if not startup_only:
         command.append("-uec-tests-exit")
+    if shutdown_pending_only:
+        command.append("-uec-tests-shutdown-pending")
+    success_markers = (
+        (SHUTDOWN_PENDING_SUCCESS_MARKER,)
+        if shutdown_pending_only else SUCCESS_MARKERS
+    )
     try:
         process = subprocess.Popen(
             command,
@@ -138,7 +149,7 @@ def run_smoke(
                     "during its startup check."
                 )
                 break
-        while not startup_only and len(completed) != len(SUCCESS_MARKERS):
+        while not startup_only and len(completed) != len(success_markers):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 failure = f"Packaged host did not complete smoke checks within {timeout_seconds:g}s."
@@ -153,8 +164,8 @@ def run_smoke(
                 if failed_marker is not None:
                     failure = f"Packaged host reported smoke failure: {line}"
                     break
-                completed.update(marker for marker in SUCCESS_MARKERS if marker in line)
-            if process.poll() is not None and len(completed) != len(SUCCESS_MARKERS):
+                completed.update(marker for marker in success_markers if marker in line)
+            if process.poll() is not None and len(completed) != len(success_markers):
                 failure = f"Packaged host exited with status {process.returncode} before smoke completion."
                 break
     finally:
@@ -163,6 +174,13 @@ def run_smoke(
                 process.wait(timeout=15)
             except subprocess.TimeoutExpired:
                 _stop_process(process)
+                failure = "Packaged host did not exit after its final smoke marker."
+            else:
+                if process.returncode != 0:
+                    failure = (
+                        "Packaged host exited with status "
+                        f"{process.returncode} after its final smoke marker."
+                    )
         else:
             _stop_process(process)
         reader.join(timeout=5)
@@ -176,22 +194,34 @@ def run_smoke(
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) not in (2, 3) or (len(argv) == 3 and argv[2] != "--startup-only"):
+    if len(argv) not in (2, 3) or (
+        len(argv) == 3 and argv[2] not in ("--startup-only", "--shutdown-pending-only")
+    ):
         print(
-            f"Usage: {Path(argv[0]).name} <packaged-archive-or-executable> [--startup-only]",
+            f"Usage: {Path(argv[0]).name} <packaged-archive-or-executable> "
+            "[--startup-only | --shutdown-pending-only]",
             file=sys.stderr,
         )
         return 2
     archive = Path(argv[1])
-    startup_only = len(argv) == 3
+    startup_only = len(argv) == 3 and argv[2] == "--startup-only"
+    shutdown_pending_only = len(argv) == 3 and argv[2] == "--shutdown-pending-only"
     try:
         executable = find_host_executable(archive)
-        run_smoke(executable, startup_only=startup_only, graceful_exit=not startup_only)
+        run_smoke(
+            executable,
+            startup_only=startup_only,
+            shutdown_pending_only=shutdown_pending_only,
+            graceful_exit=not startup_only,
+        )
     except RuntimeError as error:
         print(error, file=sys.stderr)
         return 1
     if startup_only:
         print("Packaged host remained running through its Shipping startup check.")
+        return 0
+    if shutdown_pending_only:
+        print("Packaged host drained pending work without running borrowed callbacks during shutdown.")
         return 0
     print("Packaged Development host completed the C bootstrap, collision, GC lifetime, physics, event, latent, queue, async save/load, async object load, gameplay, and travel smoke checks.")
     return 0

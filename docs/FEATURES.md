@@ -12,6 +12,7 @@ checks explicitly recorded for each feature in the Unreal build matrix.
 | Runtime drain diagnostics | Runtime implemented | Game-thread counts for subscriptions, pending requests, and in-flight callbacks before consumer unload |
 | Context/world/actor handles | Runtime implemented / Unreal integration pending | Typed active registries and weak UObject references |
 | PIE restart handle cleanup | UE 5.8.3 Editor PIE smoke verified | Two-session restart rejects old world and actor handles, stops old-world tick callbacks at cleanup, and confirms fresh handles and runtime counts recover |
+| Pending-work shutdown | UE 5.8.3 packaged Development smoke verified | Checks a queued game-thread callback and async save-slot load remain pending at engine pre-exit, neither callback ran, and the app exits cleanly through module teardown |
 | World selection | Runtime implemented / Unreal integration pending | Indexed active Game/PIE enumeration, explicit world-kind enumeration including editor/preview/inactive contexts, world kind, PIE instance identifiers, network mode, authority query, game-mode/game-state access, authority-gated mutators, and first-world convenience |
 | Actor spawn and destruction | Runtime implemented / Unreal integration pending | Loadable actor class paths, stale-handle invalidation, and one-shot destruction callbacks; game thread only |
 | Actor identity and tags | Runtime implemented / Unreal integration pending | UTF-8 name output, tag lookup/enumeration, authority-gated tag add/remove, and game-thread access |
