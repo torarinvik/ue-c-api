@@ -15,6 +15,8 @@ from pathlib import Path
 
 RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER = "C runtime module dynamic-unload policy smoke completed"
 RUNTIME_MODULE_UNLOAD_FAILURE_MARKER = "C runtime module dynamic-unload policy smoke failed"
+DEDICATED_SERVER_SUCCESS_MARKER = "C dedicated-server runtime context smoke completed"
+DEDICATED_SERVER_FAILURE_MARKER = "C dedicated-server runtime context smoke failed"
 
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
@@ -45,6 +47,7 @@ MULTI_PIE_SUCCESS_MARKER = "C multi-PIE context smoke completed"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     RUNTIME_MODULE_UNLOAD_FAILURE_MARKER,
+    DEDICATED_SERVER_FAILURE_MARKER,
     "C cooked reflection metadata smoke failed",
     "C persistence and configuration smoke failed",
     "C reflected container smoke failed",
@@ -167,12 +170,14 @@ def run_smoke(
     pie_restart_only: bool = False,
     multi_pie_only: bool = False,
     listen_server_only: bool = False,
+    dedicated_server_only: bool = False,
 ) -> None:
     """Start PIE with NullRHI and require every C smoke marker."""
     if timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
-    if sum((authority_only, pie_restart_only, multi_pie_only, listen_server_only)) > 1:
-        raise ValueError("authority, listen-server, PIE-restart, and multi-PIE modes cannot be combined")
+    if sum((authority_only, pie_restart_only, multi_pie_only, listen_server_only,
+            dedicated_server_only)) > 1:
+        raise ValueError("PIE smoke modes cannot be combined")
     repo_root = Path(__file__).resolve().parent.parent
     executable = find_editor_executable(engine_root)
     command = [
@@ -186,7 +191,19 @@ def run_smoke(
         "-stdout",
         "-FullStdOutLogOutput",
     ]
-    if authority_only or listen_server_only:
+    if dedicated_server_only:
+        command.extend((
+            "-uec-tests-dedicated-server",
+            "-uec-tests-exit",
+            "-ExecCmds=py unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).editor_request_begin_play()",
+        ))
+        success_markers = (
+            RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
+            "C consumer bootstrap completed",
+            DEDICATED_SERVER_SUCCESS_MARKER,
+        )
+        failure_markers = FAILURE_MARKERS
+    elif authority_only or listen_server_only:
         command.extend((
             "-uec-tests-authority",
             "-uec-tests-exit",
@@ -224,7 +241,7 @@ def run_smoke(
             if pie_restart_only else SUCCESS_MARKERS
         )
         failure_markers = FAILURE_MARKERS
-    if authority_only:
+    if authority_only or dedicated_server_only:
         settings_snapshot = configure_authority_pie_settings(repo_root)
     elif listen_server_only:
         settings_snapshot = configure_listen_server_pie_settings(repo_root)
@@ -321,17 +338,20 @@ def run_smoke(
 def main(argv: list[str]) -> int:
     if len(argv) not in (2, 3) or (
         len(argv) == 3 and argv[2] not in (
-            "--authority-only", "--listen-server-only", "--pie-restart-only", "--multi-pie-only"
+            "--authority-only", "--dedicated-server-only", "--listen-server-only",
+            "--pie-restart-only", "--multi-pie-only"
         )
     ):
         print(
             f"Usage: {Path(argv[0]).name} <unreal-engine-root> "
-            "[--authority-only | --listen-server-only | --pie-restart-only | --multi-pie-only]",
+            "[--authority-only | --dedicated-server-only | --listen-server-only | "
+            "--pie-restart-only | --multi-pie-only]",
             file=sys.stderr,
         )
         return 2
     try:
         authority_only = len(argv) == 3 and argv[2] == "--authority-only"
+        dedicated_server_only = len(argv) == 3 and argv[2] == "--dedicated-server-only"
         listen_server_only = len(argv) == 3 and argv[2] == "--listen-server-only"
         pie_restart_only = len(argv) == 3 and argv[2] == "--pie-restart-only"
         multi_pie_only = len(argv) == 3 and argv[2] == "--multi-pie-only"
@@ -339,12 +359,15 @@ def main(argv: list[str]) -> int:
             Path(argv[1]), authority_only=authority_only,
             pie_restart_only=pie_restart_only, multi_pie_only=multi_pie_only,
             listen_server_only=listen_server_only,
+            dedicated_server_only=dedicated_server_only,
         )
     except (OSError, RuntimeError, ValueError) as error:
         print(error, file=sys.stderr)
         return 1
     if authority_only:
         print("Editor multiplayer PIE completed the client-world physics authority smoke check.")
+    elif dedicated_server_only:
+        print("Editor dedicated-server PIE verified server-world selection, authority, and actor lifecycle.")
     elif listen_server_only:
         print("Editor listen-server PIE completed server and client authority smoke checks.")
     elif pie_restart_only:

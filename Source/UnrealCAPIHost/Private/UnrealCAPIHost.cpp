@@ -52,6 +52,7 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_prepare(void);
 extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void);
 extern "C" uec_result UEC_CALL uec_host_multi_pie_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_listen_server_authority_smoke(void);
+extern "C" void UEC_CALL uec_host_dedicated_server_context_smoke_start(void);
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealCAPIHost, Log, All);
 
@@ -715,6 +716,11 @@ public:
         {
             UE_LOG(LogUnrealCAPIHost, Error,
                 TEXT("C consumer bootstrap failed with result %d"), static_cast<int32>(result));
+        }
+        if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-dedicated-server")))
+        {
+            uec_host_dedicated_server_context_smoke_start();
+            return;
         }
         EventBridgeSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
             FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunEventBridgeSmoke), 0.1f);

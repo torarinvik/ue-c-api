@@ -26,6 +26,7 @@ from unreal_pie_runtime import (
     MULTI_PIE_SUCCESS_MARKER,
     LISTEN_SERVER_AUTHORITY_SUCCESS_MARKER,
     RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER as PIE_RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
+    DEDICATED_SERVER_SUCCESS_MARKER,
     run_smoke as run_editor_smoke,
 )
 
@@ -270,6 +271,26 @@ class UnrealRuntimeTests(unittest.TestCase):
         command = popen.call_args.args[0]
         self.assertIn("-uec-tests-authority", command)
         self.assertIn("-uec-tests-listen-server", command)
+
+    @patch("unreal_pie_runtime.find_editor_executable", return_value=Path("/fake/UnrealEditor"))
+    @patch("unreal_pie_runtime.subprocess.Popen")
+    def test_dedicated_server_pie_requires_server_context_marker(self, popen, _find_editor):
+        process = popen.return_value
+        process.stdout = io.StringIO(
+            PIE_RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER + "\n" +
+            "C consumer bootstrap completed\n" +
+            DEDICATED_SERVER_SUCCESS_MARKER + "\n"
+        )
+        process.poll.return_value = None
+        process.wait.return_value = 0
+
+        run_editor_smoke(
+            Path("/fake/engine"), timeout_seconds=1.0, dedicated_server_only=True
+        )
+
+        command = popen.call_args.args[0]
+        self.assertIn("-uec-tests-dedicated-server", command)
+        self.assertTrue(any(argument.startswith("-ExecCmds=") for argument in command))
 
     def test_surfaces_collision_smoke_failure(self):
         executable = self.make_host(["C collision smoke failed with result 8"])

@@ -86,6 +86,7 @@ if [ "$platform" = "$host_platform" ] && [ "$configuration" = Development ]; the
     if [ "$host_platform" = Mac ]; then
         python3 "$repo_dir/tests/unreal_pie_runtime.py" "$engine_root"
         python3 "$repo_dir/tests/unreal_pie_runtime.py" "$engine_root" --authority-only
+        python3 "$repo_dir/tests/unreal_pie_runtime.py" "$engine_root" --dedicated-server-only
         python3 "$repo_dir/tests/unreal_pie_runtime.py" "$engine_root" --listen-server-only
         python3 "$repo_dir/tests/unreal_pie_runtime.py" "$engine_root" --multi-pie-only
         python3 "$repo_dir/tests/unreal_pie_runtime.py" "$engine_root" --pie-restart-only
