@@ -37,8 +37,11 @@ UnrealCAPI does not support reloading its runtime module or consumer code with
 Live Coding or another editor hot-reload path. Restart the Unreal Editor or
 host process to apply bridge changes and recreate reflection-derived metadata
 caches. Existing API tables, contexts, and handles must not be reused across a
-module reload. This restart requirement remains until repeated engine reload
-and consumer-lifecycle stress checks establish a safe in-process contract.
+module reload. The runtime module reports that dynamic unloading is unsupported
+to Unreal's module manager; its DLL must stay mapped while consumers may retain
+the exported function table. This restart requirement remains until repeated
+engine reload and consumer-lifecycle stress checks establish a safe in-process
+contract.
 
 A consumer library may manage its own unload separately. Route every API path
 that can create callbacks or queued work through the admission gate in

@@ -397,6 +397,13 @@ class FUnrealCAPIModule final : public IModuleInterface
     FDelegateHandle PostLoadMapHandle;
     FTSTicker::FDelegateHandle GameThreadDispatchHandle;
 public:
+    bool SupportsDynamicReloading() override
+    {
+        // Consumers may retain exported function pointers for this module's lifetime.
+        // Keep Unreal's hot-reload path from unloading the bridge DLL in-process.
+        return false;
+    }
+
     void StartupModule() override
     {
         {

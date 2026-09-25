@@ -13,8 +13,12 @@ from collections import deque
 from pathlib import Path
 
 
+RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER = "C runtime module dynamic-unload policy smoke completed"
+RUNTIME_MODULE_UNLOAD_FAILURE_MARKER = "C runtime module dynamic-unload policy smoke failed"
+
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
+    RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
     "C cooked reflection metadata smoke completed",
     "C persistence and configuration smoke completed",
     "C reflected container smoke completed",
@@ -35,6 +39,7 @@ SHUTDOWN_PENDING_SUCCESS_MARKER = "C shutdown pending-work smoke completed"
 SHUTDOWN_REGISTRIES_SUCCESS_MARKER = "UEC runtime shutdown registries cleared"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
+    RUNTIME_MODULE_UNLOAD_FAILURE_MARKER,
     "C cooked reflection metadata smoke failed",
     "C persistence and configuration smoke failed",
     "C reflected container smoke failed",
@@ -106,7 +111,11 @@ def run_smoke(
     if shutdown_pending_only:
         command.append("-uec-tests-shutdown-pending")
     success_markers = (
-        (SHUTDOWN_PENDING_SUCCESS_MARKER, SHUTDOWN_REGISTRIES_SUCCESS_MARKER)
+        (
+            RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
+            SHUTDOWN_PENDING_SUCCESS_MARKER,
+            SHUTDOWN_REGISTRIES_SUCCESS_MARKER,
+        )
         if shutdown_pending_only else SUCCESS_MARKERS
     )
     try:

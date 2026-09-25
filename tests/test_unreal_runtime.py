@@ -9,6 +9,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from unreal_runtime import (
+    RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
+    RUNTIME_MODULE_UNLOAD_FAILURE_MARKER,
     SHUTDOWN_PENDING_SUCCESS_MARKER,
     SHUTDOWN_REGISTRIES_SUCCESS_MARKER,
     find_host_executable,
@@ -23,6 +25,7 @@ from unreal_pie_runtime import (
     PIE_RESTART_SUCCESS_MARKER,
     MULTI_PIE_SUCCESS_MARKER,
     LISTEN_SERVER_AUTHORITY_SUCCESS_MARKER,
+    RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER as PIE_RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
     run_smoke as run_editor_smoke,
 )
 
@@ -107,6 +110,7 @@ class UnrealRuntimeTests(unittest.TestCase):
 
     def test_accepts_all_smoke_markers(self):
         executable = self.make_host([
+            RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
             "C consumer bootstrap completed",
             "C cooked reflection metadata smoke completed",
             "C persistence and configuration smoke completed",
@@ -130,6 +134,7 @@ class UnrealRuntimeTests(unittest.TestCase):
     def test_shutdown_smoke_requires_marker_and_clean_exit(self, popen):
         process = popen.return_value
         process.stdout = io.StringIO(
+            RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER + "\n" +
             SHUTDOWN_PENDING_SUCCESS_MARKER + "\n" +
             SHUTDOWN_REGISTRIES_SUCCESS_MARKER + "\n"
         )
@@ -152,7 +157,10 @@ class UnrealRuntimeTests(unittest.TestCase):
     @patch("unreal_runtime.subprocess.Popen")
     def test_shutdown_smoke_requires_post_cleanup_marker(self, popen):
         process = popen.return_value
-        process.stdout = io.StringIO(SHUTDOWN_PENDING_SUCCESS_MARKER + "\n")
+        process.stdout = io.StringIO(
+            RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER + "\n" +
+            SHUTDOWN_PENDING_SUCCESS_MARKER + "\n"
+        )
         process.poll.return_value = 0
         process.returncode = 0
         with self.assertRaisesRegex(RuntimeError, "before smoke completion"):
@@ -165,6 +173,7 @@ class UnrealRuntimeTests(unittest.TestCase):
 
     def test_shutdown_smoke_reports_registry_leaks(self):
         executable = self.make_host([
+            RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
             SHUTDOWN_PENDING_SUCCESS_MARKER,
             "UEC runtime shutdown drain failed: requests=1",
         ])
@@ -175,6 +184,7 @@ class UnrealRuntimeTests(unittest.TestCase):
     def test_shutdown_smoke_rejects_process_crash_after_marker(self, popen):
         process = popen.return_value
         process.stdout = io.StringIO(
+            RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER + "\n" +
             SHUTDOWN_PENDING_SUCCESS_MARKER + "\n" +
             SHUTDOWN_REGISTRIES_SUCCESS_MARKER + "\n"
         )
@@ -193,6 +203,11 @@ class UnrealRuntimeTests(unittest.TestCase):
     def test_surfaces_smoke_failure(self):
         executable = self.make_host(["C event bridge smoke failed with result 8"])
         with self.assertRaisesRegex(RuntimeError, "C event bridge smoke failed"):
+            run_smoke(executable, timeout_seconds=10.0)
+
+    def test_surfaces_runtime_module_unload_policy_failure(self):
+        executable = self.make_host([RUNTIME_MODULE_UNLOAD_FAILURE_MARKER])
+        with self.assertRaisesRegex(RuntimeError, "dynamic-unload policy smoke failed"):
             run_smoke(executable, timeout_seconds=10.0)
 
     @patch("unreal_pie_runtime.find_editor_executable", return_value=Path("/fake/UnrealEditor"))
@@ -227,7 +242,10 @@ class UnrealRuntimeTests(unittest.TestCase):
     @patch("unreal_pie_runtime.subprocess.Popen")
     def test_multi_pie_requires_context_smoke_marker(self, popen, _find_editor):
         process = popen.return_value
-        process.stdout = io.StringIO(MULTI_PIE_SUCCESS_MARKER + "\n")
+        process.stdout = io.StringIO(
+            PIE_RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER + "\n" +
+            MULTI_PIE_SUCCESS_MARKER + "\n"
+        )
         process.poll.return_value = None
         process.wait.return_value = 0
 
@@ -240,7 +258,10 @@ class UnrealRuntimeTests(unittest.TestCase):
     @patch("unreal_pie_runtime.subprocess.Popen")
     def test_listen_server_pie_requires_server_authority_marker(self, popen, _find_editor):
         process = popen.return_value
-        process.stdout = io.StringIO(LISTEN_SERVER_AUTHORITY_SUCCESS_MARKER + "\n")
+        process.stdout = io.StringIO(
+            PIE_RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER + "\n" +
+            LISTEN_SERVER_AUTHORITY_SUCCESS_MARKER + "\n"
+        )
         process.poll.return_value = None
         process.wait.return_value = 0
 

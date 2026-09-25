@@ -13,8 +13,12 @@ from collections import deque
 from pathlib import Path
 
 
+RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER = "C runtime module dynamic-unload policy smoke completed"
+RUNTIME_MODULE_UNLOAD_FAILURE_MARKER = "C runtime module dynamic-unload policy smoke failed"
+
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
+    RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
     "C cooked reflection metadata smoke completed",
     "C persistence and configuration smoke completed",
     "C reflected container smoke completed",
@@ -31,12 +35,16 @@ SUCCESS_MARKERS = (
     "C gameplay example smoke completed",
     "C travel smoke completed",
 )
-AUTHORITY_SUCCESS_MARKERS = ("C client authority smoke completed",)
+AUTHORITY_SUCCESS_MARKERS = (
+    RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
+    "C client authority smoke completed",
+)
 LISTEN_SERVER_AUTHORITY_SUCCESS_MARKER = "C listen-server authority smoke completed"
 PIE_RESTART_SUCCESS_MARKER = "C PIE restart smoke completed"
 MULTI_PIE_SUCCESS_MARKER = "C multi-PIE context smoke completed"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
+    RUNTIME_MODULE_UNLOAD_FAILURE_MARKER,
     "C cooked reflection metadata smoke failed",
     "C persistence and configuration smoke failed",
     "C reflected container smoke failed",
@@ -56,7 +64,11 @@ FAILURE_MARKERS = (
     "C PIE restart smoke failed",
     "C multi-PIE context smoke failed",
 )
-AUTHORITY_FAILURE_MARKERS = ("C client authority smoke failed", "LogPython: Error")
+AUTHORITY_FAILURE_MARKERS = (
+    RUNTIME_MODULE_UNLOAD_FAILURE_MARKER,
+    "C client authority smoke failed",
+    "LogPython: Error",
+)
 
 
 def find_editor_executable(engine_root: Path) -> Path:
@@ -182,7 +194,10 @@ def run_smoke(
         ))
         if listen_server_only:
             command.append("-uec-tests-listen-server")
-            success_markers = (LISTEN_SERVER_AUTHORITY_SUCCESS_MARKER,)
+            success_markers = (
+                RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
+                LISTEN_SERVER_AUTHORITY_SUCCESS_MARKER,
+            )
         else:
             success_markers = AUTHORITY_SUCCESS_MARKERS
         failure_markers = AUTHORITY_FAILURE_MARKERS
@@ -192,7 +207,10 @@ def run_smoke(
             "-uec-tests-exit",
             "-ExecCmds=py unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).editor_request_begin_play()",
         ))
-        success_markers = (MULTI_PIE_SUCCESS_MARKER,)
+        success_markers = (
+            RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
+            MULTI_PIE_SUCCESS_MARKER,
+        )
         failure_markers = FAILURE_MARKERS
     else:
         command.extend((

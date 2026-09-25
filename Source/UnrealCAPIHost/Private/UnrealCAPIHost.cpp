@@ -667,6 +667,20 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
 public:
     void StartupModule() override
     {
+        const bool bSupportsDynamicReloading =
+            FModuleManager::Get().LoadModuleChecked<IModuleInterface>(TEXT("UnrealCAPI"))
+                .SupportsDynamicReloading();
+        if (bSupportsDynamicReloading)
+        {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C runtime module dynamic-unload policy smoke failed: unloading is enabled"));
+        }
+        else
+        {
+            UE_LOG(LogUnrealCAPIHost, Log,
+                TEXT("C runtime module dynamic-unload policy smoke completed"));
+        }
+
         const uec_result result = uec_host_smoke_bootstrap();
         if (result == UEC_RESULT_OK)
         {
