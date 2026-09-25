@@ -10,6 +10,7 @@ namespace
     enum class EInputSmokeStage : uint8
     {
         WaitingForInput,
+        WaitingForCompletion,
         WaitingForSuppressedCallback
     };
 
@@ -25,9 +26,15 @@ namespace
         uec_object* Subsystem = nullptr;
         uec_input_action_value ExpectedValue{};
         uint32 ActionIndex = 0u;
+        uint64 StartedBindingId = 0u;
         uint64 BindingId = 0;
+        uint64 CompletedBindingId = 0u;
+        uint32 StartedCallbackCount = 0u;
         uint32 CallbackCount = 0;
+        uint32 CompletedCallbackCount = 0u;
+        uint32 StartedCallbackCountAfterUnbind = 0u;
         uint32 CallbackCountAfterUnbind = 0;
+        uint32 CompletedCallbackCountAfterUnbind = 0u;
         uint32 SuppressionPolls = 0;
         uec_input_action_value ObservedValue{};
         EInputSmokeStage Stage = EInputSmokeStage::WaitingForInput;
@@ -43,14 +50,19 @@ namespace
     void FinishInputSmoke(FInputSmokeState& state, uec_result result)
     {
         if (state.Complete) return;
-        if (state.BindingId != 0 && state.Api != nullptr && state.Context != nullptr &&
+        if (state.Api != nullptr && state.Context != nullptr &&
             state.Api->unbind_input_action != nullptr) {
-            const uec_result unbindResult = state.Api->unbind_input_action(
-                state.Context, state.BindingId);
-            if (result == UEC_RESULT_OK && unbindResult != UEC_RESULT_OK) {
-                result = unbindResult;
+            uint64_t* bindingIds[] = {
+                &state.StartedBindingId, &state.BindingId, &state.CompletedBindingId};
+            for (uint64_t* bindingId : bindingIds) {
+                if (*bindingId == 0u) continue;
+                const uec_result unbindResult = state.Api->unbind_input_action(
+                    state.Context, *bindingId);
+                if (result == UEC_RESULT_OK && unbindResult != UEC_RESULT_OK) {
+                    result = unbindResult;
+                }
+                *bindingId = 0u;
             }
-            state.BindingId = 0;
         }
         if (state.MappingAdded && state.Api != nullptr && state.Controller != nullptr &&
             state.MappingContext != nullptr && state.Api->remove_input_mapping_context != nullptr) {
@@ -192,12 +204,26 @@ namespace
     {
         auto* state = static_cast<FInputSmokeState*>(userData);
         if (state == nullptr || state != &GInputSmokeState) return;
-        if (bindingId != state->BindingId ||
-            !IsExpectedInputValue(value, state->ExpectedValue)) {
+        if (bindingId == state->StartedBindingId) {
+            if (!IsExpectedInputValue(value, state->ExpectedValue)) {
+                state->CallbackInvalid = true;
+            }
+            ++state->StartedCallbackCount;
+        } else if (bindingId == state->BindingId) {
+            if (!IsExpectedInputValue(value, state->ExpectedValue)) {
+                state->CallbackInvalid = true;
+            }
+            ++state->CallbackCount;
+            state->ObservedValue = value;
+        } else if (bindingId == state->CompletedBindingId) {
+            if (value.struct_size < sizeof(uec_input_action_value) ||
+                value.kind != state->ExpectedValue.kind) {
+                state->CallbackInvalid = true;
+            }
+            ++state->CompletedCallbackCount;
+        } else {
             state->CallbackInvalid = true;
         }
-        ++state->CallbackCount;
-        state->ObservedValue = value;
     }
 
     uec_result InjectExpectedValue(FInputSmokeState& state)
@@ -213,18 +239,57 @@ namespace
         }
         state.ActionIndex = actionIndex;
         state.ExpectedValue = ExpectedInputValue(actionIndex);
+        state.StartedCallbackCount = 0u;
         state.CallbackCount = 0u;
+        state.CompletedCallbackCount = 0u;
+        state.StartedCallbackCountAfterUnbind = 0u;
         state.CallbackCountAfterUnbind = 0u;
+        state.CompletedCallbackCountAfterUnbind = 0u;
         state.SuppressionPolls = 0u;
         state.CallbackInvalid = false;
         uec_result result = state.Api->bind_input_action(
+            state.Actor, state.Actions[actionIndex], UEC_INPUT_TRIGGER_STARTED,
+            &OnInputSmokeAction, &state, &state.StartedBindingId);
+        if (result != UEC_RESULT_OK || state.StartedBindingId == 0u) {
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
+        result = state.Api->bind_input_action(
             state.Actor, state.Actions[actionIndex], UEC_INPUT_TRIGGER_TRIGGERED,
             &OnInputSmokeAction, &state, &state.BindingId);
         if (result != UEC_RESULT_OK || state.BindingId == 0u) {
             return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
         }
+        result = state.Api->bind_input_action(
+            state.Actor, state.Actions[actionIndex], UEC_INPUT_TRIGGER_COMPLETED,
+            &OnInputSmokeAction, &state, &state.CompletedBindingId);
+        if (result != UEC_RESULT_OK || state.CompletedBindingId == 0u) {
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
         result = InjectExpectedValue(state);
         return result;
+    }
+
+    uec_result InjectReleasedValue(FInputSmokeState& state)
+    {
+        uec_input_action_value value{};
+        value.struct_size = sizeof(value);
+        value.kind = state.ExpectedValue.kind;
+        return state.Api->inject_input_action_value(
+            state.Controller, state.Actions[state.ActionIndex], &value);
+    }
+
+    uec_result UnbindInputSmokeActions(FInputSmokeState& state)
+    {
+        uint64_t* bindingIds[] = {
+            &state.StartedBindingId, &state.BindingId, &state.CompletedBindingId};
+        for (uint64_t* bindingId : bindingIds) {
+            if (*bindingId == 0u) continue;
+            const uec_result result = state.Api->unbind_input_action(
+                state.Context, *bindingId);
+            if (result != UEC_RESULT_OK) return result;
+            *bindingId = 0u;
+        }
+        return UEC_RESULT_OK;
     }
 }
 
@@ -343,7 +408,7 @@ extern "C" uec_bool UEC_CALL uec_host_input_smoke_poll(uec_result* outResult)
     }
 
     if (state.Stage == EInputSmokeStage::WaitingForInput) {
-        if (state.CallbackCount == 0u) {
+        if (state.StartedCallbackCount == 0u || state.CallbackCount == 0u) {
             *outResult = UEC_RESULT_NOT_INITIALIZED;
             return UEC_FALSE;
         }
@@ -353,18 +418,39 @@ extern "C" uec_bool UEC_CALL uec_host_input_smoke_poll(uec_result* outResult)
             *outResult = state.Result;
             return UEC_TRUE;
         }
-        uec_result result = state.Api->unbind_input_action(
-            state.Context, state.BindingId);
+        const uec_result result = InjectReleasedValue(state);
         if (result != UEC_RESULT_OK) {
             FinishInputSmoke(state, result);
             *outResult = state.Result;
             return UEC_TRUE;
         }
-        state.BindingId = 0u;
-        state.CallbackCountAfterUnbind = state.CallbackCount;
-        result = InjectExpectedValue(state);
+        state.Stage = EInputSmokeStage::WaitingForCompletion;
+        *outResult = UEC_RESULT_NOT_INITIALIZED;
+        return UEC_FALSE;
+    }
+
+    if (state.Stage == EInputSmokeStage::WaitingForCompletion) {
+        if (state.CompletedCallbackCount == 0u) {
+            *outResult = UEC_RESULT_NOT_INITIALIZED;
+            return UEC_FALSE;
+        }
+        if (state.CallbackInvalid) {
+            FinishInputSmoke(state, UEC_RESULT_INTERNAL_ERROR);
+            *outResult = state.Result;
+            return UEC_TRUE;
+        }
+        const uec_result result = UnbindInputSmokeActions(state);
         if (result != UEC_RESULT_OK) {
             FinishInputSmoke(state, result);
+            *outResult = state.Result;
+            return UEC_TRUE;
+        }
+        state.StartedCallbackCountAfterUnbind = state.StartedCallbackCount;
+        state.CallbackCountAfterUnbind = state.CallbackCount;
+        state.CompletedCallbackCountAfterUnbind = state.CompletedCallbackCount;
+        const uec_result reinjectResult = InjectExpectedValue(state);
+        if (reinjectResult != UEC_RESULT_OK) {
+            FinishInputSmoke(state, reinjectResult);
             *outResult = state.Result;
             return UEC_TRUE;
         }
@@ -378,7 +464,9 @@ extern "C" uec_bool UEC_CALL uec_host_input_smoke_poll(uec_result* outResult)
         *outResult = UEC_RESULT_NOT_INITIALIZED;
         return UEC_FALSE;
     }
-    if (state.CallbackCount != state.CallbackCountAfterUnbind) {
+    if (state.StartedCallbackCount != state.StartedCallbackCountAfterUnbind ||
+        state.CallbackCount != state.CallbackCountAfterUnbind ||
+        state.CompletedCallbackCount != state.CompletedCallbackCountAfterUnbind) {
         FinishInputSmoke(state, UEC_RESULT_INTERNAL_ERROR);
         *outResult = state.Result;
         return UEC_TRUE;
