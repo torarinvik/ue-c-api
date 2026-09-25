@@ -28,6 +28,7 @@ SUCCESS_MARKERS = (
 )
 AUTHORITY_SUCCESS_MARKERS = ("C client authority smoke completed",)
 PIE_RESTART_SUCCESS_MARKER = "C PIE restart smoke completed"
+MULTI_PIE_SUCCESS_MARKER = "C multi-PIE context smoke completed"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C collision smoke failed",
@@ -42,6 +43,7 @@ FAILURE_MARKERS = (
     "C gameplay example smoke failed",
     "C travel smoke failed",
     "C PIE restart smoke failed",
+    "C multi-PIE context smoke failed",
 )
 AUTHORITY_FAILURE_MARKERS = ("C client authority smoke failed", "LogPython: Error")
 
@@ -74,8 +76,12 @@ def stop_process(process: subprocess.Popen[str]) -> None:
         process.wait(timeout=10)
 
 
-def configure_authority_pie_settings(repo_root: Path) -> tuple[Path, bytes | None]:
-    """Temporarily set the per-project Editor options to run one PIE client."""
+def configure_pie_settings(
+    repo_root: Path, client_count: int
+) -> tuple[Path, bytes | None]:
+    """Temporarily set the per-project Editor options for a PIE client count."""
+    if client_count < 1:
+        raise ValueError("PIE client_count must be positive")
     path = repo_root / "Saved/Config/MacEditor/EditorPerProjectUserSettings.ini"
     original = path.read_bytes() if path.is_file() else None
     text = original.decode("utf-8") if original is not None else ""
@@ -83,7 +89,7 @@ def configure_authority_pie_settings(repo_root: Path) -> tuple[Path, bytes | Non
     updates = {
         "PlayNetMode": "PIE_Client",
         "RunUnderOneProcess": "True",
-        "PlayNumberOfClients": "1",
+        "PlayNumberOfClients": str(client_count),
     }
     lines = text.splitlines()
     section_start = next((i for i, line in enumerate(lines) if line.strip() == section), None)
@@ -108,6 +114,16 @@ def configure_authority_pie_settings(repo_root: Path) -> tuple[Path, bytes | Non
     return path, original
 
 
+def configure_authority_pie_settings(repo_root: Path) -> tuple[Path, bytes | None]:
+    """Temporarily configure one in-process PIE client for authority checks."""
+    return configure_pie_settings(repo_root, 1)
+
+
+def configure_multi_pie_settings(repo_root: Path) -> tuple[Path, bytes | None]:
+    """Temporarily configure two in-process PIE clients."""
+    return configure_pie_settings(repo_root, 2)
+
+
 def restore_authority_pie_settings(path: Path, original: bytes | None) -> None:
     """Restore the user's generated Editor settings after the authority run."""
     if original is None:
@@ -121,12 +137,13 @@ def run_smoke(
     timeout_seconds: float = 150.0,
     authority_only: bool = False,
     pie_restart_only: bool = False,
+    multi_pie_only: bool = False,
 ) -> None:
     """Start PIE with NullRHI and require every C smoke marker."""
     if timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
-    if authority_only and pie_restart_only:
-        raise ValueError("authority-only and PIE-restart-only modes cannot be combined")
+    if sum((authority_only, pie_restart_only, multi_pie_only)) > 1:
+        raise ValueError("authority, PIE-restart, and multi-PIE modes cannot be combined")
     repo_root = Path(__file__).resolve().parent.parent
     executable = find_editor_executable(engine_root)
     command = [
@@ -148,6 +165,14 @@ def run_smoke(
         ))
         success_markers = AUTHORITY_SUCCESS_MARKERS
         failure_markers = AUTHORITY_FAILURE_MARKERS
+    elif multi_pie_only:
+        command.extend((
+            "-uec-tests-multi-pie",
+            "-uec-tests-exit",
+            "-ExecCmds=py unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).editor_request_begin_play()",
+        ))
+        success_markers = (MULTI_PIE_SUCCESS_MARKER,)
+        failure_markers = FAILURE_MARKERS
     else:
         command.extend((
             "-uec-tests-exit",
@@ -160,7 +185,12 @@ def run_smoke(
             if pie_restart_only else SUCCESS_MARKERS
         )
         failure_markers = FAILURE_MARKERS
-    settings_snapshot = configure_authority_pie_settings(repo_root) if authority_only else None
+    if authority_only:
+        settings_snapshot = configure_authority_pie_settings(repo_root)
+    elif multi_pie_only:
+        settings_snapshot = configure_multi_pie_settings(repo_root)
+    else:
+        settings_snapshot = None
     try:
         process = subprocess.Popen(
             command,
@@ -249,20 +279,23 @@ def run_smoke(
 
 def main(argv: list[str]) -> int:
     if len(argv) not in (2, 3) or (
-        len(argv) == 3 and argv[2] not in ("--authority-only", "--pie-restart-only")
+        len(argv) == 3 and argv[2] not in (
+            "--authority-only", "--pie-restart-only", "--multi-pie-only"
+        )
     ):
         print(
             f"Usage: {Path(argv[0]).name} <unreal-engine-root> "
-            "[--authority-only | --pie-restart-only]",
+            "[--authority-only | --pie-restart-only | --multi-pie-only]",
             file=sys.stderr,
         )
         return 2
     try:
         authority_only = len(argv) == 3 and argv[2] == "--authority-only"
         pie_restart_only = len(argv) == 3 and argv[2] == "--pie-restart-only"
+        multi_pie_only = len(argv) == 3 and argv[2] == "--multi-pie-only"
         run_smoke(
             Path(argv[1]), authority_only=authority_only,
-            pie_restart_only=pie_restart_only,
+            pie_restart_only=pie_restart_only, multi_pie_only=multi_pie_only,
         )
     except (OSError, RuntimeError, ValueError) as error:
         print(error, file=sys.stderr)
@@ -271,6 +304,8 @@ def main(argv: list[str]) -> int:
         print("Editor multiplayer PIE completed the client-world physics authority smoke check.")
     elif pie_restart_only:
         print("Editor PIE restart smoke verified stale-handle rejection and world-tick cleanup across two sessions.")
+    elif multi_pie_only:
+        print("Editor PIE smoke verified explicit world lookup and distinct instance ids across two clients.")
     else:
         print(
             "Editor PIE completed the C bootstrap, collision, GC lifetime, physics, event, latent, queue, "

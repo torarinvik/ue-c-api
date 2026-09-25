@@ -42,6 +42,7 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void);
 extern "C" void UEC_CALL uec_host_pie_restart_smoke_cancel(void);
 extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_arm(void);
 extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void);
+extern "C" uec_result UEC_CALL uec_host_multi_pie_smoke(void);
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealCAPIHost, Log, All);
 
@@ -227,6 +228,26 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             UE_LOG(LogUnrealCAPIHost, Log,
                 TEXT("C shutdown pending-work smoke scheduled"));
             FPlatformMisc::RequestExit(false);
+            return false;
+        }
+
+        if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-multi-pie")))
+        {
+            const uec_result multiPIEResult = uec_host_multi_pie_smoke();
+            if (multiPIEResult == UEC_RESULT_NOT_INITIALIZED) return true;
+            if (multiPIEResult == UEC_RESULT_OK)
+            {
+                UE_LOG(LogUnrealCAPIHost, Log,
+                    TEXT("C multi-PIE context smoke completed"));
+            }
+            else
+            {
+                UE_LOG(LogUnrealCAPIHost, Error,
+                    TEXT("C multi-PIE context smoke failed with result %d"),
+                    static_cast<int32>(multiPIEResult));
+            }
+            EventBridgeSmokeHandle.Reset();
+            RequestSmokeExit();
             return false;
         }
 

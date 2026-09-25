@@ -15,9 +15,11 @@ from unreal_runtime import (
 )
 from unreal_pie_runtime import (
     configure_authority_pie_settings,
+    configure_multi_pie_settings,
     restore_authority_pie_settings,
     SUCCESS_MARKERS,
     PIE_RESTART_SUCCESS_MARKER,
+    MULTI_PIE_SUCCESS_MARKER,
     run_smoke as run_editor_smoke,
 )
 
@@ -71,6 +73,17 @@ class UnrealRuntimeTests(unittest.TestCase):
         self.assertTrue(path.exists())
         restore_authority_pie_settings(path, snapshot)
         self.assertFalse(path.exists())
+
+    def test_multi_pie_settings_configure_two_clients_and_restore(self):
+        settings_path = self.root / "Saved/Config/MacEditor/EditorPerProjectUserSettings.ini"
+        settings_path.parent.mkdir(parents=True)
+        original = b"[/Script/UnrealEd.LevelEditorPlaySettings]\nPlayNumberOfClients=4\n"
+        settings_path.write_bytes(original)
+        path, snapshot = configure_multi_pie_settings(self.root)
+        self.assertIn("PlayNumberOfClients=2", path.read_text(encoding="utf-8"))
+        self.assertIn("RunUnderOneProcess=True", path.read_text(encoding="utf-8"))
+        restore_authority_pie_settings(path, snapshot)
+        self.assertEqual(path.read_bytes(), original)
 
     def test_requires_unique_executable(self):
         with self.assertRaisesRegex(RuntimeError, "found none"):
@@ -160,6 +173,19 @@ class UnrealRuntimeTests(unittest.TestCase):
 
         command = popen.call_args.args[0]
         self.assertIn("-uec-tests-pie-restart", command)
+
+    @patch("unreal_pie_runtime.find_editor_executable", return_value=Path("/fake/UnrealEditor"))
+    @patch("unreal_pie_runtime.subprocess.Popen")
+    def test_multi_pie_requires_context_smoke_marker(self, popen, _find_editor):
+        process = popen.return_value
+        process.stdout = io.StringIO(MULTI_PIE_SUCCESS_MARKER + "\n")
+        process.poll.return_value = None
+        process.wait.return_value = 0
+
+        run_editor_smoke(Path("/fake/engine"), timeout_seconds=1.0, multi_pie_only=True)
+
+        command = popen.call_args.args[0]
+        self.assertIn("-uec-tests-multi-pie", command)
 
     def test_surfaces_collision_smoke_failure(self):
         executable = self.make_host(["C collision smoke failed with result 8"])
