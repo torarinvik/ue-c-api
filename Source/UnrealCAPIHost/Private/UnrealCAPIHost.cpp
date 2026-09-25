@@ -13,6 +13,7 @@
 
 extern "C" uec_result UEC_CALL uec_host_smoke_bootstrap(void);
 extern "C" uec_result UEC_CALL uec_host_reflection_metadata_smoke(void);
+extern "C" uec_result UEC_CALL uec_host_persistence_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_collision_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_gc_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_physics_smoke_start(void);
@@ -592,6 +593,19 @@ public:
                 UE_LOG(LogUnrealCAPIHost, Error,
                     TEXT("C cooked reflection metadata smoke failed with result %d"),
                     static_cast<int32>(metadataResult));
+            }
+
+            const uec_result persistenceResult = uec_host_persistence_smoke();
+            if (persistenceResult == UEC_RESULT_OK)
+            {
+                UE_LOG(LogUnrealCAPIHost, Log,
+                    TEXT("C persistence and configuration smoke completed"));
+            }
+            else
+            {
+                UE_LOG(LogUnrealCAPIHost, Error,
+                    TEXT("C persistence and configuration smoke failed with result %d"),
+                    static_cast<int32>(persistenceResult));
             }
         }
         else

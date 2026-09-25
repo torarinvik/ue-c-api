@@ -93,6 +93,7 @@ class UnrealRuntimeTests(unittest.TestCase):
         executable = self.make_host([
             "C consumer bootstrap completed",
             "C cooked reflection metadata smoke completed",
+            "C persistence and configuration smoke completed",
             "C collision smoke completed",
             "C GC lifetime smoke completed",
             "C physics smoke completed",
