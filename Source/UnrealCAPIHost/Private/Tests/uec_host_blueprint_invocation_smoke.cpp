@@ -156,6 +156,25 @@ extern "C" uec_result UEC_CALL uec_host_blueprint_invocation_smoke(void)
     }
     if (result == UEC_RESULT_OK && actor == nullptr) result = UEC_RESULT_INTERNAL_ERROR;
 
+    const uec_property_value mismatchedArgument{
+        sizeof(uec_property_value), UEC_PROPERTY_DOUBLE, UEC_FALSE, {0u, 0u, 0u},
+        0, 1.5};
+    uec_property_value rejectedReturn{};
+    rejectedReturn.struct_size = sizeof(rejectedReturn);
+    rejectedReturn.kind = UEC_PROPERTY_INTEGER;
+    rejectedReturn.integer_value = 99;
+    if (result == UEC_RESULT_OK) {
+        const uec_result rejectedResult = api->invoke_actor_function_value(
+            actor, View(functionNameData), &mismatchedArgument, 1u, &rejectedReturn);
+        if (rejectedResult != UEC_RESULT_INVALID_ARGUMENT ||
+            rejectedReturn.kind != UEC_PROPERTY_UNKNOWN ||
+            rejectedReturn.bool_value != UEC_FALSE ||
+            rejectedReturn.integer_value != 0 || rejectedReturn.real_value != 0.0)
+        {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+    }
+
     const uec_property_value argument{
         sizeof(uec_property_value), UEC_PROPERTY_INTEGER, UEC_FALSE, {0u, 0u, 0u},
         867, 0.0};
