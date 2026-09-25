@@ -28,9 +28,13 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     const uec_api* api = NULL;
     uec_context* context = NULL;
     uec_world* clientWorld = NULL;
+    uec_world* serverWorld = NULL;
     uec_actor* actor = NULL;
+    uec_actor* serverActor = NULL;
     uec_scene_component* component = NULL;
     uec_net_mode netMode = UEC_NET_MODE_UNKNOWN;
+    uec_net_mode serverMode = UEC_NET_MODE_UNKNOWN;
+    uec_world_kind worldKind = UEC_WORLD_KIND_UNKNOWN;
     uec_bool hasAuthority = UEC_TRUE;
     uec_bool simulating = UEC_FALSE;
     uec_vector3 linearBefore = {0};
@@ -38,6 +42,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     uec_vector3 readback = {0};
     uec_transform actorTransformBefore = {0};
     uec_transform componentTransformBefore = {0};
+    uec_transform serverSpawnTransform = {0};
     uec_transform attemptedTransform = {0};
     uec_transform transformAfter = {0};
     uec_collision_enabled collisionBefore = UEC_COLLISION_DISABLED;
@@ -98,7 +103,9 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     if (result != UEC_RESULT_OK) return result;
     if (api == NULL || context == NULL || api->release_context == NULL ||
         api->get_world_count == NULL || api->get_world_at == NULL ||
-        api->get_world_net_mode == NULL || api->get_world_has_authority == NULL ||
+        api->get_world_kind == NULL || api->get_world_net_mode == NULL ||
+        api->get_world_has_authority == NULL || api->spawn_actor == NULL ||
+        api->destroy_actor == NULL ||
         api->release_world == NULL || api->get_actor_count_by_class == NULL ||
         api->get_actor_at_by_class == NULL || api->release_actor == NULL ||
         api->get_actor_property_value == NULL || api->set_actor_property_value == NULL ||
@@ -153,16 +160,51 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
             (void)api->release_world(candidate);
             goto cleanup;
         }
-        if (netMode == UEC_NET_MODE_CLIENT) {
+        if (netMode == UEC_NET_MODE_CLIENT && clientWorld == NULL) {
             clientWorld = candidate;
-            break;
+        } else if ((netMode == UEC_NET_MODE_DEDICATED_SERVER ||
+                    netMode == UEC_NET_MODE_LISTEN_SERVER) && serverWorld == NULL) {
+            serverWorld = candidate;
+            serverMode = netMode;
+        } else {
+            (void)api->release_world(candidate);
         }
-        (void)api->release_world(candidate);
+        if (clientWorld != NULL && serverWorld != NULL) break;
     }
-    if (clientWorld == NULL) {
+    if (clientWorld == NULL || serverWorld == NULL) {
         result = UEC_RESULT_NOT_INITIALIZED;
         goto cleanup;
     }
+    result = api->get_world_net_mode(serverWorld, &netMode);
+    if (result != UEC_RESULT_OK || netMode != serverMode) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_world_kind(serverWorld, &worldKind);
+    if (result != UEC_RESULT_OK || worldKind != UEC_WORLD_KIND_PIE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_world_has_authority(serverWorld, &hasAuthority);
+    if (result != UEC_RESULT_OK || hasAuthority != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    serverSpawnTransform.rotation.w = 1.0;
+    serverSpawnTransform.scale.x = 1.0;
+    serverSpawnTransform.scale.y = 1.0;
+    serverSpawnTransform.scale.z = 1.0;
+    result = api->spawn_actor(
+        serverWorld, classPath, &serverSpawnTransform, &serverActor);
+    if (result != UEC_RESULT_OK || serverActor == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->destroy_actor(serverActor);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    /* DestroyActor tombstones its handle; it cannot be released afterward. */
+    serverActor = NULL;
+
     result = api->get_world_has_authority(clientWorld, &hasAuthority);
     if (result != UEC_RESULT_OK || hasAuthority != UEC_FALSE) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
@@ -460,12 +502,22 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
 
 cleanup:
     if (api != NULL) {
+        if (serverActor != NULL) {
+            const int actorDestroyed = api->destroy_actor != NULL &&
+                api->destroy_actor(serverActor) == UEC_RESULT_OK;
+            if (!actorDestroyed && api->release_actor != NULL) {
+                (void)api->release_actor(serverActor);
+            }
+        }
         if (component != NULL && api->release_scene_component != NULL) {
             (void)api->release_scene_component(component);
         }
         if (actor != NULL && api->release_actor != NULL) (void)api->release_actor(actor);
         if (clientWorld != NULL && api->release_world != NULL) {
             (void)api->release_world(clientWorld);
+        }
+        if (serverWorld != NULL && api->release_world != NULL) {
+            (void)api->release_world(serverWorld);
         }
         if (context != NULL && api->release_context != NULL) {
             (void)api->release_context(context);

@@ -126,7 +126,7 @@ def configure_pie_settings(
 
 
 def configure_authority_pie_settings(repo_root: Path) -> tuple[Path, bytes | None]:
-    """Temporarily configure one in-process PIE client for authority checks."""
+    """Configure an in-process PIE client and dedicated server for authority checks."""
     return configure_pie_settings(repo_root, 1)
 
 
