@@ -371,7 +371,7 @@ def main(argv: list[str]) -> int:
     elif listen_server_only:
         print("Editor listen-server PIE completed server and client authority smoke checks.")
     elif pie_restart_only:
-        print("Editor PIE restart smoke verified stale-handle rejection, world-tick cleanup, and latent-request cancellation across three cleanup cycles.")
+        print("Editor PIE restart smoke verified 128-handle address non-reuse, stale-handle rejection, world-tick cleanup, and latent-request cancellation across three cleanup cycles.")
     elif multi_pie_only:
         print("Editor PIE smoke verified explicit world lookup and distinct instance ids across two clients.")
     else:

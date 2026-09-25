@@ -164,6 +164,35 @@ namespace
             name[requiredSize - 1u] == '\0';
     }
 
+    bool CheckWorldHandleAddressReuse(const uec_api* api, uec_context* context)
+    {
+        static constexpr uint32_t stressCount = 128u;
+        uec_world* staleWorlds[stressCount]{};
+        for (uint32_t index = 0u; index < stressCount; ++index) {
+            uec_world* world = nullptr;
+            if (api->get_world_at_by_kind(
+                    context, UEC_WORLD_KIND_PIE, 0u, &world) != UEC_RESULT_OK ||
+                world == nullptr) {
+                if (world != nullptr) (void)api->release_world(world);
+                return false;
+            }
+            for (uint32_t prior = 0u; prior < index; ++prior) {
+                if (staleWorlds[prior] == world) {
+                    (void)api->release_world(world);
+                    return false;
+                }
+            }
+            if (api->release_world(world) != UEC_RESULT_OK) return false;
+            staleWorlds[index] = world;
+            uec_world_kind staleKind = UEC_WORLD_KIND_GAME;
+            if (api->get_world_kind(world, &staleKind) != UEC_RESULT_INVALID_HANDLE ||
+                staleKind != UEC_WORLD_KIND_UNKNOWN) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     bool CheckWorldOwnedHandlesInvalidated(const uec_api* api)
     {
         uec_transform actorTransform{
@@ -273,6 +302,12 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
     if (result != UEC_RESULT_OK || GBaseline.active_callbacks != 0u ||
         GBaseline.pending_requests != 0u) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    if (!CheckWorldHandleAddressReuse(GApi, GContext)) {
+        UE_LOG(LogTemp, Error,
+            TEXT("Released PIE world handles were reused or remained valid during the stress pass"));
+        result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
 
