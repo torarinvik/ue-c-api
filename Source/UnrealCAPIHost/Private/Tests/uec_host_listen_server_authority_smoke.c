@@ -24,6 +24,10 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_transform transformBefore = {0};
     uec_transform attemptedTransform = {0};
     uec_transform transformAfter = {0};
+    uint32_t tagCountBefore = 0u;
+    uint32_t tagCountAfter = 0u;
+    char tagOutput[128] = {0};
+    size_t tagRequiredSize = 0u;
     uec_property_value valueBefore = {0};
     uec_property_value attemptedValue = {0};
     uec_property_value valueAfter = {0};
@@ -39,7 +43,8 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
         api->get_actor_property_value == NULL || api->set_actor_property_value == NULL ||
         api->set_actor_property_string == NULL || api->set_actor_tag == NULL ||
-        api->actor_has_tag == NULL) {
+        api->actor_has_tag == NULL || api->get_actor_tag_count == NULL ||
+        api->get_actor_tag_at == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -117,10 +122,52 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         goto cleanup;
     }
 
+    result = api->get_actor_tag_count(actor, &tagCountBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->set_actor_tag(actor, tag, UEC_TRUE);
+    if (result != UEC_RESULT_OK) goto cleanup;
     result = api->set_actor_tag(actor, tag, UEC_TRUE);
     if (result != UEC_RESULT_OK) goto cleanup;
     result = api->actor_has_tag(actor, tag, &hasTag);
     if (result != UEC_RESULT_OK || hasTag != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_tag_count(actor, &tagCountAfter);
+    if (result != UEC_RESULT_OK || tagCountAfter != tagCountBefore + 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_tag_at(actor, tagCountBefore, tagOutput,
+                                   sizeof(tagOutput), &tagRequiredSize);
+    if (result != UEC_RESULT_OK || tagRequiredSize != sizeof(tagText)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    for (size_t index = 0u; index < sizeof(tagText); ++index) {
+        if (tagOutput[index] != tagText[index]) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+    }
+    tagRequiredSize = SIZE_MAX;
+    if (api->get_actor_tag_at(actor, tagCountAfter, tagOutput,
+                              sizeof(tagOutput), &tagRequiredSize) != UEC_RESULT_INVALID_ARGUMENT ||
+        tagRequiredSize != 0u) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->set_actor_tag(actor, tag, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->set_actor_tag(actor, tag, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->actor_has_tag(actor, tag, &hasTag);
+    if (result != UEC_RESULT_OK || hasTag != UEC_FALSE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_tag_count(actor, &tagCountAfter);
+    if (result != UEC_RESULT_OK || tagCountAfter != tagCountBefore) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
