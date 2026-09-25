@@ -13,6 +13,7 @@ public class UnrealCAPIHost : ModuleRules
             "Engine",
             "EnhancedInput",
             "InputCore",
+            "UMG",
             "UnrealCAPI"
         });
         if (Target.bBuildEditor)

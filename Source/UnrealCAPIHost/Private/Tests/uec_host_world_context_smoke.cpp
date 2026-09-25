@@ -20,10 +20,14 @@ namespace
     uec_scene_component* GWorldOwnedComponent = nullptr;
     uec_object* GWorldOwnedObject = nullptr;
     uec_object* GWorldOwnedRetainedObject = nullptr;
+    uec_object* GCleanupWidget = nullptr;
+    uec_object* GCleanupButton = nullptr;
     uec_runtime_stats GBaseline{};
     TWeakObjectPtr<UWorld> GCapturedWorld;
     uint64_t GTickCallbackCount = 0;
     uint64_t GTickCallbackCountAtCleanup = 0;
+    uint64_t GWidgetCleanupSubscriptionId = 0;
+    uint64_t GWidgetCleanupCallbackCount = 0;
     uint64_t GLatentSmokeRequestId = 0;
     bool GWorldCleanupObserved = false;
     bool GLatentSmokeCallbackExecuted = false;
@@ -34,6 +38,11 @@ namespace
     void UEC_CALL CountWorldTicks(uint64_t, double, void*)
     {
         if (GTickCallbackCount != UINT64_MAX) ++GTickCallbackCount;
+    }
+
+    void UEC_CALL CountWidgetCleanupClicks(uint64_t, void*)
+    {
+        if (GWidgetCleanupCallbackCount != UINT64_MAX) ++GWidgetCleanupCallbackCount;
     }
 
     void UEC_CALL ObserveLatentCompletion(uint64_t, uec_result, void* userData)
@@ -70,6 +79,26 @@ namespace
                 GWorldOwnedRetainedObject = nullptr;
             } else {
                 UE_LOG(LogTemp, Error, TEXT("Retained stale object release returned %d"),
+                       static_cast<int32>(result));
+                released = false;
+            }
+        }
+        if (GApi != nullptr && GCleanupButton != nullptr) {
+            const uec_result result = GApi->release_object(GCleanupButton);
+            if (result == UEC_RESULT_OK) {
+                GCleanupButton = nullptr;
+            } else {
+                UE_LOG(LogTemp, Error, TEXT("Stale cleanup button release returned %d"),
+                       static_cast<int32>(result));
+                released = false;
+            }
+        }
+        if (GApi != nullptr && GCleanupWidget != nullptr) {
+            const uec_result result = GApi->release_object(GCleanupWidget);
+            if (result == UEC_RESULT_OK) {
+                GCleanupWidget = nullptr;
+            } else {
+                UE_LOG(LogTemp, Error, TEXT("Stale cleanup widget release returned %d"),
                        static_cast<int32>(result));
                 released = false;
             }
@@ -120,6 +149,13 @@ namespace
     void ReleaseCapturedHandles()
     {
         RemoveWorldCleanupObserver();
+        if (GApi != nullptr && GContext != nullptr &&
+            GWidgetCleanupSubscriptionId != 0u &&
+            GApi->unbind_button_clicked != nullptr) {
+            (void)GApi->unbind_button_clicked(GContext, GWidgetCleanupSubscriptionId);
+        }
+        GWidgetCleanupSubscriptionId = 0u;
+        GWidgetCleanupCallbackCount = 0u;
         (void)ReleaseWorldOwnedHandles();
         if (GApi != nullptr && GOldActor != nullptr) {
             (void)GApi->release_actor(GOldActor);
@@ -220,6 +256,12 @@ namespace
         uec_bool componentVisible = UEC_TRUE;
         const uec_result visibleResult = api->get_component_visible(
             GWorldOwnedComponent, &componentVisible);
+        uec_bool widgetEnabled = UEC_TRUE;
+        const uec_result widgetResult = api->get_widget_enabled(
+            GCleanupWidget, &widgetEnabled);
+        uec_bool buttonEnabled = UEC_TRUE;
+        const uec_result buttonResult = api->get_widget_enabled(
+            GCleanupButton, &buttonEnabled);
 
         char actorName[64]{};
         size_t actorNameSize = SIZE_MAX;
@@ -240,16 +282,20 @@ namespace
             actorNameResult == UEC_RESULT_INVALID_HANDLE && actorNameSize == 0u &&
             componentResult == UEC_RESULT_INVALID_HANDLE && componentCleared &&
             visibleResult == UEC_RESULT_INVALID_HANDLE && componentVisible == UEC_FALSE &&
+            widgetResult == UEC_RESULT_INVALID_HANDLE && widgetEnabled == UEC_FALSE &&
+            buttonResult == UEC_RESULT_INVALID_HANDLE && buttonEnabled == UEC_FALSE &&
             objectResult == UEC_RESULT_INVALID_HANDLE && objectPathSize == 0u &&
             retainedObjectResult == UEC_RESULT_INVALID_HANDLE && retainedPathSize == 0u &&
             gameInstanceResult == UEC_RESULT_INVALID_HANDLE && gameInstancePathSize == 0u;
         if (!invalidated) {
             UE_LOG(LogTemp, Error,
-                TEXT("PIE world cleanup did not invalidate world-owned handles: actor=%d name=%d/%llu component=%d visible=%d/%d object=%d/%llu retained=%d/%llu gameInstance=%d/%llu"),
+                TEXT("PIE world cleanup did not invalidate world-owned handles: actor=%d name=%d/%llu component=%d visible=%d/%d widget=%d/%d button=%d/%d object=%d/%llu retained=%d/%llu gameInstance=%d/%llu"),
                 static_cast<int32>(actorResult), static_cast<int32>(actorNameResult),
                 static_cast<unsigned long long>(actorNameSize),
                 static_cast<int32>(componentResult), static_cast<int32>(visibleResult),
-                componentVisible, static_cast<int32>(objectResult),
+                componentVisible, static_cast<int32>(widgetResult), widgetEnabled,
+                static_cast<int32>(buttonResult), buttonEnabled,
+                static_cast<int32>(objectResult),
                 static_cast<unsigned long long>(objectPathSize),
                 static_cast<int32>(retainedObjectResult),
                 static_cast<unsigned long long>(retainedPathSize),
@@ -276,6 +322,8 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
     GLatentSmokeRequestId = 0;
     GTickCallbackCount = 0;
     GTickCallbackCountAtCleanup = 0;
+    GWidgetCleanupSubscriptionId = 0;
+    GWidgetCleanupCallbackCount = 0;
     uint32_t editorWorldCount = 0;
 
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &GApi, &GContext);
@@ -290,6 +338,9 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
         GApi->get_component_transform == nullptr || GApi->get_component_visible == nullptr ||
         GApi->get_object_path == nullptr || GApi->retain_object == nullptr ||
         GApi->subscribe_world_tick == nullptr || GApi->invoke_actor_function_latent == nullptr ||
+        GApi->create_widget == nullptr || GApi->get_widget_child == nullptr ||
+        GApi->add_widget_to_viewport == nullptr || GApi->bind_button_clicked == nullptr ||
+        GApi->unbind_button_clicked == nullptr || GApi->get_widget_enabled == nullptr ||
         GApi->release_actor == nullptr ||
         GApi->release_scene_component == nullptr || GApi->release_object == nullptr ||
         GApi->release_world == nullptr || GApi->release_context == nullptr) {
@@ -422,6 +473,41 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
         }
     }
     {
+        static constexpr char widgetClassPathData[] =
+            "/Script/UnrealCAPIHost.ECAPIHostCleanupWidget";
+        static constexpr char buttonNameData[] = "CleanupButton";
+        const uec_string_view widgetClassPath{
+            widgetClassPathData, sizeof(widgetClassPathData) - 1u};
+        const uec_string_view buttonName{buttonNameData, sizeof(buttonNameData) - 1u};
+        result = GApi->create_widget(GOldWorld, widgetClassPath, &GCleanupWidget);
+        if (result != UEC_RESULT_OK || GCleanupWidget == nullptr) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        result = GApi->get_widget_child(GCleanupWidget, buttonName, &GCleanupButton);
+        if (result != UEC_RESULT_OK || GCleanupButton == nullptr) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        result = GApi->add_widget_to_viewport(GCleanupWidget, 0);
+        if (result != UEC_RESULT_OK) goto cleanup;
+        result = GApi->bind_button_clicked(
+            GCleanupButton, &CountWidgetCleanupClicks, nullptr,
+            &GWidgetCleanupSubscriptionId);
+        if (result != UEC_RESULT_OK || GWidgetCleanupSubscriptionId == 0u) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        uec_runtime_stats boundStats{};
+        boundStats.struct_size = sizeof(boundStats);
+        result = GApi->get_runtime_stats(GContext, &boundStats);
+        if (result != UEC_RESULT_OK ||
+            boundStats.active_subscriptions != GBaseline.active_subscriptions + 1u) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+    }
+    {
         uint64_t subscriptionId = 0;
         result = GApi->subscribe_world_tick(
             GOldWorld, &CountWorldTicks, nullptr, &subscriptionId);
@@ -501,9 +587,11 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void)
         GContext == nullptr || GOldWorld == nullptr || GOldActor == nullptr ||
         GWorldOwnedActor == nullptr || GWorldOwnedComponent == nullptr ||
         GWorldOwnedObject == nullptr || GWorldOwnedRetainedObject == nullptr ||
+        GCleanupWidget == nullptr || GCleanupButton == nullptr ||
         GOldWorldGameInstance == nullptr ||
         GLatentSmokeActor == nullptr || GLatentSmokeRequestId == 0u ||
         GLatentSmokeCallbackExecuted ||
+        GWidgetCleanupSubscriptionId == 0u || GWidgetCleanupCallbackCount != 0u ||
         GTickCallbackCount == 0u || GTickCallbackCount != GTickCallbackCountAtCleanup) {
         UE_LOG(LogTemp, Error,
             TEXT("PIE restart cleanup invariant failed: cleanup=%d tick=%llu atCleanup=%llu latentRequest=%llu latentCallback=%d api=%d context=%d world=%d actor=%d"),
@@ -515,6 +603,13 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void)
             GApi != nullptr, GContext != nullptr, GOldWorld != nullptr, GOldActor != nullptr);
         goto cleanup;
     }
+    if (GApi->unbind_button_clicked(GContext, GWidgetCleanupSubscriptionId) !=
+        UEC_RESULT_INVALID_ARGUMENT) {
+        UE_LOG(LogTemp, Error,
+            TEXT("World cleanup did not retire the button callback token"));
+        goto cleanup;
+    }
+    GWidgetCleanupSubscriptionId = 0u;
     {
         const uec_result oldWorldResult = GApi->get_world_kind(GOldWorld, &oldWorldKind);
         const uec_result oldActorResult = GApi->get_actor_name(
