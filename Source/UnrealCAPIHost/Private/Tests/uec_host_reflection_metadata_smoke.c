@@ -5,7 +5,13 @@
 uec_result UEC_CALL uec_host_reflection_metadata_smoke(void)
 {
     static const char actorClassPath[] = "/Script/Engine.Actor";
+    static const char objectClassPath[] = "/Script/CoreUObject.Object";
+    static const char actorClassName[] = "Actor";
+    static const char replicationPropertyName[] = "bReplicates";
     static const char targetFunctionName[] = "K2_GetActorLocation";
+    const uec_string_view objectClass = {
+        objectClassPath, sizeof(objectClassPath) - 1u
+    };
     const uec_api* api = NULL;
     uec_context* context = NULL;
     uec_class* actorClass = NULL;
@@ -14,11 +20,20 @@ uec_result UEC_CALL uec_host_reflection_metadata_smoke(void)
     uint32_t targetFunctionIndex = UINT32_MAX;
     uec_bool targetHasReturnValue = UEC_FALSE;
     uec_bool targetIsLatent = UEC_TRUE;
+    uec_bool classIsObject = UEC_FALSE;
     uint32_t targetParameterCount = 0u;
+    uint32_t classPropertyCount = 0u;
+    uint32_t replicationPropertyIndex = UINT32_MAX;
+    uec_property_kind replicationPropertyKind = UEC_PROPERTY_UNKNOWN;
+    size_t replicationPropertyRequiredSize = 0u;
+    char className[64] = {0};
+    size_t classNameRequiredSize = 0u;
 
     if (result != UEC_RESULT_OK) return result;
     if (api == NULL || context == NULL || api->find_class == NULL ||
         api->release_class == NULL || api->release_context == NULL ||
+        api->get_class_name == NULL || api->class_is_a == NULL ||
+        api->get_class_property_count == NULL || api->get_class_property_at == NULL ||
         api->get_class_function_count == NULL || api->get_class_function_at == NULL ||
         api->get_class_function_flags == NULL ||
         api->get_class_function_parameter_at == NULL) {
@@ -31,6 +46,57 @@ uec_result UEC_CALL uec_host_reflection_metadata_smoke(void)
     if (result != UEC_RESULT_OK || actorClass == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
+    }
+    result = api->get_class_name(actorClass, className, sizeof(className),
+                                 &classNameRequiredSize);
+    if (result != UEC_RESULT_OK ||
+        classNameRequiredSize != sizeof(actorClassName) ||
+        strcmp(className, actorClassName) != 0) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->class_is_a(actorClass, objectClass, &classIsObject);
+    if (result != UEC_RESULT_OK || classIsObject != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_class_property_count(actorClass, &classPropertyCount);
+    if (result != UEC_RESULT_OK || classPropertyCount == 0u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    for (uint32_t index = 0u; index < classPropertyCount; ++index) {
+        char propertyName[128] = {0};
+        size_t propertyRequiredSize = 0u;
+        uec_property_kind propertyKind = UEC_PROPERTY_UNKNOWN;
+        result = api->get_class_property_at(actorClass, index, propertyName,
+                                            sizeof(propertyName), &propertyRequiredSize,
+                                            &propertyKind);
+        if (result != UEC_RESULT_OK) goto cleanup;
+        if (strcmp(propertyName, replicationPropertyName) == 0) {
+            replicationPropertyIndex = index;
+            replicationPropertyKind = propertyKind;
+            replicationPropertyRequiredSize = propertyRequiredSize;
+            break;
+        }
+    }
+    if (replicationPropertyIndex == UINT32_MAX ||
+        replicationPropertyKind != UEC_PROPERTY_BOOL ||
+        replicationPropertyRequiredSize != sizeof(replicationPropertyName)) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    {
+        size_t propertyRequiredSize = SIZE_MAX;
+        uec_property_kind propertyKind = UEC_PROPERTY_BOOL;
+        result = api->get_class_property_at(actorClass, classPropertyCount,
+                                            NULL, 0u, &propertyRequiredSize,
+                                            &propertyKind);
+        if (result != UEC_RESULT_INVALID_ARGUMENT || propertyRequiredSize != 0u ||
+            propertyKind != UEC_PROPERTY_UNKNOWN) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
     }
     result = api->get_class_function_count(actorClass, &functionCount);
     if (result != UEC_RESULT_OK || functionCount == 0u) {
