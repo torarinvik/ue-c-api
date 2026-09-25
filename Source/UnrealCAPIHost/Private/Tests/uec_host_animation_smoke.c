@@ -15,6 +15,8 @@ typedef struct uec_animation_smoke_state {
     uint64_t animation_subscription_id;
     uint64_t tick_subscription_id;
     uint32_t completion_count;
+    uint32_t reentrant_unbind_count;
+    uint32_t callbacks_observed_in_flight;
     double elapsed_seconds;
     uec_result callback_result;
     uec_bool running;
@@ -122,6 +124,25 @@ static void UEC_CALL AnimationFinished(uint64_t subscriptionId, void* userData)
     if (state != &g_animation_smoke || state->running != UEC_TRUE) return;
     if (subscriptionId != state->animation_subscription_id)
         state->callback_result = UEC_RESULT_INTERNAL_ERROR;
+    uec_runtime_stats stats = {0};
+    stats.struct_size = sizeof(stats);
+    const uec_result statsResult = state->api->get_runtime_stats(
+        state->context, &stats);
+    if (statsResult != UEC_RESULT_OK || stats.active_callbacks != 1u) {
+        state->callback_result = statsResult == UEC_RESULT_OK ?
+            UEC_RESULT_INTERNAL_ERROR : statsResult;
+    } else {
+        state->callbacks_observed_in_flight = stats.active_callbacks;
+    }
+    const uec_result unbindResult = state->api->unbind_animation_finished(
+        state->context, subscriptionId);
+    if (unbindResult != UEC_RESULT_OK) {
+        if (state->callback_result == UEC_RESULT_OK)
+            state->callback_result = unbindResult;
+    } else {
+        ++state->reentrant_unbind_count;
+        state->animation_subscription_id = 0u;
+    }
     ++state->completion_count;
 }
 
@@ -139,6 +160,11 @@ static void UEC_CALL AnimationSmokeTick(
         return;
     }
     if (state->completion_count == 1u) {
+        if (state->reentrant_unbind_count != 1u ||
+            state->callbacks_observed_in_flight != 1u) {
+            FinishAnimationSmoke(UEC_RESULT_INTERNAL_ERROR);
+            return;
+        }
         const uec_result stopResult = state->api->stop_skeletal_animation(state->component);
         FinishAnimationSmoke(stopResult);
         return;
