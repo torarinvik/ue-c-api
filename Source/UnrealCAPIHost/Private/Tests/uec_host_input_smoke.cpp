@@ -5,6 +5,8 @@
 
 namespace
 {
+    constexpr uint32 ActionValueCount = 4u;
+
     enum class EInputSmokeStage : uint8
     {
         WaitingForInput,
@@ -18,9 +20,11 @@ namespace
         uec_world* World = nullptr;
         uec_actor* Controller = nullptr;
         uec_actor* Actor = nullptr;
-        uec_object* Action = nullptr;
+        uec_object* Actions[ActionValueCount]{};
         uec_object* MappingContext = nullptr;
         uec_object* Subsystem = nullptr;
+        uec_input_action_value ExpectedValue{};
+        uint32 ActionIndex = 0u;
         uint64 BindingId = 0;
         uint32 CallbackCount = 0;
         uint32 CallbackCountAfterUnbind = 0;
@@ -73,13 +77,15 @@ namespace
             }
             state.MappingContext = nullptr;
         }
-        if (state.Action != nullptr && state.Api != nullptr &&
-            state.Api->release_object != nullptr) {
-            const uec_result releaseResult = state.Api->release_object(state.Action);
-            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
-                result = releaseResult;
+        for (uec_object*& action : state.Actions) {
+            if (action != nullptr && state.Api != nullptr &&
+                state.Api->release_object != nullptr) {
+                const uec_result releaseResult = state.Api->release_object(action);
+                if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                    result = releaseResult;
+                }
+                action = nullptr;
             }
-            state.Action = nullptr;
         }
         if (state.Actor != nullptr && state.Api != nullptr) {
             uec_result destroyResult = UEC_RESULT_INVALID_HANDLE;
@@ -131,13 +137,53 @@ namespace
         return result;
     }
 
-    bool IsExpectedInputValue(const uec_input_action_value& value)
+    uec_input_action_value ExpectedInputValue(uint32 actionIndex)
+    {
+        uec_input_action_value value{};
+        value.struct_size = sizeof(value);
+        switch (actionIndex)
+        {
+        case 0u:
+            value.kind = UEC_INPUT_ACTION_VALUE_BOOLEAN;
+            value.bool_value = UEC_TRUE;
+            break;
+        case 1u:
+            value.kind = UEC_INPUT_ACTION_VALUE_AXIS_1D;
+            value.axis.x = 0.75;
+            break;
+        case 2u:
+            value.kind = UEC_INPUT_ACTION_VALUE_AXIS_2D;
+            value.axis.x = 0.25;
+            value.axis.y = -0.5;
+            break;
+        default:
+            value.kind = UEC_INPUT_ACTION_VALUE_AXIS_3D;
+            value.axis = {0.125, -0.25, 0.75};
+            break;
+        }
+        return value;
+    }
+
+    bool IsExpectedInputValue(const uec_input_action_value& value,
+                              const uec_input_action_value& expected)
     {
         return value.struct_size >= sizeof(uec_input_action_value) &&
-            value.kind == UEC_INPUT_ACTION_VALUE_AXIS_1D &&
-            FMath::IsNearlyEqual(static_cast<float>(value.axis.x), 0.75f) &&
-            FMath::IsNearlyZero(static_cast<float>(value.axis.y)) &&
-            FMath::IsNearlyZero(static_cast<float>(value.axis.z));
+            value.kind == expected.kind && value.bool_value == expected.bool_value &&
+            FMath::IsNearlyEqual(static_cast<float>(value.axis.x),
+                                 static_cast<float>(expected.axis.x)) &&
+            FMath::IsNearlyEqual(static_cast<float>(value.axis.y),
+                                 static_cast<float>(expected.axis.y)) &&
+            FMath::IsNearlyEqual(static_cast<float>(value.axis.z),
+                                 static_cast<float>(expected.axis.z));
+    }
+
+    bool IsDefaultInputValue(const uec_input_action_value& value,
+                             uec_input_action_value_kind expectedKind)
+    {
+        uec_input_action_value expected{};
+        expected.struct_size = sizeof(expected);
+        expected.kind = expectedKind;
+        return IsExpectedInputValue(value, expected);
     }
 
     void UEC_CALL OnInputSmokeAction(uint64_t bindingId,
@@ -146,7 +192,8 @@ namespace
     {
         auto* state = static_cast<FInputSmokeState*>(userData);
         if (state == nullptr || state != &GInputSmokeState) return;
-        if (bindingId != state->BindingId || !IsExpectedInputValue(value)) {
+        if (bindingId != state->BindingId ||
+            !IsExpectedInputValue(value, state->ExpectedValue)) {
             state->CallbackInvalid = true;
         }
         ++state->CallbackCount;
@@ -155,12 +202,29 @@ namespace
 
     uec_result InjectExpectedValue(FInputSmokeState& state)
     {
-        uec_input_action_value value{};
-        value.struct_size = sizeof(value);
-        value.kind = UEC_INPUT_ACTION_VALUE_AXIS_1D;
-        value.axis.x = 0.75;
         return state.Api->inject_input_action_value(
-            state.Controller, state.Action, &value);
+            state.Controller, state.Actions[state.ActionIndex], &state.ExpectedValue);
+    }
+
+    uec_result BeginActionValueCheck(FInputSmokeState& state, uint32 actionIndex)
+    {
+        if (actionIndex >= ActionValueCount || state.Actions[actionIndex] == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        state.ActionIndex = actionIndex;
+        state.ExpectedValue = ExpectedInputValue(actionIndex);
+        state.CallbackCount = 0u;
+        state.CallbackCountAfterUnbind = 0u;
+        state.SuppressionPolls = 0u;
+        state.CallbackInvalid = false;
+        uec_result result = state.Api->bind_input_action(
+            state.Actor, state.Actions[actionIndex], UEC_INPUT_TRIGGER_TRIGGERED,
+            &OnInputSmokeAction, &state, &state.BindingId);
+        if (result != UEC_RESULT_OK || state.BindingId == 0u) {
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
+        result = InjectExpectedValue(state);
+        return result;
     }
 }
 
@@ -196,6 +260,9 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
     static constexpr char actorClassPathData[] =
         "/Script/UnrealCAPIHost.UECAPIHostInputSmokeActor";
     static constexpr char actionPropertyData[] = "SmokeAction";
+    static constexpr char booleanActionPropertyData[] = "SmokeBooleanAction";
+    static constexpr char axis2DActionPropertyData[] = "SmokeAxis2DAction";
+    static constexpr char axis3DActionPropertyData[] = "SmokeAxis3DAction";
     static constexpr char mappingPropertyData[] = "SmokeMappingContext";
     static constexpr char subsystemClassPathData[] =
         "/Script/EnhancedInput.EnhancedInputLocalPlayerSubsystem";
@@ -203,6 +270,11 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
         actorClassPathData, sizeof(actorClassPathData) - 1u};
     const uec_string_view actionProperty{
         actionPropertyData, sizeof(actionPropertyData) - 1u};
+    const uec_string_view actionProperties[ActionValueCount] = {
+        {booleanActionPropertyData, sizeof(booleanActionPropertyData) - 1u},
+        actionProperty,
+        {axis2DActionPropertyData, sizeof(axis2DActionPropertyData) - 1u},
+        {axis3DActionPropertyData, sizeof(axis3DActionPropertyData) - 1u}};
     const uec_string_view mappingProperty{
         mappingPropertyData, sizeof(mappingPropertyData) - 1u};
     const uec_string_view subsystemClassPath{
@@ -213,16 +285,17 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
         result = state.Api->spawn_actor(
             state.World, actorClassPath, &transform, &state.Actor);
     }
-    if (result == UEC_RESULT_OK) {
+    for (uint32 index = 0u; result == UEC_RESULT_OK && index < ActionValueCount; ++index) {
         result = state.Api->get_actor_property_object(
-            state.Actor, actionProperty, &state.Action);
+            state.Actor, actionProperties[index], &state.Actions[index]);
     }
     if (result == UEC_RESULT_OK) {
         result = state.Api->get_actor_property_object(
             state.Actor, mappingProperty, &state.MappingContext);
     }
-    if (result != UEC_RESULT_OK || state.Action == nullptr ||
-        state.MappingContext == nullptr) {
+    bool allActionsFound = true;
+    for (const uec_object* action : state.Actions) allActionsFound &= action != nullptr;
+    if (result != UEC_RESULT_OK || !allActionsFound || state.MappingContext == nullptr) {
         return FailInputSmokeStart(
             state, result == UEC_RESULT_OK ? UEC_RESULT_NOT_INITIALIZED : result);
     }
@@ -244,25 +317,18 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
     if (result != UEC_RESULT_OK) return FailInputSmokeStart(state, result);
     state.MappingAdded = true;
 
-    uec_input_action_value initialValue{};
-    initialValue.struct_size = sizeof(initialValue);
-    result = state.Api->get_input_action_value(
-        state.Controller, state.Action, &initialValue);
-    if (result != UEC_RESULT_OK ||
-        initialValue.kind != UEC_INPUT_ACTION_VALUE_AXIS_1D ||
-        !FMath::IsNearlyZero(static_cast<float>(initialValue.axis.x))) {
-        return FailInputSmokeStart(
-            state, result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
+    for (uint32 index = 0u; index < ActionValueCount; ++index) {
+        uec_input_action_value initialValue{};
+        initialValue.struct_size = sizeof(initialValue);
+        result = state.Api->get_input_action_value(
+            state.Controller, state.Actions[index], &initialValue);
+        const uec_input_action_value_kind inputKind = ExpectedInputValue(index).kind;
+        if (result != UEC_RESULT_OK || !IsDefaultInputValue(initialValue, inputKind)) {
+            return FailInputSmokeStart(
+                state, result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
+        }
     }
-
-    result = state.Api->bind_input_action(
-        state.Actor, state.Action, UEC_INPUT_TRIGGER_TRIGGERED,
-        &OnInputSmokeAction, &state, &state.BindingId);
-    if (result != UEC_RESULT_OK || state.BindingId == 0u) {
-        return FailInputSmokeStart(
-            state, result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
-    }
-    result = InjectExpectedValue(state);
+    result = BeginActionValueCheck(state, 0u);
     if (result != UEC_RESULT_OK) return FailInputSmokeStart(state, result);
     return UEC_RESULT_OK;
 }
@@ -281,7 +347,8 @@ extern "C" uec_bool UEC_CALL uec_host_input_smoke_poll(uec_result* outResult)
             *outResult = UEC_RESULT_NOT_INITIALIZED;
             return UEC_FALSE;
         }
-        if (state.CallbackInvalid || !IsExpectedInputValue(state.ObservedValue)) {
+        if (state.CallbackInvalid ||
+            !IsExpectedInputValue(state.ObservedValue, state.ExpectedValue)) {
             FinishInputSmoke(state, UEC_RESULT_INTERNAL_ERROR);
             *outResult = state.Result;
             return UEC_TRUE;
@@ -315,6 +382,18 @@ extern "C" uec_bool UEC_CALL uec_host_input_smoke_poll(uec_result* outResult)
         FinishInputSmoke(state, UEC_RESULT_INTERNAL_ERROR);
         *outResult = state.Result;
         return UEC_TRUE;
+    }
+
+    if (state.ActionIndex + 1u < ActionValueCount) {
+        const uec_result result = BeginActionValueCheck(state, state.ActionIndex + 1u);
+        if (result != UEC_RESULT_OK) {
+            FinishInputSmoke(state, result);
+            *outResult = state.Result;
+            return UEC_TRUE;
+        }
+        state.Stage = EInputSmokeStage::WaitingForInput;
+        *outResult = UEC_RESULT_NOT_INITIALIZED;
+        return UEC_FALSE;
     }
 
     uec_result result = state.Api->remove_input_mapping_context(
