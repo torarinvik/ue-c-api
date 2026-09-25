@@ -36,6 +36,8 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     static const char meshAssetPath[] = "/Engine/BasicShapes/Cube.Cube";
     static const char skeletalMeshAssetPath[] = "/Engine/EngineMeshes/SkeletalCube.SkeletalCube";
     static const char wrongMeshPath[] = "/Script/Engine.Actor";
+    static const char scalarParameterPath[] = "UECAPI_SmokeScalar";
+    static const char vectorParameterPath[] = "UECAPI_SmokeVector";
     static const char markerProperty[] = "CApiMarker";
     const uec_string_view cameraClass = {
         cameraClassPath, sizeof(cameraClassPath) - 1u};
@@ -49,6 +51,10 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         skeletalMeshAssetPath, sizeof(skeletalMeshAssetPath) - 1u};
     const uec_string_view wrongMeshName = {
         wrongMeshPath, sizeof(wrongMeshPath) - 1u};
+    const uec_string_view scalarParameterName = {
+        scalarParameterPath, sizeof(scalarParameterPath) - 1u};
+    const uec_string_view vectorParameterName = {
+        vectorParameterPath, sizeof(vectorParameterPath) - 1u};
     const uec_string_view markerName = {
         markerProperty, sizeof(markerProperty) - 1u};
     const uec_api* api = NULL;
@@ -81,6 +87,8 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         api->get_actor_property_value == NULL || api->load_object == NULL ||
         api->release_object == NULL || api->set_static_mesh == NULL ||
         api->set_skeletal_mesh == NULL ||
+        api->set_component_material_scalar == NULL ||
+        api->set_component_material_vector == NULL ||
         api->release_context == NULL) {
         result = UEC_RESULT_UNSUPPORTED;
         goto cleanup;
@@ -187,6 +195,32 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
             skeletalMeshComponent, skeletalMeshAsset, UEC_FALSE);
     if (result == UEC_RESULT_OK && api->set_skeletal_mesh(
             skeletalMeshComponent, wrongMeshObject, UEC_FALSE) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    const uec_vector3 materialVector = {0.25, 0.5, 0.75};
+    if (result == UEC_RESULT_OK)
+        result = api->set_component_material_scalar(
+            meshComponent, scalarParameterName, 0.625);
+    if (result == UEC_RESULT_OK)
+        result = api->set_component_material_vector(
+            meshComponent, vectorParameterName, materialVector);
+    if (result == UEC_RESULT_OK)
+        result = api->set_component_material_scalar(
+            skeletalMeshComponent, scalarParameterName, 0.375);
+    if (result == UEC_RESULT_OK)
+        result = api->set_component_material_vector(
+            skeletalMeshComponent, vectorParameterName, materialVector);
+    if (result == UEC_RESULT_OK && api->set_component_material_scalar(
+            camera, scalarParameterName, 0.5) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK && api->set_component_material_vector(
+            camera, vectorParameterName, materialVector) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK && api->set_component_material_scalar(
+            meshComponent, scalarParameterName, 1.0e300) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK && api->set_component_material_vector(
+            skeletalMeshComponent, vectorParameterName,
+            (uec_vector3){0.0, 1.0e300, 0.0}) != UEC_RESULT_INVALID_ARGUMENT)
         result = UEC_RESULT_INTERNAL_ERROR;
 
     if (result == UEC_RESULT_OK)

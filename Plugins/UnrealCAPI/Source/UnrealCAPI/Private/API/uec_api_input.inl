@@ -538,8 +538,8 @@
         if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         if (!IsValidStringView(parameterName) ||
-            parameterName.size == 0 || !FMath::IsFinite(value.x) ||
-            !FMath::IsFinite(value.y) || !FMath::IsFinite(value.z)) {
+            parameterName.size == 0 || !IsRepresentableFloat(value.x) ||
+            !IsRepresentableFloat(value.y) || !IsRepresentableFloat(value.z)) {
             return UEC_RESULT_INVALID_ARGUMENT;
         }
         UMeshComponent* component = Cast<UMeshComponent>(componentHandle->Value.Get());
