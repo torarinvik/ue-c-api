@@ -3,6 +3,10 @@
 #include "Components/PrimitiveComponent.h"
 #include "Engine/Engine.h"
 #include "Modules/ModuleManager.h"
+#if WITH_EDITOR
+#include "Editor/EditorEngine.h"
+#include "UnrealEdGlobals.h"
+#endif
 
 #include "uec_api.h"
 #include "UECAPIHostCollisionSmokeActor.h"
@@ -45,6 +49,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     FTSTicker::FDelegateHandle ObjectLoadSmokeHandle;
     FTSTicker::FDelegateHandle GameplayExampleSmokeHandle;
     FTSTicker::FDelegateHandle TravelSmokeHandle;
+    FTSTicker::FDelegateHandle ExitAfterPIESmokeHandle;
     float LatentSmokeElapsed = 0.0f;
     float QueueSmokeElapsed = 0.0f;
     float AsyncSaveSmokeElapsed = 0.0f;
@@ -54,6 +59,34 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     double PhysicsSmokeDeadline = 0.0;
     double PhysicsSmokeNextPollTime = 0.0;
     double AuthoritySmokeDeadline = 0.0;
+
+    bool FinishTestRunAfterPIE(float)
+    {
+#if WITH_EDITOR
+        if (GEditor != nullptr && GEditor->PlayWorld != nullptr) return true;
+#endif
+        ExitAfterPIESmokeHandle.Reset();
+        FPlatformMisc::RequestExit(false);
+        return false;
+    }
+
+    void RequestSmokeExit()
+    {
+#if WITH_EDITOR
+        if (GEditor != nullptr && GEditor->PlayWorld != nullptr)
+        {
+            if (!ExitAfterPIESmokeHandle.IsValid())
+            {
+                GEditor->RequestEndPlayMap();
+                ExitAfterPIESmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
+                    FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::FinishTestRunAfterPIE),
+                    0.05f);
+            }
+            return;
+        }
+#endif
+        FPlatformMisc::RequestExit(false);
+    }
 
     void StartEventBridgeSmokeChain()
     {
@@ -138,7 +171,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             }
             EventBridgeSmokeHandle.Reset();
             if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-exit"))) {
-                FPlatformMisc::RequestExit(false);
+                RequestSmokeExit();
             }
             return false;
         }
@@ -377,7 +410,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         if (result == UEC_RESULT_OK) {
             UE_LOG(LogUnrealCAPIHost, Log, TEXT("C travel smoke completed"));
             if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-exit"))) {
-                FPlatformMisc::RequestExit(false);
+                RequestSmokeExit();
             }
         }
         else {

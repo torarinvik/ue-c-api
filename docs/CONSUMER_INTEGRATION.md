@@ -255,7 +255,8 @@ it on the game thread. Controllers without an associated local player return
 ABI minor 137 adds `set_component_collision_channel_response` so consumers can
 set a primitive component's channel response to Ignore, Overlap, or Block. It
 uses the existing `uec_collision_response` values and rejects undeclared enum
-values.
+values. Collision setting changes require world authority and return
+`UEC_RESULT_UNSUPPORTED` in client worlds.
 ABI minor 138 adds `get_progress_bar_percent` and `set_progress_bar_percent`
 for normalized UMG progress values. Setter inputs must be finite and in
 `[0, 1]`; both calls require the game thread and a valid `UProgressBar` handle.
@@ -370,7 +371,10 @@ handles from that world; reacquire the new world and its objects after travel.
 Global asset handles remain valid.
 
 In networked worlds, call `get_world_net_mode` and `get_world_has_authority`
-before mutating gameplay state. The authority query does not provide
+before mutating gameplay state. Actor/component transforms, tags, activation,
+attachment, detachment, collision settings, and physics writes reject client
+worlds with `UEC_RESULT_UNSUPPORTED`; local visibility, view-target, and input
+prediction changes remain client-usable. The authority query does not provide
 replication or RPC behavior; those contracts remain explicit future adapters.
 Use `get_world_game_mode` only on an authoritative world, and use
 `get_world_game_state` when a world-scoped framework object is needed. Both

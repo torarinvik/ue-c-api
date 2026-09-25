@@ -147,6 +147,10 @@
         USceneComponent* parent = parentHandle->Value.Get();
         if (child == nullptr || parent == nullptr) return UEC_RESULT_INVALID_HANDLE;
         if (child == parent || child->GetWorld() != parent->GetWorld()) return UEC_RESULT_INVALID_ARGUMENT;
+        const uec_result childAuthorityResult = RequireComponentAuthority(child);
+        if (childAuthorityResult != UEC_RESULT_OK) return childAuthorityResult;
+        const uec_result parentAuthorityResult = RequireComponentAuthority(parent);
+        if (parentAuthorityResult != UEC_RESULT_OK) return parentAuthorityResult;
         const FAttachmentTransformRules rules = keepWorldTransform != UEC_FALSE
             ? FAttachmentTransformRules::KeepWorldTransform
             : FAttachmentTransformRules::KeepRelativeTransform;
@@ -163,6 +167,8 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         USceneComponent* component = componentHandle->Value.Get();
         if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const uec_result authorityResult = RequireComponentAuthority(component);
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         const FDetachmentTransformRules rules = keepWorldTransform != UEC_FALSE
             ? FDetachmentTransformRules::KeepWorldTransform
             : FDetachmentTransformRules::KeepRelativeTransform;

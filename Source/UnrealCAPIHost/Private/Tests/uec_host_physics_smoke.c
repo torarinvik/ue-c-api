@@ -157,7 +157,9 @@ uec_bool UEC_CALL uec_host_physics_smoke_poll(uec_result* outResult)
         }
         if (result == UEC_RESULT_OK &&
             (linearVelocity.x < 1.0 || angularVelocity.y < 0.05)) {
-            result = UEC_RESULT_INTERNAL_ERROR;
+            /* Give Chaos later frames to apply the initial impulses before failing. */
+            *outResult = UEC_RESULT_OK;
+            return UEC_FALSE;
         }
         if (result == UEC_RESULT_OK) {
             state->velocity_before_force = linearVelocity.x;

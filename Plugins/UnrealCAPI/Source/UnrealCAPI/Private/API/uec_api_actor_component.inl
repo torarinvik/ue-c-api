@@ -63,7 +63,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = handle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        const uec_result authorityResult = RequireWorldAuthority(actor->GetWorld());
+        const uec_result authorityResult = RequireActorAuthority(actor);
         if (authorityResult != UEC_RESULT_OK) return authorityResult;
         CancelActorSubscriptions(actor);
         TombstoneHandle(handle->Header);
@@ -107,7 +107,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         AActor* actor = handle->Value.Get();
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        const uec_result authorityResult = RequireWorldAuthority(actor->GetWorld());
+        const uec_result authorityResult = RequireActorAuthority(actor);
         if (authorityResult != UEC_RESULT_OK) return authorityResult;
         actor->SetActorTransform(ToFTransform(*transform), sweep != UEC_FALSE);
         return UEC_RESULT_OK;
@@ -322,6 +322,8 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         USceneComponent* component = handle->Value.Get();
         if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const uec_result authorityResult = RequireComponentAuthority(component);
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         component->SetWorldTransform(ToFTransform(*transform), sweep != UEC_FALSE);
         return UEC_RESULT_OK;
     }
@@ -352,6 +354,8 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         USceneComponent* component = handle->Value.Get();
         if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const uec_result authorityResult = RequireComponentAuthority(component);
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         if (active != UEC_FALSE)
         {
             component->Activate(reset != UEC_FALSE);

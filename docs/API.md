@@ -448,11 +448,15 @@ true for standalone, listen-server, and dedicated-server worlds, and false for
 client worlds. Replication and RPC behavior remain outside this query.
 Actor spawn, destruction, transform writes, possession, and server-side
 physics writes return `UEC_RESULT_UNSUPPORTED` when their world is a client;
-local view-target and input-prediction operations remain client-usable.
+component transform, activation, attachment, detachment, and collision-setting
+writes are also rejected in client worlds. Actor tag writes remain
+authority-gated. Component visibility and local view-target and input-prediction
+operations remain client-usable for presentation and prediction.
 The UE 5.8.3 multiplayer PIE smoke confirms this behavior for all actor and
 component physics mutators, including simulation toggles, velocity writes,
-impulses, forces, and torque, and verifies the test body's velocity is
-unchanged after rejection.
+impulses, forces, and torque. It also verifies that actor/component transforms,
+tags, activation, and collision settings remain unchanged after client-side
+rejection.
 `get_world_game_mode` returns the authoritative game-mode object when one is
 available; client worlds return `UEC_RESULT_UNSUPPORTED`.
 `get_world_game_state` returns the active world game-state object when one is
@@ -815,7 +819,8 @@ supported trace channel to block or ignore.
 `set_component_collision_channel_response` accepts the three-way
 `uec_collision_response` enum to set Ignore, Overlap, or Block and rejects
 undeclared values with `UEC_RESULT_INVALID_ARGUMENT`. These operations require
-a primitive component and run on the game thread.
+a primitive component and run on the game thread. They also require world
+authority and return `UEC_RESULT_UNSUPPORTED` in client worlds.
 
 `play_skeletal_animation` and `stop_skeletal_animation` control the transient
 animation state of skeletal mesh components using a loaded animation asset.

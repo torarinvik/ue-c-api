@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """Portable tests for locating and monitoring the packaged host smoke run."""
 
+import io
 import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from unreal_runtime import find_host_executable, run_smoke
 from unreal_pie_runtime import (
     configure_authority_pie_settings,
     restore_authority_pie_settings,
+    SUCCESS_MARKERS,
+    run_smoke as run_editor_smoke,
 )
 
 
@@ -86,6 +90,17 @@ class UnrealRuntimeTests(unittest.TestCase):
         executable = self.make_host(["C event bridge smoke failed with result 8"])
         with self.assertRaisesRegex(RuntimeError, "C event bridge smoke failed"):
             run_smoke(executable, timeout_seconds=10.0)
+
+    @patch("unreal_pie_runtime.find_editor_executable", return_value=Path("/fake/UnrealEditor"))
+    @patch("unreal_pie_runtime.subprocess.Popen")
+    def test_surfaces_editor_crash_after_success_markers(self, popen, _find_editor):
+        process = popen.return_value
+        process.stdout = io.StringIO("\n".join(SUCCESS_MARKERS) + "\n")
+        process.poll.return_value = None
+        process.wait.return_value = -6
+
+        with self.assertRaisesRegex(RuntimeError, "exited with status -6 after the PIE smoke completed"):
+            run_editor_smoke(Path("/fake/engine"), timeout_seconds=1.0)
 
     def test_surfaces_collision_smoke_failure(self):
         executable = self.make_host(["C collision smoke failed with result 8"])

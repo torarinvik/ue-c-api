@@ -57,13 +57,14 @@ checks explicitly recorded for each feature in the Unreal build matrix.
 | Reflection and Blueprint calls | Partial | Property writes, class/function/parameter/flag metadata including property access flags, class-default text, referenced-class paths, enum names/values, reflected struct-field metadata and type paths, and typed hard class references, reflected actor/object-array counts/text elements, typed scalar array/map/set reads and map-key reads, array/map writes, typed nested-struct scalar reads and writes, actor/UObject map/set counts and text entries, soft object/class path readback and writes, nested struct field text readback and writes, zero-argument calls, scalar typed calls, bounded text-marshaled calls, scalar multi-output calls, text multi-output calls, ABI 132 Blueprint-to-C event bridges, ABI 133 async latent calls, and ABI 134 typed FVector/FQuat/FTransform calls are available; broader typed ABI calls remain |
 | Input | Partial | Enhanced Input mapping contexts, action polling/injection, and tokenized callbacks are implemented; broader action semantics remain |
 | Async loading, travel, streaming | Partial | Async object requests, cancellation, loaded-state queries, level-travel submission with cancellable completion callbacks, indexed streaming-level state requests, and cancellable streaming completion callbacks are available |
-| Multiplayer and replication | Partial | Network-mode and authority queries plus authority-gated actor, possession, transform, and physics mutators; replication/RPC adapters remain planned |
+| Multiplayer and replication | Partial | Network-mode and authority queries plus authority-gated actor/component transforms, tags, activation, attachment, collision settings, possession, and physics mutators; replication/RPC adapters remain planned |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
 
 The shared host smoke now runs collision line traces, sweeps, overlaps,
 detailed hit queries, and focused physics state/motion checks in a UE 5.8.3
 Editor PIE world and a packaged Development build. A separate multiplayer PIE
-run verifies client-world rejection of the physics mutators. The test runners
+run verifies client-world rejection of physics, transform, tag, activation,
+and collision mutators while checking the affected state remains unchanged. The test runners
 request an engine exit after receiving every success marker. These runs verify
 only the operations the smoke exercises; other Unreal-dependent features
 still need focused probes before release.

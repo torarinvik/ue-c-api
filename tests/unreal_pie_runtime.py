@@ -212,9 +212,15 @@ def run_smoke(
     finally:
         if failure is None:
             try:
-                process.wait(timeout=15)
+                return_code = process.wait(timeout=15)
+                if return_code != 0:
+                    failure = (
+                        f"Unreal Editor exited with status {return_code} "
+                        "after the PIE smoke completed."
+                    )
             except subprocess.TimeoutExpired:
                 stop_process(process)
+                failure = "Unreal Editor did not exit cleanly after the PIE smoke completed."
         else:
             stop_process(process)
         reader.join(timeout=5)

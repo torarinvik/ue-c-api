@@ -238,6 +238,8 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const uec_result authorityResult = RequireComponentAuthority(component);
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         component->SetCollisionEnabled(collisionEnabled);
         return UEC_RESULT_OK;
     }
@@ -275,6 +277,8 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const uec_result authorityResult = RequireComponentAuthority(component);
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         component->SetCollisionResponseToChannel(
             collisionChannel, block != UEC_FALSE ? ECR_Block : ECR_Ignore);
         return UEC_RESULT_OK;
@@ -300,6 +304,8 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UPrimitiveComponent* component = Cast<UPrimitiveComponent>(componentHandle->Value.Get());
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const uec_result authorityResult = RequireComponentAuthority(component);
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
         component->SetCollisionResponseToChannel(collisionChannel, engineResponse);
         return UEC_RESULT_OK;
     }

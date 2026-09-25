@@ -12,6 +12,14 @@ static int IsSameVector(uec_vector3 actual, uec_vector3 expected)
         IsNear(actual.z, expected.z);
 }
 
+static int IsSameTransform(uec_transform actual, uec_transform expected)
+{
+    return IsSameVector(actual.translation, expected.translation) &&
+        IsSameVector(actual.scale, expected.scale) && IsNear(actual.rotation.x, expected.rotation.x) &&
+        IsNear(actual.rotation.y, expected.rotation.y) && IsNear(actual.rotation.z, expected.rotation.z) &&
+        IsNear(actual.rotation.w, expected.rotation.w);
+}
+
 uec_result UEC_CALL uec_host_authority_smoke(void)
 {
     static const char actorClassPath[] =
@@ -28,6 +36,21 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     uec_vector3 linearBefore = {0};
     uec_vector3 angularBefore = {0};
     uec_vector3 readback = {0};
+    uec_transform actorTransformBefore = {0};
+    uec_transform componentTransformBefore = {0};
+    uec_transform attemptedTransform = {0};
+    uec_transform transformAfter = {0};
+    uec_collision_enabled collisionBefore = UEC_COLLISION_DISABLED;
+    uec_collision_enabled collisionAfter = UEC_COLLISION_DISABLED;
+    uec_collision_response responseBefore = UEC_COLLISION_RESPONSE_IGNORE;
+    uec_collision_response responseAfter = UEC_COLLISION_RESPONSE_IGNORE;
+    uec_bool activeBefore = UEC_FALSE;
+    uec_bool activeAfter = UEC_FALSE;
+    uec_bool hasTag = UEC_FALSE;
+    static const char authorityTagText[] = "UEC_ClientAuthoritySmoke";
+    const uec_string_view authorityTag = {
+        authorityTagText, sizeof(authorityTagText) - 1u
+    };
     uint32_t worldCount = 0u;
     uint32_t actorCount = 0u;
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
@@ -38,6 +61,14 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->release_world == NULL || api->get_actor_count_by_class == NULL ||
         api->get_actor_at_by_class == NULL || api->release_actor == NULL ||
         api->get_actor_root_component == NULL || api->release_scene_component == NULL ||
+        api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
+        api->get_component_transform == NULL || api->set_component_transform == NULL ||
+        api->get_component_active == NULL || api->set_component_active == NULL ||
+        api->get_component_collision_enabled == NULL ||
+        api->set_component_collision_enabled == NULL ||
+        api->get_component_collision_response == NULL ||
+        api->set_component_collision_channel_response == NULL ||
+        api->actor_has_tag == NULL || api->set_actor_tag == NULL ||
         api->get_component_simulating_physics == NULL ||
         api->get_component_velocity == NULL ||
         api->get_component_physics_angular_velocity == NULL ||
@@ -108,7 +139,33 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     result = api->get_component_physics_angular_velocity(component, &angularBefore);
     if (result != UEC_RESULT_OK) goto cleanup;
 
-    if (api->set_component_simulating_physics(component, UEC_FALSE) != UEC_RESULT_UNSUPPORTED ||
+    result = api->get_actor_transform(actor, &actorTransformBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(component, &componentTransformBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_active(component, &activeBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_collision_enabled(component, &collisionBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_collision_response(
+        component, UEC_TRACE_VISIBILITY, &responseBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    attemptedTransform = actorTransformBefore;
+    attemptedTransform.translation.x += 250.0;
+
+    if (api->set_actor_transform(actor, &attemptedTransform, UEC_FALSE) != UEC_RESULT_UNSUPPORTED ||
+        api->set_component_transform(component, &attemptedTransform, UEC_FALSE) != UEC_RESULT_UNSUPPORTED ||
+        api->set_actor_tag(actor, authorityTag, UEC_TRUE) != UEC_RESULT_UNSUPPORTED ||
+        api->set_component_active(component, activeBefore == UEC_FALSE ? UEC_TRUE : UEC_FALSE,
+                                  UEC_FALSE) != UEC_RESULT_UNSUPPORTED ||
+        api->set_component_collision_enabled(
+            component, collisionBefore == UEC_COLLISION_DISABLED
+                ? UEC_COLLISION_QUERY_ONLY : UEC_COLLISION_DISABLED) != UEC_RESULT_UNSUPPORTED ||
+        api->set_component_collision_channel_response(
+            component, UEC_TRACE_VISIBILITY,
+            responseBefore == UEC_COLLISION_RESPONSE_BLOCK
+                ? UEC_COLLISION_RESPONSE_IGNORE : UEC_COLLISION_RESPONSE_BLOCK) != UEC_RESULT_UNSUPPORTED ||
+        api->set_component_simulating_physics(component, UEC_FALSE) != UEC_RESULT_UNSUPPORTED ||
         api->set_component_simulating_physics(component, UEC_TRUE) != UEC_RESULT_UNSUPPORTED ||
         api->set_component_physics_velocity(component, (uec_vector3){10.0, 0.0, 0.0}, UEC_FALSE) !=
             UEC_RESULT_UNSUPPORTED ||
@@ -134,6 +191,37 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->apply_actor_angular_impulse(actor, (uec_vector3){0.0, 10.0, 0.0}, UEC_TRUE) !=
             UEC_RESULT_UNSUPPORTED) {
         result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_transform(actor, &transformAfter);
+    if (result != UEC_RESULT_OK || !IsSameTransform(transformAfter, actorTransformBefore)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_transform(component, &transformAfter);
+    if (result != UEC_RESULT_OK || !IsSameTransform(transformAfter, componentTransformBefore)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_active(component, &activeAfter);
+    if (result != UEC_RESULT_OK || activeAfter != activeBefore) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_collision_enabled(component, &collisionAfter);
+    if (result != UEC_RESULT_OK || collisionAfter != collisionBefore) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_collision_response(
+        component, UEC_TRACE_VISIBILITY, &responseAfter);
+    if (result != UEC_RESULT_OK || responseAfter != responseBefore) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->actor_has_tag(actor, authorityTag, &hasTag);
+    if (result != UEC_RESULT_OK || hasTag != UEC_FALSE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
     result = api->get_component_velocity(component, &readback);

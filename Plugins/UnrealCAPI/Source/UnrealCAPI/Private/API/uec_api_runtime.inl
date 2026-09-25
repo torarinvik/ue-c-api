@@ -341,6 +341,17 @@
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         return world->GetNetMode() == NM_Client ? UEC_RESULT_UNSUPPORTED : UEC_RESULT_OK;
     }
+    static uec_result RequireActorAuthority(const AActor* actor)
+    {
+        return actor == nullptr ? UEC_RESULT_INVALID_HANDLE : RequireWorldAuthority(actor->GetWorld());
+    }
+    static uec_result RequireComponentAuthority(const USceneComponent* component)
+    {
+        if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const AActor* owner = component->GetOwner();
+        return owner != nullptr ? RequireActorAuthority(owner)
+                                : RequireWorldAuthority(component->GetWorld());
+    }
     static bool IsFiniteTransform(const uec_transform& value)
     {
         const double rotationLengthSquared = value.rotation.x * value.rotation.x +
