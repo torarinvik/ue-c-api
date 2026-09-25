@@ -531,7 +531,7 @@
                 for (const auto* handle : registry)
                 {
                     if (handle != nullptr && handle->Header.Generation != 0 &&
-                        !handle->Header.bReleased) ++count;
+                        !handle->Header.bReleased && !handle->Header.bInvalidated) ++count;
                 }
                 return count;
             };

@@ -421,8 +421,10 @@ requests perform the same gated registry insertion before dispatch.
 
 The module also listens for Unreal world cleanup. External teardown, PIE
 restart, and non-bridge travel reuse the same timer, subscription, and
-world-bound handle invalidation path; callers should reacquire handles after a
-world is recreated.
+world-bound handle invalidation path. Calls through affected handles fail as
+stale, but their release functions remain valid so consumers can relinquish
+those handles after cleanup; callers should reacquire handles after a world is
+recreated.
 
 Strings are UTF-8 views with an explicit byte length. The caller owns the bytes
 for the duration of a call; the bridge does not retain them. Malformed UTF-8,

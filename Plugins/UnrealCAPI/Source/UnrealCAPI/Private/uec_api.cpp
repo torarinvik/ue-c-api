@@ -74,6 +74,7 @@ namespace
         EUECHandleKind Kind = EUECHandleKind::Context;
         uint64 Generation = 0;
         bool bReleased = false;
+        bool bInvalidated = false;
     };
     static uint64 AllocateHandleGeneration();
     static bool InitializeHandle(FUECHandleHeader& header, EUECHandleKind kind);

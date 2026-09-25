@@ -76,12 +76,18 @@
         header.Kind = kind;
         header.Generation = generation;
         header.bReleased = false;
+        header.bInvalidated = false;
         return true;
     }
     static void TombstoneHandle(FUECHandleHeader& header)
     {
         FScopeLock lock(&GHandleMutex);
         header.bReleased = true;
+    }
+    static void InvalidateHandle(FUECHandleHeader& header)
+    {
+        FScopeLock lock(&GHandleMutex);
+        if (!header.bReleased) header.bInvalidated = true;
     }
     static bool IsShuttingDown()
     {
@@ -96,7 +102,8 @@
     {
         return context != nullptr && GContexts.Contains(context) &&
             context->Header.Kind == EUECHandleKind::Context &&
-            context->Header.Generation != 0 && !context->Header.bReleased;
+            context->Header.Generation != 0 && !context->Header.bReleased &&
+            !context->Header.bInvalidated;
     }
     static bool IsValidContext(uec_context* rawContext)
     {
@@ -123,7 +130,7 @@
         FScopeLock lock(&GHandleMutex);
         const bool valid = world != nullptr && !GShuttingDown && GWorlds.Contains(world) &&
             world->Header.Kind == EUECHandleKind::World && world->Header.Generation != 0 &&
-            !world->Header.bReleased && world->Value.IsValid();
+            !world->Header.bReleased && !world->Header.bInvalidated && world->Value.IsValid();
         if (!valid) SetLastErrorMessage(TEXT("Invalid or stale world handle"));
         return valid;
     }
@@ -132,7 +139,7 @@
         FScopeLock lock(&GHandleMutex);
         const bool valid = actor != nullptr && !GShuttingDown && GActors.Contains(actor) &&
             actor->Header.Kind == EUECHandleKind::Actor && actor->Header.Generation != 0 &&
-            !actor->Header.bReleased && actor->Value.IsValid();
+            !actor->Header.bReleased && !actor->Header.bInvalidated && actor->Value.IsValid();
         if (!valid) SetLastErrorMessage(TEXT("Invalid or stale actor handle"));
         return valid;
     }
@@ -142,6 +149,7 @@
         const bool valid = component != nullptr && !GShuttingDown && GComponents.Contains(component) &&
             component->Header.Kind == EUECHandleKind::SceneComponent &&
             component->Header.Generation != 0 && !component->Header.bReleased &&
+            !component->Header.bInvalidated &&
             component->Value.IsValid();
         if (!valid) SetLastErrorMessage(TEXT("Invalid or stale scene-component handle"));
         return valid;
@@ -151,7 +159,7 @@
         FScopeLock lock(&GHandleMutex);
         const bool valid = klass != nullptr && !GShuttingDown && GClasses.Contains(klass) &&
             klass->Header.Kind == EUECHandleKind::Class && klass->Header.Generation != 0 &&
-            !klass->Header.bReleased && klass->Value.IsValid();
+            !klass->Header.bReleased && !klass->Header.bInvalidated && klass->Value.IsValid();
         if (!valid) SetLastErrorMessage(TEXT("Invalid or stale class handle"));
         return valid;
     }
@@ -160,7 +168,7 @@
         FScopeLock lock(&GHandleMutex);
         const bool valid = object != nullptr && !GShuttingDown && GObjects.Contains(object) &&
             object->Header.Kind == EUECHandleKind::Object && object->Header.Generation != 0 &&
-            !object->Header.bReleased && object->Value.IsValid();
+            !object->Header.bReleased && !object->Header.bInvalidated && object->Value.IsValid();
         if (!valid) SetLastErrorMessage(TEXT("Invalid or stale object handle"));
         return valid;
     }

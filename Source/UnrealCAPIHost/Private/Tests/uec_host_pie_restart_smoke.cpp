@@ -13,6 +13,10 @@ namespace
     uec_context* GContext = nullptr;
     uec_world* GOldWorld = nullptr;
     uec_actor* GOldActor = nullptr;
+    uec_actor* GWorldOwnedActor = nullptr;
+    uec_scene_component* GWorldOwnedComponent = nullptr;
+    uec_object* GWorldOwnedObject = nullptr;
+    uec_object* GWorldOwnedRetainedObject = nullptr;
     uec_runtime_stats GBaseline{};
     TWeakObjectPtr<UWorld> GCapturedWorld;
     uint64_t GTickCallbackCount = 0;
@@ -46,9 +50,56 @@ namespace
     void RemoveWorldCleanupObserver() {}
 #endif
 
+    bool ReleaseWorldOwnedHandles()
+    {
+        bool released = true;
+        if (GApi != nullptr && GWorldOwnedRetainedObject != nullptr) {
+            const uec_result result = GApi->release_object(GWorldOwnedRetainedObject);
+            if (result == UEC_RESULT_OK) {
+                GWorldOwnedRetainedObject = nullptr;
+            } else {
+                UE_LOG(LogTemp, Error, TEXT("Retained stale object release returned %d"),
+                       static_cast<int32>(result));
+                released = false;
+            }
+        }
+        if (GApi != nullptr && GWorldOwnedObject != nullptr) {
+            const uec_result result = GApi->release_object(GWorldOwnedObject);
+            if (result == UEC_RESULT_OK) {
+                GWorldOwnedObject = nullptr;
+            } else {
+                UE_LOG(LogTemp, Error, TEXT("Weak stale object release returned %d"),
+                       static_cast<int32>(result));
+                released = false;
+            }
+        }
+        if (GApi != nullptr && GWorldOwnedComponent != nullptr) {
+            const uec_result result = GApi->release_scene_component(GWorldOwnedComponent);
+            if (result == UEC_RESULT_OK) {
+                GWorldOwnedComponent = nullptr;
+            } else {
+                UE_LOG(LogTemp, Error, TEXT("Stale component release returned %d"),
+                       static_cast<int32>(result));
+                released = false;
+            }
+        }
+        if (GApi != nullptr && GWorldOwnedActor != nullptr) {
+            const uec_result result = GApi->release_actor(GWorldOwnedActor);
+            if (result == UEC_RESULT_OK) {
+                GWorldOwnedActor = nullptr;
+            } else {
+                UE_LOG(LogTemp, Error, TEXT("Stale actor release returned %d"),
+                       static_cast<int32>(result));
+                released = false;
+            }
+        }
+        return released;
+    }
+
     void ReleaseCapturedHandles()
     {
         RemoveWorldCleanupObserver();
+        (void)ReleaseWorldOwnedHandles();
         if (GApi != nullptr && GOldActor != nullptr) {
             (void)GApi->release_actor(GOldActor);
         }
@@ -72,6 +123,70 @@ namespace
         return api->get_actor_name(actor, name, sizeof(name), &requiredSize) == UEC_RESULT_OK &&
             requiredSize > 1u && name[requiredSize - 1u] == '\0';
     }
+
+    bool CheckWorldOwnedHandlesInvalidated(const uec_api* api)
+    {
+        uec_transform actorTransform{
+            {1.0, 1.0, 1.0}, {1.0, 1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}};
+        const uec_result actorResult = api->get_actor_transform(
+            GWorldOwnedActor, &actorTransform);
+        const bool actorCleared = actorTransform.translation.x == 0.0 &&
+            actorTransform.translation.y == 0.0 && actorTransform.translation.z == 0.0 &&
+            actorTransform.rotation.x == 0.0 && actorTransform.rotation.y == 0.0 &&
+            actorTransform.rotation.z == 0.0 && actorTransform.rotation.w == 0.0 &&
+            actorTransform.scale.x == 0.0 && actorTransform.scale.y == 0.0 &&
+            actorTransform.scale.z == 0.0;
+
+        uec_transform componentTransform{
+            {1.0, 1.0, 1.0}, {1.0, 1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}};
+        const uec_result componentResult = api->get_component_transform(
+            GWorldOwnedComponent, &componentTransform);
+        const bool componentCleared = componentTransform.translation.x == 0.0 &&
+            componentTransform.translation.y == 0.0 &&
+            componentTransform.translation.z == 0.0 &&
+            componentTransform.rotation.x == 0.0 && componentTransform.rotation.y == 0.0 &&
+            componentTransform.rotation.z == 0.0 && componentTransform.rotation.w == 0.0 &&
+            componentTransform.scale.x == 0.0 && componentTransform.scale.y == 0.0 &&
+            componentTransform.scale.z == 0.0;
+        uec_bool componentVisible = UEC_TRUE;
+        const uec_result visibleResult = api->get_component_visible(
+            GWorldOwnedComponent, &componentVisible);
+
+        char actorName[64]{};
+        size_t actorNameSize = SIZE_MAX;
+        const uec_result actorNameResult = api->get_actor_name(
+            GWorldOwnedActor, actorName, sizeof(actorName), &actorNameSize);
+
+        char objectPath[128]{};
+        size_t objectPathSize = SIZE_MAX;
+        const uec_result objectResult = api->get_object_path(
+            GWorldOwnedObject, objectPath, sizeof(objectPath), &objectPathSize);
+        size_t retainedPathSize = SIZE_MAX;
+        const uec_result retainedObjectResult = api->get_object_path(
+            GWorldOwnedRetainedObject, objectPath, sizeof(objectPath), &retainedPathSize);
+        const bool invalidated = actorResult == UEC_RESULT_INVALID_HANDLE && actorCleared &&
+            actorNameResult == UEC_RESULT_INVALID_HANDLE && actorNameSize == 0u &&
+            componentResult == UEC_RESULT_INVALID_HANDLE && componentCleared &&
+            visibleResult == UEC_RESULT_INVALID_HANDLE && componentVisible == UEC_FALSE &&
+            objectResult == UEC_RESULT_INVALID_HANDLE && objectPathSize == 0u &&
+            retainedObjectResult == UEC_RESULT_INVALID_HANDLE && retainedPathSize == 0u;
+        if (!invalidated) {
+            UE_LOG(LogTemp, Error,
+                TEXT("PIE world cleanup did not invalidate world-owned handles: actor=%d name=%d/%llu component=%d visible=%d/%d object=%d/%llu retained=%d/%llu"),
+                static_cast<int32>(actorResult), static_cast<int32>(actorNameResult),
+                static_cast<unsigned long long>(actorNameSize),
+                static_cast<int32>(componentResult), static_cast<int32>(visibleResult),
+                componentVisible, static_cast<int32>(objectResult),
+                static_cast<unsigned long long>(objectPathSize),
+                static_cast<int32>(retainedObjectResult),
+                static_cast<unsigned long long>(retainedPathSize));
+        }
+        if (invalidated && !ReleaseWorldOwnedHandles()) {
+            UE_LOG(LogTemp, Error, TEXT("PIE world-owned stale handles could not be released"));
+            return false;
+        }
+        return invalidated;
+    }
 }
 
 extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
@@ -90,7 +205,12 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
     if (GApi == nullptr || GContext == nullptr || GApi->get_runtime_stats == nullptr ||
         GApi->get_world_at_by_kind == nullptr || GApi->get_world_kind == nullptr ||
         GApi->get_first_player_controller == nullptr || GApi->get_actor_name == nullptr ||
+        GApi->spawn_actor == nullptr || GApi->get_actor_root_component == nullptr ||
+        GApi->get_actor_property_object == nullptr || GApi->get_actor_transform == nullptr ||
+        GApi->get_component_transform == nullptr || GApi->get_component_visible == nullptr ||
+        GApi->get_object_path == nullptr || GApi->retain_object == nullptr ||
         GApi->subscribe_world_tick == nullptr || GApi->release_actor == nullptr ||
+        GApi->release_scene_component == nullptr || GApi->release_object == nullptr ||
         GApi->release_world == nullptr || GApi->release_context == nullptr) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
@@ -113,6 +233,57 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
     if (result != UEC_RESULT_OK || GOldActor == nullptr || !CheckActorName(GApi, GOldActor)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
+    }
+    {
+        static constexpr char collisionActorPathData[] =
+            "/Script/UnrealCAPIHost.UECAPIHostCollisionSmokeActor";
+        static constexpr char rootPropertyData[] = "RootComponent";
+        const uec_string_view collisionActorPath{
+            collisionActorPathData, sizeof(collisionActorPathData) - 1u};
+        const uec_string_view rootProperty{
+            rootPropertyData, sizeof(rootPropertyData) - 1u};
+        const uec_transform transform{
+            {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
+        result = GApi->spawn_actor(
+            GOldWorld, collisionActorPath, &transform, &GWorldOwnedActor);
+        if (result != UEC_RESULT_OK || GWorldOwnedActor == nullptr) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        result = GApi->get_actor_root_component(
+            GWorldOwnedActor, &GWorldOwnedComponent);
+        if (result != UEC_RESULT_OK || GWorldOwnedComponent == nullptr) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        result = GApi->get_actor_property_object(
+            GWorldOwnedActor, rootProperty, &GWorldOwnedObject);
+        if (result != UEC_RESULT_OK || GWorldOwnedObject == nullptr) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        result = GApi->retain_object(GWorldOwnedObject, &GWorldOwnedRetainedObject);
+        if (result != UEC_RESULT_OK || GWorldOwnedRetainedObject == nullptr) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        char objectPath[128]{};
+        size_t objectPathSize = 0;
+        result = GApi->get_object_path(
+            GWorldOwnedObject, objectPath, sizeof(objectPath), &objectPathSize);
+        if (result != UEC_RESULT_OK || objectPathSize <= 1u ||
+            objectPathSize > sizeof(objectPath) || objectPath[objectPathSize - 1u] != '\0') {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        objectPathSize = 0;
+        result = GApi->get_object_path(
+            GWorldOwnedRetainedObject, objectPath, sizeof(objectPath), &objectPathSize);
+        if (result != UEC_RESULT_OK || objectPathSize <= 1u ||
+            objectPathSize > sizeof(objectPath) || objectPath[objectPathSize - 1u] != '\0') {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
     }
     {
         uint64_t subscriptionId = 0;
@@ -149,6 +320,8 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void)
 
     if (!GWorldCleanupObserved || GApi == nullptr ||
         GContext == nullptr || GOldWorld == nullptr || GOldActor == nullptr ||
+        GWorldOwnedActor == nullptr || GWorldOwnedComponent == nullptr ||
+        GWorldOwnedObject == nullptr || GWorldOwnedRetainedObject == nullptr ||
         GTickCallbackCount == 0u || GTickCallbackCount != GTickCallbackCountAtCleanup) {
         UE_LOG(LogTemp, Error,
             TEXT("PIE restart cleanup invariant failed: cleanup=%d tick=%llu atCleanup=%llu api=%d context=%d world=%d actor=%d"),
@@ -173,12 +346,13 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void)
             goto cleanup;
         }
     }
+    if (!CheckWorldOwnedHandlesInvalidated(GApi)) goto cleanup;
 
     result = GApi->release_actor(GOldActor);
     if (result != UEC_RESULT_OK) goto cleanup;
     GOldActor = nullptr;
     result = GApi->release_world(GOldWorld);
-    if (result != UEC_RESULT_OK && result != UEC_RESULT_INVALID_HANDLE) goto cleanup;
+    if (result != UEC_RESULT_OK) goto cleanup;
     GOldWorld = nullptr;
 
     result = GApi->get_world_at_by_kind(GContext, UEC_WORLD_KIND_PIE, 0u, &newWorld);

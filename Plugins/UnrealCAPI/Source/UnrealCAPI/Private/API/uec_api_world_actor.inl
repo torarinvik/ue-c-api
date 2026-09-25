@@ -338,11 +338,12 @@
     {
         if (world == nullptr) return;
         CancelActorSubscriptionsForWorld(world);
+        // Invalidate access without consuming the consumer's right to release each handle.
         for (const FUECWorld* candidate : GWorlds)
         {
             if (candidate == nullptr || candidate->Value.Get() != world) continue;
             auto* mutableCandidate = const_cast<FUECWorld*>(candidate);
-            TombstoneHandle(mutableCandidate->Header);
+            InvalidateHandle(mutableCandidate->Header);
             mutableCandidate->Value.Reset();
         }
         for (const FUECActor* candidate : GActors)
@@ -351,7 +352,7 @@
             if (actor == nullptr || actor->GetWorld() != world) continue;
             CancelActorSubscriptions(actor);
             auto* mutableCandidate = const_cast<FUECActor*>(candidate);
-            TombstoneHandle(mutableCandidate->Header);
+            InvalidateHandle(mutableCandidate->Header);
             mutableCandidate->Value.Reset();
         }
         for (const FUECSceneComponent* candidate : GComponents)
@@ -359,7 +360,7 @@
             USceneComponent* component = candidate == nullptr ? nullptr : candidate->Value.Get();
             if (component == nullptr || component->GetWorld() != world) continue;
             auto* mutableCandidate = const_cast<FUECSceneComponent*>(candidate);
-            TombstoneHandle(mutableCandidate->Header);
+            InvalidateHandle(mutableCandidate->Header);
             mutableCandidate->Value.Reset();
         }
         if (GEngine == nullptr) return;
@@ -369,7 +370,7 @@
             if (object == nullptr || GEngine->GetWorldFromContextObject(
                 object, EGetWorldErrorMode::ReturnNull) != world) continue;
             auto* mutableCandidate = const_cast<FUECObject*>(candidate);
-            TombstoneHandle(mutableCandidate->Header);
+            InvalidateHandle(mutableCandidate->Header);
             mutableCandidate->Value.Reset();
             mutableCandidate->StrongValue.Reset();
         }

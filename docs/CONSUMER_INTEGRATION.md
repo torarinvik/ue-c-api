@@ -65,7 +65,8 @@ stopping new work and canceling requests or subscriptions, poll its
 all are zero. ABI 87 appends `live_contexts`, `live_worlds`, `live_actors`,
 `live_components`, `live_classes`, and `live_objects`; initialize the full
 `struct_size` to read them and use the original prefix when targeting older
-bridges.
+bridges. World-invalidated handles are excluded from the live counts but remain
+registered and should still be released by their owners.
 
 `examples/c_consumer_drain/` provides a C helper that performs this poll and a
 portable test for each nonzero counter. Call it from the game thread after the
@@ -364,8 +365,10 @@ animation stops. Looping playback remains active until the consumer stops it.
 ## Handles and shutdown
 
 Handles are opaque bridge references to Unreal objects. Each handle has a
-typed, monotonic generation and released handles remain tombstoned until module
-shutdown, preventing stale pointer acceptance after address reuse. Releasing a
+typed, monotonic generation and caller-released handles remain tombstoned until
+module shutdown, preventing stale pointer acceptance after address reuse.
+World-invalidated handles remain registered until the caller releases them,
+while their Unreal object references are cleared immediately. Releasing a
 handle does not destroy the Unreal object. Weak object handles become invalid
 when Unreal destroys or unloads the object; use `retain_object` when a GC-tracked
 strong reference is needed and release that retained handle when finished.
@@ -373,8 +376,9 @@ The PIE and packaged Development smoke runs force garbage collection while both
 weak and retained SaveGame handles exist, then verify the weak handle expires
 after the retained handle is released.
 World cleanup, including PIE restart and engine-managed travel, proactively
-invalidates handles associated with the old world; reacquire them after the
-new world is initialized.
+invalidates handles associated with the old world and drops retained world-bound
+references; access fails after invalidation, but each affected handle remains
+releasable. Reacquire handles after the new world is initialized.
 
 Stop submitting work before unloading the module. Shutdown first rejects new
 API entry points, then cancels timers, subscriptions, queued callbacks, asset
