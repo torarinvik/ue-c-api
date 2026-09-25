@@ -345,6 +345,16 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         }
         UE_LOG(LogUnrealCAPIHost, Log, TEXT("C reflected container smoke completed"));
 
+        const uec_result playerFlowResult = uec_host_player_flow_smoke();
+        if (playerFlowResult != UEC_RESULT_OK) {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C player-flow and camera smoke failed with result %d"),
+                static_cast<int32>(playerFlowResult));
+            EventBridgeSmokeHandle.Reset();
+            return false;
+        }
+        UE_LOG(LogUnrealCAPIHost, Log, TEXT("C player-flow and camera smoke completed"));
+
         const uec_result blueprintInvocationResult =
             uec_host_blueprint_invocation_smoke();
         if (blueprintInvocationResult != UEC_RESULT_OK) {
