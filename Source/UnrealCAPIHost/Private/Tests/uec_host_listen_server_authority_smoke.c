@@ -25,6 +25,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     static const char actorClassText[] =
         "/Script/UnrealCAPIHost.UECAPIHostCollisionSmokeActor";
     static const char componentClassText[] = "/Script/Engine.BoxComponent";
+    static const char staticMeshComponentClassText[] = "/Script/Engine.StaticMeshComponent";
     static const char primitiveComponentClassText[] = "/Script/Engine.PrimitiveComponent";
     static const char sceneComponentClassText[] = "/Script/Engine.SceneComponent";
     static const char invalidComponentClassText[] = "/Script/Engine.Actor";
@@ -33,6 +34,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     static const char replicatedPropertyText[] = "AuthoritySmokeReplicatedValue";
     static const char tagText[] = "UEC_ListenServerAuthoritySmoke";
     static const char textValue[] = "25";
+    static const char attachmentSocketName[] = "UECAPIHostAttachmentSocket";
     const uec_string_view actorClass = {actorClassText, sizeof(actorClassText) - 1u};
     const uec_string_view baseActorClass = {
         baseActorClassText, sizeof(baseActorClassText) - 1u
@@ -42,6 +44,9 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     };
     const uec_string_view componentClass = {
         componentClassText, sizeof(componentClassText) - 1u
+    };
+    const uec_string_view staticMeshComponentClass = {
+        staticMeshComponentClassText, sizeof(staticMeshComponentClassText) - 1u
     };
     const uec_string_view primitiveComponentClass = {
         primitiveComponentClassText, sizeof(primitiveComponentClassText) - 1u
@@ -57,6 +62,9 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     };
     const uec_string_view tag = {tagText, sizeof(tagText) - 1u};
     const uec_string_view text = {textValue, sizeof(textValue) - 1u};
+    const uec_string_view attachmentSocket = {
+        attachmentSocketName, sizeof(attachmentSocketName) - 1u
+    };
     static const char emptySocketName[] = "";
     const uec_string_view emptySocket = {emptySocketName, 0u};
     const uec_api* api = NULL;
@@ -65,6 +73,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_actor* actor = NULL;
     uec_actor* childActor = NULL;
     uec_scene_component* parentComponent = NULL;
+    uec_scene_component* socketParentComponent = NULL;
     uec_scene_component* childComponent = NULL;
     uec_scene_component* filteredComponent = NULL;
     uec_net_mode netMode = UEC_NET_MODE_UNKNOWN;
@@ -84,6 +93,10 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_transform childTransformAfterAttach = {0};
     uec_transform childTransformBeforeRelativeAttach = {0};
     uec_transform childTransformAfterRelativeAttach = {0};
+    uec_transform socketParentTransform = {0};
+    uec_transform childTransformBeforeSocketAttach = {0};
+    uec_transform childTransformAfterSocketAttach = {0};
+    uec_transform expectedSocketTransform = {0};
     uec_transform relativeExpectedTransform = {0};
     uec_transform childTransformAfterParentMove = {0};
     uec_transform childTransformAfterDetach = {0};
@@ -99,6 +112,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_property_value valueAfter = {0};
     uint32_t worldCount = 0u;
     uint32_t filteredComponentCount = 0u;
+    uint32_t socketComponentCount = 0u;
     char componentClassName[128] = {0};
     size_t componentClassRequiredSize = 0u;
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
@@ -453,6 +467,46 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         goto cleanup;
     }
 
+    result = api->get_actor_component_count_by_class(
+        actor, staticMeshComponentClass, &socketComponentCount);
+    if (result != UEC_RESULT_OK || socketComponentCount != 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_component_at_by_class(
+        actor, staticMeshComponentClass, 0u, &socketParentComponent);
+    if (result != UEC_RESULT_OK || socketParentComponent == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_transform(socketParentComponent, &socketParentTransform);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(childComponent,
+                                          &childTransformBeforeSocketAttach);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->attach_scene_component(childComponent, socketParentComponent,
+                                         UEC_FALSE, attachmentSocket);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(childComponent,
+                                          &childTransformAfterSocketAttach);
+    expectedSocketTransform = childTransformBeforeSocketAttach;
+    expectedSocketTransform.translation.x += socketParentTransform.translation.x + 20.0;
+    expectedSocketTransform.translation.y += socketParentTransform.translation.y;
+    expectedSocketTransform.translation.z += socketParentTransform.translation.z;
+    if (result != UEC_RESULT_OK ||
+        !IsSameTransform(childTransformAfterSocketAttach, expectedSocketTransform)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->detach_scene_component(childComponent, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(childComponent, &transformAfter);
+    if (result != UEC_RESULT_OK ||
+        !IsSameTransform(transformAfter, childTransformBeforeSocketAttach)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
     result = api->get_component_visible(childComponent, &visibleBefore);
     if (result != UEC_RESULT_OK) goto cleanup;
     const uec_bool toggledVisibility = visibleBefore == UEC_FALSE ? UEC_TRUE : UEC_FALSE;
@@ -523,6 +577,10 @@ cleanup:
     }
     if (parentComponent != NULL && api != NULL && api->release_scene_component != NULL) {
         (void)api->release_scene_component(parentComponent);
+    }
+    if (socketParentComponent != NULL && api != NULL &&
+        api->release_scene_component != NULL) {
+        (void)api->release_scene_component(socketParentComponent);
     }
     if (filteredComponent != NULL && api != NULL && api->release_scene_component != NULL) {
         (void)api->release_scene_component(filteredComponent);

@@ -4,6 +4,8 @@
 #include "GameFramework/Actor.h"
 #include "UECAPIHostCollisionSmokeActor.generated.h"
 
+class UStaticMeshComponent;
+
 USTRUCT()
 struct FUECAPIHostAuthoritySmokeStruct
 {
@@ -20,6 +22,9 @@ class AUECAPIHostCollisionSmokeActor final : public AActor
 
 public:
     AUECAPIHostCollisionSmokeActor();
+
+    UPROPERTY(VisibleAnywhere, Category = "Smoke")
+    UStaticMeshComponent* AttachmentSocketComponent = nullptr;
 
     UPROPERTY(Replicated)
     int32 AuthoritySmokeReplicatedValue = 23;

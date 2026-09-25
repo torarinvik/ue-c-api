@@ -18,6 +18,26 @@ static int IsPhysicsVectorNear(uec_vector3 actual, uec_vector3 expected)
         actual.z >= expected.z - tolerance && actual.z <= expected.z + tolerance;
 }
 
+static int IsTransformNear(uec_transform actual, uec_transform expected)
+{
+    const double tolerance = 0.05;
+    return IsPhysicsVectorNear(actual.translation, expected.translation) &&
+        actual.rotation.x >= expected.rotation.x - tolerance &&
+        actual.rotation.x <= expected.rotation.x + tolerance &&
+        actual.rotation.y >= expected.rotation.y - tolerance &&
+        actual.rotation.y <= expected.rotation.y + tolerance &&
+        actual.rotation.z >= expected.rotation.z - tolerance &&
+        actual.rotation.z <= expected.rotation.z + tolerance &&
+        actual.rotation.w >= expected.rotation.w - tolerance &&
+        actual.rotation.w <= expected.rotation.w + tolerance &&
+        actual.scale.x >= expected.scale.x - tolerance &&
+        actual.scale.x <= expected.scale.x + tolerance &&
+        actual.scale.y >= expected.scale.y - tolerance &&
+        actual.scale.y <= expected.scale.y + tolerance &&
+        actual.scale.z >= expected.scale.z - tolerance &&
+        actual.scale.z <= expected.scale.z + tolerance;
+}
+
 static int IsAt(const uec_api* api, uec_actor* actor, uec_vector3 position)
 {
     uec_transform transform = {0};
@@ -71,7 +91,14 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
 {
     static const char actorClassPath[] =
         "/Script/UnrealCAPIHost.UECAPIHostCollisionSmokeActor";
+    static const char staticMeshComponentClassPath[] =
+        "/Script/Engine.StaticMeshComponent";
+    static const char attachmentSocketText[] = "UECAPIHostAttachmentSocket";
     const uec_string_view classPath = {actorClassPath, sizeof(actorClassPath) - 1u};
+    const uec_string_view staticMeshClassPath = {
+        staticMeshComponentClassPath, sizeof(staticMeshComponentClassPath) - 1u};
+    const uec_string_view attachmentSocket = {
+        attachmentSocketText, sizeof(attachmentSocketText) - 1u};
     const uec_vector3 center = {12000.0, -24000.0, 50000.0};
     const uec_vector3 start = {center.x - 250.0, center.y, center.z};
     const uec_vector3 end = {center.x + 250.0, center.y, center.z};
@@ -91,6 +118,7 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     uec_actor* movingActor = NULL;
     uec_scene_component* component = NULL;
     uec_scene_component* movingComponent = NULL;
+    uec_scene_component* socketComponent = NULL;
     uec_hit_result hit = {0};
     uec_hit_result_details details = {0};
     uec_actor* overlaps[4] = {0};
@@ -100,7 +128,13 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     uec_hit_smoke_capture hitCapture = {0};
     uec_vector3 boundsOrigin = {0};
     uec_vector3 boundsExtent = {0};
+    uec_transform socketParentTransform = {0};
+    uec_transform childTransformBeforeSocketAttach = {0};
+    uec_transform childTransformAfterSocketAttach = {0};
+    uec_transform expectedSocketTransform = {0};
+    uec_transform childTransformAfterSocketDetach = {0};
     uint32_t overlapCount = 0u;
+    uint32_t socketComponentCount = 0u;
     uint64_t hitSubscriptionId = 0u;
     int failureLine = 0;
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
@@ -126,7 +160,11 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         api->get_component_collision_response == NULL || api->line_trace == NULL ||
         api->line_trace_filtered == NULL || api->sweep_trace_filtered == NULL ||
         api->overlap_shape_filtered == NULL || api->trace_detailed_filtered == NULL ||
-        api->get_actor_transform == NULL || api->get_actor_bounds == NULL) {
+        api->get_actor_transform == NULL || api->get_actor_bounds == NULL ||
+        api->get_actor_component_count_by_class == NULL ||
+        api->get_actor_component_at_by_class == NULL ||
+        api->attach_scene_component == NULL || api->detach_scene_component == NULL ||
+        api->get_component_transform == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
@@ -361,6 +399,47 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
+    result = api->get_actor_component_count_by_class(
+        actor, staticMeshClassPath, &socketComponentCount);
+    if (result != UEC_RESULT_OK || socketComponentCount != 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->get_actor_component_at_by_class(
+        actor, staticMeshClassPath, 0u, &socketComponent);
+    if (result != UEC_RESULT_OK || socketComponent == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->get_component_transform(socketComponent, &socketParentTransform);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_transform(movingComponent,
+                                          &childTransformBeforeSocketAttach);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->attach_scene_component(movingComponent, socketComponent,
+                                         UEC_FALSE, attachmentSocket);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_transform(movingComponent,
+                                          &childTransformAfterSocketAttach);
+    expectedSocketTransform = childTransformBeforeSocketAttach;
+    expectedSocketTransform.translation.x += socketParentTransform.translation.x + 20.0;
+    expectedSocketTransform.translation.y += socketParentTransform.translation.y;
+    expectedSocketTransform.translation.z += socketParentTransform.translation.z;
+    if (result != UEC_RESULT_OK ||
+        !IsTransformNear(childTransformAfterSocketAttach, expectedSocketTransform)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->detach_scene_component(movingComponent, UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_transform(movingComponent,
+                                          &childTransformAfterSocketDetach);
+    if (result != UEC_RESULT_OK ||
+        !IsTransformNear(childTransformAfterSocketDetach,
+                         childTransformBeforeSocketAttach)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
     result = api->set_component_collision_channel_response(
         component, UEC_TRACE_WORLD_DYNAMIC, UEC_COLLISION_RESPONSE_BLOCK);
     if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
@@ -410,6 +489,7 @@ cleanup:
             (void)api->unbind_component_hit(context, hitSubscriptionId);
         }
         if (movingComponent != NULL) (void)api->release_scene_component(movingComponent);
+        if (socketComponent != NULL) (void)api->release_scene_component(socketComponent);
         if (movingActor != NULL) {
             const uec_result destroyResult = api->destroy_actor(movingActor);
             if (destroyResult != UEC_RESULT_OK) (void)api->release_actor(movingActor);
