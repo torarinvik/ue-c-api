@@ -16,6 +16,7 @@ from pathlib import Path
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
     "C collision smoke completed",
+    "C physics smoke completed",
     "C event bridge smoke completed",
     "C latent invocation smoke completed",
     "C game-thread queue smoke completed",
@@ -27,6 +28,8 @@ SUCCESS_MARKERS = (
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C collision smoke failed",
+    "C physics smoke failed",
+    "C physics smoke failed to start",
     "C event bridge smoke failed",
     "C latent invocation smoke failed",
     "C game-thread queue smoke failed",
@@ -81,6 +84,7 @@ def run_smoke(engine_root: Path, timeout_seconds: float = 150.0) -> None:
         "-nop4",
         "-stdout",
         "-FullStdOutLogOutput",
+        "-uec-tests-exit",
         "-ExecCmds=py unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).editor_request_begin_play()",
     ]
     try:
@@ -165,8 +169,8 @@ def main(argv: list[str]) -> int:
         print(error, file=sys.stderr)
         return 1
     print(
-        "Editor PIE completed the C bootstrap, collision, event, latent, queue, async save/load, "
-        "async object load, gameplay, and travel smoke checks."
+        "Editor PIE completed the C bootstrap, collision, physics, event, latent, queue, "
+        "async save/load, async object load, gameplay, and travel smoke checks."
     )
     return 0
 

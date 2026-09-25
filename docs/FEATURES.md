@@ -53,14 +53,16 @@ checks explicitly recorded for each feature in the Unreal build matrix.
 | Level travel | Packaged Development and Editor PIE smoke verified | Map name queries, immediate and callback-based game-thread `OpenLevel` requests, cancellation of completion callbacks, PIE-prefixed destination matching, world-owned timer/tick and actor-scoped subscription cancellation, and invalidation of old-world handles |
 | Player flow | Runtime implemented / Unreal integration pending | Indexed local controller lookup, player-start lookup, world game-instance, game-mode, and game-state access, possession, and view-target selection |
 | Input polling | Runtime implemented / Unreal integration pending | Digital and analog key queries by Unreal key name |
-| Basic physics | Partial / simulation smoke verified | ABI 143 enables/disables primitive-component simulation and reads the state; PIE and packaged Development smoke verify both transitions. Finite-validated actor and primitive-component linear/angular velocity, impulse, force, torque, and angular-impulse operations act on simulating primitive roots; broader physics behavior remains unverified |
+| Basic physics | Partial / PIE and packaged Development smoke verified | ABI 143 simulation enable/readback; smoke checks simulation on/off, actor/component linear and angular velocity, additive velocity behavior, impulse/angular-impulse effects, force/torque effects across physics ticks, and unsupported operations with simulation off. Client-world authority and broader physics conditions remain unverified |
 | Reflection and Blueprint calls | Partial | Property writes, class/function/parameter/flag metadata including property access flags, class-default text, referenced-class paths, enum names/values, reflected struct-field metadata and type paths, and typed hard class references, reflected actor/object-array counts/text elements, typed scalar array/map/set reads and map-key reads, array/map writes, typed nested-struct scalar reads and writes, actor/UObject map/set counts and text entries, soft object/class path readback and writes, nested struct field text readback and writes, zero-argument calls, scalar typed calls, bounded text-marshaled calls, scalar multi-output calls, text multi-output calls, ABI 132 Blueprint-to-C event bridges, ABI 133 async latent calls, and ABI 134 typed FVector/FQuat/FTransform calls are available; broader typed ABI calls remain |
 | Input | Partial | Enhanced Input mapping contexts, action polling/injection, and tokenized callbacks are implemented; broader action semantics remain |
 | Async loading, travel, streaming | Partial | Async object requests, cancellation, loaded-state queries, level-travel submission with cancellable completion callbacks, indexed streaming-level state requests, and cancellable streaming completion callbacks are available |
 | Multiplayer and replication | Partial | Network-mode and authority queries plus authority-gated actor, possession, transform, and physics mutators; replication/RPC adapters remain planned |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
 
-The shared host smoke now runs collision line traces, sweeps, overlaps, and
-detailed hit queries in a UE 5.8.3 Editor PIE world and a packaged Development
-build. Those runs verify only the operations the smoke exercises;
-other Unreal-dependent features still need focused probes before release.
+The shared host smoke now runs collision line traces, sweeps, overlaps,
+detailed hit queries, and focused physics state/motion checks in a UE 5.8.3
+Editor PIE world and a packaged Development build. The test runners request an
+engine exit after receiving every success marker. Those runs verify only the
+operations the smoke exercises; other Unreal-dependent features still need
+focused probes before release.

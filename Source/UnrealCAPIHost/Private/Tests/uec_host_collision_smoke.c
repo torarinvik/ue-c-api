@@ -10,6 +10,14 @@ static int IsNear(double actual, double expected)
     return difference <= 1.0;
 }
 
+static int IsPhysicsVectorNear(uec_vector3 actual, uec_vector3 expected)
+{
+    const double tolerance = 0.05;
+    return actual.x >= expected.x - tolerance && actual.x <= expected.x + tolerance &&
+        actual.y >= expected.y - tolerance && actual.y <= expected.y + tolerance &&
+        actual.z >= expected.z - tolerance && actual.z <= expected.z + tolerance;
+}
+
 static int IsAt(const uec_api* api, uec_actor* actor, uec_vector3 position)
 {
     uec_transform transform = {0};
@@ -105,6 +113,13 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         api->bind_component_hit == NULL || api->unbind_component_hit == NULL ||
         api->set_component_simulating_physics == NULL ||
         api->get_component_simulating_physics == NULL ||
+        api->get_component_velocity == NULL || api->get_actor_velocity == NULL ||
+        api->set_component_physics_velocity == NULL || api->apply_component_impulse == NULL ||
+        api->apply_component_force == NULL ||
+        api->get_component_physics_angular_velocity == NULL ||
+        api->set_component_physics_angular_velocity == NULL ||
+        api->apply_component_torque == NULL || api->apply_component_angular_impulse == NULL ||
+        api->set_actor_physics_velocity == NULL ||
         api->set_component_collision_channel_response == NULL ||
         api->get_component_collision_response == NULL || api->line_trace == NULL ||
         api->line_trace_filtered == NULL || api->sweep_trace_filtered == NULL ||
@@ -237,11 +252,90 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
+    const uec_vector3 linearVelocity = {12.0, -6.0, 3.0};
+    const uec_vector3 linearDelta = {4.0, 2.0, -1.0};
+    const uec_vector3 angularVelocity = {0.25, -0.5, 0.75};
+    const uec_vector3 angularDelta = {0.125, 0.25, -0.125};
+    uec_vector3 physicsReadback = {99.0, 99.0, 99.0};
+    result = api->set_component_physics_velocity(component, linearVelocity, UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_velocity(component, &physicsReadback);
+    if (result != UEC_RESULT_OK || !IsPhysicsVectorNear(physicsReadback, linearVelocity)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    const uec_vector3 addedLinearVelocity = {
+        linearVelocity.x + linearDelta.x,
+        linearVelocity.y + linearDelta.y,
+        linearVelocity.z + linearDelta.z};
+    result = api->set_component_physics_velocity(component, linearDelta, UEC_TRUE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_actor_velocity(actor, &physicsReadback);
+    if (result != UEC_RESULT_OK || !IsPhysicsVectorNear(physicsReadback, addedLinearVelocity)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->set_actor_physics_velocity(actor, linearVelocity, UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_velocity(component, &physicsReadback);
+    if (result != UEC_RESULT_OK || !IsPhysicsVectorNear(physicsReadback, linearVelocity)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->set_component_physics_angular_velocity(component, angularVelocity, UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_physics_angular_velocity(component, &physicsReadback);
+    if (result != UEC_RESULT_OK || !IsPhysicsVectorNear(physicsReadback, angularVelocity)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    const uec_vector3 addedAngularVelocity = {
+        angularVelocity.x + angularDelta.x,
+        angularVelocity.y + angularDelta.y,
+        angularVelocity.z + angularDelta.z};
+    result = api->set_component_physics_angular_velocity(component, angularDelta, UEC_TRUE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_physics_angular_velocity(component, &physicsReadback);
+    if (result != UEC_RESULT_OK || !IsPhysicsVectorNear(physicsReadback, addedAngularVelocity)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->set_component_physics_velocity(component, (uec_vector3){0}, UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    const uec_vector3 impulse = {2.0, -3.0, 4.0};
+    result = api->apply_component_impulse(component, impulse, UEC_TRUE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    const uec_vector3 angularImpulse = {0.5, -0.25, 0.125};
+    result = api->set_component_physics_angular_velocity(component, (uec_vector3){0}, UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->apply_component_angular_impulse(component, angularImpulse, UEC_TRUE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->apply_component_force(component, (uec_vector3){100000.0, 0.0, 0.0});
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->apply_component_torque(component, (uec_vector3){0.0, 100000.0, 0.0},
+                                         UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
     result = api->set_component_simulating_physics(component, UEC_FALSE);
     if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
     result = api->get_component_simulating_physics(component, &simulating);
     if (result != UEC_RESULT_OK || simulating != UEC_FALSE) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    physicsReadback = (uec_vector3){99.0, 99.0, 99.0};
+    if (api->set_component_physics_velocity(component, linearVelocity, UEC_FALSE) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->apply_component_impulse(component, impulse, UEC_TRUE) != UEC_RESULT_UNSUPPORTED ||
+        api->apply_component_force(component, linearVelocity) != UEC_RESULT_UNSUPPORTED ||
+        api->get_component_physics_angular_velocity(component, &physicsReadback) !=
+            UEC_RESULT_UNSUPPORTED || !IsPhysicsVectorNear(physicsReadback, (uec_vector3){0}) ||
+        api->set_component_physics_angular_velocity(component, angularVelocity, UEC_FALSE) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->apply_component_torque(component, angularVelocity, UEC_FALSE) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->apply_component_angular_impulse(component, angularImpulse, UEC_TRUE) !=
+            UEC_RESULT_UNSUPPORTED) {
+        result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
     result = api->set_component_collision_enabled(component, UEC_COLLISION_QUERY_ONLY);

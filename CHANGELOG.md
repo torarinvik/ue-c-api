@@ -10,6 +10,11 @@ development; they do not imply a published or runtime-verified release.
 - ABI minor 143 adds game-thread component physics-simulation controls. Enabling
   simulation requires a movable primitive component and a collision mode that
   includes physics; the getter reports deterministic false output on failure.
+- The UE 5.8.3 PIE and packaged Development smoke now checks component and actor
+  linear/angular velocity readback, additive velocity updates, impulse and
+  angular-impulse response, force and torque response over physics ticks, and
+  unsupported physics operations with simulation disabled. The runtime test
+  host exits normally after its final success marker.
 - Added an `UnrealCAPIHostServer` target definition for source-built Unreal
   distributions that support dedicated-server targets. The installed UE 5.8.3
   Mac distribution rejects server builds before compiling project code.
@@ -503,5 +508,9 @@ development; they do not imply a published or runtime-verified release.
 
 - CI checks syntax and selected type layouts; it does not link or execute the
   consumer, compile the Unreal module, or test engine behavior.
-- UE 5.8.3 editor and packaged-build verification remain pending. The API is
-  experimental and may change incompatibly before a supported release.
+- UE 5.8.3 Game and Editor Development builds, Mac cook/stage/package, Editor
+  PIE, and packaged Development smoke pass locally with macOS 27.0, Xcode 27.0,
+  Apple Clang 21.1.6, and Metal Toolchain 27A266a. This toolchain is outside
+  Epic's published UE 5.8 macOS compatibility row. Shipping app finalization
+  and a supported-toolchain build remain pending. The API is experimental and
+  may change incompatibly before a supported release.
