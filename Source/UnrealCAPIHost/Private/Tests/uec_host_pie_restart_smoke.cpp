@@ -11,6 +11,7 @@ namespace
 {
     const uec_api* GApi = nullptr;
     uec_context* GContext = nullptr;
+    uec_world* GEditorWorld = nullptr;
     uec_world* GOldWorld = nullptr;
     uec_actor* GOldActor = nullptr;
     uec_actor* GWorldOwnedActor = nullptr;
@@ -106,12 +107,16 @@ namespace
         if (GApi != nullptr && GOldWorld != nullptr) {
             (void)GApi->release_world(GOldWorld);
         }
+        if (GApi != nullptr && GEditorWorld != nullptr) {
+            (void)GApi->release_world(GEditorWorld);
+        }
         if (GApi != nullptr && GContext != nullptr) {
             (void)GApi->release_context(GContext);
         }
         GCapturedWorld.Reset();
         GOldActor = nullptr;
         GOldWorld = nullptr;
+        GEditorWorld = nullptr;
         GContext = nullptr;
         GApi = nullptr;
     }
@@ -122,6 +127,15 @@ namespace
         size_t requiredSize = 0;
         return api->get_actor_name(actor, name, sizeof(name), &requiredSize) == UEC_RESULT_OK &&
             requiredSize > 1u && name[requiredSize - 1u] == '\0';
+    }
+
+    bool CheckWorldName(const uec_api* api, uec_world* world)
+    {
+        char name[128]{};
+        size_t requiredSize = 0;
+        return api->get_world_name(world, name, sizeof(name), &requiredSize) == UEC_RESULT_OK &&
+            requiredSize > 1u && requiredSize <= sizeof(name) &&
+            name[requiredSize - 1u] == '\0';
     }
 
     bool CheckWorldOwnedHandlesInvalidated(const uec_api* api)
@@ -199,11 +213,13 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
     GWorldCleanupObserved = false;
     GTickCallbackCount = 0;
     GTickCallbackCountAtCleanup = 0;
+    uint32_t editorWorldCount = 0;
 
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &GApi, &GContext);
     if (result != UEC_RESULT_OK) return result;
     if (GApi == nullptr || GContext == nullptr || GApi->get_runtime_stats == nullptr ||
         GApi->get_world_at_by_kind == nullptr || GApi->get_world_kind == nullptr ||
+        GApi->get_world_count_by_kind == nullptr || GApi->get_world_name == nullptr ||
         GApi->get_first_player_controller == nullptr || GApi->get_actor_name == nullptr ||
         GApi->spawn_actor == nullptr || GApi->get_actor_root_component == nullptr ||
         GApi->get_actor_property_object == nullptr || GApi->get_actor_transform == nullptr ||
@@ -222,6 +238,28 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
         GBaseline.pending_requests != 0u) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
+    }
+
+    result = GApi->get_world_count_by_kind(
+        GContext, UEC_WORLD_KIND_EDITOR, &editorWorldCount);
+    if (result != UEC_RESULT_OK || editorWorldCount == 0u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_NOT_INITIALIZED;
+        goto cleanup;
+    }
+    result = GApi->get_world_at_by_kind(
+        GContext, UEC_WORLD_KIND_EDITOR, 0u, &GEditorWorld);
+    if (result != UEC_RESULT_OK || GEditorWorld == nullptr) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    {
+        uec_world_kind kind = UEC_WORLD_KIND_UNKNOWN;
+        result = GApi->get_world_kind(GEditorWorld, &kind);
+        if (result != UEC_RESULT_OK || kind != UEC_WORLD_KIND_EDITOR ||
+            !CheckWorldName(GApi, GEditorWorld)) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
     }
 
     result = GApi->get_world_at_by_kind(GContext, UEC_WORLD_KIND_PIE, 0u, &GOldWorld);
@@ -311,6 +349,7 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void)
     return UEC_RESULT_UNSUPPORTED;
 #else
     uec_world_kind oldWorldKind = UEC_WORLD_KIND_GAME;
+    uec_world_kind editorWorldKind = UEC_WORLD_KIND_UNKNOWN;
     char oldActorName[64]{};
     size_t oldActorNameSize = SIZE_MAX;
     uec_world* newWorld = nullptr;
@@ -347,6 +386,19 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void)
         }
     }
     if (!CheckWorldOwnedHandlesInvalidated(GApi)) goto cleanup;
+
+    result = GApi->get_world_kind(GEditorWorld, &editorWorldKind);
+    if (result != UEC_RESULT_OK || editorWorldKind != UEC_WORLD_KIND_EDITOR ||
+        !CheckWorldName(GApi, GEditorWorld)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UE_LOG(LogTemp, Error,
+            TEXT("Editor-world handle did not survive PIE cleanup: result=%d kind=%d"),
+            static_cast<int32>(result), static_cast<int32>(editorWorldKind));
+        goto cleanup;
+    }
+    result = GApi->release_world(GEditorWorld);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    GEditorWorld = nullptr;
 
     result = GApi->release_actor(GOldActor);
     if (result != UEC_RESULT_OK) goto cleanup;
