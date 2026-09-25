@@ -347,6 +347,9 @@ shutdown, preventing stale pointer acceptance after address reuse. Releasing a
 handle does not destroy the Unreal object. Weak object handles become invalid
 when Unreal destroys or unloads the object; use `retain_object` when a GC-tracked
 strong reference is needed and release that retained handle when finished.
+The PIE and packaged Development smoke runs force garbage collection while both
+weak and retained SaveGame handles exist, then verify the weak handle expires
+after the retained handle is released.
 World cleanup, including PIE restart and engine-managed travel, proactively
 invalidates handles associated with the old world; reacquire them after the
 new world is initialized.

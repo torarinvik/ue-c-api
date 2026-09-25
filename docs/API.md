@@ -768,6 +768,9 @@ thread and do not retain the asset handle.
 `TStrongObjectPtr`. Ordinary loaded and callback-returned object handles remain
 weak; callers that need an asset or save object to survive garbage collection
 must retain it and later release the retained handle with `release_object`.
+The Unreal smoke suite forces garbage collection to verify that a retained
+SaveGame handle keeps the object usable and that the ordinary weak handle goes
+stale after the retained handle is released.
 
 `get_component_class_name` returns the full Unreal class path for a scene
 component, and `component_is_a` checks it against another scene-component class

@@ -37,7 +37,7 @@ checks explicitly recorded for each feature in the Unreal build matrix.
 | Pawn and character movement | Runtime implemented / Unreal integration pending | Add world-space pawn input and character jump state; ABI 125 linear, ABI 126 angular, ABI 127 angular impulse, and ABI 128 actor-root angular physics operations |
 | Mesh presentation | Runtime implemented / Unreal integration pending | Assign loaded static or skeletal meshes to compatible components |
 | Animation and material parameters | Runtime implemented / Unreal integration pending | Play/stop skeletal assets, tokenized one-shot completion callbacks, and scalar/vector material parameters |
-| Explicit object retention | Runtime implemented / Unreal integration pending | Promote a weak object handle to a GC-tracked strong handle |
+| Explicit object retention | PIE and packaged Development smoke verified | Promote a weak object handle to a GC-tracked strong handle; forced-GC smoke verifies retention and weak-handle expiry after release |
 | Component type introspection | Runtime implemented / Unreal integration pending | Class-path output and inheritance checks for scene components |
 | Component attachment | Runtime implemented / Unreal integration pending | Same-world attach/detach with transform rules and optional sockets |
 | Actor type introspection | Runtime implemented / Unreal integration pending | Class-path output, inheritance checks, and indexed world queries by actor class |

@@ -16,6 +16,7 @@ from pathlib import Path
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
     "C collision smoke completed",
+    "C GC lifetime smoke completed",
     "C physics smoke completed",
     "C event bridge smoke completed",
     "C latent invocation smoke completed",
@@ -29,6 +30,7 @@ AUTHORITY_SUCCESS_MARKERS = ("C client authority smoke completed",)
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C collision smoke failed",
+    "C GC lifetime smoke failed",
     "C physics smoke failed",
     "C physics smoke failed to start",
     "C event bridge smoke failed",
@@ -252,7 +254,7 @@ def main(argv: list[str]) -> int:
         print("Editor multiplayer PIE completed the client-world physics authority smoke check.")
     else:
         print(
-            "Editor PIE completed the C bootstrap, collision, physics, event, latent, queue, "
+            "Editor PIE completed the C bootstrap, collision, GC lifetime, physics, event, latent, queue, "
             "async save/load, async object load, gameplay, and travel smoke checks."
         )
     return 0

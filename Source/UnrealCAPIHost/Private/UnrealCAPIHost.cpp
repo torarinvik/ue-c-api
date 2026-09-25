@@ -13,6 +13,7 @@
 
 extern "C" uec_result UEC_CALL uec_host_smoke_bootstrap(void);
 extern "C" uec_result UEC_CALL uec_host_collision_smoke(void);
+extern "C" uec_result UEC_CALL uec_host_gc_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_physics_smoke_start(void);
 extern "C" uec_bool UEC_CALL uec_host_physics_smoke_poll(uec_result* out_result);
 extern "C" void UEC_CALL uec_host_physics_smoke_cancel(void);
@@ -185,6 +186,16 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             return false;
         }
         UE_LOG(LogUnrealCAPIHost, Log, TEXT("C collision smoke completed"));
+
+        const uec_result gcResult = uec_host_gc_smoke();
+        if (gcResult != UEC_RESULT_OK) {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C GC lifetime smoke failed with result %d"),
+                static_cast<int32>(gcResult));
+            EventBridgeSmokeHandle.Reset();
+            return false;
+        }
+        UE_LOG(LogUnrealCAPIHost, Log, TEXT("C GC lifetime smoke completed"));
 
         const uec_result physicsResult = uec_host_physics_smoke_start();
         if (physicsResult == UEC_RESULT_OK) {

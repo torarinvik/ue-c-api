@@ -16,6 +16,7 @@ from pathlib import Path
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
     "C collision smoke completed",
+    "C GC lifetime smoke completed",
     "C physics smoke completed",
     "C event bridge smoke completed",
     "C latent invocation smoke completed",
@@ -28,6 +29,7 @@ SUCCESS_MARKERS = (
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C collision smoke failed",
+    "C GC lifetime smoke failed",
     "C physics smoke failed",
     "C physics smoke failed to start",
     "C event bridge smoke failed",
@@ -191,7 +193,7 @@ def main(argv: list[str]) -> int:
     if startup_only:
         print("Packaged host remained running through its Shipping startup check.")
         return 0
-    print("Packaged Development host completed the C bootstrap, collision, physics, event, latent, queue, async save/load, async object load, gameplay, and travel smoke checks.")
+    print("Packaged Development host completed the C bootstrap, collision, GC lifetime, physics, event, latent, queue, async save/load, async object load, gameplay, and travel smoke checks.")
     return 0
 
 
