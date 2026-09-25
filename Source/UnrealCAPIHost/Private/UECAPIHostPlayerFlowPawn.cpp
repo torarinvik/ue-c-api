@@ -1,6 +1,7 @@
 #include "UECAPIHostPlayerFlowPawn.h"
 
 #include "Camera/CameraComponent.h"
+#include "Components/AudioComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Animation/AnimSequence.h"
@@ -16,6 +17,9 @@ AUECAPIHostPlayerFlowPawn::AUECAPIHostPlayerFlowPawn()
     FlowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FlowCamera"));
     FlowCamera->SetupAttachment(root);
     FlowCamera->SetFieldOfView(87.0f);
+    FlowAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("FlowAudio"));
+    FlowAudio->SetupAttachment(root);
+    FlowAudio->SetAutoActivate(false);
     FlowMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FlowMesh"));
     FlowMesh->SetupAttachment(root);
     FlowMesh->SetMobility(EComponentMobility::Movable);

@@ -9,12 +9,15 @@ typedef struct uec_animation_smoke_state {
     uec_world* world;
     uec_actor* actor;
     uec_scene_component* component;
+    uec_object* audio_component;
     uec_object* mesh;
     uec_object* animation;
     uec_object* wrong_object;
     uint64_t animation_subscription_id;
+    uint64_t audio_subscription_id;
     uint64_t tick_subscription_id;
     uint32_t completion_count;
+    uint32_t audio_callback_count;
     uint32_t reentrant_unbind_count;
     uint32_t callbacks_observed_in_flight;
     uint32_t baseline_subscriptions;
@@ -52,6 +55,13 @@ static uec_result ReleaseAnimationSmokeState(uec_animation_smoke_state* state)
             result = unbindResult;
         state->animation_subscription_id = 0u;
     }
+    if (api != NULL && context != NULL && state->audio_subscription_id != 0u) {
+        const uec_result unbindResult = api->unbind_audio_finished(
+            context, state->audio_subscription_id);
+        if (result == UEC_RESULT_OK && unbindResult != UEC_RESULT_OK)
+            result = unbindResult;
+        state->audio_subscription_id = 0u;
+    }
     if (api != NULL && state->component != NULL) {
         if (state->animation_playing == UEC_TRUE) {
             const uec_result stopResult = api->stop_skeletal_animation(state->component);
@@ -63,6 +73,12 @@ static uec_result ReleaseAnimationSmokeState(uec_animation_smoke_state* state)
         if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK)
             result = releaseResult;
         state->component = NULL;
+    }
+    if (api != NULL && state->audio_component != NULL) {
+        const uec_result releaseResult = api->release_object(state->audio_component);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK)
+            result = releaseResult;
+        state->audio_component = NULL;
     }
     if (api != NULL && state->wrong_object != NULL) {
         const uec_result releaseResult = api->release_object(state->wrong_object);
@@ -128,6 +144,16 @@ static uec_result AnimationCleanupStepFailed(const char* step, uec_result result
     return result;
 }
 
+static void UEC_CALL AudioFinished(uint64_t subscriptionId, void* userData)
+{
+    uec_animation_smoke_state* state = (uec_animation_smoke_state*)userData;
+    if (state != &g_animation_smoke || state->running != UEC_TRUE) return;
+    if (subscriptionId != state->audio_subscription_id) {
+        state->callback_result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    ++state->audio_callback_count;
+}
+
 static uec_result VerifyAnimationSubscriptionActorCleanup(
     uec_animation_smoke_state* state)
 {
@@ -146,11 +172,18 @@ static uec_result VerifyAnimationSubscriptionActorCleanup(
             "bind", result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
     state->animation_subscription_id = cancelledSubscriptionId;
 
+    result = state->api->bind_audio_finished(
+        (uec_object*)state->audio_component, AudioFinished, state,
+        &state->audio_subscription_id);
+    if (result != UEC_RESULT_OK || state->audio_subscription_id == 0u)
+        return AnimationCleanupStepFailed(
+            "audio-bind", result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
+
     uec_runtime_stats stats = {0};
     stats.struct_size = sizeof(stats);
     result = state->api->get_runtime_stats(state->context, &stats);
     if (result != UEC_RESULT_OK ||
-        stats.active_subscriptions != state->baseline_subscriptions + 2u) {
+        stats.active_subscriptions != state->baseline_subscriptions + 3u) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         return AnimationCleanupStepFailed(
             "pre-destroy-stats", result == UEC_RESULT_OK ?
@@ -172,6 +205,10 @@ static uec_result VerifyAnimationSubscriptionActorCleanup(
     if (result != UEC_RESULT_OK)
         return AnimationCleanupStepFailed("release-component", result);
     state->component = NULL;
+    result = state->api->release_object(state->audio_component);
+    if (result != UEC_RESULT_OK)
+        return AnimationCleanupStepFailed("release-audio-component", result);
+    state->audio_component = NULL;
 
     const uec_result unbindResult = state->api->unbind_animation_finished(
         state->context, cancelledSubscriptionId);
@@ -182,6 +219,17 @@ static uec_result VerifyAnimationSubscriptionActorCleanup(
         return AnimationCleanupStepFailed("cancelled-token", unbindResult);
     state->animation_subscription_id = 0u;
     if (state->completion_count != 1u) return UEC_RESULT_INTERNAL_ERROR;
+    const uec_result audioUnbindResult = state->api->unbind_audio_finished(
+        state->context, state->audio_subscription_id);
+    if (audioUnbindResult == UEC_RESULT_OK)
+        return AnimationCleanupStepFailed("audio-subscription-still-present",
+                                          UEC_RESULT_INTERNAL_ERROR);
+    if (audioUnbindResult != UEC_RESULT_INVALID_ARGUMENT)
+        return AnimationCleanupStepFailed("audio-cancelled-token", audioUnbindResult);
+    state->audio_subscription_id = 0u;
+    if (state->audio_callback_count != 0u)
+        return AnimationCleanupStepFailed("audio-callback-not-suppressed",
+                                          UEC_RESULT_INTERNAL_ERROR);
     stats = (uec_runtime_stats){0};
     stats.struct_size = sizeof(stats);
     result = state->api->get_runtime_stats(state->context, &stats);
@@ -284,6 +332,8 @@ uec_result UEC_CALL uec_host_animation_smoke_start(void)
         api->get_actor_transform == NULL ||
         api->get_actor_component_count_by_class == NULL ||
         api->get_actor_component_at_by_class == NULL ||
+        api->get_actor_property_object == NULL ||
+        api->bind_audio_finished == NULL || api->unbind_audio_finished == NULL ||
         api->release_scene_component == NULL || api->load_object == NULL ||
         api->release_object == NULL || api->set_skeletal_mesh == NULL ||
         api->play_skeletal_animation == NULL || api->stop_skeletal_animation == NULL ||
@@ -297,6 +347,8 @@ uec_result UEC_CALL uec_host_animation_smoke_start(void)
     baseline.struct_size = sizeof(baseline);
     result = api->get_runtime_stats(state->context, &baseline);
     if (result != UEC_RESULT_OK) return AbortAnimationSmoke(result);
+    if (baseline.active_subscriptions > UINT32_MAX - 3u)
+        return AbortAnimationSmoke(UEC_RESULT_INTERNAL_ERROR);
     state->baseline_subscriptions = baseline.active_subscriptions;
 
     result = api->get_default_world(state->context, &state->world);
@@ -308,6 +360,12 @@ uec_result UEC_CALL uec_host_animation_smoke_start(void)
         result = api->spawn_actor(state->world, AnimationSmokeView(pawnClassPath),
                                   &transform, &state->actor);
     if (result == UEC_RESULT_OK && state->actor == NULL)
+        result = UEC_RESULT_INTERNAL_ERROR;
+
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_object(
+            state->actor, AnimationSmokeView("FlowAudio"), &state->audio_component);
+    if (result == UEC_RESULT_OK && state->audio_component == NULL)
         result = UEC_RESULT_INTERNAL_ERROR;
 
     uint32_t componentCount = 0u;

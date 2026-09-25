@@ -40,7 +40,8 @@ development; they do not imply a published or runtime-verified release.
   and skeletal-animation completion subscriptions. World cleanup and
   pre-`OpenLevel` travel cancel widget interactions, and travel also removes
   world-owned streaming completion requests before invalidating handles. The
-  animation PIE smoke verifies actor-destruction cancellation; the PIE restart
+  animation PIE smoke verifies skeletal-animation completion and audio-token
+  cancellation with callback suppression on actor destruction; the PIE restart
   smoke verifies widget-token cancellation across three cleanup cycles; the
   async travel smoke verifies that the widget token is already retired when the
   travel call returns.

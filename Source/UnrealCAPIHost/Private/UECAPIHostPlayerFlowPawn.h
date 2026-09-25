@@ -5,6 +5,7 @@
 #include "UECAPIHostPlayerFlowPawn.generated.h"
 
 class UCameraComponent;
+class UAudioComponent;
 class UAnimSequence;
 class USkeletalMesh;
 class USkeletalMeshComponent;
@@ -25,6 +26,9 @@ public:
 
     UPROPERTY()
     TObjectPtr<UCameraComponent> FlowCamera;
+
+    UPROPERTY()
+    TObjectPtr<UAudioComponent> FlowAudio;
 
     UPROPERTY()
     TObjectPtr<UStaticMeshComponent> FlowMesh;
