@@ -110,6 +110,7 @@ class UnrealRuntimeTests(unittest.TestCase):
             "C cooked reflection metadata smoke completed",
             "C persistence and configuration smoke completed",
             "C reflected container smoke completed",
+            "C Blueprint invocation smoke completed",
             "C collision smoke completed",
             "C GC lifetime smoke completed",
             "C physics smoke completed",

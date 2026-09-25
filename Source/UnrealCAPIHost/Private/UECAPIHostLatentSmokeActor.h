@@ -6,7 +6,7 @@
 #include "Engine/LatentActionManager.h"
 #include "UECAPIHostLatentSmokeActor.generated.h"
 
-UCLASS(NotBlueprintable)
+UCLASS(Blueprintable)
 class AUECAPIHostLatentSmokeActor final : public AActor
 {
     GENERATED_BODY()
@@ -46,6 +46,10 @@ public:
     UFUNCTION(BlueprintCallable, Category="Unreal C API Host Smoke",
               meta=(WorldContext="WorldContextObject"))
     void WorldContextSmokeCall(UObject* WorldContextObject);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable,
+              Category="Unreal C API Host Smoke")
+    int32 BlueprintGeneratedSmokeCall(int32 Value);
 };
 
 UCLASS()
