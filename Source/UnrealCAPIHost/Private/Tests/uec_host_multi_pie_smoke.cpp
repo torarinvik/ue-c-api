@@ -34,7 +34,7 @@ extern "C" uec_result UEC_CALL uec_host_multi_pie_smoke(void)
         api->release_object == nullptr || api->get_runtime_stats == nullptr ||
         api->release_actor == nullptr || api->release_world == nullptr ||
         api->release_context == nullptr || api->set_timer == nullptr ||
-        api->clear_timer == nullptr) {
+        api->clear_timer == nullptr || api->set_controller_view_target == nullptr) {
         result = UEC_RESULT_UNSUPPORTED;
         goto cleanup;
     }
@@ -125,6 +125,13 @@ extern "C" uec_result UEC_CALL uec_host_multi_pie_smoke(void)
         UE_LOG(LogTemp, Error,
             TEXT("Multi-PIE world contexts returned the same game-instance path: %s"),
             UTF8_TO_TCHAR(gameInstancePaths[0]));
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    if (api->set_controller_view_target(controllers[0], controllers[1]) !=
+        UEC_RESULT_INVALID_ARGUMENT) {
+        UE_LOG(LogTemp, Error,
+            TEXT("A player controller accepted a view target from another PIE world"));
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
