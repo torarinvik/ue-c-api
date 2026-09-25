@@ -222,6 +222,20 @@
         outValue = static_cast<int64>(value);
         return true;
     }
+    static bool TryReadIntegerPropertyValue(const FNumericProperty* property,
+                                            const void* value, int64& outValue)
+    {
+        if (property == nullptr || value == nullptr) return false;
+        if (!IsUnsignedIntegerProperty(property))
+        {
+            outValue = property->GetSignedIntPropertyValue(value);
+            return true;
+        }
+        const uint64 unsignedValue = property->GetUnsignedIntPropertyValue(value);
+        if (unsignedValue > static_cast<uint64>(TNumericLimits<int64>::Max())) return false;
+        outValue = static_cast<int64>(unsignedValue);
+        return true;
+    }
     static bool IsIntegerValueInRange(const FNumericProperty* property, int64 value)
     {
         if (property == nullptr) return false;

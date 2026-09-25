@@ -32,7 +32,8 @@
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             const FString text = LexToString(value->integer_value);
-            underlying->SetNumericPropertyValueFromString_InContainer(object, *text);
+            void* enumValue = enumProperty->ContainerPtrToValuePtr<void>(object);
+            underlying->SetNumericPropertyValueFromString(enumValue, *text);
             return UEC_RESULT_OK;
         }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))

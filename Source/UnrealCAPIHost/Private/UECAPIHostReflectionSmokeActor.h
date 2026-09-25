@@ -4,6 +4,13 @@
 #include "GameFramework/Actor.h"
 #include "UECAPIHostReflectionSmokeActor.generated.h"
 
+UENUM()
+enum class EUECAPIHostReflectionSmokeMode : uint8
+{
+    First,
+    Second
+};
+
 UCLASS(NotBlueprintable)
 class AUECAPIHostReflectionSmokeActor final : public AActor
 {
@@ -23,4 +30,25 @@ public:
 
     UPROPERTY()
     FVector Position;
+
+    UPROPERTY()
+    bool Enabled;
+
+    UPROPERTY()
+    int32 Count;
+
+    UPROPERTY()
+    EUECAPIHostReflectionSmokeMode Mode;
+
+    UPROPERTY()
+    float Ratio;
+
+    UPROPERTY()
+    FString Label;
+
+    UPROPERTY()
+    FName Identifier;
+
+    UPROPERTY()
+    FText Description;
 };

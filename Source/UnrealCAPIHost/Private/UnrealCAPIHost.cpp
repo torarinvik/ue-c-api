@@ -16,6 +16,7 @@ extern "C" uec_result UEC_CALL uec_host_reflection_metadata_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_persistence_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_collision_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_reflection_containers_smoke(void);
+extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_blueprint_invocation_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_gc_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_physics_smoke_start(void);
@@ -364,6 +365,18 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             }
             return false;
         }
+
+        const uec_result reflectionScalarsResult =
+            uec_host_reflection_scalars_smoke();
+        if (reflectionScalarsResult != UEC_RESULT_OK) {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C reflected scalar property smoke failed with result %d"),
+                static_cast<int32>(reflectionScalarsResult));
+            EventBridgeSmokeHandle.Reset();
+            return false;
+        }
+        UE_LOG(LogUnrealCAPIHost, Log,
+            TEXT("C reflected scalar property smoke completed"));
 
         const uec_result reflectionContainersResult =
             uec_host_reflection_containers_smoke();

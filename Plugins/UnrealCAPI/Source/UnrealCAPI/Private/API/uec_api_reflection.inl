@@ -144,7 +144,9 @@
         if (FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
         {
             FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
-            if (!TryReadIntegerProperty(underlying, actor, outValue->integer_value)) {
+            const void* enumValue = enumProperty->ContainerPtrToValuePtr<void>(actor);
+            if (!TryReadIntegerPropertyValue(underlying, enumValue,
+                                             outValue->integer_value)) {
                 return UEC_RESULT_UNSUPPORTED;
             }
             return UEC_RESULT_OK;
@@ -202,7 +204,9 @@
         {
             const FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
             int64 enumValue = 0;
-            if (!TryReadIntegerProperty(underlying, actor, enumValue)) return UEC_RESULT_UNSUPPORTED;
+            const void* valuePtr = enumProperty->ContainerPtrToValuePtr<void>(actor);
+            if (!TryReadIntegerPropertyValue(underlying, valuePtr, enumValue))
+                return UEC_RESULT_UNSUPPORTED;
             value = enumProperty->GetEnum()->GetNameStringByValue(enumValue);
         }
         else
@@ -247,7 +251,8 @@
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
             const FString text = LexToString(value->integer_value);
-            underlying->SetNumericPropertyValueFromString_InContainer(actor, *text);
+            void* enumValue = enumProperty->ContainerPtrToValuePtr<void>(actor);
+            underlying->SetNumericPropertyValueFromString(enumValue, *text);
             return UEC_RESULT_OK;
         }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
@@ -344,7 +349,9 @@
         if (FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
         {
             FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
-            if (!TryReadIntegerProperty(underlying, object, outValue->integer_value)) {
+            const void* enumValue = enumProperty->ContainerPtrToValuePtr<void>(object);
+            if (!TryReadIntegerPropertyValue(underlying, enumValue,
+                                             outValue->integer_value)) {
                 return UEC_RESULT_UNSUPPORTED;
             }
             return UEC_RESULT_OK;
@@ -403,7 +410,9 @@
         {
             const FNumericProperty* underlying = enumProperty->GetUnderlyingProperty();
             int64 enumValue = 0;
-            if (!TryReadIntegerProperty(underlying, object, enumValue)) return UEC_RESULT_UNSUPPORTED;
+            const void* valuePtr = enumProperty->ContainerPtrToValuePtr<void>(object);
+            if (!TryReadIntegerPropertyValue(underlying, valuePtr, enumValue))
+                return UEC_RESULT_UNSUPPORTED;
             value = enumProperty->GetEnum()->GetNameStringByValue(enumValue);
         }
         else

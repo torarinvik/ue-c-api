@@ -21,8 +21,9 @@
                 !IsValidEnumValue(property, value.integer_value)) {
                 return UEC_RESULT_INVALID_ARGUMENT;
             }
-            enumProperty->GetUnderlyingProperty()->SetNumericPropertyValueFromString_InContainer(
-                container, *LexToString(value.integer_value));
+            void* enumValue = enumProperty->ContainerPtrToValuePtr<void>(container);
+            enumProperty->GetUnderlyingProperty()->SetNumericPropertyValueFromString(
+                enumValue, *LexToString(value.integer_value));
             return UEC_RESULT_OK;
         }
         if (FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
@@ -74,8 +75,9 @@
         if (const FEnumProperty* enumProperty = CastField<FEnumProperty>(property))
         {
             outValue->kind = UEC_PROPERTY_ENUM;
-            return TryReadIntegerProperty(enumProperty->GetUnderlyingProperty(), container,
-                                          outValue->integer_value)
+            const void* enumValue = enumProperty->ContainerPtrToValuePtr<void>(container);
+            return TryReadIntegerPropertyValue(enumProperty->GetUnderlyingProperty(),
+                                               enumValue, outValue->integer_value)
                 ? UEC_RESULT_OK : UEC_RESULT_UNSUPPORTED;
         }
         if (const FNumericProperty* numericProperty = CastField<FNumericProperty>(property))
