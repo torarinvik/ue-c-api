@@ -52,4 +52,17 @@ UCLASS()
 class UUECAPIHostSaveGame final : public USaveGame
 {
     GENERATED_BODY()
+
+public:
+    UPROPERTY(SaveGame)
+    int32 PersistedCount = 0;
+
+    UPROPERTY(SaveGame)
+    bool PersistedEnabled = false;
+
+    UPROPERTY(SaveGame)
+    float PersistedRatio = 0.0f;
+
+    UPROPERTY(SaveGame)
+    FString PersistedLabel;
 };

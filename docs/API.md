@@ -722,6 +722,8 @@ Save-game helpers create a `USaveGame` subclass by class path, save or delete a
 named slot synchronously, and load a slot only when its object is compatible
 with the requested class. Save failures are returned through the `out_saved` or
 `out_deleted` boolean; a missing load slot returns `UEC_RESULT_NOT_INITIALIZED`.
+Unreal serializes only reflected properties marked with its `SaveGame` property
+specifier; other object properties remain at their class defaults after load.
 `save_versioned_application_data` and `load_versioned_application_data` store
 opaque application bytes in a bridge-owned `USaveGame` subclass alongside a
 nonzero, caller-managed schema version. They run on the game thread and accept
