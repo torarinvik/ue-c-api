@@ -28,10 +28,18 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     static const char primitiveComponentClassText[] = "/Script/Engine.PrimitiveComponent";
     static const char sceneComponentClassText[] = "/Script/Engine.SceneComponent";
     static const char invalidComponentClassText[] = "/Script/Engine.Actor";
+    static const char baseActorClassText[] = "/Script/Engine.Actor";
+    static const char invalidActorClassText[] = "/Script/CoreUObject.Object";
     static const char replicatedPropertyText[] = "AuthoritySmokeReplicatedValue";
     static const char tagText[] = "UEC_ListenServerAuthoritySmoke";
     static const char textValue[] = "25";
     const uec_string_view actorClass = {actorClassText, sizeof(actorClassText) - 1u};
+    const uec_string_view baseActorClass = {
+        baseActorClassText, sizeof(baseActorClassText) - 1u
+    };
+    const uec_string_view invalidActorClass = {
+        invalidActorClassText, sizeof(invalidActorClassText) - 1u
+    };
     const uec_string_view componentClass = {
         componentClassText, sizeof(componentClassText) - 1u
     };
@@ -67,6 +75,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_bool activeBefore = UEC_FALSE;
     uec_bool activeAfter = UEC_FALSE;
     uec_bool isComponentType = UEC_FALSE;
+    uec_bool isActorType = UEC_FALSE;
     uec_transform spawnTransform = {0};
     uec_transform transformBefore = {0};
     uec_transform attemptedTransform = {0};
@@ -80,6 +89,8 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uint32_t tagCountAfter = 0u;
     char tagOutput[128] = {0};
     size_t tagRequiredSize = 0u;
+    char actorClassName[192] = {0};
+    size_t actorClassRequiredSize = 0u;
     uec_property_value valueBefore = {0};
     uec_property_value attemptedValue = {0};
     uec_property_value valueAfter = {0};
@@ -94,6 +105,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         api->get_world_net_mode == NULL || api->get_world_has_authority == NULL ||
         api->release_world == NULL || api->spawn_actor == NULL ||
         api->destroy_actor == NULL || api->release_actor == NULL ||
+        api->get_actor_class_name == NULL || api->actor_is_a == NULL ||
         api->get_actor_root_component == NULL || api->release_scene_component == NULL ||
         api->get_actor_component_count_by_class == NULL ||
         api->get_actor_component_at_by_class == NULL ||
@@ -153,6 +165,34 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     result = api->spawn_actor(listenServer, actorClass, &spawnTransform, &actor);
     if (result != UEC_RESULT_OK || actor == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_class_name(actor, actorClassName, sizeof(actorClassName),
+                                       &actorClassRequiredSize);
+    if (result != UEC_RESULT_OK || actorClassRequiredSize != sizeof(actorClassText)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    for (size_t index = 0u; index < sizeof(actorClassText); ++index) {
+        if (actorClassName[index] != actorClassText[index]) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+    }
+    result = api->actor_is_a(actor, actorClass, &isActorType);
+    if (result != UEC_RESULT_OK || isActorType != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->actor_is_a(actor, baseActorClass, &isActorType);
+    if (result != UEC_RESULT_OK || isActorType != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    isActorType = UEC_TRUE;
+    if (api->actor_is_a(actor, invalidActorClass, &isActorType) !=
+            UEC_RESULT_INVALID_ARGUMENT || isActorType != UEC_FALSE) {
+        result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
 
