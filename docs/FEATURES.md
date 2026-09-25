@@ -10,6 +10,7 @@ checks explicitly recorded for each feature in the Unreal build matrix.
 | C and C++ public-header compatibility | Verified | C11 and C++17 syntax checks pass |
 | Diagnostics and logging | Runtime implemented | Bounded `get_last_error`; game log output; strict UTF-8 input validation |
 | Runtime drain diagnostics | Runtime implemented | Game-thread counts for subscriptions, pending requests, and in-flight callbacks before consumer unload |
+| Bridge module hot reload | Unsupported; restart required | Restart the Unreal Editor or host process to apply bridge changes or rebuild reflection-derived caches; consumer library unload follows the separate drain helper contract |
 | Context/world/actor handles | Runtime implemented / Unreal integration pending | Typed active registries and weak UObject references |
 | Multiple PIE world contexts | UE 5.8.3 two-client Editor PIE smoke verified | Indexed lookup returns distinct PIE instance ids and working player-controller handles for separate worlds |
 | PIE restart handle cleanup | UE 5.8.3 Editor PIE smoke verified | Two-session restart rejects old world and actor handles, stops old-world tick callbacks at cleanup, and confirms fresh handles and runtime counts recover |

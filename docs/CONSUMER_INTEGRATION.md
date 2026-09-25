@@ -30,6 +30,21 @@ The returned table is owned by the plugin and remains valid until the module
 is unloaded. The context is a bridge handle and must be released through
 `api->release_context`. Consumers call through the table rather than linking
 against private C++ symbols or Unreal headers.
+
+## Reload policy
+
+UnrealCAPI does not support reloading its runtime module or consumer code with
+Live Coding or another editor hot-reload path. Restart the Unreal Editor or
+host process to apply bridge changes and recreate reflection-derived metadata
+caches. Existing API tables, contexts, and handles must not be reused across a
+module reload. This restart requirement remains until repeated engine reload
+and consumer-lifecycle stress checks establish a safe in-process contract.
+
+A consumer library may manage its own unload separately: stop submissions,
+cancel and unsubscribe its work, poll `uec_consumer_drain_poll` until drained,
+then release its handles and context before unloading its callback code. That
+procedure does not make unloading or reloading the UnrealCAPI runtime module
+safe.
 The runtime module is built with C++ exceptions disabled, so no C++ exception
 may cross the C ABI. Unreal assertions and fatal errors remain process-level
 failures.
