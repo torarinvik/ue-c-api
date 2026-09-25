@@ -5,6 +5,8 @@
 #include "UECAPIHostPlayerFlowPawn.generated.h"
 
 class UCameraComponent;
+class USkeletalMesh;
+class USkeletalMeshComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
 
@@ -27,4 +29,10 @@ public:
 
     UPROPERTY()
     TObjectPtr<UStaticMesh> CookedTestMesh;
+
+    UPROPERTY()
+    TObjectPtr<USkeletalMeshComponent> FlowSkeletalMesh;
+
+    UPROPERTY()
+    TObjectPtr<USkeletalMesh> CookedTestSkeletalMesh;
 };

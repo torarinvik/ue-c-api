@@ -2,6 +2,8 @@
 
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -18,4 +20,11 @@ AUECAPIHostPlayerFlowPawn::AUECAPIHostPlayerFlowPawn()
     static ConstructorHelpers::FObjectFinder<UStaticMesh> meshAsset(
         TEXT("/Engine/BasicShapes/Cube.Cube"));
     if (meshAsset.Succeeded()) CookedTestMesh = meshAsset.Object;
+    FlowSkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(
+        TEXT("FlowSkeletalMesh"));
+    FlowSkeletalMesh->SetupAttachment(root);
+    FlowSkeletalMesh->SetMobility(EComponentMobility::Movable);
+    static ConstructorHelpers::FObjectFinder<USkeletalMesh> skeletalMeshAsset(
+        TEXT("/Engine/EngineMeshes/SkeletalCube.SkeletalCube"));
+    if (skeletalMeshAsset.Succeeded()) CookedTestSkeletalMesh = skeletalMeshAsset.Object;
 }

@@ -32,15 +32,21 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         "/Script/UnrealCAPIHost.UECAPIHostPlayerFlowPawn";
     static const char cameraClassPath[] = "/Script/Engine.CameraComponent";
     static const char meshComponentClassPath[] = "/Script/Engine.StaticMeshComponent";
+    static const char skeletalMeshComponentClassPath[] = "/Script/Engine.SkeletalMeshComponent";
     static const char meshAssetPath[] = "/Engine/BasicShapes/Cube.Cube";
+    static const char skeletalMeshAssetPath[] = "/Engine/EngineMeshes/SkeletalCube.SkeletalCube";
     static const char wrongMeshPath[] = "/Script/Engine.Actor";
     static const char markerProperty[] = "CApiMarker";
     const uec_string_view cameraClass = {
         cameraClassPath, sizeof(cameraClassPath) - 1u};
     const uec_string_view meshComponentClass = {
         meshComponentClassPath, sizeof(meshComponentClassPath) - 1u};
+    const uec_string_view skeletalMeshComponentClass = {
+        skeletalMeshComponentClassPath, sizeof(skeletalMeshComponentClassPath) - 1u};
     const uec_string_view meshAssetName = {
         meshAssetPath, sizeof(meshAssetPath) - 1u};
+    const uec_string_view skeletalMeshAssetName = {
+        skeletalMeshAssetPath, sizeof(skeletalMeshAssetPath) - 1u};
     const uec_string_view wrongMeshName = {
         wrongMeshPath, sizeof(wrongMeshPath) - 1u};
     const uec_string_view markerName = {
@@ -55,7 +61,9 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     uec_actor* playerStart = NULL;
     uec_scene_component* camera = NULL;
     uec_scene_component* meshComponent = NULL;
+    uec_scene_component* skeletalMeshComponent = NULL;
     uec_object* meshAsset = NULL;
+    uec_object* skeletalMeshAsset = NULL;
     uec_object* wrongMeshObject = NULL;
     uec_runtime_stats baseline = {0};
     uec_bool controllerChanged = UEC_FALSE;
@@ -72,6 +80,7 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         api->get_camera_field_of_view == NULL || api->set_camera_field_of_view == NULL ||
         api->get_actor_property_value == NULL || api->load_object == NULL ||
         api->release_object == NULL || api->set_static_mesh == NULL ||
+        api->set_skeletal_mesh == NULL ||
         api->release_context == NULL) {
         result = UEC_RESULT_UNSUPPORTED;
         goto cleanup;
@@ -155,6 +164,31 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
             meshComponent, wrongMeshObject) != UEC_RESULT_INVALID_ARGUMENT)
         result = UEC_RESULT_INTERNAL_ERROR;
 
+    uint32_t skeletalMeshComponentCount = 0u;
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_component_count_by_class(
+            pawn, skeletalMeshComponentClass, &skeletalMeshComponentCount);
+    if (result == UEC_RESULT_OK && skeletalMeshComponentCount == 0u)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_component_at_by_class(
+            pawn, skeletalMeshComponentClass, 0u, &skeletalMeshComponent);
+    if (result == UEC_RESULT_OK && skeletalMeshComponent == NULL)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->load_object(context, skeletalMeshAssetName, &skeletalMeshAsset);
+    if (result == UEC_RESULT_OK && skeletalMeshAsset == NULL)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK && api->set_skeletal_mesh(
+            meshComponent, skeletalMeshAsset, UEC_FALSE) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->set_skeletal_mesh(
+            skeletalMeshComponent, skeletalMeshAsset, UEC_FALSE);
+    if (result == UEC_RESULT_OK && api->set_skeletal_mesh(
+            skeletalMeshComponent, wrongMeshObject, UEC_FALSE) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+
     if (result == UEC_RESULT_OK)
         result = api->set_controller_view_target(controller, pawn);
     if (result == UEC_RESULT_OK) controllerChanged = UEC_TRUE;
@@ -185,6 +219,14 @@ cleanup:
     }
     if (meshComponent != NULL && api != NULL) {
         const uec_result releaseResult = api->release_scene_component(meshComponent);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) result = releaseResult;
+    }
+    if (skeletalMeshComponent != NULL && api != NULL) {
+        const uec_result releaseResult = api->release_scene_component(skeletalMeshComponent);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) result = releaseResult;
+    }
+    if (skeletalMeshAsset != NULL && api != NULL) {
+        const uec_result releaseResult = api->release_object(skeletalMeshAsset);
         if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) result = releaseResult;
     }
     if (wrongMeshObject != NULL && api != NULL) {
