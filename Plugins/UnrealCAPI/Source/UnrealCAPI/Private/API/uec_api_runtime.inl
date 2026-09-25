@@ -360,6 +360,20 @@
         return owner != nullptr ? RequireActorAuthority(owner)
                                 : RequireWorldAuthority(component->GetWorld());
     }
+    static bool IsWritablePropertyForObject(const UObject* owner,
+                                            const FProperty* property)
+    {
+        if (!IsWritableProperty(property)) return false;
+        if (!property->HasAnyPropertyFlags(CPF_Net) || owner == nullptr) return true;
+        const AActor* actor = Cast<AActor>(owner);
+        if (actor == nullptr) {
+            const UActorComponent* component = Cast<UActorComponent>(owner);
+            if (component != nullptr) actor = component->GetOwner();
+        }
+        if (actor != nullptr) return RequireActorAuthority(actor) == UEC_RESULT_OK;
+        const UWorld* world = owner->GetWorld();
+        return world == nullptr || RequireWorldAuthority(world) == UEC_RESULT_OK;
+    }
     static bool IsFiniteTransform(const uec_transform& value)
     {
         const double rotationLengthSquared = value.rotation.x * value.rotation.x +

@@ -464,7 +464,9 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FClassProperty* property = FindClassProperty(actor, propertyName);
-        if (property == nullptr || !IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        if (property == nullptr || !IsWritablePropertyForObject(actor, property)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
         UClass* value = nullptr;
         if (rawClass != nullptr)
         {
@@ -513,7 +515,9 @@
         if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
         if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FClassProperty* property = FindClassProperty(object, propertyName);
-        if (property == nullptr || !IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        if (property == nullptr || !IsWritablePropertyForObject(object, property)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
         UClass* value = nullptr;
         if (rawClass != nullptr)
         {

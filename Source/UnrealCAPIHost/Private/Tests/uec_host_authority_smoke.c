@@ -47,6 +47,20 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     uec_bool activeBefore = UEC_FALSE;
     uec_bool activeAfter = UEC_FALSE;
     uec_bool hasTag = UEC_FALSE;
+    uec_property_value replicatedValueBefore = {0};
+    uec_property_value attemptedReplicatedValue = {0};
+    uec_property_value replicatedValueAfter = {0};
+    uec_property_value localValueBefore = {0};
+    uec_property_value attemptedLocalValue = {0};
+    uec_property_value localValueAfter = {0};
+    static const char replicatedPropertyText[] = "AuthoritySmokeReplicatedValue";
+    const uec_string_view replicatedProperty = {
+        replicatedPropertyText, sizeof(replicatedPropertyText) - 1u
+    };
+    static const char localPropertyText[] = "AuthoritySmokeLocalValue";
+    const uec_string_view localProperty = {
+        localPropertyText, sizeof(localPropertyText) - 1u
+    };
     static const char authorityTagText[] = "UEC_ClientAuthoritySmoke";
     const uec_string_view authorityTag = {
         authorityTagText, sizeof(authorityTagText) - 1u
@@ -60,6 +74,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->get_world_net_mode == NULL || api->get_world_has_authority == NULL ||
         api->release_world == NULL || api->get_actor_count_by_class == NULL ||
         api->get_actor_at_by_class == NULL || api->release_actor == NULL ||
+        api->get_actor_property_value == NULL || api->set_actor_property_value == NULL ||
         api->get_actor_root_component == NULL || api->release_scene_component == NULL ||
         api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
         api->get_component_transform == NULL || api->set_component_transform == NULL ||
@@ -121,6 +136,54 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     }
     result = api->get_actor_at_by_class(clientWorld, classPath, 0u, &actor);
     if (result != UEC_RESULT_OK || actor == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    replicatedValueBefore.struct_size = sizeof(replicatedValueBefore);
+    result = api->get_actor_property_value(
+        actor, replicatedProperty, &replicatedValueBefore);
+    if (result != UEC_RESULT_OK ||
+        replicatedValueBefore.kind != UEC_PROPERTY_INTEGER) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    attemptedReplicatedValue = replicatedValueBefore;
+    attemptedReplicatedValue.integer_value =
+        replicatedValueBefore.integer_value == INT32_MAX
+            ? replicatedValueBefore.integer_value - 1
+            : replicatedValueBefore.integer_value + 1;
+    if (api->set_actor_property_value(
+            actor, replicatedProperty, &attemptedReplicatedValue) !=
+        UEC_RESULT_UNSUPPORTED) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    replicatedValueAfter.struct_size = sizeof(replicatedValueAfter);
+    result = api->get_actor_property_value(
+        actor, replicatedProperty, &replicatedValueAfter);
+    if (result != UEC_RESULT_OK ||
+        replicatedValueAfter.kind != UEC_PROPERTY_INTEGER ||
+        replicatedValueAfter.integer_value != replicatedValueBefore.integer_value) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    localValueBefore.struct_size = sizeof(localValueBefore);
+    result = api->get_actor_property_value(actor, localProperty, &localValueBefore);
+    if (result != UEC_RESULT_OK || localValueBefore.kind != UEC_PROPERTY_INTEGER) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    attemptedLocalValue = localValueBefore;
+    attemptedLocalValue.integer_value = localValueBefore.integer_value + 1;
+    if (api->set_actor_property_value(actor, localProperty, &attemptedLocalValue) !=
+        UEC_RESULT_OK) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    localValueAfter.struct_size = sizeof(localValueAfter);
+    result = api->get_actor_property_value(actor, localProperty, &localValueAfter);
+    if (result != UEC_RESULT_OK || localValueAfter.kind != UEC_PROPERTY_INTEGER ||
+        localValueAfter.integer_value != attemptedLocalValue.integer_value) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }

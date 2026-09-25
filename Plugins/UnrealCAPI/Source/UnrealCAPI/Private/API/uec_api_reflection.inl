@@ -227,7 +227,7 @@
         if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (!IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(actor, property)) return UEC_RESULT_UNSUPPORTED;
         if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
         {
             if (value->kind != UEC_PROPERTY_BOOL || !IsValidBool(value->bool_value)) {
@@ -293,7 +293,7 @@
         }
         FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (!IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(actor, property)) return UEC_RESULT_UNSUPPORTED;
         const FString text = ToFString(value);
         if (const FStrProperty* stringProperty = CastField<FStrProperty>(property))
         {
@@ -452,7 +452,7 @@
         if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
         if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = actor->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
-        if (!IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(actor, property)) return UEC_RESULT_UNSUPPORTED;
         FObjectPropertyBase* objectProperty = CastField<FObjectPropertyBase>(property);
         if (objectProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
         UObject* value = nullptr;
@@ -504,7 +504,7 @@
         if (owner == nullptr) return UEC_RESULT_INVALID_HANDLE;
         if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
-        if (!IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(owner, property)) return UEC_RESULT_UNSUPPORTED;
         FObjectPropertyBase* objectProperty = CastField<FObjectPropertyBase>(property);
         if (objectProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
         UObject* value = nullptr;

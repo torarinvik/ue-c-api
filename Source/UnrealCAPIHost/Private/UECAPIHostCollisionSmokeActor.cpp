@@ -1,9 +1,11 @@
 #include "UECAPIHostCollisionSmokeActor.h"
 
 #include "Components/BoxComponent.h"
+#include "Net/UnrealNetwork.h"
 
 AUECAPIHostCollisionSmokeActor::AUECAPIHostCollisionSmokeActor()
 {
+    bReplicates = true;
     UBoxComponent* collisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
     SetRootComponent(collisionBox);
     collisionBox->SetMobility(EComponentMobility::Movable);
@@ -12,4 +14,11 @@ AUECAPIHostCollisionSmokeActor::AUECAPIHostCollisionSmokeActor()
     collisionBox->SetCollisionObjectType(ECC_WorldDynamic);
     collisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
     collisionBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+}
+
+void AUECAPIHostCollisionSmokeActor::GetLifetimeReplicatedProps(
+    TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(AUECAPIHostCollisionSmokeActor, AuthoritySmokeReplicatedValue);
 }

@@ -12,7 +12,7 @@
         if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
         FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (!IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(object, property)) return UEC_RESULT_UNSUPPORTED;
         if (FBoolProperty* boolProperty = CastField<FBoolProperty>(property))
         {
             if (value->kind != UEC_PROPERTY_BOOL || !IsValidBool(value->bool_value)) {
@@ -78,7 +78,7 @@
         }
         FProperty* property = object->GetClass()->FindPropertyByName(FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        if (!IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(object, property)) return UEC_RESULT_UNSUPPORTED;
         const FString text = ToFString(value);
         if (const FStrProperty* stringProperty = CastField<FStrProperty>(property))
         {

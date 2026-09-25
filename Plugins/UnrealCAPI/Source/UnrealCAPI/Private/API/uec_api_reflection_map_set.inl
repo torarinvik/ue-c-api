@@ -273,7 +273,7 @@
         FMapProperty* mapProperty = CastField<FMapProperty>(
             owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
         if (mapProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
-        if (!IsWritableProperty(mapProperty) || mapProperty->ValueProp == nullptr) {
+        if (!IsWritablePropertyForObject(owner, mapProperty) || mapProperty->ValueProp == nullptr) {
             return UEC_RESULT_UNSUPPORTED;
         }
         FScriptMapHelper helper(mapProperty, mapProperty->ContainerPtrToValuePtr<void>(owner));
@@ -501,7 +501,7 @@
         FMapProperty* mapProperty = CastField<FMapProperty>(
             owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
         if (mapProperty == nullptr || mapProperty->ValueProp == nullptr) return UEC_RESULT_UNSUPPORTED;
-        if (!IsWritableProperty(mapProperty)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(owner, mapProperty)) return UEC_RESULT_UNSUPPORTED;
         FScriptMapHelper helper(mapProperty, mapProperty->ContainerPtrToValuePtr<void>(owner));
         int32 slot = INDEX_NONE;
         if (!FindMapSlot(helper, index, slot)) return UEC_RESULT_INVALID_ARGUMENT;
@@ -567,7 +567,7 @@
         if (setProperty == nullptr || setProperty->ElementProp == nullptr) {
             return UEC_RESULT_UNSUPPORTED;
         }
-        if (!IsWritableProperty(setProperty)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(owner, setProperty)) return UEC_RESULT_UNSUPPORTED;
         FScriptSetHelper helper(setProperty, setProperty->ContainerPtrToValuePtr<void>(owner));
         int32 slot = INDEX_NONE;
         if (!FindSetSlot(helper, index, slot)) return UEC_RESULT_INVALID_ARGUMENT;
@@ -597,7 +597,7 @@
         if (setProperty == nullptr || setProperty->ElementProp == nullptr) {
             return UEC_RESULT_UNSUPPORTED;
         }
-        if (!IsWritableProperty(setProperty)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(owner, setProperty)) return UEC_RESULT_UNSUPPORTED;
         FScriptSetHelper helper(setProperty, setProperty->ContainerPtrToValuePtr<void>(owner));
         int32 slot = INDEX_NONE;
         if (!FindSetSlot(helper, index, slot)) return UEC_RESULT_INVALID_ARGUMENT;

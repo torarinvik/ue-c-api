@@ -204,7 +204,7 @@
         if (!CastField<FSoftObjectProperty>(property) && !CastField<FSoftClassProperty>(property)) {
             return UEC_RESULT_UNSUPPORTED;
         }
-        if (!IsWritableProperty(property)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(owner, property)) return UEC_RESULT_UNSUPPORTED;
         const FString text = ToFString(path);
         if (property->ImportText_InContainer(*text, owner, owner, PPF_None, GWarn) == nullptr) {
             return UEC_RESULT_INVALID_ARGUMENT;
@@ -380,7 +380,9 @@
         if (structProperty == nullptr || structProperty->Struct == nullptr) {
             return UEC_RESULT_UNSUPPORTED;
         }
-        if (!IsWritableProperty(structProperty)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(owner, structProperty)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
         void* fieldContainer = nullptr;
         FProperty* field = ResolveStructFieldPath(structProperty, owner, ToFString(fieldName), fieldContainer);
         if (field == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
@@ -429,7 +431,7 @@
         FArrayProperty* arrayProperty = CastField<FArrayProperty>(
             owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
         if (arrayProperty == nullptr) return UEC_RESULT_UNSUPPORTED;
-        if (!IsWritableProperty(arrayProperty) || arrayProperty->Inner == nullptr) {
+        if (!IsWritablePropertyForObject(owner, arrayProperty) || arrayProperty->Inner == nullptr) {
             return UEC_RESULT_UNSUPPORTED;
         }
         FScriptArrayHelper helper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(owner));
@@ -587,7 +589,7 @@
         FArrayProperty* arrayProperty = CastField<FArrayProperty>(
             owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
         if (arrayProperty == nullptr || arrayProperty->Inner == nullptr) return UEC_RESULT_UNSUPPORTED;
-        if (!IsWritableProperty(arrayProperty)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(owner, arrayProperty)) return UEC_RESULT_UNSUPPORTED;
         FScriptArrayHelper helper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(owner));
         if (helper.Num() < 0 || static_cast<uint64>(helper.Num()) > UINT32_MAX) {
             return UEC_RESULT_INTERNAL_ERROR;
@@ -632,7 +634,9 @@
         FStructProperty* structProperty = CastField<FStructProperty>(
             owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
         if (structProperty == nullptr || structProperty->Struct == nullptr) return UEC_RESULT_UNSUPPORTED;
-        if (!IsWritableProperty(structProperty)) return UEC_RESULT_UNSUPPORTED;
+        if (!IsWritablePropertyForObject(owner, structProperty)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
         void* fieldContainer = nullptr;
         FProperty* field = ResolveStructFieldPath(structProperty, owner, ToFString(fieldName), fieldContainer);
         if (field == nullptr || fieldContainer == nullptr) return UEC_RESULT_INVALID_ARGUMENT;

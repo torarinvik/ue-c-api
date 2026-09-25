@@ -11,4 +11,14 @@ class AUECAPIHostCollisionSmokeActor final : public AActor
 
 public:
     AUECAPIHostCollisionSmokeActor();
+
+    UPROPERTY(Replicated)
+    int32 AuthoritySmokeReplicatedValue = 23;
+
+    UPROPERTY()
+    int32 AuthoritySmokeLocalValue = 17;
+
+protected:
+    virtual void GetLifetimeReplicatedProps(
+        TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
