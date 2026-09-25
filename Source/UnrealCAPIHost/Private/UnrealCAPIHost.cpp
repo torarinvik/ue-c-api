@@ -48,6 +48,7 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
 extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void);
 extern "C" void UEC_CALL uec_host_pie_restart_smoke_cancel(void);
 extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_arm(void);
+extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_prepare(void);
 extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void);
 extern "C" uec_result UEC_CALL uec_host_multi_pie_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_listen_server_authority_smoke(void);
@@ -233,6 +234,15 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-shutdown-pending")))
         {
             EventBridgeSmokeHandle.Reset();
+            const uec_result prepareResult = uec_host_shutdown_pending_smoke_prepare();
+            if (prepareResult != UEC_RESULT_OK)
+            {
+                UE_LOG(LogUnrealCAPIHost, Error,
+                    TEXT("C shutdown pending-work smoke failed with result %d"),
+                    static_cast<int32>(prepareResult));
+                FPlatformMisc::RequestExit(false);
+                return false;
+            }
             ShutdownPendingPreExitHandle = FCoreDelegates::OnEnginePreExit.AddRaw(
                 this, &FUnrealCAPIHostModule::VerifyPendingWorkBeforeModuleShutdown);
             UE_LOG(LogUnrealCAPIHost, Log,

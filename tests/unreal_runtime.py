@@ -233,7 +233,10 @@ def main(argv: list[str]) -> int:
         print("Packaged host remained running through its Shipping startup check.")
         return 0
     if shutdown_pending_only:
-        print("Packaged host drained pending work without running borrowed callbacks during shutdown.")
+        print(
+            "Packaged host drained pending work and its native event delegate without running "
+            "queue, save, asset-load, or event-bridge callbacks during shutdown."
+        )
         return 0
     print(
         "Packaged Development host completed the C bootstrap, reflection metadata, "
