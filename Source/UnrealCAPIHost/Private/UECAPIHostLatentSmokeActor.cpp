@@ -98,3 +98,8 @@ void AUECAPIHostLatentSmokeActor::WorldContextSmokeCall(UObject* WorldContextObj
 {
     (void)WorldContextObject;
 }
+
+int32 AUECAPIHostLatentSmokeActor::BlueprintGeneratedSmokeCall_Implementation(int32 Value)
+{
+    return Value + 1;
+}

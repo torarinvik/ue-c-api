@@ -47,9 +47,10 @@ public:
               meta=(WorldContext="WorldContextObject"))
     void WorldContextSmokeCall(UObject* WorldContextObject);
 
-    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable,
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable,
               Category="Unreal C API Host Smoke")
     int32 BlueprintGeneratedSmokeCall(int32 Value);
+    virtual int32 BlueprintGeneratedSmokeCall_Implementation(int32 Value);
 };
 
 UCLASS()

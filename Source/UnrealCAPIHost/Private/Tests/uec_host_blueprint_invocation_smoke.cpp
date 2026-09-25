@@ -54,7 +54,7 @@ extern "C" uec_result UEC_CALL uec_host_blueprint_invocation_smoke(void)
     }
     if (result == UEC_RESULT_OK &&
         (returnValue.struct_size < sizeof(returnValue) ||
-         returnValue.kind != UEC_PROPERTY_INTEGER || returnValue.integer_value != 0))
+         returnValue.kind != UEC_PROPERTY_INTEGER || returnValue.integer_value != 868))
     {
         result = UEC_RESULT_INTERNAL_ERROR;
     }
