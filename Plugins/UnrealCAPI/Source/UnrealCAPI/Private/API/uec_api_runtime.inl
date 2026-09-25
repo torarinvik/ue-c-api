@@ -8,6 +8,7 @@
     static void RemoveAllActorDestroyedHandlers(); static void ClearAllActorDestroyedSubscriptions();
     static void HandleWorldCleanup(UWorld* world, bool sessionEnded, bool cleanupResources);
     static void HandlePostLoadMap(UWorld* world); static void CancelAllTravelRequests(); static void CancelAllStreamingRequests(); static void CancelStreamingRequestsFor(UWorld* world);
+    static int32 GetStreamingRequestCountForShutdown();
     static bool AllocateMonotonicId(uint64& nextId, uint64& outId)
     {
         if (nextId == 0) return false;
@@ -508,11 +509,46 @@
     {
         FScopeLock lock(&GHandleMutex);
         UE_LOG(LogTemp, Verbose,
-            TEXT("%s shutdown resources: handles context=%d world=%d actor=%d component=%d class=%d object=%d; timers=%d tick=%d audio=%d widget=%d animation=%d collision=%d input=%d loads=%d game_thread=%d travel=%d saves=%d"),
+            TEXT("%s shutdown resources: handles context=%d world=%d actor=%d component=%d class=%d object=%d; timers=%d tick=%d audio=%d widget=%d animation=%d collision=%d events=%d actor_destroyed=%d actor_worlds=%d input=%d latent=%d loads=%d game_thread=%d travel=%d streaming=%d saves=%d callbacks=%d"),
             UTF8_TO_TCHAR(kModuleName), GContexts.Num(), GWorlds.Num(), GActors.Num(),
             GComponents.Num(), GClasses.Num(), GObjects.Num(), GTimers.Num(),
             GTickSubscriptions.Num(), GAudioSubscriptions.Num(), GWidgetSubscriptions.Num(),
-            GAnimationSubscriptions.Num(), GCollisionSubscriptions.Num(), GInputBindings.Num(),
-            GObjectLoadRequests.Num(), GGameThreadRequests.Num(), GTravelRequests.Num(),
-            GSaveGameRequests.Num());
+            GAnimationSubscriptions.Num(), GCollisionSubscriptions.Num(),
+            GEventBridgeSubscriptions.Num(), GActorDestroyedSubscriptions.Num(),
+            GActorDestroyedHandlers.Num(), GInputBindings.Num(),
+            GLatentFunctionRequests.Num(), GObjectLoadRequests.Num(),
+            GGameThreadRequests.Num(), GTravelRequests.Num(),
+            GetStreamingRequestCountForShutdown(),
+            GSaveGameRequests.Num(), GActiveCallbacks);
+    }
+    static bool VerifyShutdownRegistriesCleared()
+    {
+        FScopeLock lock(&GHandleMutex);
+        const bool clean = GShuttingDown && GContexts.IsEmpty() && GWorlds.IsEmpty() &&
+            GActors.IsEmpty() && GComponents.IsEmpty() && GClasses.IsEmpty() &&
+            GObjects.IsEmpty() && GTimers.IsEmpty() && GTickSubscriptions.IsEmpty() &&
+            GAudioSubscriptions.IsEmpty() && GWidgetSubscriptions.IsEmpty() &&
+            GAnimationSubscriptions.IsEmpty() && GCollisionSubscriptions.IsEmpty() &&
+            GEventBridgeSubscriptions.IsEmpty() && GActorDestroyedHandlers.IsEmpty() &&
+            GActorDestroyedSubscriptions.IsEmpty() && GInputBindings.IsEmpty() &&
+            GLatentFunctionRequests.IsEmpty() && GObjectLoadRequests.IsEmpty() &&
+            GGameThreadRequests.IsEmpty() && GGameThreadRequestOrder.IsEmpty() &&
+            GTravelRequests.IsEmpty() && GetStreamingRequestCountForShutdown() == 0 &&
+            GSaveGameRequests.IsEmpty() && GActiveCallbacks == 0;
+        if (!clean)
+        {
+            UE_LOG(LogTemp, Error,
+                TEXT("UEC runtime shutdown drain failed: contexts=%d worlds=%d actors=%d components=%d classes=%d objects=%d timers=%d tick=%d audio=%d widget=%d animation=%d collision=%d events=%d actor_destroyed=%d actor_worlds=%d input=%d latent=%d loads=%d game_thread=%d travel=%d streaming=%d saves=%d callbacks=%d shutting_down=%d"),
+                GContexts.Num(), GWorlds.Num(), GActors.Num(), GComponents.Num(),
+                GClasses.Num(), GObjects.Num(), GTimers.Num(), GTickSubscriptions.Num(),
+                GAudioSubscriptions.Num(), GWidgetSubscriptions.Num(),
+                GAnimationSubscriptions.Num(), GCollisionSubscriptions.Num(),
+                GEventBridgeSubscriptions.Num(), GActorDestroyedSubscriptions.Num(),
+                GActorDestroyedHandlers.Num(), GInputBindings.Num(),
+                GLatentFunctionRequests.Num(), GObjectLoadRequests.Num(),
+                GGameThreadRequests.Num(), GTravelRequests.Num(),
+                GetStreamingRequestCountForShutdown(),
+                GSaveGameRequests.Num(), GActiveCallbacks, GShuttingDown);
+        }
+        return clean;
     }

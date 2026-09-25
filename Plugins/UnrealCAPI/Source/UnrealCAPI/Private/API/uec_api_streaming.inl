@@ -244,6 +244,11 @@
     TMap<uint64, TSharedPtr<FUECStreamingRequest>> GStreamingRequests;
     uint64 GNextStreamingRequestId = 1;
 
+    static int32 GetStreamingRequestCountForShutdown()
+    {
+        return GStreamingRequests.Num();
+    }
+
     static ULevelStreaming* FindStreamingLevel(UWorld* world, const FName& package)
     {
         if (world == nullptr) return nullptr;

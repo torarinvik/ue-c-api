@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from unreal_runtime import (
     SHUTDOWN_PENDING_SUCCESS_MARKER,
+    SHUTDOWN_REGISTRIES_SUCCESS_MARKER,
     find_host_executable,
     run_smoke,
 )
@@ -128,7 +129,10 @@ class UnrealRuntimeTests(unittest.TestCase):
     @patch("unreal_runtime.subprocess.Popen")
     def test_shutdown_smoke_requires_marker_and_clean_exit(self, popen):
         process = popen.return_value
-        process.stdout = io.StringIO(SHUTDOWN_PENDING_SUCCESS_MARKER + "\n")
+        process.stdout = io.StringIO(
+            SHUTDOWN_PENDING_SUCCESS_MARKER + "\n" +
+            SHUTDOWN_REGISTRIES_SUCCESS_MARKER + "\n"
+        )
         process.poll.return_value = None
         process.returncode = 0
         process.wait.return_value = 0
@@ -146,9 +150,34 @@ class UnrealRuntimeTests(unittest.TestCase):
         process.wait.assert_called_once_with(timeout=15)
 
     @patch("unreal_runtime.subprocess.Popen")
-    def test_shutdown_smoke_rejects_process_crash_after_marker(self, popen):
+    def test_shutdown_smoke_requires_post_cleanup_marker(self, popen):
         process = popen.return_value
         process.stdout = io.StringIO(SHUTDOWN_PENDING_SUCCESS_MARKER + "\n")
+        process.poll.return_value = 0
+        process.returncode = 0
+        with self.assertRaisesRegex(RuntimeError, "before smoke completion"):
+            run_smoke(
+                self.make_host([]),
+                timeout_seconds=1.0,
+                shutdown_pending_only=True,
+                graceful_exit=True,
+            )
+
+    def test_shutdown_smoke_reports_registry_leaks(self):
+        executable = self.make_host([
+            SHUTDOWN_PENDING_SUCCESS_MARKER,
+            "UEC runtime shutdown drain failed: requests=1",
+        ])
+        with self.assertRaisesRegex(RuntimeError, "runtime shutdown drain failed"):
+            run_smoke(executable, timeout_seconds=10.0, shutdown_pending_only=True)
+
+    @patch("unreal_runtime.subprocess.Popen")
+    def test_shutdown_smoke_rejects_process_crash_after_marker(self, popen):
+        process = popen.return_value
+        process.stdout = io.StringIO(
+            SHUTDOWN_PENDING_SUCCESS_MARKER + "\n" +
+            SHUTDOWN_REGISTRIES_SUCCESS_MARKER + "\n"
+        )
         process.poll.return_value = None
         process.returncode = 5
         process.wait.return_value = 5

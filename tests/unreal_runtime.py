@@ -32,6 +32,7 @@ SUCCESS_MARKERS = (
     "C travel smoke completed",
 )
 SHUTDOWN_PENDING_SUCCESS_MARKER = "C shutdown pending-work smoke completed"
+SHUTDOWN_REGISTRIES_SUCCESS_MARKER = "UEC runtime shutdown registries cleared"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C cooked reflection metadata smoke failed",
@@ -51,6 +52,7 @@ FAILURE_MARKERS = (
     "C gameplay example smoke failed",
     "C travel smoke failed",
     "C shutdown pending-work smoke failed",
+    "UEC runtime shutdown drain failed",
 )
 
 
@@ -104,7 +106,7 @@ def run_smoke(
     if shutdown_pending_only:
         command.append("-uec-tests-shutdown-pending")
     success_markers = (
-        (SHUTDOWN_PENDING_SUCCESS_MARKER,)
+        (SHUTDOWN_PENDING_SUCCESS_MARKER, SHUTDOWN_REGISTRIES_SUCCESS_MARKER)
         if shutdown_pending_only else SUCCESS_MARKERS
     )
     try:

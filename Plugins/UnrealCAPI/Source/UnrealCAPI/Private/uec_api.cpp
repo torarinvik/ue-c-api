@@ -440,6 +440,9 @@ public:
         CancelAllInputBindings();
         RemoveAllActorDestroyedHandlers(); ClearAllActorDestroyedSubscriptions();
         ClearAllHandles();
+        if (VerifyShutdownRegistriesCleared()) {
+            UE_LOG(LogTemp, Log, TEXT("UEC runtime shutdown registries cleared"));
+        }
         UE_LOG(LogTemp, Log, TEXT("%s runtime module stopped"), UTF8_TO_TCHAR(kModuleName));
     }
 };
