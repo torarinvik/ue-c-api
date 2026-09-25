@@ -8,9 +8,11 @@ namespace
     uec_context* GContext = nullptr;
     uint64_t GGameThreadRequestId = 0;
     uint64_t GSaveLoadRequestId = 0;
+    uint64_t GObjectLoadRequestId = 0;
     bool GArmed = false;
     bool GGameThreadCallbackExecuted = false;
     bool GSaveLoadCallbackExecuted = false;
+    bool GObjectLoadCallbackExecuted = false;
 
     void UEC_CALL MarkGameThreadCallback(void*)
     {
@@ -21,6 +23,15 @@ namespace
         uint64_t, uec_result, uec_object*, uec_bool, void*)
     {
         GSaveLoadCallbackExecuted = true;
+    }
+
+    void UEC_CALL MarkObjectLoadCallback(
+        uint64_t, uec_result, uec_object* object, void*)
+    {
+        GObjectLoadCallbackExecuted = true;
+        if (object != nullptr && GApi != nullptr && GApi->release_object != nullptr) {
+            (void)GApi->release_object(object);
+        }
     }
 
     void ReleaseShutdownSmokeContext()
@@ -42,7 +53,8 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_arm(void)
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &GApi, &GContext);
     if (result != UEC_RESULT_OK) goto cleanup;
     if (GApi == nullptr || GContext == nullptr || GApi->run_on_game_thread == nullptr ||
-        GApi->async_load_game_from_slot == nullptr || GApi->release_context == nullptr) {
+        GApi->async_load_game_from_slot == nullptr ||
+        GApi->request_object_load == nullptr || GApi->release_context == nullptr) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -67,6 +79,20 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_arm(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    {
+        static constexpr char missingObjectPath[] =
+            "/UEC_ShutdownPending_Missing_Asset/Asset.Asset";
+        result = GApi->request_object_load(
+            GContext,
+            uec_string_view{missingObjectPath, sizeof(missingObjectPath) - 1u},
+            &MarkObjectLoadCallback,
+            nullptr,
+            &GObjectLoadRequestId);
+    }
+    if (result != UEC_RESULT_OK || GObjectLoadRequestId == 0u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
     return UEC_RESULT_OK;
 
 cleanup:
@@ -80,15 +106,18 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void)
     uec_runtime_stats stats{};
     if (!GArmed || GApi == nullptr || GContext == nullptr ||
         GApi->get_runtime_stats == nullptr || GGameThreadRequestId == 0u ||
-        GSaveLoadRequestId == 0u || GGameThreadCallbackExecuted ||
-        GSaveLoadCallbackExecuted) {
+        GSaveLoadRequestId == 0u || GObjectLoadRequestId == 0u ||
+        GGameThreadCallbackExecuted || GSaveLoadCallbackExecuted ||
+        GObjectLoadCallbackExecuted) {
         UE_LOG(LogTemp, Error,
-            TEXT("Shutdown smoke precondition failed: armed=%d api=%d context=%d stats=%d game_id=%llu save_id=%llu game_callback=%d save_callback=%d"),
+            TEXT("Shutdown smoke precondition failed: armed=%d api=%d context=%d stats=%d game_id=%llu save_id=%llu object_id=%llu game_callback=%d save_callback=%d object_callback=%d"),
             GArmed, GApi != nullptr, GContext != nullptr,
             GApi != nullptr && GApi->get_runtime_stats != nullptr,
             static_cast<unsigned long long>(GGameThreadRequestId),
             static_cast<unsigned long long>(GSaveLoadRequestId),
-            GGameThreadCallbackExecuted, GSaveLoadCallbackExecuted);
+            static_cast<unsigned long long>(GObjectLoadRequestId),
+            GGameThreadCallbackExecuted, GSaveLoadCallbackExecuted,
+            GObjectLoadCallbackExecuted);
         goto cleanup;
     }
 
@@ -99,9 +128,9 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void)
             TEXT("Shutdown smoke could not read pending work before module shutdown: result=%d"),
             static_cast<int32>(result));
     }
-    else if (stats.pending_requests < 2u || stats.active_callbacks != 0u) {
+    else if (stats.pending_requests < 3u || stats.active_callbacks != 0u) {
         UE_LOG(LogTemp, Error,
-            TEXT("Shutdown smoke expected queued callbacks and async requests: pending=%u active=%u"),
+            TEXT("Shutdown smoke expected queued dispatch, save, and object-load requests: pending=%u active=%u"),
             stats.pending_requests, stats.active_callbacks);
         result = UEC_RESULT_INTERNAL_ERROR;
     }
