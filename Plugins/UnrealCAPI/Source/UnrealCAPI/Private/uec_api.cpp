@@ -398,6 +398,9 @@ class FUnrealCAPIModule final : public IModuleInterface
 {
     FDelegateHandle WorldCleanupHandle;
     FDelegateHandle PostLoadMapHandle;
+#if WITH_EDITOR
+    FDelegateHandle ObjectsReplacedHandle;
+#endif
     FTSTicker::FDelegateHandle GameThreadDispatchHandle;
 public:
     bool SupportsDynamicReloading() override
@@ -417,6 +420,10 @@ public:
         }
         WorldCleanupHandle = FWorldDelegates::OnWorldCleanup.AddStatic(&HandleWorldCleanup);
         PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddStatic(&HandlePostLoadMap);
+#if WITH_EDITOR
+        ObjectsReplacedHandle = FCoreUObjectDelegates::OnObjectsReplaced.AddStatic(
+            &HandleObjectsReplaced);
+#endif
         GameThreadDispatchHandle = FTSTicker::GetCoreTicker().AddTicker(
             FTickerDelegate::CreateStatic(&DispatchGameThreadRequests), 0.0f);
         UE_LOG(LogTemp, Log, TEXT("%s runtime module started (ABI %u.%u)"),
@@ -426,6 +433,9 @@ public:
     {
         FWorldDelegates::OnWorldCleanup.Remove(WorldCleanupHandle);
         FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
+#if WITH_EDITOR
+        FCoreUObjectDelegates::OnObjectsReplaced.Remove(ObjectsReplacedHandle);
+#endif
         {
             FScopeLock lock(&GHandleMutex);
             GShuttingDown = true;

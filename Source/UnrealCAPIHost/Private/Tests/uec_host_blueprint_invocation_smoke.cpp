@@ -2,6 +2,12 @@
 
 #include <cstring>
 
+#if WITH_EDITOR
+#include "Engine/Blueprint.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+#include "Kismet2/KismetEditorUtilities.h"
+#endif
+
 namespace
 {
     uec_string_view View(const char* text)
@@ -119,6 +125,205 @@ namespace
         }
         return result;
     }
+
+    uec_result VerifyBlueprintReinstancing(
+        const uec_api* api, uec_context* context, uec_world* world)
+    {
+#if WITH_EDITOR
+        static constexpr char classPathData[] =
+            "/Game/Tests/BP_UECAPIHostFunctionSmoke.BP_UECAPIHostFunctionSmoke_C";
+        uec_class* staleClass = nullptr;
+        uec_result result = api->find_class(context, View(classPathData), &staleClass);
+        UBlueprint* blueprint = LoadObject<UBlueprint>(
+            nullptr, TEXT("/Game/Tests/BP_UECAPIHostFunctionSmoke"));
+        UClass* previousGeneratedClass =
+            blueprint == nullptr ? nullptr : blueprint->GeneratedClass;
+        const FName temporaryVariableName(TEXT("UECReinstancingSmokeTemp"));
+        bool addedTemporaryVariable = false;
+        if (result == UEC_RESULT_OK &&
+            (staleClass == nullptr || previousGeneratedClass == nullptr))
+        {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+
+        uec_actor* actorBeforeCompile = nullptr;
+        bool spawnedActorForCompile = false;
+        const uec_transform transform{
+            {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
+        if (result == UEC_RESULT_OK) {
+            result = api->spawn_actor(world, View(classPathData), &transform,
+                                      &actorBeforeCompile);
+        }
+        if (result == UEC_RESULT_OK && actorBeforeCompile == nullptr) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (actorBeforeCompile != nullptr) {
+            spawnedActorForCompile = true;
+            const uec_result releaseResult = api->release_actor(actorBeforeCompile);
+            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                result = releaseResult;
+            }
+            actorBeforeCompile = nullptr;
+        }
+
+        uint32_t oldPropertyCount = 0u;
+        if (result == UEC_RESULT_OK) {
+            result = api->get_class_property_count(staleClass, &oldPropertyCount);
+        }
+        if (result == UEC_RESULT_OK && oldPropertyCount == 0u) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result == UEC_RESULT_OK) {
+            FEdGraphPinType temporaryVariableType;
+            temporaryVariableType.PinCategory = FName(TEXT("int"));
+            addedTemporaryVariable = FBlueprintEditorUtils::AddMemberVariable(
+                blueprint, temporaryVariableName, temporaryVariableType);
+            if (!addedTemporaryVariable) result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result == UEC_RESULT_OK) {
+            const EBlueprintCompileOptions compileOptions =
+                EBlueprintCompileOptions::SkipSave |
+                EBlueprintCompileOptions::SkipGarbageCollection;
+            FKismetEditorUtilities::CompileBlueprint(blueprint, compileOptions);
+            if (blueprint->GeneratedClass == nullptr ||
+                blueprint->GeneratedClass->FindPropertyByName(temporaryVariableName) == nullptr)
+            {
+                UE_LOG(LogTemp, Error, TEXT("Blueprint compile did not add the temporary property"));
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+        }
+
+        if (result == UEC_RESULT_OK) {
+            const bool classWasReplaced =
+                blueprint->GeneratedClass != previousGeneratedClass;
+            uint32_t updatedPropertyCount = UINT32_MAX;
+            const uec_result metadataResult = api->get_class_property_count(
+                staleClass, &updatedPropertyCount);
+            const bool expectedInvalidation = classWasReplaced &&
+                metadataResult == UEC_RESULT_INVALID_HANDLE && updatedPropertyCount == 0u;
+            const bool expectedInPlaceUpdate = !classWasReplaced &&
+                metadataResult == UEC_RESULT_OK && updatedPropertyCount > oldPropertyCount;
+            if (!expectedInvalidation && !expectedInPlaceUpdate) {
+                UE_LOG(LogTemp, Error,
+                    TEXT("Blueprint class metadata after compile returned %d with %u properties; replaced=%s"),
+                    static_cast<int32>(metadataResult), updatedPropertyCount,
+                    classWasReplaced ? TEXT("yes") : TEXT("no"));
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+        }
+        if (staleClass != nullptr) {
+            const uec_result releaseResult = api->release_class(staleClass);
+            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                result = releaseResult;
+            }
+        }
+
+        if (result == UEC_RESULT_OK && addedTemporaryVariable) {
+            uec_class* recompiledClass = nullptr;
+            result = api->find_class(context, View(classPathData), &recompiledClass);
+            uint32_t propertyCount = 0u;
+            if (result == UEC_RESULT_OK) {
+                result = api->get_class_property_count(recompiledClass, &propertyCount);
+            }
+            bool foundTemporaryProperty = false;
+            for (uint32_t index = 0u; result == UEC_RESULT_OK && index < propertyCount; ++index) {
+                char propertyName[128] = {};
+                size_t requiredSize = 0u;
+                uec_property_kind propertyKind = UEC_PROPERTY_UNKNOWN;
+                result = api->get_class_property_at(
+                    recompiledClass, index, propertyName, sizeof(propertyName),
+                    &requiredSize, &propertyKind);
+                if (result == UEC_RESULT_OK &&
+                    std::strcmp(propertyName, "UECReinstancingSmokeTemp") == 0)
+                {
+                    foundTemporaryProperty = propertyKind == UEC_PROPERTY_INTEGER;
+                }
+            }
+            if (result == UEC_RESULT_OK && !foundTemporaryProperty) {
+                UE_LOG(LogTemp, Error,
+                    TEXT("C API did not reflect the temporary Blueprint property"));
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+            if (recompiledClass != nullptr) {
+                const uec_result releaseResult = api->release_class(recompiledClass);
+                if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                    result = releaseResult;
+                }
+            }
+        }
+
+        if (addedTemporaryVariable) {
+            FBlueprintEditorUtils::RemoveMemberVariable(blueprint, temporaryVariableName);
+            const EBlueprintCompileOptions compileOptions =
+                EBlueprintCompileOptions::SkipSave |
+                EBlueprintCompileOptions::SkipGarbageCollection;
+            FKismetEditorUtilities::CompileBlueprint(blueprint, compileOptions);
+            if (blueprint->GeneratedClass == nullptr ||
+                blueprint->GeneratedClass->FindPropertyByName(temporaryVariableName) != nullptr)
+            {
+                UE_LOG(LogTemp, Error, TEXT("Temporary Blueprint variable was not removed"));
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+        }
+
+        if (spawnedActorForCompile) {
+            uint32_t actorCount = 0u;
+            const uec_result countResult = api->get_actor_count_by_class(
+                world, View(classPathData), &actorCount);
+            if (result == UEC_RESULT_OK &&
+                (countResult != UEC_RESULT_OK || actorCount != 1u))
+            {
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+            if (countResult == UEC_RESULT_OK && actorCount > 0u) {
+                uec_actor* reinstancedActor = nullptr;
+                const uec_result getActorResult = api->get_actor_at_by_class(
+                    world, View(classPathData), 0u, &reinstancedActor);
+                if (getActorResult != UEC_RESULT_OK || reinstancedActor == nullptr) {
+                    if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+                } else {
+                    const uec_result destroyResult = api->destroy_actor(reinstancedActor);
+                    if (destroyResult != UEC_RESULT_OK) {
+                        if (result == UEC_RESULT_OK) result = destroyResult;
+                        const uec_result releaseResult = api->release_actor(reinstancedActor);
+                        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                            result = releaseResult;
+                        }
+                    }
+                }
+            }
+        }
+
+        uec_class* currentClass = nullptr;
+        if (result == UEC_RESULT_OK) {
+            result = api->find_class(context, View(classPathData), &currentClass);
+            if (result != UEC_RESULT_OK) {
+                UE_LOG(LogTemp, Error, TEXT("Finding Blueprint class after compile returned %d"),
+                    static_cast<int32>(result));
+            }
+        }
+        uint32_t currentPropertyCount = 0u;
+        if (result == UEC_RESULT_OK) {
+            result = api->get_class_property_count(currentClass, &currentPropertyCount);
+        }
+        if (result == UEC_RESULT_OK && currentPropertyCount != oldPropertyCount) {
+            UE_LOG(LogTemp, Error, TEXT("Blueprint property count did not return to its original value"));
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (currentClass != nullptr) {
+            const uec_result releaseResult = api->release_class(currentClass);
+            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                result = releaseResult;
+            }
+        }
+        return result;
+#else
+        static_cast<void>(api);
+        static_cast<void>(context);
+        static_cast<void>(world);
+        return UEC_RESULT_OK;
+#endif
+    }
 }
 
 extern "C" uec_result UEC_CALL uec_host_blueprint_invocation_smoke(void)
@@ -139,18 +344,26 @@ extern "C" uec_result UEC_CALL uec_host_blueprint_invocation_smoke(void)
     if (api->get_default_world == nullptr ||
         api->release_world == nullptr || api->release_context == nullptr ||
         api->spawn_actor == nullptr || api->destroy_actor == nullptr ||
-        api->release_actor == nullptr || api->invoke_actor_function_value == nullptr)
+        api->release_actor == nullptr || api->get_actor_count_by_class == nullptr ||
+        api->get_actor_at_by_class == nullptr ||
+        api->get_class_property_count == nullptr || api->get_class_property_at == nullptr ||
+        api->invoke_actor_function_value == nullptr)
     {
         if (api->release_context != nullptr) api->release_context(context);
         return UEC_RESULT_INTERNAL_ERROR;
     }
 
     result = VerifyBlueprintFunctionMetadata(api, context);
+    if (result == UEC_RESULT_OK) {
+        result = api->get_default_world(context, &world);
+    }
+    if (result == UEC_RESULT_OK && world == nullptr) result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK) {
+        result = VerifyBlueprintReinstancing(api, context, world);
+    }
 
     const uec_transform transform{
         {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
-    if (result == UEC_RESULT_OK) result = api->get_default_world(context, &world);
-    if (result == UEC_RESULT_OK && world == nullptr) result = UEC_RESULT_INTERNAL_ERROR;
     if (result == UEC_RESULT_OK) {
         result = api->spawn_actor(world, View(classPathData), &transform, &actor);
     }

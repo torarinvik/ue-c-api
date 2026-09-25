@@ -389,6 +389,25 @@
         InvalidateWorldHandles(world);
     }
 
+#if WITH_EDITOR
+    static void HandleObjectsReplaced(
+        const FCoreUObjectDelegates::FReplacementObjectMap& replacements)
+    {
+        if (replacements.IsEmpty()) return;
+        FScopeLock lock(&GHandleMutex);
+        if (GShuttingDown) return;
+        for (const FUECClass* candidate : GClasses)
+        {
+            auto* handle = const_cast<FUECClass*>(candidate);
+            if (handle != nullptr && !handle->Header.bReleased &&
+                replacements.Contains(handle->Value.Get()))
+            {
+                handle->Header.bInvalidated = true;
+            }
+        }
+    }
+#endif
+
     static FUECActor* MakeActorHandle(AActor* actor)
     {
         if (actor == nullptr) return nullptr;

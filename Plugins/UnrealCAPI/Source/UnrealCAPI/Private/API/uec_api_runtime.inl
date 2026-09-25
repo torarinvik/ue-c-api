@@ -13,6 +13,10 @@
         const TSharedPtr<FUECCollisionSubscription>& subscription);
     static void RemoveAllActorDestroyedHandlers(); static void ClearAllActorDestroyedSubscriptions();
     static void HandleWorldCleanup(UWorld* world, bool sessionEnded, bool cleanupResources);
+#if WITH_EDITOR
+    static void HandleObjectsReplaced(
+        const FCoreUObjectDelegates::FReplacementObjectMap& replacements);
+#endif
     static void HandlePostLoadMap(UWorld* world); static void CancelAllTravelRequests(); static void CancelAllStreamingRequests(); static void CancelStreamingRequestsFor(UWorld* world);
     static int32 GetStreamingRequestCountForShutdown();
     static bool AllocateMonotonicId(uint64& nextId, uint64& outId)

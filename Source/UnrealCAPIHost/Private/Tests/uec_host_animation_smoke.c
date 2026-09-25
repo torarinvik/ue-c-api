@@ -361,7 +361,8 @@ static void UEC_CALL AnimationSmokeTick(
         return;
     }
     state->elapsed_seconds += deltaSeconds;
-    if (state->elapsed_seconds > 10.0)
+    /* Allow for large editor hitches while asynchronous assets finish loading in PIE. */
+    if (state->elapsed_seconds > 60.0)
         FinishAnimationSmoke(UEC_RESULT_INTERNAL_ERROR);
 }
 

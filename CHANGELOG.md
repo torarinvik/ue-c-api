@@ -36,6 +36,11 @@ development; they do not imply a published or runtime-verified release.
 
 ### Fixed
 
+- Editor class handles now become invalid when Unreal replaces their `UClass`
+  during Blueprint compilation. UE 5.8.3 recompiles the smoke Blueprint in
+  place, so the Editor PIE check verifies updated property metadata and a live
+  actor across compilation; replacement invalidation is ready for engine paths
+  that replace the class object.
 - World cleanup, actor destruction, PIE restart, and level travel cancel audio
   and skeletal-animation completion subscriptions. World cleanup and
   pre-`OpenLevel` travel cancel widget interactions, and travel also removes
