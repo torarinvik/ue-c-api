@@ -31,6 +31,9 @@ public:
     TObjectPtr<UAudioComponent> FlowAudio;
 
     UPROPERTY()
+    TObjectPtr<UAudioComponent> FlowAudioForDestroySmoke;
+
+    UPROPERTY()
     TObjectPtr<UStaticMeshComponent> FlowMesh;
 
     UPROPERTY()

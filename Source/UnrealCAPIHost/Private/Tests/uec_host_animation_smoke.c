@@ -10,11 +10,13 @@ typedef struct uec_animation_smoke_state {
     uec_actor* actor;
     uec_scene_component* component;
     uec_object* audio_component;
+    uec_object* destroyable_audio_component;
     uec_object* mesh;
     uec_object* animation;
     uec_object* wrong_object;
     uint64_t animation_subscription_id;
     uint64_t audio_subscription_id;
+    uint64_t destroyable_audio_subscription_id;
     uint64_t tick_subscription_id;
     uint32_t completion_count;
     uint32_t audio_callback_count;
@@ -62,6 +64,14 @@ static uec_result ReleaseAnimationSmokeState(uec_animation_smoke_state* state)
             result = unbindResult;
         state->audio_subscription_id = 0u;
     }
+    if (api != NULL && context != NULL &&
+        state->destroyable_audio_subscription_id != 0u) {
+        const uec_result unbindResult = api->unbind_audio_finished(
+            context, state->destroyable_audio_subscription_id);
+        if (result == UEC_RESULT_OK && unbindResult != UEC_RESULT_OK)
+            result = unbindResult;
+        state->destroyable_audio_subscription_id = 0u;
+    }
     if (api != NULL && state->component != NULL) {
         if (state->animation_playing == UEC_TRUE) {
             const uec_result stopResult = api->stop_skeletal_animation(state->component);
@@ -79,6 +89,13 @@ static uec_result ReleaseAnimationSmokeState(uec_animation_smoke_state* state)
         if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK)
             result = releaseResult;
         state->audio_component = NULL;
+    }
+    if (api != NULL && state->destroyable_audio_component != NULL) {
+        const uec_result releaseResult = api->release_object(
+            state->destroyable_audio_component);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK)
+            result = releaseResult;
+        state->destroyable_audio_component = NULL;
     }
     if (api != NULL && state->wrong_object != NULL) {
         const uec_result releaseResult = api->release_object(state->wrong_object);
@@ -148,7 +165,8 @@ static void UEC_CALL AudioFinished(uint64_t subscriptionId, void* userData)
 {
     uec_animation_smoke_state* state = (uec_animation_smoke_state*)userData;
     if (state != &g_animation_smoke || state->running != UEC_TRUE) return;
-    if (subscriptionId != state->audio_subscription_id) {
+    if (subscriptionId != state->audio_subscription_id &&
+        subscriptionId != state->destroyable_audio_subscription_id) {
         state->callback_result = UEC_RESULT_INTERNAL_ERROR;
     }
     ++state->audio_callback_count;
@@ -173,13 +191,64 @@ static uec_result VerifyAnimationSubscriptionActorCleanup(
     state->animation_subscription_id = cancelledSubscriptionId;
 
     result = state->api->bind_audio_finished(
+        state->destroyable_audio_component, AudioFinished, state,
+        &state->destroyable_audio_subscription_id);
+    if (result != UEC_RESULT_OK || state->destroyable_audio_subscription_id == 0u)
+        return AnimationCleanupStepFailed(
+            "explicit-audio-bind",
+            result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
+
+    uec_runtime_stats stats = {0};
+    stats.struct_size = sizeof(stats);
+    result = state->api->get_runtime_stats(state->context, &stats);
+    if (result != UEC_RESULT_OK ||
+        stats.active_subscriptions != state->baseline_subscriptions + 3u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        return AnimationCleanupStepFailed("explicit-audio-pre-destroy-stats", result);
+    }
+    result = state->api->destroy_audio_component(state->destroyable_audio_component);
+    if (result != UEC_RESULT_OK)
+        return AnimationCleanupStepFailed("destroy-audio-component", result);
+    uec_bool audioPlaying = UEC_TRUE;
+    if (state->api->get_audio_component_playing(
+            state->destroyable_audio_component, &audioPlaying) !=
+            UEC_RESULT_INVALID_HANDLE || audioPlaying != UEC_FALSE) {
+        return AnimationCleanupStepFailed(
+            "destroyed-audio-handle", UEC_RESULT_INTERNAL_ERROR);
+    }
+    const uec_result explicitAudioUnbindResult = state->api->unbind_audio_finished(
+        state->context, state->destroyable_audio_subscription_id);
+    if (explicitAudioUnbindResult != UEC_RESULT_INVALID_ARGUMENT)
+        return AnimationCleanupStepFailed("explicit-audio-token",
+            explicitAudioUnbindResult == UEC_RESULT_OK ?
+                UEC_RESULT_INTERNAL_ERROR : explicitAudioUnbindResult);
+    state->destroyable_audio_subscription_id = 0u;
+    if (state->audio_callback_count != 0u)
+        return AnimationCleanupStepFailed("explicit-audio-callback",
+                                          UEC_RESULT_INTERNAL_ERROR);
+    if (state->api->release_object(state->destroyable_audio_component) !=
+        UEC_RESULT_INVALID_HANDLE) {
+        return AnimationCleanupStepFailed(
+            "released-destroyed-audio", UEC_RESULT_INTERNAL_ERROR);
+    }
+    state->destroyable_audio_component = NULL;
+    stats = (uec_runtime_stats){0};
+    stats.struct_size = sizeof(stats);
+    result = state->api->get_runtime_stats(state->context, &stats);
+    if (result != UEC_RESULT_OK ||
+        stats.active_subscriptions != state->baseline_subscriptions + 2u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        return AnimationCleanupStepFailed("explicit-audio-post-destroy-stats", result);
+    }
+
+    result = state->api->bind_audio_finished(
         (uec_object*)state->audio_component, AudioFinished, state,
         &state->audio_subscription_id);
     if (result != UEC_RESULT_OK || state->audio_subscription_id == 0u)
         return AnimationCleanupStepFailed(
             "audio-bind", result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
 
-    uec_runtime_stats stats = {0};
+    stats = (uec_runtime_stats){0};
     stats.struct_size = sizeof(stats);
     result = state->api->get_runtime_stats(state->context, &stats);
     if (result != UEC_RESULT_OK ||
@@ -334,6 +403,8 @@ uec_result UEC_CALL uec_host_animation_smoke_start(void)
         api->get_actor_component_at_by_class == NULL ||
         api->get_actor_property_object == NULL ||
         api->bind_audio_finished == NULL || api->unbind_audio_finished == NULL ||
+        api->destroy_audio_component == NULL ||
+        api->get_audio_component_playing == NULL ||
         api->release_scene_component == NULL || api->load_object == NULL ||
         api->release_object == NULL || api->set_skeletal_mesh == NULL ||
         api->play_skeletal_animation == NULL || api->stop_skeletal_animation == NULL ||
@@ -366,6 +437,12 @@ uec_result UEC_CALL uec_host_animation_smoke_start(void)
         result = api->get_actor_property_object(
             state->actor, AnimationSmokeView("FlowAudio"), &state->audio_component);
     if (result == UEC_RESULT_OK && state->audio_component == NULL)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_object(
+            state->actor, AnimationSmokeView("FlowAudioForDestroySmoke"),
+            &state->destroyable_audio_component);
+    if (result == UEC_RESULT_OK && state->destroyable_audio_component == NULL)
         result = UEC_RESULT_INTERNAL_ERROR;
 
     uint32_t componentCount = 0u;

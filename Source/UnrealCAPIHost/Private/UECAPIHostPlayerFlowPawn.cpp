@@ -20,6 +20,10 @@ AUECAPIHostPlayerFlowPawn::AUECAPIHostPlayerFlowPawn()
     FlowAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("FlowAudio"));
     FlowAudio->SetupAttachment(root);
     FlowAudio->SetAutoActivate(false);
+    FlowAudioForDestroySmoke = CreateDefaultSubobject<UAudioComponent>(
+        TEXT("FlowAudioForDestroySmoke"));
+    FlowAudioForDestroySmoke->SetupAttachment(root);
+    FlowAudioForDestroySmoke->SetAutoActivate(false);
     FlowMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FlowMesh"));
     FlowMesh->SetupAttachment(root);
     FlowMesh->SetMobility(EComponentMobility::Movable);
