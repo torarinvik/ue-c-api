@@ -20,6 +20,7 @@ host_abi_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_abi_sm
 host_collision_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_collision_smoke.c"
 host_physics_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_physics_smoke.c"
 host_authority_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_authority_smoke.c"
+host_listen_server_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_listen_server_authority_smoke.c"
 host_event_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_event_bridge_smoke.c"
 host_reflection_metadata_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_reflection_metadata_smoke.c"
 host_gameplay_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_gameplay_example_smoke.c"
@@ -65,6 +66,7 @@ git -C "$repo_dir" diff --check
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_collision_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_physics_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_authority_consumer"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_listen_server_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_event_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -fsyntax-only "$host_reflection_metadata_consumer"

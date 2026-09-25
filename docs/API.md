@@ -463,6 +463,9 @@ component physics mutators, including simulation toggles, velocity writes,
 impulses, forces, and torque. It also verifies that actor/component transforms,
 tags, activation, and collision settings remain unchanged after client-side
 rejection.
+The listen-server PIE smoke checks the positive authority path: the world
+reports listen-server mode and authority, and C API actor spawning, replicated
+property writes, tag writes, and transform writes succeed there.
 `get_world_game_mode` returns the authoritative game-mode object when one is
 available; client worlds return `UEC_RESULT_UNSUPPORTED`.
 `get_world_game_state` returns the active world game-state object when one is

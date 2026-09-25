@@ -49,6 +49,7 @@ extern "C" void UEC_CALL uec_host_pie_restart_smoke_cancel(void);
 extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_arm(void);
 extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void);
 extern "C" uec_result UEC_CALL uec_host_multi_pie_smoke(void);
+extern "C" uec_result UEC_CALL uec_host_listen_server_authority_smoke(void);
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealCAPIHost, Log, All);
 
@@ -280,19 +281,24 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-authority"))) {
             const double now = FPlatformTime::Seconds();
             if (AuthoritySmokeDeadline == 0.0) AuthoritySmokeDeadline = now + 60.0;
+            const bool requireListenServer = FParse::Param(
+                FCommandLine::Get(), TEXT("uec-tests-listen-server"));
             UWorld* clientWorld = nullptr;
+            UWorld* listenServerWorld = nullptr;
             for (const FWorldContext& worldContext : GEngine->GetWorldContexts()) {
                 UWorld* world = worldContext.World();
-                if (world != nullptr && worldContext.WorldType == EWorldType::PIE &&
-                    world->GetNetMode() == NM_Client) {
-                    clientWorld = world;
-                    break;
-                }
+                if (world == nullptr || worldContext.WorldType != EWorldType::PIE) continue;
+                if (world->GetNetMode() == NM_Client) clientWorld = world;
+                else if (world->GetNetMode() == NM_ListenServer) listenServerWorld = world;
+                if (clientWorld != nullptr &&
+                    (!requireListenServer || listenServerWorld != nullptr)) break;
             }
-            if (clientWorld == nullptr && now < AuthoritySmokeDeadline) return true;
+            if ((clientWorld == nullptr || (requireListenServer && listenServerWorld == nullptr)) &&
+                now < AuthoritySmokeDeadline) return true;
 
             uec_result result = UEC_RESULT_OK;
-            if (clientWorld == nullptr) {
+            if (clientWorld == nullptr ||
+                (requireListenServer && listenServerWorld == nullptr)) {
                 result = UEC_RESULT_NOT_INITIALIZED;
             }
             else {
@@ -311,8 +317,18 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
                     else result = uec_host_authority_smoke();
                 }
             }
+            if (result == UEC_RESULT_OK && requireListenServer) {
+                result = uec_host_listen_server_authority_smoke();
+            }
             if (result == UEC_RESULT_OK) {
-                UE_LOG(LogUnrealCAPIHost, Log, TEXT("C client authority smoke completed"));
+                if (requireListenServer) {
+                    UE_LOG(LogUnrealCAPIHost, Log,
+                        TEXT("C listen-server authority smoke completed"));
+                }
+                else {
+                    UE_LOG(LogUnrealCAPIHost, Log,
+                        TEXT("C client authority smoke completed"));
+                }
             }
             else {
                 UE_LOG(LogUnrealCAPIHost, Error,

@@ -15,11 +15,13 @@ from unreal_runtime import (
 )
 from unreal_pie_runtime import (
     configure_authority_pie_settings,
+    configure_listen_server_pie_settings,
     configure_multi_pie_settings,
     restore_authority_pie_settings,
     SUCCESS_MARKERS,
     PIE_RESTART_SUCCESS_MARKER,
     MULTI_PIE_SUCCESS_MARKER,
+    LISTEN_SERVER_AUTHORITY_SUCCESS_MARKER,
     run_smoke as run_editor_smoke,
 )
 
@@ -82,6 +84,19 @@ class UnrealRuntimeTests(unittest.TestCase):
         path, snapshot = configure_multi_pie_settings(self.root)
         self.assertIn("PlayNumberOfClients=2", path.read_text(encoding="utf-8"))
         self.assertIn("RunUnderOneProcess=True", path.read_text(encoding="utf-8"))
+        restore_authority_pie_settings(path, snapshot)
+        self.assertEqual(path.read_bytes(), original)
+
+    def test_listen_server_settings_configure_server_and_client_and_restore(self):
+        settings_path = self.root / "Saved/Config/MacEditor/EditorPerProjectUserSettings.ini"
+        settings_path.parent.mkdir(parents=True)
+        original = b"[/Script/UnrealEd.LevelEditorPlaySettings]\nPlayNetMode=PIE_Client\n"
+        settings_path.write_bytes(original)
+        path, snapshot = configure_listen_server_pie_settings(self.root)
+        configured = path.read_text(encoding="utf-8")
+        self.assertIn("PlayNetMode=PIE_ListenServer", configured)
+        self.assertIn("PlayNumberOfClients=2", configured)
+        self.assertIn("RunUnderOneProcess=True", configured)
         restore_authority_pie_settings(path, snapshot)
         self.assertEqual(path.read_bytes(), original)
 
@@ -190,6 +205,20 @@ class UnrealRuntimeTests(unittest.TestCase):
 
         command = popen.call_args.args[0]
         self.assertIn("-uec-tests-multi-pie", command)
+
+    @patch("unreal_pie_runtime.find_editor_executable", return_value=Path("/fake/UnrealEditor"))
+    @patch("unreal_pie_runtime.subprocess.Popen")
+    def test_listen_server_pie_requires_server_authority_marker(self, popen, _find_editor):
+        process = popen.return_value
+        process.stdout = io.StringIO(LISTEN_SERVER_AUTHORITY_SUCCESS_MARKER + "\n")
+        process.poll.return_value = None
+        process.wait.return_value = 0
+
+        run_editor_smoke(Path("/fake/engine"), timeout_seconds=1.0, listen_server_only=True)
+
+        command = popen.call_args.args[0]
+        self.assertIn("-uec-tests-authority", command)
+        self.assertIn("-uec-tests-listen-server", command)
 
     def test_surfaces_collision_smoke_failure(self):
         executable = self.make_host(["C collision smoke failed with result 8"])
