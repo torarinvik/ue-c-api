@@ -14,6 +14,7 @@ namespace
     uec_world* GEditorWorld = nullptr;
     uec_world* GOldWorld = nullptr;
     uec_actor* GOldActor = nullptr;
+    uec_object* GOldWorldGameInstance = nullptr;
     uec_actor* GWorldOwnedActor = nullptr;
     uec_scene_component* GWorldOwnedComponent = nullptr;
     uec_object* GWorldOwnedObject = nullptr;
@@ -60,6 +61,16 @@ namespace
                 GWorldOwnedRetainedObject = nullptr;
             } else {
                 UE_LOG(LogTemp, Error, TEXT("Retained stale object release returned %d"),
+                       static_cast<int32>(result));
+                released = false;
+            }
+        }
+        if (GApi != nullptr && GOldWorldGameInstance != nullptr) {
+            const uec_result result = GApi->release_object(GOldWorldGameInstance);
+            if (result == UEC_RESULT_OK) {
+                GOldWorldGameInstance = nullptr;
+            } else {
+                UE_LOG(LogTemp, Error, TEXT("Stale world game-instance release returned %d"),
                        static_cast<int32>(result));
                 released = false;
             }
@@ -178,22 +189,28 @@ namespace
         size_t retainedPathSize = SIZE_MAX;
         const uec_result retainedObjectResult = api->get_object_path(
             GWorldOwnedRetainedObject, objectPath, sizeof(objectPath), &retainedPathSize);
+        size_t gameInstancePathSize = SIZE_MAX;
+        const uec_result gameInstanceResult = api->get_object_path(
+            GOldWorldGameInstance, objectPath, sizeof(objectPath), &gameInstancePathSize);
         const bool invalidated = actorResult == UEC_RESULT_INVALID_HANDLE && actorCleared &&
             actorNameResult == UEC_RESULT_INVALID_HANDLE && actorNameSize == 0u &&
             componentResult == UEC_RESULT_INVALID_HANDLE && componentCleared &&
             visibleResult == UEC_RESULT_INVALID_HANDLE && componentVisible == UEC_FALSE &&
             objectResult == UEC_RESULT_INVALID_HANDLE && objectPathSize == 0u &&
-            retainedObjectResult == UEC_RESULT_INVALID_HANDLE && retainedPathSize == 0u;
+            retainedObjectResult == UEC_RESULT_INVALID_HANDLE && retainedPathSize == 0u &&
+            gameInstanceResult == UEC_RESULT_INVALID_HANDLE && gameInstancePathSize == 0u;
         if (!invalidated) {
             UE_LOG(LogTemp, Error,
-                TEXT("PIE world cleanup did not invalidate world-owned handles: actor=%d name=%d/%llu component=%d visible=%d/%d object=%d/%llu retained=%d/%llu"),
+                TEXT("PIE world cleanup did not invalidate world-owned handles: actor=%d name=%d/%llu component=%d visible=%d/%d object=%d/%llu retained=%d/%llu gameInstance=%d/%llu"),
                 static_cast<int32>(actorResult), static_cast<int32>(actorNameResult),
                 static_cast<unsigned long long>(actorNameSize),
                 static_cast<int32>(componentResult), static_cast<int32>(visibleResult),
                 componentVisible, static_cast<int32>(objectResult),
                 static_cast<unsigned long long>(objectPathSize),
                 static_cast<int32>(retainedObjectResult),
-                static_cast<unsigned long long>(retainedPathSize));
+                static_cast<unsigned long long>(retainedPathSize),
+                static_cast<int32>(gameInstanceResult),
+                static_cast<unsigned long long>(gameInstancePathSize));
         }
         if (invalidated && !ReleaseWorldOwnedHandles()) {
             UE_LOG(LogTemp, Error, TEXT("PIE world-owned stale handles could not be released"));
@@ -221,6 +238,7 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
         GApi->get_world_at_by_kind == nullptr || GApi->get_world_kind == nullptr ||
         GApi->get_world_count_by_kind == nullptr || GApi->get_world_name == nullptr ||
         GApi->get_first_player_controller == nullptr || GApi->get_actor_name == nullptr ||
+        GApi->get_world_game_instance == nullptr || GApi->object_is_a == nullptr ||
         GApi->spawn_actor == nullptr || GApi->get_actor_root_component == nullptr ||
         GApi->get_actor_property_object == nullptr || GApi->get_actor_transform == nullptr ||
         GApi->get_component_transform == nullptr || GApi->get_component_visible == nullptr ||
@@ -266,6 +284,33 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world)
     if (result != UEC_RESULT_OK || GOldWorld == nullptr) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
+    }
+    result = GApi->get_world_game_instance(GOldWorld, &GOldWorldGameInstance);
+    if (result != UEC_RESULT_OK || GOldWorldGameInstance == nullptr) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    {
+        static constexpr char gameInstanceClassPathData[] = "/Script/Engine.GameInstance";
+        const uec_string_view gameInstanceClassPath{
+            gameInstanceClassPathData, sizeof(gameInstanceClassPathData) - 1u};
+        uec_bool isGameInstance = UEC_FALSE;
+        result = GApi->object_is_a(
+            GOldWorldGameInstance, gameInstanceClassPath, &isGameInstance);
+        if (result != UEC_RESULT_OK || isGameInstance != UEC_TRUE) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        char gameInstancePath[256]{};
+        size_t gameInstancePathSize = 0;
+        result = GApi->get_object_path(GOldWorldGameInstance, gameInstancePath,
+                                       sizeof(gameInstancePath), &gameInstancePathSize);
+        if (result != UEC_RESULT_OK || gameInstancePathSize <= 1u ||
+            gameInstancePathSize > sizeof(gameInstancePath) ||
+            gameInstancePath[gameInstancePathSize - 1u] != '\0') {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
     }
     result = GApi->get_first_player_controller(GOldWorld, &GOldActor);
     if (result != UEC_RESULT_OK || GOldActor == nullptr || !CheckActorName(GApi, GOldActor)) {
@@ -361,6 +406,7 @@ extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void)
         GContext == nullptr || GOldWorld == nullptr || GOldActor == nullptr ||
         GWorldOwnedActor == nullptr || GWorldOwnedComponent == nullptr ||
         GWorldOwnedObject == nullptr || GWorldOwnedRetainedObject == nullptr ||
+        GOldWorldGameInstance == nullptr ||
         GTickCallbackCount == 0u || GTickCallbackCount != GTickCallbackCountAtCleanup) {
         UE_LOG(LogTemp, Error,
             TEXT("PIE restart cleanup invariant failed: cleanup=%d tick=%llu atCleanup=%llu api=%d context=%d world=%d actor=%d"),
@@ -465,4 +511,173 @@ cleanup:
 extern "C" void UEC_CALL uec_host_pie_restart_smoke_cancel(void)
 {
     ReleaseCapturedHandles();
+}
+#include "CoreMinimal.h"
+
+#include "uec_api.h"
+
+extern "C" uec_result UEC_CALL uec_host_multi_pie_smoke(void)
+{
+    const uec_api* api = nullptr;
+    uec_context* context = nullptr;
+    uec_world* worlds[2]{};
+    uec_actor* controllers[2]{};
+    uec_object* gameInstances[2]{};
+    int32_t instances[2] = {-1, -1};
+    char gameInstancePaths[2][256]{};
+    uec_runtime_stats baseline{};
+    uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
+    if (result != UEC_RESULT_OK) return result;
+
+    if (api == nullptr || context == nullptr || api->get_world_count_by_kind == nullptr ||
+        api->get_world_at_by_kind == nullptr || api->get_world_kind == nullptr ||
+        api->get_world_pie_instance == nullptr || api->get_first_player_controller == nullptr ||
+        api->get_actor_name == nullptr || api->get_world_game_instance == nullptr ||
+        api->object_is_a == nullptr || api->get_object_path == nullptr ||
+        api->release_object == nullptr || api->get_runtime_stats == nullptr ||
+        api->release_actor == nullptr || api->release_world == nullptr ||
+        api->release_context == nullptr) {
+        result = UEC_RESULT_UNSUPPORTED;
+        goto cleanup;
+    }
+
+    baseline.struct_size = sizeof(baseline);
+    result = api->get_runtime_stats(context, &baseline);
+    if (result != UEC_RESULT_OK) goto cleanup;
+
+    {
+        uint32_t worldCount = 0;
+        result = api->get_world_count_by_kind(context, UEC_WORLD_KIND_PIE, &worldCount);
+        if (result != UEC_RESULT_OK) goto cleanup;
+        if (worldCount < 2u) {
+            result = UEC_RESULT_NOT_INITIALIZED;
+            goto cleanup;
+        }
+    }
+
+    for (uint32_t index = 0; index < 2u; ++index)
+    {
+        result = api->get_world_at_by_kind(
+            context, UEC_WORLD_KIND_PIE, index, &worlds[index]);
+        if (result != UEC_RESULT_OK || worlds[index] == nullptr) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        uec_world_kind kind = UEC_WORLD_KIND_UNKNOWN;
+        result = api->get_world_kind(worlds[index], &kind);
+        if (result != UEC_RESULT_OK || kind != UEC_WORLD_KIND_PIE) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        result = api->get_world_pie_instance(worlds[index], &instances[index]);
+        if (result != UEC_RESULT_OK || instances[index] < 0) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        result = api->get_first_player_controller(worlds[index], &controllers[index]);
+        if (result != UEC_RESULT_OK || controllers[index] == nullptr) {
+            if (result == UEC_RESULT_NOT_INITIALIZED) goto cleanup;
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        result = api->get_world_game_instance(worlds[index], &gameInstances[index]);
+        if (result != UEC_RESULT_OK || gameInstances[index] == nullptr) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        static constexpr char gameInstanceClassPathData[] =
+            "/Script/Engine.GameInstance";
+        const uec_string_view gameInstanceClassPath{
+            gameInstanceClassPathData, sizeof(gameInstanceClassPathData) - 1u};
+        uec_bool isGameInstance = UEC_FALSE;
+        result = api->object_is_a(
+            gameInstances[index], gameInstanceClassPath, &isGameInstance);
+        if (result != UEC_RESULT_OK || isGameInstance != UEC_TRUE) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        size_t gameInstancePathSize = 0;
+        result = api->get_object_path(gameInstances[index], gameInstancePaths[index],
+                                      sizeof(gameInstancePaths[index]),
+                                      &gameInstancePathSize);
+        if (result != UEC_RESULT_OK || gameInstancePathSize <= 1u ||
+            gameInstancePathSize > sizeof(gameInstancePaths[index]) ||
+            gameInstancePaths[index][gameInstancePathSize - 1u] != '\0') {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        char name[128]{};
+        size_t requiredSize = 0;
+        result = api->get_actor_name(
+            controllers[index], name, sizeof(name), &requiredSize);
+        if (result != UEC_RESULT_OK || requiredSize <= 1u ||
+            requiredSize > sizeof(name) || name[requiredSize - 1u] != '\0') {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+    }
+
+    if (instances[0] == instances[1]) {
+        UE_LOG(LogTemp, Error,
+            TEXT("Multi-PIE contexts share the same PIE instance id: %d"), instances[0]);
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    if (FCStringAnsi::Strcmp(gameInstancePaths[0], gameInstancePaths[1]) == 0) {
+        UE_LOG(LogTemp, Error,
+            TEXT("Multi-PIE world contexts returned the same game-instance path: %s"),
+            UTF8_TO_TCHAR(gameInstancePaths[0]));
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = UEC_RESULT_OK;
+
+cleanup:
+    for (uec_actor* controller : controllers) {
+        if (controller != nullptr) {
+            const uec_result releaseResult = api->release_actor(controller);
+            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                result = releaseResult;
+            }
+        }
+    }
+    for (uec_object* gameInstance : gameInstances) {
+        if (gameInstance != nullptr) {
+            const uec_result releaseResult = api->release_object(gameInstance);
+            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                result = releaseResult;
+            }
+        }
+    }
+    for (uec_world* world : worlds) {
+        if (world != nullptr) {
+            const uec_result releaseResult = api->release_world(world);
+            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                result = releaseResult;
+            }
+        }
+    }
+    if (result == UEC_RESULT_OK) {
+        uec_runtime_stats observed{};
+        observed.struct_size = sizeof(observed);
+        result = api->get_runtime_stats(context, &observed);
+        if (result == UEC_RESULT_OK &&
+            (observed.live_worlds != baseline.live_worlds ||
+             observed.live_actors != baseline.live_actors ||
+             observed.live_contexts != baseline.live_contexts ||
+             observed.active_subscriptions != baseline.active_subscriptions ||
+             observed.pending_requests != baseline.pending_requests ||
+             observed.active_callbacks != baseline.active_callbacks)) {
+            UE_LOG(LogTemp, Error,
+                TEXT("Multi-PIE handle counts failed to return to baseline"));
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+    }
+    if (api != nullptr && context != nullptr && api->release_context != nullptr) {
+        const uec_result releaseResult = api->release_context(context);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+            result = releaseResult;
+        }
+    }
+    return result;
 }
