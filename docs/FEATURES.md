@@ -20,8 +20,8 @@ checks explicitly recorded for each feature in the Unreal build matrix.
 | Actor spawn and destruction | UE 5.8.3 Editor PIE smoke verified | C API actor spawn and destruction run in focused dedicated-server PIE, multiplayer dedicated-server PIE, and listen-server PIE contexts; loadable actor class paths, stale-handle invalidation, and one-shot destruction callbacks; game thread only |
 | Actor identity and tags | UE 5.8.3 Editor PIE smoke verified | UTF-8 actor-name and tag output, tag lookup/enumeration; listen-server checks cover authority-gated add/remove, duplicate-operation idempotency, count changes, indexed tag output, and invalid-index clearing |
 | Actor queries and bounds | UE 5.8.3 Editor PIE smoke verified | Indexed class-filtered actor lookup and world-space bounds report the spawned box actor's center and extent correctly |
-| Actor transforms | Runtime implemented / Unreal integration pending | Double-precision C POD transform; game thread only |
-| Scene components | Runtime implemented / Unreal integration pending | Root-component handle, world transforms, visibility and activation read/write, and class-filtered enumeration |
+| Actor transforms | UE 5.8.3 listen-server Editor PIE smoke verified | Double-precision C POD get/set with transform readback; game thread only |
+| Scene components | UE 5.8.3 listen-server Editor PIE smoke verified | Root-component handles, indexed and class-filtered enumeration, world-transform read/write, and visibility-flag/activation read/write |
 | Timers | Runtime implemented / Unreal integration pending | One-shot and looping game-thread callbacks with cancellation and a 1024-entry bound |
 | World tick subscriptions | Runtime implemented / Unreal integration pending | Per-frame game-thread callbacks scoped to a world with unsubscribe tokens, teardown cleanup, and a 1024-entry bound |
 | Class/property metadata | Runtime implemented / Unreal integration pending | Class lookup, inheritance, names, and broad reflected property kinds |

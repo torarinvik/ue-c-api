@@ -377,7 +377,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         USceneComponent* component = handle->Value.Get();
         if (component == nullptr) return UEC_RESULT_INVALID_HANDLE;
-        *outVisible = component->IsVisible() ? UEC_TRUE : UEC_FALSE;
+        *outVisible = component->GetVisibleFlag() ? UEC_TRUE : UEC_FALSE;
         return UEC_RESULT_OK;
     }
 

@@ -24,10 +24,14 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
 {
     static const char actorClassText[] =
         "/Script/UnrealCAPIHost.UECAPIHostCollisionSmokeActor";
+    static const char componentClassText[] = "/Script/Engine.BoxComponent";
     static const char replicatedPropertyText[] = "AuthoritySmokeReplicatedValue";
     static const char tagText[] = "UEC_ListenServerAuthoritySmoke";
     static const char textValue[] = "25";
     const uec_string_view actorClass = {actorClassText, sizeof(actorClassText) - 1u};
+    const uec_string_view componentClass = {
+        componentClassText, sizeof(componentClassText) - 1u
+    };
     const uec_string_view replicatedProperty = {
         replicatedPropertyText, sizeof(replicatedPropertyText) - 1u
     };
@@ -42,9 +46,14 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_actor* childActor = NULL;
     uec_scene_component* parentComponent = NULL;
     uec_scene_component* childComponent = NULL;
+    uec_scene_component* filteredComponent = NULL;
     uec_net_mode netMode = UEC_NET_MODE_UNKNOWN;
     uec_bool hasAuthority = UEC_FALSE;
     uec_bool hasTag = UEC_FALSE;
+    uec_bool visibleBefore = UEC_FALSE;
+    uec_bool visibleAfter = UEC_FALSE;
+    uec_bool activeBefore = UEC_FALSE;
+    uec_bool activeAfter = UEC_FALSE;
     uec_transform spawnTransform = {0};
     uec_transform transformBefore = {0};
     uec_transform attemptedTransform = {0};
@@ -62,6 +71,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_property_value attemptedValue = {0};
     uec_property_value valueAfter = {0};
     uint32_t worldCount = 0u;
+    uint32_t filteredComponentCount = 0u;
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
     if (result != UEC_RESULT_OK) return result;
     if (api == NULL || context == NULL || api->release_context == NULL ||
@@ -70,8 +80,12 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         api->release_world == NULL || api->spawn_actor == NULL ||
         api->destroy_actor == NULL || api->release_actor == NULL ||
         api->get_actor_root_component == NULL || api->release_scene_component == NULL ||
-        api->get_component_transform == NULL || api->attach_scene_component == NULL ||
-        api->detach_scene_component == NULL ||
+        api->get_actor_component_count_by_class == NULL ||
+        api->get_actor_component_at_by_class == NULL ||
+        api->get_component_transform == NULL || api->set_component_transform == NULL ||
+        api->get_component_visible == NULL || api->set_component_visible == NULL ||
+        api->get_component_active == NULL || api->set_component_active == NULL ||
+        api->attach_scene_component == NULL || api->detach_scene_component == NULL ||
         api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
         api->get_actor_property_value == NULL || api->set_actor_property_value == NULL ||
         api->set_actor_property_string == NULL || api->set_actor_tag == NULL ||
@@ -211,8 +225,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     result = api->set_actor_transform(actor, &attemptedTransform, UEC_FALSE);
     if (result != UEC_RESULT_OK) goto cleanup;
     result = api->get_actor_transform(actor, &transformAfter);
-    if (result != UEC_RESULT_OK ||
-        transformAfter.translation.x != attemptedTransform.translation.x) {
+    if (result != UEC_RESULT_OK || !IsSameTransform(transformAfter, attemptedTransform)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -229,6 +242,28 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    result = api->get_component_transform(parentComponent, &transformBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_actor_component_count_by_class(actor, componentClass,
+                                                     &filteredComponentCount);
+    if (result != UEC_RESULT_OK || filteredComponentCount != 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_component_at_by_class(actor, componentClass, 0u,
+                                                  &filteredComponent);
+    if (result != UEC_RESULT_OK || filteredComponent == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_transform(filteredComponent, &transformAfter);
+    if (result != UEC_RESULT_OK || !IsSameTransform(transformAfter, transformBefore)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->release_scene_component(filteredComponent);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    filteredComponent = NULL;
     result = api->get_actor_root_component(childActor, &childComponent);
     if (result != UEC_RESULT_OK || childComponent == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
@@ -283,6 +318,54 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         goto cleanup;
     }
 
+    transformBefore = childTransformAfterDetachedParentMove;
+    attemptedTransform = transformBefore;
+    attemptedTransform.translation.x += 5.0;
+    attemptedTransform.translation.y -= 10.0;
+    result = api->set_component_transform(childComponent, &attemptedTransform, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(childComponent, &transformAfter);
+    if (result != UEC_RESULT_OK || !IsSameTransform(transformAfter, attemptedTransform)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
+    result = api->get_component_visible(childComponent, &visibleBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    const uec_bool toggledVisibility = visibleBefore == UEC_FALSE ? UEC_TRUE : UEC_FALSE;
+    result = api->set_component_visible(childComponent, toggledVisibility, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_visible(childComponent, &visibleAfter);
+    if (result != UEC_RESULT_OK || visibleAfter != toggledVisibility) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->set_component_visible(childComponent, visibleBefore, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_visible(childComponent, &visibleAfter);
+    if (result != UEC_RESULT_OK || visibleAfter != visibleBefore) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
+    result = api->get_component_active(childComponent, &activeBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    const uec_bool toggledActivation = activeBefore == UEC_FALSE ? UEC_TRUE : UEC_FALSE;
+    result = api->set_component_active(childComponent, toggledActivation, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_active(childComponent, &activeAfter);
+    if (result != UEC_RESULT_OK || activeAfter != toggledActivation) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->set_component_active(childComponent, activeBefore, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_active(childComponent, &activeAfter);
+    if (result != UEC_RESULT_OK || activeAfter != activeBefore) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
     result = api->destroy_actor(actor);
     if (result != UEC_RESULT_OK) goto cleanup;
     actor = NULL;
@@ -317,6 +400,9 @@ cleanup:
     }
     if (parentComponent != NULL && api != NULL && api->release_scene_component != NULL) {
         (void)api->release_scene_component(parentComponent);
+    }
+    if (filteredComponent != NULL && api != NULL && api->release_scene_component != NULL) {
+        (void)api->release_scene_component(filteredComponent);
     }
     if (listenServer != NULL && api != NULL && api->release_world != NULL) {
         (void)api->release_world(listenServer);
