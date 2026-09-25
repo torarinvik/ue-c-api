@@ -398,6 +398,11 @@ state, including false for a valid non-simulating component. Writes accept only
 requires movable component mobility and a collision mode that includes physics
 (`UEC_COLLISION_QUERY_AND_PHYSICS` or `UEC_COLLISION_PHYSICS_ONLY`). Unreal
 refusal or unmet prerequisites return `UEC_RESULT_UNSUPPORTED`.
+ABI minor 144 appends `get_component_mesh` for static- and skeletal-mesh scene
+components. It returns a weak object handle for the currently assigned mesh
+asset and requires the game thread. The output is cleared before validation;
+non-mesh components return `UEC_RESULT_INVALID_ARGUMENT`, and valid mesh
+components with no assigned asset return `UEC_RESULT_NOT_INITIALIZED`.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
@@ -857,6 +862,8 @@ playing at bind time.
 `set_component_material_scalar` and `set_component_material_vector` update all
 matching material parameters on a mesh component; parameter names are UTF-8
 views and vector values use the API's world-independent double-precision type.
+`get_component_mesh` reads back the assigned static or skeletal mesh as an
+ordinary weak object handle; consumers must release that handle after use.
 
 ## Verification
 

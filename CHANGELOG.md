@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 144 adds `get_component_mesh` to read the assigned static or
+  skeletal mesh asset through a weak object handle. The UE 5.8.3 Editor PIE and
+  packaged Development smoke verifies asset-path readback after assignment.
 - The UE 5.8.3 Editor PIE and packaged Development smoke now plays a cooked
   skeletal animation to completion and checks exactly-once delivery, canceled
   completion-subscription suppression, and invalid component/asset rejection.

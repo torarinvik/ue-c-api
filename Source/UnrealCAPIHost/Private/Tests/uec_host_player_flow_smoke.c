@@ -13,6 +13,27 @@ static int PlayerFlowNear(double actual, double expected)
     return fabs(actual - expected) <= 0.01;
 }
 
+static uec_result VerifyComponentMeshPath(const uec_api* api,
+                                          uec_scene_component* component,
+                                          const char* expectedPath)
+{
+    uec_object* mesh = NULL;
+    char path[512] = {0};
+    size_t requiredSize = 0u;
+    uec_result result = api->get_component_mesh(component, &mesh);
+    if (result == UEC_RESULT_OK && mesh == NULL) result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->get_object_path(mesh, path, sizeof(path), &requiredSize);
+    if (result == UEC_RESULT_OK && strcmp(path, expectedPath) != 0)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (mesh != NULL) {
+        const uec_result releaseResult = api->release_object(mesh);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK)
+            result = releaseResult;
+    }
+    return result;
+}
+
 static uec_result DestroyPlayerFlowPawn(const uec_api* api, uec_actor** pawn)
 {
     if (api == NULL || pawn == NULL || *pawn == NULL) return UEC_RESULT_OK;
@@ -86,7 +107,8 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         api->get_camera_field_of_view == NULL || api->set_camera_field_of_view == NULL ||
         api->get_actor_property_value == NULL || api->load_object == NULL ||
         api->release_object == NULL || api->set_static_mesh == NULL ||
-        api->set_skeletal_mesh == NULL ||
+        api->set_skeletal_mesh == NULL || api->get_component_mesh == NULL ||
+        api->get_object_path == NULL ||
         api->set_component_material_scalar == NULL ||
         api->set_component_material_vector == NULL ||
         api->release_context == NULL) {
@@ -159,11 +181,26 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         result = api->load_object(context, meshAssetName, &meshAsset);
     if (result == UEC_RESULT_OK && meshAsset == NULL)
         result = UEC_RESULT_INTERNAL_ERROR;
+    uec_object* observedMesh = meshAsset;
+    if (result == UEC_RESULT_OK &&
+        (api->get_component_mesh(meshComponent, &observedMesh) !=
+             UEC_RESULT_NOT_INITIALIZED || observedMesh != NULL))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    observedMesh = meshAsset;
+    if (result == UEC_RESULT_OK &&
+        (api->get_component_mesh(camera, &observedMesh) !=
+             UEC_RESULT_INVALID_ARGUMENT || observedMesh != NULL))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK &&
+        api->get_component_mesh(meshComponent, NULL) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
     if (result == UEC_RESULT_OK && api->set_static_mesh(camera, meshAsset) !=
             UEC_RESULT_INVALID_ARGUMENT)
         result = UEC_RESULT_INTERNAL_ERROR;
     if (result == UEC_RESULT_OK)
         result = api->set_static_mesh(meshComponent, meshAsset);
+    if (result == UEC_RESULT_OK)
+        result = VerifyComponentMeshPath(api, meshComponent, meshAssetPath);
     if (result == UEC_RESULT_OK)
         result = api->load_object(context, wrongMeshName, &wrongMeshObject);
     if (result == UEC_RESULT_OK && wrongMeshObject == NULL)
@@ -187,12 +224,20 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         result = api->load_object(context, skeletalMeshAssetName, &skeletalMeshAsset);
     if (result == UEC_RESULT_OK && skeletalMeshAsset == NULL)
         result = UEC_RESULT_INTERNAL_ERROR;
+    observedMesh = skeletalMeshAsset;
+    if (result == UEC_RESULT_OK &&
+        (api->get_component_mesh(skeletalMeshComponent, &observedMesh) !=
+             UEC_RESULT_NOT_INITIALIZED || observedMesh != NULL))
+        result = UEC_RESULT_INTERNAL_ERROR;
     if (result == UEC_RESULT_OK && api->set_skeletal_mesh(
             meshComponent, skeletalMeshAsset, UEC_FALSE) != UEC_RESULT_INVALID_ARGUMENT)
         result = UEC_RESULT_INTERNAL_ERROR;
     if (result == UEC_RESULT_OK)
         result = api->set_skeletal_mesh(
             skeletalMeshComponent, skeletalMeshAsset, UEC_FALSE);
+    if (result == UEC_RESULT_OK)
+        result = VerifyComponentMeshPath(api, skeletalMeshComponent,
+                                         skeletalMeshAssetPath);
     if (result == UEC_RESULT_OK && api->set_skeletal_mesh(
             skeletalMeshComponent, wrongMeshObject, UEC_FALSE) != UEC_RESULT_INVALID_ARGUMENT)
         result = UEC_RESULT_INTERNAL_ERROR;

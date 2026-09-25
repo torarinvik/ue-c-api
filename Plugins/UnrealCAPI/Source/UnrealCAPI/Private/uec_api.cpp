@@ -388,7 +388,8 @@ namespace
         &GetProgressBarPercent, &SetProgressBarPercent,
         &GetWidgetEnabled, &SetWidgetEnabled,
         &GetCheckBoxState, &SetCheckBoxState, &GetWidgetChild,
-        &SetComponentSimulatingPhysics, &GetComponentSimulatingPhysics
+        &SetComponentSimulatingPhysics, &GetComponentSimulatingPhysics,
+        &GetComponentMesh
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

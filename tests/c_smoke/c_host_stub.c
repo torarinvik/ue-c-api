@@ -30,6 +30,14 @@ static uec_result UEC_CALL StubGetComponentSimulatingPhysics(
     return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetComponentMesh(
+    uec_scene_component* component, uec_object** outMesh)
+{
+    if (outMesh != NULL) *outMesh = NULL;
+    if (outMesh == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubBindInputAction(
     uec_actor* actor, uec_object* action, uec_input_trigger_event triggerEvent,
     uec_input_action_callback callback, void* userData, uint64_t* outBindingId)
