@@ -378,6 +378,9 @@ obtain a native Unreal handle is removed before the call reports failure.
 Skeletal-animation completion subscriptions use the same token rules. Bind only
 while a single animation is playing; the one-shot callback fires when that
 animation stops. Looping playback remains active until the consumer stops it.
+Actor destruction and world cleanup cancel remaining animation and audio
+subscriptions; world cleanup also cancels widget interaction subscriptions.
+Tokens for canceled subscriptions are no longer valid.
 
 ## Handles and shutdown
 
@@ -403,18 +406,18 @@ requests, save requests, and input bindings. Existing handles and callbacks
 must be treated as unusable once shutdown begins. Worker-thread dispatch checks
 the shutdown gate while registering its request, so a request cannot be added
 after teardown has already drained the queue. Destroying an actor through the
-bridge also removes collision and Enhanced Input delegates attached to its
-components; an in-flight callback is allowed to return before its native
-delegate is removed.
-The bridge also watches owners of collision and Enhanced Input subscriptions,
-so external actor destruction removes those bindings and invalidates their
-actor/component handles.
+bridge also removes collision, Enhanced Input, audio, and skeletal-animation
+completion subscriptions attached to it; an in-flight callback is allowed to
+return before its native delegate is removed. The bridge also watches owners
+of collision, Enhanced Input, audio, and animation subscriptions, so external
+actor destruction removes those bindings and invalidates their actor/component
+handles.
 
-Level travel cancels timers, world-tick subscriptions, and actor-scoped
-collision/input subscriptions for the traveled world before submitting the
-request. It then invalidates world, actor, component, and world-bound object
-handles from that world; reacquire the new world and its objects after travel.
-Global asset handles remain valid.
+Level travel cancels timers, world-tick, audio, animation, and widget
+subscriptions, plus actor-scoped collision/input subscriptions for the
+traveled world before submitting the request. It then invalidates world,
+actor, component, and world-bound object handles from that world; reacquire the
+new world and its objects after travel. Global asset handles remain valid.
 
 In networked worlds, call `get_world_net_mode` and `get_world_has_authority`
 before mutating gameplay state. Actor/component transforms, tags, activation,

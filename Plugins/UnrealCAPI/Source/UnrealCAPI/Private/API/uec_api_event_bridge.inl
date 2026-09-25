@@ -406,6 +406,8 @@
             GInputBindings.Remove(bindingId);
         }
         CancelEventBridgeSubscriptions(actor);
+        CancelAudioSubscriptionsForActor(actor);
+        CancelAnimationSubscriptionsForActor(actor);
     }
 
     static void CancelActorSubscriptionsForWorld(UWorld* world)

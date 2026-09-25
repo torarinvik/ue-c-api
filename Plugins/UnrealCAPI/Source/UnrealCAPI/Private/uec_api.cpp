@@ -289,6 +289,7 @@ namespace
     #include "API/uec_api_reflection_invoke_typed.inl"
     #include "API/uec_api_reflection_latent.inl"
     #include "API/uec_api_presentation.inl"
+    #include "API/uec_api_subscriptions.inl"
     #include "API/uec_api_gameplay.inl"
     #include "API/uec_api_input.inl"
     #include "API/uec_api_async.inl"

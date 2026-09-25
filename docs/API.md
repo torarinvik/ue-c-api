@@ -491,12 +491,12 @@ should enumerate and retain the desired world handle.
 output convention as other names. `travel_world` submits a game-thread level
 travel request through `UGameplayStatics::OpenLevel`; the call returning `OK`
 means the request was submitted, not that loading has completed. The bridge
-cancels timers, world-tick subscriptions, and actor-scoped collision/input
-subscriptions owned by that world and immediately invalidates its world, actor,
-component, and world-bound object handles; global asset handles remain valid.
-Reacquire a world after travel and reacquire objects from the new world. The
-same invalidation occurs for `travel_world_async` before its `OpenLevel`
-submission, even if the completion callback is later canceled.
+cancels timers, world-tick, audio, animation, and widget subscriptions, plus
+actor-scoped collision/input subscriptions owned by that world, and immediately
+invalidates its world, actor, component, and world-bound object handles; global
+asset handles remain valid. Reacquire a world after travel and reacquire objects
+from the new world. The same invalidation occurs for `travel_world_async` before
+its `OpenLevel` submission, even if the completion callback is later canceled.
 
 Collision and Enhanced Input subscriptions also install one actor-destruction
 listener per owning world. If Unreal destroys an actor outside the bridge, its

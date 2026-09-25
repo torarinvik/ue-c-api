@@ -17,6 +17,7 @@ typedef struct uec_animation_smoke_state {
     uint32_t completion_count;
     uint32_t reentrant_unbind_count;
     uint32_t callbacks_observed_in_flight;
+    uint32_t baseline_subscriptions;
     double elapsed_seconds;
     uec_result callback_result;
     uec_bool running;
@@ -118,6 +119,80 @@ static void FinishAnimationSmoke(uec_result result)
     memset(&g_animation_smoke, 0, sizeof(g_animation_smoke));
 }
 
+static void UEC_CALL AnimationFinished(uint64_t subscriptionId, void* userData);
+
+static uec_result AnimationCleanupStepFailed(const char* step, uec_result result)
+{
+    fprintf(stderr, "Animation actor-cleanup step %s failed with result %d\n",
+            step, (int)result);
+    return result;
+}
+
+static uec_result VerifyAnimationSubscriptionActorCleanup(
+    uec_animation_smoke_state* state)
+{
+    uec_result result = state->api->stop_skeletal_animation(state->component);
+    if (result != UEC_RESULT_OK) return AnimationCleanupStepFailed("stop", result);
+    state->animation_playing = UEC_FALSE;
+    result = state->api->play_skeletal_animation(
+        state->component, state->animation, UEC_TRUE);
+    if (result != UEC_RESULT_OK) return AnimationCleanupStepFailed("replay", result);
+    state->animation_playing = UEC_TRUE;
+    uint64_t cancelledSubscriptionId = 0u;
+    result = state->api->bind_animation_finished(
+        state->component, AnimationFinished, state, &cancelledSubscriptionId);
+    if (result != UEC_RESULT_OK || cancelledSubscriptionId == 0u)
+        return AnimationCleanupStepFailed(
+            "bind", result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
+    state->animation_subscription_id = cancelledSubscriptionId;
+
+    uec_runtime_stats stats = {0};
+    stats.struct_size = sizeof(stats);
+    result = state->api->get_runtime_stats(state->context, &stats);
+    if (result != UEC_RESULT_OK ||
+        stats.active_subscriptions != state->baseline_subscriptions + 2u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        return AnimationCleanupStepFailed(
+            "pre-destroy-stats", result == UEC_RESULT_OK ?
+                UEC_RESULT_INTERNAL_ERROR : result);
+    }
+
+    uec_actor* destroyedActor = state->actor;
+    result = state->api->destroy_actor(destroyedActor);
+    if (result != UEC_RESULT_OK) return AnimationCleanupStepFailed("destroy", result);
+    state->animation_playing = UEC_FALSE;
+    state->actor = NULL;
+    uec_transform ignoredTransform = {0};
+    result = state->api->get_actor_transform(destroyedActor, &ignoredTransform);
+    if (result != UEC_RESULT_INVALID_HANDLE)
+        return AnimationCleanupStepFailed(
+            "destroyed-actor-handle", result == UEC_RESULT_OK ?
+                UEC_RESULT_INTERNAL_ERROR : result);
+    result = state->api->release_scene_component(state->component);
+    if (result != UEC_RESULT_OK)
+        return AnimationCleanupStepFailed("release-component", result);
+    state->component = NULL;
+
+    const uec_result unbindResult = state->api->unbind_animation_finished(
+        state->context, cancelledSubscriptionId);
+    if (unbindResult == UEC_RESULT_OK)
+        return AnimationCleanupStepFailed("subscription-still-present",
+                                          UEC_RESULT_INTERNAL_ERROR);
+    if (unbindResult != UEC_RESULT_INVALID_ARGUMENT)
+        return AnimationCleanupStepFailed("cancelled-token", unbindResult);
+    state->animation_subscription_id = 0u;
+    if (state->completion_count != 1u) return UEC_RESULT_INTERNAL_ERROR;
+    stats = (uec_runtime_stats){0};
+    stats.struct_size = sizeof(stats);
+    result = state->api->get_runtime_stats(state->context, &stats);
+    if (result != UEC_RESULT_OK)
+        return AnimationCleanupStepFailed("post-destroy-stats", result);
+    if (stats.active_subscriptions != state->baseline_subscriptions + 1u)
+        return AnimationCleanupStepFailed("subscription-count",
+                                          UEC_RESULT_INTERNAL_ERROR);
+    return UEC_RESULT_OK;
+}
+
 static void UEC_CALL AnimationFinished(uint64_t subscriptionId, void* userData)
 {
     uec_animation_smoke_state* state = (uec_animation_smoke_state*)userData;
@@ -165,8 +240,7 @@ static void UEC_CALL AnimationSmokeTick(
             FinishAnimationSmoke(UEC_RESULT_INTERNAL_ERROR);
             return;
         }
-        const uec_result stopResult = state->api->stop_skeletal_animation(state->component);
-        FinishAnimationSmoke(stopResult);
+        FinishAnimationSmoke(VerifyAnimationSubscriptionActorCleanup(state));
         return;
     }
     state->elapsed_seconds += deltaSeconds;
@@ -204,8 +278,10 @@ uec_result UEC_CALL uec_host_animation_smoke_start(void)
     if (result != UEC_RESULT_OK) return result;
     const uec_api* api = state->api;
     if (api == NULL || state->context == NULL || api->get_default_world == NULL ||
+        api->get_runtime_stats == NULL ||
         api->release_world == NULL || api->spawn_actor == NULL ||
         api->destroy_actor == NULL || api->release_actor == NULL ||
+        api->get_actor_transform == NULL ||
         api->get_actor_component_count_by_class == NULL ||
         api->get_actor_component_at_by_class == NULL ||
         api->release_scene_component == NULL || api->load_object == NULL ||
@@ -216,6 +292,12 @@ uec_result UEC_CALL uec_host_animation_smoke_start(void)
         api->release_context == NULL) {
         return AbortAnimationSmoke(UEC_RESULT_UNSUPPORTED);
     }
+
+    uec_runtime_stats baseline = {0};
+    baseline.struct_size = sizeof(baseline);
+    result = api->get_runtime_stats(state->context, &baseline);
+    if (result != UEC_RESULT_OK) return AbortAnimationSmoke(result);
+    state->baseline_subscriptions = baseline.active_subscriptions;
 
     result = api->get_default_world(state->context, &state->world);
     if (result == UEC_RESULT_OK && state->world == NULL)

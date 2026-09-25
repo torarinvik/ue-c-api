@@ -1,6 +1,12 @@
 /* Shared runtime validation, conversion, lifecycle, and diagnostics helpers. */
     static void CancelActorSubscriptions(AActor* actor);
     static void CancelActorSubscriptionsForWorld(UWorld* world);
+    static void CancelAudioSubscriptionsFor(UAudioComponent* audio);
+    static void CancelAudioSubscriptionsForActor(AActor* actor);
+    static void CancelAudioSubscriptionsForWorld(UWorld* world);
+    static void CancelWidgetSubscriptionsForWorld(UWorld* world);
+    static void CancelAnimationSubscriptionsForActor(AActor* actor);
+    static void CancelAnimationSubscriptionsForWorld(UWorld* world);
     static void EnsureActorDestroyedHandler(UWorld* world);
     static void RemoveActorDestroyedHandler(UWorld* world);
     static void RemoveCollisionSubscription(

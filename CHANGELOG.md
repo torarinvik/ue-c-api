@@ -36,6 +36,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Fixed
 
+- World cleanup, actor destruction, PIE restart, and level travel now cancel
+  audio and skeletal-animation completion subscriptions; world cleanup also
+  cancels widget interaction subscriptions. The animation PIE smoke verifies
+  actor-destruction cancellation and subscription-count drainage.
 - Actor-destroyed notifications now invalidate actor, component, and object
   handles by clearing their weak references without pre-releasing them, so
   consumers can still release handles after Unreal destroys their objects.
