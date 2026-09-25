@@ -337,36 +337,6 @@
         return UEC_RESULT_OK;
     }
 
-    /* Camera component properties. */
-    uec_result UEC_CALL GetCameraFieldOfView(uec_scene_component* rawComponent,
-                                             double* outDegrees)
-    {
-        if (outDegrees != nullptr) *outDegrees = 0.0;
-        if (outDegrees == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        UCameraComponent* camera = Cast<UCameraComponent>(componentHandle->Value.Get());
-        if (camera == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        *outDegrees = static_cast<double>(camera->FieldOfView);
-        return UEC_RESULT_OK;
-    }
-
-    uec_result UEC_CALL SetCameraFieldOfView(uec_scene_component* rawComponent,
-                                             double degrees)
-    {
-        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if (!IsRepresentableFloat(degrees) || degrees <= 0.0 || degrees >= 360.0) {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        UCameraComponent* camera = Cast<UCameraComponent>(componentHandle->Value.Get());
-        if (camera == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        camera->SetFieldOfView(static_cast<float>(degrees));
-        return UEC_RESULT_OK;
-    }
-
     /* Attached audio components and completion subscriptions. */
     uec_result UEC_CALL SpawnSoundAttached(uec_scene_component* rawAttachTo,
                                            uec_object* rawSound,
@@ -607,36 +577,6 @@
         return UEC_RESULT_OK;
     }
 
-    uec_result UEC_CALL GetComponentMesh(uec_scene_component* rawComponent,
-                                         uec_object** outMesh)
-    {
-        if (outMesh != nullptr) *outMesh = nullptr;
-        if (outMesh == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        USceneComponent* component = componentHandle->Value.Get();
-        UObject* mesh = nullptr;
-        if (UStaticMeshComponent* staticMesh = Cast<UStaticMeshComponent>(component))
-        {
-            mesh = staticMesh->GetStaticMesh();
-        }
-        else if (USkeletalMeshComponent* skeletalMesh =
-                     Cast<USkeletalMeshComponent>(component))
-        {
-            mesh = skeletalMesh->GetSkeletalMeshAsset();
-        }
-        else
-        {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        if (mesh == nullptr) return UEC_RESULT_NOT_INITIALIZED;
-        FUECObject* meshHandle = MakeObjectHandle(mesh);
-        if (meshHandle == nullptr) return HandleCreationFailureResult();
-        *outMesh = reinterpret_cast<uec_object*>(meshHandle);
-        return UEC_RESULT_OK;
-    }
-
     uec_result UEC_CALL PlaySkeletalAnimation(uec_scene_component* rawComponent,
                                               uec_object* rawAnimation,
                                               uec_bool looping)
@@ -663,6 +603,100 @@
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
         component->Stop();
         return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetComponentMaterialScalar(uec_scene_component* rawComponent,
+                                                    uec_string_view parameterName,
+                                                    double value)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(parameterName) || parameterName.size == 0 ||
+            !IsRepresentableFloat(value)) return UEC_RESULT_INVALID_ARGUMENT;
+        UMeshComponent* component = Cast<UMeshComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        component->SetScalarParameterValueOnMaterials(
+            FName(*ToFString(parameterName)), static_cast<float>(value));
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetComponentMaterialVector(uec_scene_component* rawComponent,
+                                                    uec_string_view parameterName,
+                                                    uec_vector3 value)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(parameterName) || parameterName.size == 0 ||
+            !IsRepresentableFloat(value.x) || !IsRepresentableFloat(value.y) ||
+            !IsRepresentableFloat(value.z)) return UEC_RESULT_INVALID_ARGUMENT;
+        UMeshComponent* component = Cast<UMeshComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        component->SetVectorParameterValueOnMaterials(
+            FName(*ToFString(parameterName)), FVector(value.x, value.y, value.z));
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetComponentMaterialScalar(uec_scene_component* rawComponent,
+                                                    uec_string_view parameterName,
+                                                    double* outValue)
+    {
+        if (outValue != nullptr) *outValue = 0.0;
+        if (outValue == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(parameterName) || parameterName.size == 0)
+            return UEC_RESULT_INVALID_ARGUMENT;
+        UMeshComponent* component = Cast<UMeshComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const FHashedMaterialParameterInfo parameterInfo{
+            FName(*ToFString(parameterName))};
+        for (int32 index = 0; index < component->GetNumMaterials(); ++index)
+        {
+            UMaterialInterface* material = component->GetMaterial(index);
+            if (!IsValid(material)) continue;
+            float value = 0.0f;
+            if (material->GetScalarParameterValue(parameterInfo, value))
+            {
+                if (!FMath::IsFinite(value)) return UEC_RESULT_INTERNAL_ERROR;
+                *outValue = static_cast<double>(value);
+                return UEC_RESULT_OK;
+            }
+        }
+        return UEC_RESULT_NOT_INITIALIZED;
+    }
+
+    uec_result UEC_CALL GetComponentMaterialVector(uec_scene_component* rawComponent,
+                                                    uec_string_view parameterName,
+                                                    uec_vector3* outValue)
+    {
+        if (outValue != nullptr) *outValue = {};
+        if (outValue == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(parameterName) || parameterName.size == 0)
+            return UEC_RESULT_INVALID_ARGUMENT;
+        UMeshComponent* component = Cast<UMeshComponent>(componentHandle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const FHashedMaterialParameterInfo parameterInfo{
+            FName(*ToFString(parameterName))};
+        for (int32 index = 0; index < component->GetNumMaterials(); ++index)
+        {
+            UMaterialInterface* material = component->GetMaterial(index);
+            if (!IsValid(material)) continue;
+            FLinearColor value{0.0f, 0.0f, 0.0f, 0.0f};
+            if (material->GetVectorParameterValue(parameterInfo, value))
+            {
+                if (!FMath::IsFinite(value.R) || !FMath::IsFinite(value.G) ||
+                    !FMath::IsFinite(value.B)) return UEC_RESULT_INTERNAL_ERROR;
+                *outValue = {value.R, value.G, value.B};
+                return UEC_RESULT_OK;
+            }
+        }
+        return UEC_RESULT_NOT_INITIALIZED;
     }
 
     /* Poll the documented single-animation state so completion works without

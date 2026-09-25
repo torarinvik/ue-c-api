@@ -403,6 +403,13 @@ components. It returns a weak object handle for the currently assigned mesh
 asset and requires the game thread. The output is cleared before validation;
 non-mesh components return `UEC_RESULT_INVALID_ARGUMENT`, and valid mesh
 components with no assigned asset return `UEC_RESULT_NOT_INITIALIZED`.
+ABI minors 145 and 146 append `get_component_material_scalar` and
+`get_component_material_vector`. They read a named scalar or vector parameter
+from the first component material slot that defines it, returning vector RGB as
+the API's double-precision `uec_vector3`. Both calls require the game thread,
+clear their output before validation, return `UEC_RESULT_INVALID_ARGUMENT` for
+non-mesh components, and return `UEC_RESULT_NOT_INITIALIZED` when no assigned
+material defines a parameter of the requested type.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
@@ -862,6 +869,8 @@ playing at bind time.
 `set_component_material_scalar` and `set_component_material_vector` update all
 matching material parameters on a mesh component; parameter names are UTF-8
 views and vector values use the API's world-independent double-precision type.
+The matching getters return the first defined parameter value across material
+slots and reset outputs on failure.
 `get_component_mesh` reads back the assigned static or skeletal mesh as an
 ordinary weak object handle; consumers must release that handle after use.
 

@@ -31,6 +31,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/AudioComponent.h"
+#include "Materials/MaterialInterface.h"
 #include "Animation/AnimationAsset.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/SkeletalMesh.h"
@@ -389,7 +390,7 @@ namespace
         &GetWidgetEnabled, &SetWidgetEnabled,
         &GetCheckBoxState, &SetCheckBoxState, &GetWidgetChild,
         &SetComponentSimulatingPhysics, &GetComponentSimulatingPhysics,
-        &GetComponentMesh
+        &GetComponentMesh, &GetComponentMaterialScalar, &GetComponentMaterialVector
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

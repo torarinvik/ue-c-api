@@ -57,8 +57,9 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     static const char meshAssetPath[] = "/Engine/BasicShapes/Cube.Cube";
     static const char skeletalMeshAssetPath[] = "/Engine/EngineMeshes/SkeletalCube.SkeletalCube";
     static const char wrongMeshPath[] = "/Script/Engine.Actor";
-    static const char scalarParameterPath[] = "UECAPI_SmokeScalar";
-    static const char vectorParameterPath[] = "UECAPI_SmokeVector";
+    static const char scalarParameterPath[] = "Opacity";
+    static const char vectorParameterPath[] = "TintColorAndOpacity";
+    static const char missingParameterPath[] = "UECAPI_MissingMaterialParameter";
     static const char markerProperty[] = "CApiMarker";
     const uec_string_view cameraClass = {
         cameraClassPath, sizeof(cameraClassPath) - 1u};
@@ -76,6 +77,8 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         scalarParameterPath, sizeof(scalarParameterPath) - 1u};
     const uec_string_view vectorParameterName = {
         vectorParameterPath, sizeof(vectorParameterPath) - 1u};
+    const uec_string_view missingParameterName = {
+        missingParameterPath, sizeof(missingParameterPath) - 1u};
     const uec_string_view markerName = {
         markerProperty, sizeof(markerProperty) - 1u};
     const uec_api* api = NULL;
@@ -108,6 +111,8 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         api->get_actor_property_value == NULL || api->load_object == NULL ||
         api->release_object == NULL || api->set_static_mesh == NULL ||
         api->set_skeletal_mesh == NULL || api->get_component_mesh == NULL ||
+        api->get_component_material_scalar == NULL ||
+        api->get_component_material_vector == NULL ||
         api->get_object_path == NULL ||
         api->set_component_material_scalar == NULL ||
         api->set_component_material_vector == NULL ||
@@ -266,6 +271,69 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     if (result == UEC_RESULT_OK && api->set_component_material_vector(
             skeletalMeshComponent, vectorParameterName,
             (uec_vector3){0.0, 1.0e300, 0.0}) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+
+    double materialScalar = -1.0;
+    uec_vector3 observedMaterialVector = {-1.0, -1.0, -1.0};
+    if (result == UEC_RESULT_OK)
+        result = api->get_component_material_scalar(
+            meshComponent, scalarParameterName, &materialScalar);
+    if (result == UEC_RESULT_OK && !PlayerFlowNear(materialScalar, 0.625))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->get_component_material_vector(
+            meshComponent, vectorParameterName, &observedMaterialVector);
+    if (result == UEC_RESULT_OK &&
+        (!PlayerFlowNear(observedMaterialVector.x, materialVector.x) ||
+         !PlayerFlowNear(observedMaterialVector.y, materialVector.y) ||
+         !PlayerFlowNear(observedMaterialVector.z, materialVector.z)))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    materialScalar = -1.0;
+    observedMaterialVector = (uec_vector3){-1.0, -1.0, -1.0};
+    if (result == UEC_RESULT_OK)
+        result = api->get_component_material_scalar(
+            skeletalMeshComponent, scalarParameterName, &materialScalar);
+    if (result == UEC_RESULT_OK && !PlayerFlowNear(materialScalar, 0.375))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->get_component_material_vector(
+            skeletalMeshComponent, vectorParameterName, &observedMaterialVector);
+    if (result == UEC_RESULT_OK &&
+        (!PlayerFlowNear(observedMaterialVector.x, materialVector.x) ||
+         !PlayerFlowNear(observedMaterialVector.y, materialVector.y) ||
+         !PlayerFlowNear(observedMaterialVector.z, materialVector.z)))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    materialScalar = -1.0;
+    observedMaterialVector = (uec_vector3){-1.0, -1.0, -1.0};
+    if (result == UEC_RESULT_OK &&
+        (api->get_component_material_scalar(
+             meshComponent, missingParameterName, &materialScalar) !=
+             UEC_RESULT_NOT_INITIALIZED || materialScalar != 0.0))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK &&
+        (api->get_component_material_vector(
+             meshComponent, missingParameterName, &observedMaterialVector) !=
+             UEC_RESULT_NOT_INITIALIZED || observedMaterialVector.x != 0.0 ||
+         observedMaterialVector.y != 0.0 || observedMaterialVector.z != 0.0))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    materialScalar = -1.0;
+    observedMaterialVector = (uec_vector3){-1.0, -1.0, -1.0};
+    if (result == UEC_RESULT_OK &&
+        (api->get_component_material_scalar(
+             camera, scalarParameterName, &materialScalar) !=
+             UEC_RESULT_INVALID_ARGUMENT || materialScalar != 0.0))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK &&
+        (api->get_component_material_vector(
+             camera, vectorParameterName, &observedMaterialVector) !=
+             UEC_RESULT_INVALID_ARGUMENT || observedMaterialVector.x != 0.0 ||
+         observedMaterialVector.y != 0.0 || observedMaterialVector.z != 0.0))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK &&
+        (api->get_component_material_scalar(
+             meshComponent, scalarParameterName, NULL) != UEC_RESULT_INVALID_ARGUMENT ||
+         api->get_component_material_vector(
+             meshComponent, vectorParameterName, NULL) != UEC_RESULT_INVALID_ARGUMENT))
         result = UEC_RESULT_INTERNAL_ERROR;
 
     if (result == UEC_RESULT_OK)

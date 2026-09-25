@@ -7,6 +7,12 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minors 145 and 146 add `get_component_material_scalar` and
+  `get_component_material_vector`. UE 5.8.3 Editor PIE and packaged Development
+  smoke verifies set/readback values against the cooked `Widget3DPassThrough`
+  material on static and skeletal mesh components, missing parameters, and
+  output clearing for invalid component/output arguments. Rendered pixels remain
+  unverified.
 - ABI minor 144 adds `get_component_mesh` to read the assigned static or
   skeletal mesh asset through a weak object handle. The UE 5.8.3 Editor PIE and
   packaged Development smoke verifies asset-path readback after assignment.

@@ -512,43 +512,6 @@
         return UEC_RESULT_OK;
     }
 
-    uec_result UEC_CALL SetComponentMaterialScalar(uec_scene_component* rawComponent,
-                                                    uec_string_view parameterName,
-                                                    double value)
-    {
-        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if (!IsValidStringView(parameterName) ||
-            parameterName.size == 0 || !IsRepresentableFloat(value)) {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        UMeshComponent* component = Cast<UMeshComponent>(componentHandle->Value.Get());
-        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        component->SetScalarParameterValueOnMaterials(
-            FName(*ToFString(parameterName)), static_cast<float>(value));
-        return UEC_RESULT_OK;
-    }
-
-    uec_result UEC_CALL SetComponentMaterialVector(uec_scene_component* rawComponent,
-                                                    uec_string_view parameterName,
-                                                    uec_vector3 value)
-    {
-        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
-        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
-        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
-        if (!IsValidStringView(parameterName) ||
-            parameterName.size == 0 || !IsRepresentableFloat(value.x) ||
-            !IsRepresentableFloat(value.y) || !IsRepresentableFloat(value.z)) {
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        UMeshComponent* component = Cast<UMeshComponent>(componentHandle->Value.Get());
-        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-        component->SetVectorParameterValueOnMaterials(
-            FName(*ToFString(parameterName)), FVector(value.x, value.y, value.z));
-        return UEC_RESULT_OK;
-    }
-
     uec_result UEC_CALL AddInputMappingContext(uec_actor* rawController,
                                                uec_object* rawMappingContext,
                                                int32_t priority)

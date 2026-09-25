@@ -410,6 +410,59 @@
         return UEC_RESULT_OK;
     }
 
+    /* Camera and mesh reads belong to the actor/component gameplay surface. */
+    uec_result UEC_CALL GetCameraFieldOfView(uec_scene_component* rawComponent,
+                                             double* outDegrees)
+    {
+        if (outDegrees != nullptr) *outDegrees = 0.0;
+        if (outDegrees == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UCameraComponent* camera = Cast<UCameraComponent>(componentHandle->Value.Get());
+        if (camera == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *outDegrees = static_cast<double>(camera->FieldOfView);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetCameraFieldOfView(uec_scene_component* rawComponent,
+                                             double degrees)
+    {
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsRepresentableFloat(degrees) || degrees <= 0.0 || degrees >= 360.0)
+            return UEC_RESULT_INVALID_ARGUMENT;
+        UCameraComponent* camera = Cast<UCameraComponent>(componentHandle->Value.Get());
+        if (camera == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        camera->SetFieldOfView(static_cast<float>(degrees));
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetComponentMesh(uec_scene_component* rawComponent,
+                                         uec_object** outMesh)
+    {
+        if (outMesh != nullptr) *outMesh = nullptr;
+        if (outMesh == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* componentHandle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(componentHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USceneComponent* component = componentHandle->Value.Get();
+        UObject* mesh = nullptr;
+        if (UStaticMeshComponent* staticMesh = Cast<UStaticMeshComponent>(component))
+            mesh = staticMesh->GetStaticMesh();
+        else if (USkeletalMeshComponent* skeletalMesh =
+                     Cast<USkeletalMeshComponent>(component))
+            mesh = skeletalMesh->GetSkeletalMeshAsset();
+        else
+            return UEC_RESULT_INVALID_ARGUMENT;
+        if (mesh == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        FUECObject* meshHandle = MakeObjectHandle(mesh);
+        if (meshHandle == nullptr) return HandleCreationFailureResult();
+        *outMesh = reinterpret_cast<uec_object*>(meshHandle);
+        return UEC_RESULT_OK;
+    }
+
     static void ClearAllCollisionSubscriptions()
     {
         for (const TPair<uint64, TSharedPtr<FUECCollisionSubscription>>& pair : GCollisionSubscriptions)

@@ -38,6 +38,25 @@ static uec_result UEC_CALL StubGetComponentMesh(
     return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetComponentMaterialScalar(
+    uec_scene_component* component, uec_string_view parameterName, double* outValue)
+{
+    (void)parameterName;
+    if (outValue != NULL) *outValue = 0.0;
+    if (outValue == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetComponentMaterialVector(
+    uec_scene_component* component, uec_string_view parameterName,
+    uec_vector3* outValue)
+{
+    (void)parameterName;
+    if (outValue != NULL) *outValue = (uec_vector3){0};
+    if (outValue == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubBindInputAction(
     uec_actor* actor, uec_object* action, uec_input_trigger_event triggerEvent,
     uec_input_action_callback callback, void* userData, uint64_t* outBindingId)

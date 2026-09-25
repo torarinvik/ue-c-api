@@ -10,6 +10,7 @@ class USkeletalMesh;
 class USkeletalMeshComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
+class UMaterialInterface;
 
 UCLASS(NotBlueprintable)
 class AUECAPIHostPlayerFlowPawn final : public APawn
@@ -30,6 +31,9 @@ public:
 
     UPROPERTY()
     TObjectPtr<UStaticMesh> CookedTestMesh;
+
+    UPROPERTY()
+    TObjectPtr<UMaterialInterface> CookedTestMaterial;
 
     UPROPERTY()
     TObjectPtr<USkeletalMeshComponent> FlowSkeletalMesh;

@@ -6,6 +6,7 @@
 #include "Animation/AnimSequence.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
 AUECAPIHostPlayerFlowPawn::AUECAPIHostPlayerFlowPawn()
@@ -18,6 +19,12 @@ AUECAPIHostPlayerFlowPawn::AUECAPIHostPlayerFlowPawn()
     FlowMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FlowMesh"));
     FlowMesh->SetupAttachment(root);
     FlowMesh->SetMobility(EComponentMobility::Movable);
+    static ConstructorHelpers::FObjectFinder<UMaterialInterface> materialAsset(
+        TEXT("/Engine/EngineMaterials/Widget3DPassThrough.Widget3DPassThrough"));
+    if (materialAsset.Succeeded()) {
+        CookedTestMaterial = materialAsset.Object;
+        FlowMesh->SetMaterial(0, CookedTestMaterial);
+    }
     static ConstructorHelpers::FObjectFinder<UStaticMesh> meshAsset(
         TEXT("/Engine/BasicShapes/Cube.Cube"));
     if (meshAsset.Succeeded()) CookedTestMesh = meshAsset.Object;
@@ -25,6 +32,8 @@ AUECAPIHostPlayerFlowPawn::AUECAPIHostPlayerFlowPawn()
         TEXT("FlowSkeletalMesh"));
     FlowSkeletalMesh->SetupAttachment(root);
     FlowSkeletalMesh->SetMobility(EComponentMobility::Movable);
+    if (CookedTestMaterial != nullptr)
+        FlowSkeletalMesh->SetMaterial(0, CookedTestMaterial);
     static ConstructorHelpers::FObjectFinder<USkeletalMesh> skeletalMeshAsset(
         TEXT("/Engine/EngineMeshes/SkeletalCube.SkeletalCube"));
     if (skeletalMeshAsset.Succeeded()) CookedTestSkeletalMesh = skeletalMeshAsset.Object;
