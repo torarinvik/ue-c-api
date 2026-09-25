@@ -98,6 +98,61 @@ namespace
         return UEC_RESULT_OK;
     }
 
+    uec_result CheckSoftProperty(const uec_api* api,
+                                 uec_context* context,
+                                 uec_actor* actor,
+                                 const char* propertyName,
+                                 uec_property_kind kind,
+                                 const char* initialPath,
+                                 const char* updatedPath)
+    {
+        char buffer[256] = {};
+        uec_text_output output{sizeof(uec_text_output), UEC_PROPERTY_UNKNOWN,
+                               buffer, sizeof(buffer), 0u};
+        uec_result result = api->get_actor_property_soft_value(
+            actor, View(propertyName), &output);
+        if (result != UEC_RESULT_OK) return result;
+        if (output.kind != kind || std::strstr(buffer, initialPath) == nullptr ||
+            output.required_size > sizeof(buffer)) {
+            api->log(context, View("soft property initial path mismatch"));
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+
+        char shortBuffer[1] = {};
+        uec_text_output shortOutput{sizeof(uec_text_output), UEC_PROPERTY_UNKNOWN,
+                                    shortBuffer, sizeof(shortBuffer), 0u};
+        result = api->get_actor_property_soft_value(actor, View(propertyName), &shortOutput);
+        if (result != UEC_RESULT_BUFFER_TOO_SMALL || shortOutput.kind != kind ||
+            shortOutput.required_size != output.required_size) {
+            api->log(context, View("soft property short-buffer result mismatch"));
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+
+        const uec_property_kind wrongKind = kind == UEC_PROPERTY_SOFT_OBJECT ?
+            UEC_PROPERTY_SOFT_CLASS : UEC_PROPERTY_SOFT_OBJECT;
+        if (api->set_actor_property_soft_value(
+                actor, View(propertyName), wrongKind, View(updatedPath)) !=
+            UEC_RESULT_INVALID_ARGUMENT) {
+            api->log(context, View("soft property accepted a mismatched kind"));
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        result = api->set_actor_property_soft_value(
+            actor, View(propertyName), kind, View(updatedPath));
+        if (result != UEC_RESULT_OK) return result;
+
+        std::memset(buffer, 0, sizeof(buffer));
+        output.kind = UEC_PROPERTY_UNKNOWN;
+        output.required_size = 0u;
+        result = api->get_actor_property_soft_value(actor, View(propertyName), &output);
+        if (result != UEC_RESULT_OK) return result;
+        if (output.kind != kind || std::strstr(buffer, updatedPath) == nullptr ||
+            output.required_size > sizeof(buffer)) {
+            api->log(context, View("soft property updated path mismatch"));
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        return UEC_RESULT_OK;
+    }
+
     uec_result DestroyActor(const uec_api* api, uec_actor*& actor)
     {
         if (actor == nullptr) return UEC_RESULT_OK;
@@ -131,7 +186,9 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
         api->release_actor == nullptr || api->get_actor_property_value == nullptr ||
         api->set_actor_property_value == nullptr ||
         api->get_actor_property_string == nullptr ||
-        api->set_actor_property_string == nullptr) {
+        api->set_actor_property_string == nullptr ||
+        api->get_actor_property_soft_value == nullptr ||
+        api->set_actor_property_soft_value == nullptr) {
         result = UEC_RESULT_INTERNAL_ERROR;
     }
 
@@ -246,6 +303,15 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
         api->log(context, View(diagnostic));
         result = UEC_RESULT_INTERNAL_ERROR;
     }
+
+    if (result == UEC_RESULT_OK) stage = "soft object property";
+    if (result == UEC_RESULT_OK) result = CheckSoftProperty(
+        api, context, actor, "SoftMesh", UEC_PROPERTY_SOFT_OBJECT,
+        "/Engine/BasicShapes/Cube.Cube", "/Engine/BasicShapes/Sphere.Sphere");
+    if (result == UEC_RESULT_OK) stage = "soft class property";
+    if (result == UEC_RESULT_OK) result = CheckSoftProperty(
+        api, context, actor, "SoftActorClass", UEC_PROPERTY_SOFT_CLASS,
+        "/Script/Engine.Actor", "/Script/Engine.Pawn");
 
     if (result != UEC_RESULT_OK && api != nullptr && api->log != nullptr &&
         context != nullptr) {

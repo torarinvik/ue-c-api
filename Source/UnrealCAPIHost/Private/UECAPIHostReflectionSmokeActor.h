@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
 #include "UECAPIHostReflectionSmokeActor.generated.h"
 
@@ -51,4 +52,10 @@ public:
 
     UPROPERTY()
     FText Description;
+
+    UPROPERTY()
+    TSoftObjectPtr<UStaticMesh> SoftMesh;
+
+    UPROPERTY()
+    TSoftClassPtr<AActor> SoftActorClass;
 };
