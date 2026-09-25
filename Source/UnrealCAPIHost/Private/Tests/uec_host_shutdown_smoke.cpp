@@ -8,16 +8,20 @@ namespace
     uec_context* GContext = nullptr;
     uec_world* GShutdownWorld = nullptr;
     uec_actor* GActor = nullptr;
+    uec_actor* GLatentActor = nullptr;
     uec_object* GEventBridge = nullptr;
     uint64_t GGameThreadRequestId = 0;
     uint64_t GSaveLoadRequestId = 0;
     uint64_t GObjectLoadRequestId = 0;
+    uint64_t GLatentRequestId = 0;
     uint64_t GEventBridgeSubscriptionId = 0;
+    uint32_t GPreparedPendingRequestBaseline = 0;
     bool GPrepared = false;
     bool GArmed = false;
     bool GGameThreadCallbackExecuted = false;
     bool GSaveLoadCallbackExecuted = false;
     bool GObjectLoadCallbackExecuted = false;
+    bool GLatentCallbackExecuted = false;
     bool GEventBridgeCallbackExecuted = false;
     bool GEventBridgeWasRegistered = false;
 
@@ -41,6 +45,11 @@ namespace
         }
     }
 
+    void UEC_CALL MarkLatentCallback(uint64_t, uec_result, void*)
+    {
+        GLatentCallbackExecuted = true;
+    }
+
     void UEC_CALL MarkEventBridgeCallback(
         uint64_t, int64_t, int64_t, double, uec_string_view, void*)
     {
@@ -59,6 +68,10 @@ namespace
             (void)GApi->release_object(GEventBridge);
         }
         GEventBridge = nullptr;
+        if (GLatentActor != nullptr && GApi != nullptr && GApi->release_actor != nullptr) {
+            (void)GApi->release_actor(GLatentActor);
+        }
+        GLatentActor = nullptr;
         if (GActor != nullptr && GApi != nullptr && GApi->release_actor != nullptr) {
             (void)GApi->release_actor(GActor);
         }
@@ -67,6 +80,15 @@ namespace
             (void)GApi->release_world(GShutdownWorld);
         }
         GShutdownWorld = nullptr;
+    }
+
+    void CancelShutdownLatentRequest()
+    {
+        if (GLatentRequestId != 0u && GApi != nullptr && GContext != nullptr &&
+            GApi->cancel_actor_function_latent != nullptr) {
+            (void)GApi->cancel_actor_function_latent(GContext, GLatentRequestId);
+        }
+        GLatentRequestId = 0u;
     }
 
     void ReleaseShutdownSmokeContext()
@@ -89,6 +111,8 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_prepare(void)
     if (GApi == nullptr || GContext == nullptr || GApi->get_default_world == nullptr ||
         GApi->spawn_actor == nullptr || GApi->get_or_create_actor_event_bridge == nullptr ||
         GApi->bind_actor_event_bridge == nullptr || GApi->unbind_actor_event_bridge == nullptr ||
+        GApi->invoke_actor_function_latent == nullptr ||
+        GApi->cancel_actor_function_latent == nullptr ||
         GApi->release_world == nullptr || GApi->release_actor == nullptr ||
         GApi->release_object == nullptr || GApi->run_on_game_thread == nullptr ||
         GApi->async_load_game_from_slot == nullptr ||
@@ -134,6 +158,42 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_prepare(void)
             if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
             goto cleanup;
         }
+        GPreparedPendingRequestBaseline = stats.pending_requests;
+
+        static constexpr char latentActorClassPath[] =
+            "/Script/UnrealCAPIHost.UECAPIHostLatentSmokeActor";
+        static constexpr char latentFunctionName[] = "WaitForSmokeDuration";
+        const uec_string_view latentClass{
+            latentActorClassPath, sizeof(latentActorClassPath) - 1u};
+        const uec_string_view latentName{
+            latentFunctionName, sizeof(latentFunctionName) - 1u};
+        result = GApi->spawn_actor(GShutdownWorld, latentClass, &transform, &GLatentActor);
+        if (result != UEC_RESULT_OK || GLatentActor == nullptr) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        uec_function_argument latentArguments[2]{};
+        latentArguments[0].struct_size = sizeof(latentArguments[0]);
+        latentArguments[0].kind = UEC_PROPERTY_OBJECT;
+        latentArguments[0].world_value = GShutdownWorld;
+        latentArguments[1].struct_size = sizeof(latentArguments[1]);
+        latentArguments[1].kind = UEC_PROPERTY_FLOAT;
+        latentArguments[1].real_value = 3600.0;
+        result = GApi->invoke_actor_function_latent(
+            GLatentActor, latentName, latentArguments, 2u,
+            &MarkLatentCallback, nullptr, &GLatentRequestId);
+        if (result != UEC_RESULT_OK || GLatentRequestId == 0u) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        stats = {};
+        stats.struct_size = sizeof(stats);
+        result = GApi->get_runtime_stats(GContext, &stats);
+        if (result != UEC_RESULT_OK ||
+            stats.pending_requests != GPreparedPendingRequestBaseline + 1u) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
         GEventBridgeWasRegistered = true;
         /* Keep the native delegate registered while dropping its caller handles. */
         ReleaseShutdownSmokeHandles(false);
@@ -143,6 +203,7 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_prepare(void)
     return UEC_RESULT_OK;
 
 cleanup:
+    CancelShutdownLatentRequest();
     ReleaseShutdownSmokeHandles(true);
     ReleaseShutdownSmokeContext();
     return result;
@@ -157,7 +218,7 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_arm(void)
     uec_result result = UEC_RESULT_OK;
     if (GApi->run_on_game_thread == nullptr ||
         GApi->async_load_game_from_slot == nullptr ||
-        GApi->request_object_load == nullptr) {
+        GApi->request_object_load == nullptr || GLatentRequestId == 0u) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -199,6 +260,7 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_arm(void)
     return UEC_RESULT_OK;
 
 cleanup:
+    CancelShutdownLatentRequest();
     ReleaseShutdownSmokeHandles(true);
     ReleaseShutdownSmokeContext();
     return result;
@@ -212,17 +274,21 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void)
         GApi == nullptr || GContext == nullptr ||
         GApi->get_runtime_stats == nullptr || GGameThreadRequestId == 0u ||
         GSaveLoadRequestId == 0u || GObjectLoadRequestId == 0u ||
+        GLatentRequestId == 0u ||
         GGameThreadCallbackExecuted || GSaveLoadCallbackExecuted ||
-        GObjectLoadCallbackExecuted || GEventBridgeCallbackExecuted) {
+        GObjectLoadCallbackExecuted || GLatentCallbackExecuted ||
+        GEventBridgeCallbackExecuted) {
         UE_LOG(LogTemp, Error,
-            TEXT("Shutdown smoke precondition failed: armed=%d api=%d context=%d stats=%d game_id=%llu save_id=%llu object_id=%llu game_callback=%d save_callback=%d object_callback=%d bridge_callback=%d"),
+            TEXT("Shutdown smoke precondition failed: armed=%d api=%d context=%d stats=%d game_id=%llu save_id=%llu object_id=%llu latent_id=%llu game_callback=%d save_callback=%d object_callback=%d latent_callback=%d bridge_callback=%d"),
             GArmed, GApi != nullptr, GContext != nullptr,
             GApi != nullptr && GApi->get_runtime_stats != nullptr,
             static_cast<unsigned long long>(GGameThreadRequestId),
             static_cast<unsigned long long>(GSaveLoadRequestId),
             static_cast<unsigned long long>(GObjectLoadRequestId),
+            static_cast<unsigned long long>(GLatentRequestId),
             GGameThreadCallbackExecuted, GSaveLoadCallbackExecuted,
-            GObjectLoadCallbackExecuted, GEventBridgeCallbackExecuted);
+            GObjectLoadCallbackExecuted, GLatentCallbackExecuted,
+            GEventBridgeCallbackExecuted);
         goto cleanup;
     }
 
@@ -233,10 +299,12 @@ extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void)
             TEXT("Shutdown smoke could not read pending work before module shutdown: result=%d"),
             static_cast<int32>(result));
     }
-    else if (stats.pending_requests < 3u || stats.active_callbacks != 0u) {
+    else if (stats.pending_requests < GPreparedPendingRequestBaseline + 3u ||
+             stats.active_callbacks != 0u || GLatentCallbackExecuted) {
         UE_LOG(LogTemp, Error,
-            TEXT("Shutdown smoke expected pending work with no callbacks after world cleanup: pending=%u subscriptions=%u callbacks=%u"),
-            stats.pending_requests, stats.active_subscriptions, stats.active_callbacks);
+            TEXT("Shutdown smoke expected three pending requests and a suppressed latent callback after world cleanup: pending=%u baseline=%u subscriptions=%u callbacks=%u latent_callback=%d"),
+            stats.pending_requests, GPreparedPendingRequestBaseline,
+            stats.active_subscriptions, stats.active_callbacks, GLatentCallbackExecuted);
         result = UEC_RESULT_INTERNAL_ERROR;
     }
 

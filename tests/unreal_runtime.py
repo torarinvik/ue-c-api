@@ -243,8 +243,8 @@ def main(argv: list[str]) -> int:
         return 0
     if shutdown_pending_only:
         print(
-            "Packaged host drained pending work and its native event delegate without running "
-            "queue, save, asset-load, or event-bridge callbacks during shutdown."
+            "Packaged host drained a world-owned latent request and pending work without running "
+            "latent, queue, save, asset-load, or event-bridge callbacks during shutdown."
         )
         return 0
     print(
