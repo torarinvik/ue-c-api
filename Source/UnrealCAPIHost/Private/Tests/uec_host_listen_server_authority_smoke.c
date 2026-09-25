@@ -25,12 +25,24 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     static const char actorClassText[] =
         "/Script/UnrealCAPIHost.UECAPIHostCollisionSmokeActor";
     static const char componentClassText[] = "/Script/Engine.BoxComponent";
+    static const char primitiveComponentClassText[] = "/Script/Engine.PrimitiveComponent";
+    static const char sceneComponentClassText[] = "/Script/Engine.SceneComponent";
+    static const char invalidComponentClassText[] = "/Script/Engine.Actor";
     static const char replicatedPropertyText[] = "AuthoritySmokeReplicatedValue";
     static const char tagText[] = "UEC_ListenServerAuthoritySmoke";
     static const char textValue[] = "25";
     const uec_string_view actorClass = {actorClassText, sizeof(actorClassText) - 1u};
     const uec_string_view componentClass = {
         componentClassText, sizeof(componentClassText) - 1u
+    };
+    const uec_string_view primitiveComponentClass = {
+        primitiveComponentClassText, sizeof(primitiveComponentClassText) - 1u
+    };
+    const uec_string_view sceneComponentClass = {
+        sceneComponentClassText, sizeof(sceneComponentClassText) - 1u
+    };
+    const uec_string_view invalidComponentClass = {
+        invalidComponentClassText, sizeof(invalidComponentClassText) - 1u
     };
     const uec_string_view replicatedProperty = {
         replicatedPropertyText, sizeof(replicatedPropertyText) - 1u
@@ -54,6 +66,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_bool visibleAfter = UEC_FALSE;
     uec_bool activeBefore = UEC_FALSE;
     uec_bool activeAfter = UEC_FALSE;
+    uec_bool isComponentType = UEC_FALSE;
     uec_transform spawnTransform = {0};
     uec_transform transformBefore = {0};
     uec_transform attemptedTransform = {0};
@@ -72,6 +85,8 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_property_value valueAfter = {0};
     uint32_t worldCount = 0u;
     uint32_t filteredComponentCount = 0u;
+    char componentClassName[128] = {0};
+    size_t componentClassRequiredSize = 0u;
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
     if (result != UEC_RESULT_OK) return result;
     if (api == NULL || context == NULL || api->release_context == NULL ||
@@ -82,6 +97,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         api->get_actor_root_component == NULL || api->release_scene_component == NULL ||
         api->get_actor_component_count_by_class == NULL ||
         api->get_actor_component_at_by_class == NULL ||
+        api->get_component_class_name == NULL || api->component_is_a == NULL ||
         api->get_component_transform == NULL || api->set_component_transform == NULL ||
         api->get_component_visible == NULL || api->set_component_visible == NULL ||
         api->get_component_active == NULL || api->set_component_active == NULL ||
@@ -254,6 +270,44 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
                                                   &filteredComponent);
     if (result != UEC_RESULT_OK || filteredComponent == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_class_name(filteredComponent, componentClassName,
+                                           sizeof(componentClassName),
+                                           &componentClassRequiredSize);
+    if (result != UEC_RESULT_OK ||
+        componentClassRequiredSize != sizeof(componentClassText)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    for (size_t index = 0u; index < sizeof(componentClassText); ++index) {
+        if (componentClassName[index] != componentClassText[index]) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+    }
+    result = api->component_is_a(filteredComponent, componentClass, &isComponentType);
+    if (result != UEC_RESULT_OK || isComponentType != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->component_is_a(filteredComponent, primitiveComponentClass,
+                                 &isComponentType);
+    if (result != UEC_RESULT_OK || isComponentType != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->component_is_a(filteredComponent, sceneComponentClass,
+                                 &isComponentType);
+    if (result != UEC_RESULT_OK || isComponentType != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    isComponentType = UEC_TRUE;
+    if (api->component_is_a(filteredComponent, invalidComponentClass,
+                            &isComponentType) != UEC_RESULT_INVALID_ARGUMENT ||
+        isComponentType != UEC_FALSE) {
+        result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
     result = api->get_component_transform(filteredComponent, &transformAfter);
