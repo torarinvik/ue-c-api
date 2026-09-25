@@ -35,6 +35,7 @@ done
     "$repo_dir/Source/UnrealCAPIHost/Private/uec_host_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_abi_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_event_bridge_smoke.c" \
+    "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_reflection_metadata_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_gameplay_example_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/uec_host_consumer_drain_example.c" \
     "$repo_dir/examples/c_gameplay/c_gameplay.c" \

@@ -92,6 +92,7 @@ class UnrealRuntimeTests(unittest.TestCase):
     def test_accepts_all_smoke_markers(self):
         executable = self.make_host([
             "C consumer bootstrap completed",
+            "C cooked reflection metadata smoke completed",
             "C collision smoke completed",
             "C GC lifetime smoke completed",
             "C physics smoke completed",

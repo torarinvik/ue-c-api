@@ -15,6 +15,7 @@ from pathlib import Path
 
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
+    "C cooked reflection metadata smoke completed",
     "C collision smoke completed",
     "C GC lifetime smoke completed",
     "C physics smoke completed",
@@ -31,6 +32,7 @@ PIE_RESTART_SUCCESS_MARKER = "C PIE restart smoke completed"
 MULTI_PIE_SUCCESS_MARKER = "C multi-PIE context smoke completed"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
+    "C cooked reflection metadata smoke failed",
     "C collision smoke failed",
     "C GC lifetime smoke failed",
     "C physics smoke failed",

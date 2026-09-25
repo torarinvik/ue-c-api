@@ -12,6 +12,7 @@
 #include "UECAPIHostCollisionSmokeActor.h"
 
 extern "C" uec_result UEC_CALL uec_host_smoke_bootstrap(void);
+extern "C" uec_result UEC_CALL uec_host_reflection_metadata_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_collision_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_gc_smoke(void);
 extern "C" uec_result UEC_CALL uec_host_physics_smoke_start(void);
@@ -580,6 +581,18 @@ public:
         if (result == UEC_RESULT_OK)
         {
             UE_LOG(LogUnrealCAPIHost, Log, TEXT("C consumer bootstrap completed"));
+            const uec_result metadataResult = uec_host_reflection_metadata_smoke();
+            if (metadataResult == UEC_RESULT_OK)
+            {
+                UE_LOG(LogUnrealCAPIHost, Log,
+                    TEXT("C cooked reflection metadata smoke completed"));
+            }
+            else
+            {
+                UE_LOG(LogUnrealCAPIHost, Error,
+                    TEXT("C cooked reflection metadata smoke failed with result %d"),
+                    static_cast<int32>(metadataResult));
+            }
         }
         else
         {

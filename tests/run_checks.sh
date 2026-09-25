@@ -21,6 +21,7 @@ host_collision_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_
 host_physics_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_physics_smoke.c"
 host_authority_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_authority_smoke.c"
 host_event_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_event_bridge_smoke.c"
+host_reflection_metadata_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_reflection_metadata_smoke.c"
 host_gameplay_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_gameplay_example_smoke.c"
 host_gameplay_translation_unit="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_gameplay_example.c"
 host_consumer_drain_translation_unit="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_consumer_drain_example.c"
@@ -66,6 +67,8 @@ git -C "$repo_dir" diff --check
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_authority_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_event_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -fsyntax-only "$host_reflection_metadata_consumer"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$repo_dir/examples/c_gameplay" -I "$consumer_drain_example_dir" \
     -fsyntax-only "$host_gameplay_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
@@ -84,6 +87,7 @@ fi
     "$consumer" "$layout_consumer" "$widget_ui_smoke" "$gameplay_example_smoke" \
     "$physics_simulation_smoke" \
     "$host_stub" "$host_consumer" "$host_abi_consumer" "$host_event_consumer" \
+    "$host_reflection_metadata_consumer" \
     "$gameplay_example" "$widget_ui_example" "$host_gameplay_consumer" \
     "$host_consumer_drain_translation_unit" \
     -o "$stub_build_dir/c_smoke"
