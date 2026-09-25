@@ -1,5 +1,25 @@
 #include "uec_api.h"
 
+static int IsNear(double actual, double expected)
+{
+    const double tolerance = 0.05;
+    return actual >= expected - tolerance && actual <= expected + tolerance;
+}
+
+static int IsSameTransform(uec_transform actual, uec_transform expected)
+{
+    return IsNear(actual.translation.x, expected.translation.x) &&
+        IsNear(actual.translation.y, expected.translation.y) &&
+        IsNear(actual.translation.z, expected.translation.z) &&
+        IsNear(actual.rotation.x, expected.rotation.x) &&
+        IsNear(actual.rotation.y, expected.rotation.y) &&
+        IsNear(actual.rotation.z, expected.rotation.z) &&
+        IsNear(actual.rotation.w, expected.rotation.w) &&
+        IsNear(actual.scale.x, expected.scale.x) &&
+        IsNear(actual.scale.y, expected.scale.y) &&
+        IsNear(actual.scale.z, expected.scale.z);
+}
+
 uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
 {
     static const char actorClassText[] =
@@ -13,10 +33,15 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     };
     const uec_string_view tag = {tagText, sizeof(tagText) - 1u};
     const uec_string_view text = {textValue, sizeof(textValue) - 1u};
+    static const char emptySocketName[] = "";
+    const uec_string_view emptySocket = {emptySocketName, 0u};
     const uec_api* api = NULL;
     uec_context* context = NULL;
     uec_world* listenServer = NULL;
     uec_actor* actor = NULL;
+    uec_actor* childActor = NULL;
+    uec_scene_component* parentComponent = NULL;
+    uec_scene_component* childComponent = NULL;
     uec_net_mode netMode = UEC_NET_MODE_UNKNOWN;
     uec_bool hasAuthority = UEC_FALSE;
     uec_bool hasTag = UEC_FALSE;
@@ -24,6 +49,11 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_transform transformBefore = {0};
     uec_transform attemptedTransform = {0};
     uec_transform transformAfter = {0};
+    uec_transform childTransformBeforeAttach = {0};
+    uec_transform childTransformAfterAttach = {0};
+    uec_transform childTransformAfterParentMove = {0};
+    uec_transform childTransformAfterDetach = {0};
+    uec_transform childTransformAfterDetachedParentMove = {0};
     uint32_t tagCountBefore = 0u;
     uint32_t tagCountAfter = 0u;
     char tagOutput[128] = {0};
@@ -32,7 +62,6 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_property_value attemptedValue = {0};
     uec_property_value valueAfter = {0};
     uint32_t worldCount = 0u;
-    int actorDestroyed = 0;
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
     if (result != UEC_RESULT_OK) return result;
     if (api == NULL || context == NULL || api->release_context == NULL ||
@@ -40,6 +69,9 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         api->get_world_net_mode == NULL || api->get_world_has_authority == NULL ||
         api->release_world == NULL || api->spawn_actor == NULL ||
         api->destroy_actor == NULL || api->release_actor == NULL ||
+        api->get_actor_root_component == NULL || api->release_scene_component == NULL ||
+        api->get_component_transform == NULL || api->attach_scene_component == NULL ||
+        api->detach_scene_component == NULL ||
         api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
         api->get_actor_property_value == NULL || api->set_actor_property_value == NULL ||
         api->set_actor_property_string == NULL || api->set_actor_tag == NULL ||
@@ -185,16 +217,106 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         goto cleanup;
     }
 
+    spawnTransform.translation.x = 1000.0;
+    spawnTransform.translation.y = 500.0;
+    result = api->spawn_actor(listenServer, actorClass, &spawnTransform, &childActor);
+    if (result != UEC_RESULT_OK || childActor == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_root_component(actor, &parentComponent);
+    if (result != UEC_RESULT_OK || parentComponent == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_root_component(childActor, &childComponent);
+    if (result != UEC_RESULT_OK || childComponent == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_transform(childComponent, &childTransformBeforeAttach);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->attach_scene_component(childComponent, parentComponent,
+                                         UEC_TRUE, emptySocket);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(childComponent, &childTransformAfterAttach);
+    if (result != UEC_RESULT_OK ||
+        !IsSameTransform(childTransformAfterAttach, childTransformBeforeAttach)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
+    result = api->get_actor_transform(actor, &transformBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    attemptedTransform = transformBefore;
+    attemptedTransform.translation.x += 40.0;
+    result = api->set_actor_transform(actor, &attemptedTransform, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(childComponent, &childTransformAfterParentMove);
+    if (result != UEC_RESULT_OK ||
+        !IsNear(childTransformAfterParentMove.translation.x,
+                childTransformBeforeAttach.translation.x + 40.0) ||
+        !IsNear(childTransformAfterParentMove.translation.y,
+                childTransformBeforeAttach.translation.y) ||
+        !IsNear(childTransformAfterParentMove.translation.z,
+                childTransformBeforeAttach.translation.z)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->detach_scene_component(childComponent, UEC_TRUE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(childComponent, &childTransformAfterDetach);
+    if (result != UEC_RESULT_OK ||
+        !IsSameTransform(childTransformAfterDetach, childTransformAfterParentMove)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    attemptedTransform.translation.x += 25.0;
+    result = api->set_actor_transform(actor, &attemptedTransform, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_transform(childComponent,
+                                          &childTransformAfterDetachedParentMove);
+    if (result != UEC_RESULT_OK ||
+        !IsSameTransform(childTransformAfterDetachedParentMove,
+                         childTransformAfterDetach)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+
     result = api->destroy_actor(actor);
     if (result != UEC_RESULT_OK) goto cleanup;
-    actorDestroyed = 1;
+    actor = NULL;
+    result = api->destroy_actor(childActor);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    childActor = NULL;
 
 cleanup:
-    if (actor != NULL) {
-        if (!actorDestroyed && api != NULL && api->destroy_actor != NULL) {
-            (void)api->destroy_actor(actor);
+    if (childComponent != NULL && api != NULL && api->detach_scene_component != NULL) {
+        (void)api->detach_scene_component(childComponent, UEC_TRUE);
+    }
+    if (childActor != NULL) {
+        if (api != NULL && api->destroy_actor != NULL &&
+            api->destroy_actor(childActor) == UEC_RESULT_OK) {
+            childActor = NULL;
+        } else if (api != NULL && api->release_actor != NULL) {
+            (void)api->release_actor(childActor);
+            childActor = NULL;
         }
-        if (api != NULL && api->release_actor != NULL) (void)api->release_actor(actor);
+    }
+    if (actor != NULL) {
+        if (api != NULL && api->destroy_actor != NULL &&
+            api->destroy_actor(actor) == UEC_RESULT_OK) {
+            actor = NULL;
+        }
+        if (actor != NULL && api != NULL && api->release_actor != NULL) {
+            (void)api->release_actor(actor);
+        }
+    }
+    if (childComponent != NULL && api != NULL && api->release_scene_component != NULL) {
+        (void)api->release_scene_component(childComponent);
+    }
+    if (parentComponent != NULL && api != NULL && api->release_scene_component != NULL) {
+        (void)api->release_scene_component(parentComponent);
     }
     if (listenServer != NULL && api != NULL && api->release_world != NULL) {
         (void)api->release_world(listenServer);
