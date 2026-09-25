@@ -13,6 +13,7 @@ from unreal_pie_runtime import (
     configure_authority_pie_settings,
     restore_authority_pie_settings,
     SUCCESS_MARKERS,
+    PIE_RESTART_SUCCESS_MARKER,
     run_smoke as run_editor_smoke,
 )
 
@@ -102,6 +103,23 @@ class UnrealRuntimeTests(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "exited with status -6 after the PIE smoke completed"):
             run_editor_smoke(Path("/fake/engine"), timeout_seconds=1.0)
+
+    @patch("unreal_pie_runtime.find_editor_executable", return_value=Path("/fake/UnrealEditor"))
+    @patch("unreal_pie_runtime.subprocess.Popen")
+    def test_pie_restart_requires_second_session_marker(self, popen, _find_editor):
+        process = popen.return_value
+        process.stdout = io.StringIO(
+            "\n".join((*SUCCESS_MARKERS, PIE_RESTART_SUCCESS_MARKER)) + "\n"
+        )
+        process.poll.return_value = None
+        process.wait.return_value = 0
+
+        run_editor_smoke(
+            Path("/fake/engine"), timeout_seconds=1.0, pie_restart_only=True
+        )
+
+        command = popen.call_args.args[0]
+        self.assertIn("-uec-tests-pie-restart", command)
 
     def test_surfaces_collision_smoke_failure(self):
         executable = self.make_host(["C collision smoke failed with result 8"])

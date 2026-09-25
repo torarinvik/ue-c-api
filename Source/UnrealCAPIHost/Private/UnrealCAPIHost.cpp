@@ -37,6 +37,9 @@ extern "C" void UEC_CALL uec_host_gameplay_example_smoke_cancel(void);
 extern "C" uec_result UEC_CALL uec_host_travel_smoke_start(void);
 extern "C" uec_bool UEC_CALL uec_host_travel_smoke_poll(uec_result* out_result);
 extern "C" void UEC_CALL uec_host_travel_smoke_cancel(void);
+extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world);
+extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void);
+extern "C" void UEC_CALL uec_host_pie_restart_smoke_cancel(void);
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealCAPIHost, Log, All);
 
@@ -50,6 +53,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     FTSTicker::FDelegateHandle ObjectLoadSmokeHandle;
     FTSTicker::FDelegateHandle GameplayExampleSmokeHandle;
     FTSTicker::FDelegateHandle TravelSmokeHandle;
+    FTSTicker::FDelegateHandle PIEEndForRestartHandle;
     FTSTicker::FDelegateHandle ExitAfterPIESmokeHandle;
     float LatentSmokeElapsed = 0.0f;
     float QueueSmokeElapsed = 0.0f;
@@ -60,6 +64,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     double PhysicsSmokeDeadline = 0.0;
     double PhysicsSmokeNextPollTime = 0.0;
     double AuthoritySmokeDeadline = 0.0;
+    bool bPIERestartStarted = false;
 
     bool FinishTestRunAfterPIE(float)
     {
@@ -76,6 +81,29 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
 #if WITH_EDITOR
         if (GEditor != nullptr && GEditor->PlayWorld != nullptr)
         {
+            if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-pie-restart")) &&
+                !bPIERestartStarted && !PIEEndForRestartHandle.IsValid())
+            {
+                const uec_result captureResult =
+                    uec_host_pie_restart_smoke_capture(GEditor->PlayWorld);
+                if (captureResult != UEC_RESULT_OK)
+                {
+                    UE_LOG(LogUnrealCAPIHost, Error,
+                        TEXT("C PIE restart smoke failed to capture handles with result %d"),
+                        static_cast<int32>(captureResult));
+                    GEditor->RequestEndPlayMap();
+                    ExitAfterPIESmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
+                        FTickerDelegate::CreateRaw(
+                            this, &FUnrealCAPIHostModule::FinishTestRunAfterPIE),
+                        0.05f);
+                    return;
+                }
+                PIEEndForRestartHandle = FTSTicker::GetCoreTicker().AddTicker(
+                    FTickerDelegate::CreateRaw(
+                        this, &FUnrealCAPIHostModule::EndPIEForRestart),
+                    0.2f);
+                return;
+            }
             if (!ExitAfterPIESmokeHandle.IsValid())
             {
                 GEditor->RequestEndPlayMap();
@@ -88,6 +116,47 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
 #endif
         FPlatformMisc::RequestExit(false);
     }
+
+#if WITH_EDITOR
+    bool EndPIEForRestart(float)
+    {
+        PIEEndForRestartHandle.Reset();
+        if (GEditor == nullptr || GEditor->PlayWorld == nullptr)
+        {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C PIE restart smoke lost the first PlayWorld before shutdown"));
+            uec_host_pie_restart_smoke_cancel();
+            FPlatformMisc::RequestExit(false);
+            return false;
+        }
+        GEditor->RequestEndPlayMap();
+        ExitAfterPIESmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
+            FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RestartPIEAfterCleanup),
+            0.05f);
+        return false;
+    }
+
+    bool RestartPIEAfterCleanup(float)
+    {
+        if (GEditor == nullptr)
+        {
+            ExitAfterPIESmokeHandle.Reset();
+            uec_host_pie_restart_smoke_cancel();
+            FPlatformMisc::RequestExit(false);
+            return false;
+        }
+        if (GEditor->PlayWorld != nullptr) return true;
+
+        ExitAfterPIESmokeHandle.Reset();
+        bPIERestartStarted = true;
+        FRequestPlaySessionParams parameters;
+        GEditor->RequestPlaySession(parameters);
+        EventBridgeSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
+            FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunEventBridgeSmoke),
+            0.1f);
+        return false;
+    }
+#endif
 
     void StartEventBridgeSmokeChain()
     {
@@ -127,6 +196,24 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             }
         }
         if (!hasRuntimeWorld) return true;
+
+        if (bPIERestartStarted)
+        {
+            const uec_result restartResult = uec_host_pie_restart_smoke_verify();
+            if (restartResult != UEC_RESULT_OK)
+            {
+                UE_LOG(LogUnrealCAPIHost, Error,
+                    TEXT("C PIE restart smoke failed with result %d"),
+                    static_cast<int32>(restartResult));
+                EventBridgeSmokeHandle.Reset();
+                RequestSmokeExit();
+                return false;
+            }
+            UE_LOG(LogUnrealCAPIHost, Log, TEXT("C PIE restart smoke completed"));
+            EventBridgeSmokeHandle.Reset();
+            RequestSmokeExit();
+            return false;
+        }
 
         if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-authority"))) {
             const double now = FPlatformTime::Seconds();
@@ -482,6 +569,13 @@ public:
             FTSTicker::GetCoreTicker().RemoveTicker(TravelSmokeHandle);
             uec_host_travel_smoke_cancel();
         }
+        if (PIEEndForRestartHandle.IsValid()) {
+            FTSTicker::GetCoreTicker().RemoveTicker(PIEEndForRestartHandle);
+        }
+        if (ExitAfterPIESmokeHandle.IsValid()) {
+            FTSTicker::GetCoreTicker().RemoveTicker(ExitAfterPIESmokeHandle);
+        }
+        uec_host_pie_restart_smoke_cancel();
     }
 };
 

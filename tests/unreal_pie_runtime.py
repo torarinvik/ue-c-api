@@ -27,6 +27,7 @@ SUCCESS_MARKERS = (
     "C travel smoke completed",
 )
 AUTHORITY_SUCCESS_MARKERS = ("C client authority smoke completed",)
+PIE_RESTART_SUCCESS_MARKER = "C PIE restart smoke completed"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C collision smoke failed",
@@ -40,6 +41,7 @@ FAILURE_MARKERS = (
     "C async object load smoke failed",
     "C gameplay example smoke failed",
     "C travel smoke failed",
+    "C PIE restart smoke failed",
 )
 AUTHORITY_FAILURE_MARKERS = ("C client authority smoke failed", "LogPython: Error")
 
@@ -118,10 +120,13 @@ def run_smoke(
     engine_root: Path,
     timeout_seconds: float = 150.0,
     authority_only: bool = False,
+    pie_restart_only: bool = False,
 ) -> None:
     """Start PIE with NullRHI and require every C smoke marker."""
     if timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be positive")
+    if authority_only and pie_restart_only:
+        raise ValueError("authority-only and PIE-restart-only modes cannot be combined")
     repo_root = Path(__file__).resolve().parent.parent
     executable = find_editor_executable(engine_root)
     command = [
@@ -148,7 +153,12 @@ def run_smoke(
             "-uec-tests-exit",
             "-ExecCmds=py unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).editor_request_begin_play()",
         ))
-        success_markers = SUCCESS_MARKERS
+        if pie_restart_only:
+            command.append("-uec-tests-pie-restart")
+        success_markers = (
+            (*SUCCESS_MARKERS, PIE_RESTART_SUCCESS_MARKER)
+            if pie_restart_only else SUCCESS_MARKERS
+        )
         failure_markers = FAILURE_MARKERS
     settings_snapshot = configure_authority_pie_settings(repo_root) if authority_only else None
     try:
@@ -238,20 +248,29 @@ def run_smoke(
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) not in (2, 3) or (len(argv) == 3 and argv[2] != "--authority-only"):
+    if len(argv) not in (2, 3) or (
+        len(argv) == 3 and argv[2] not in ("--authority-only", "--pie-restart-only")
+    ):
         print(
-            f"Usage: {Path(argv[0]).name} <unreal-engine-root> [--authority-only]",
+            f"Usage: {Path(argv[0]).name} <unreal-engine-root> "
+            "[--authority-only | --pie-restart-only]",
             file=sys.stderr,
         )
         return 2
     try:
-        authority_only = len(argv) == 3
-        run_smoke(Path(argv[1]), authority_only=authority_only)
+        authority_only = len(argv) == 3 and argv[2] == "--authority-only"
+        pie_restart_only = len(argv) == 3 and argv[2] == "--pie-restart-only"
+        run_smoke(
+            Path(argv[1]), authority_only=authority_only,
+            pie_restart_only=pie_restart_only,
+        )
     except (OSError, RuntimeError, ValueError) as error:
         print(error, file=sys.stderr)
         return 1
     if authority_only:
         print("Editor multiplayer PIE completed the client-world physics authority smoke check.")
+    elif pie_restart_only:
+        print("Editor PIE restart smoke verified stale-handle rejection and world-tick cleanup across two sessions.")
     else:
         print(
             "Editor PIE completed the C bootstrap, collision, GC lifetime, physics, event, latent, queue, "

@@ -76,6 +76,7 @@ if [ "$platform" = "$host_platform" ] && [ "$configuration" = Development ]; the
     if [ "$host_platform" = Mac ]; then
         python3 "$repo_dir/tests/unreal_pie_runtime.py" "$engine_root"
         python3 "$repo_dir/tests/unreal_pie_runtime.py" "$engine_root" --authority-only
+        python3 "$repo_dir/tests/unreal_pie_runtime.py" "$engine_root" --pie-restart-only
         runtime_output="$repo_dir/Saved/StagedBuilds/Mac/UnrealCAPIHost.app/Contents/MacOS"
     else
         printf 'Editor PIE smoke skipped on %s; only Mac is currently automated.\n' "$host_platform"
