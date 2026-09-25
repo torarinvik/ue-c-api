@@ -8,52 +8,8 @@
 #include "UnrealEdGlobals.h"
 #endif
 
-#include "uec_api.h"
 #include "UECAPIHostCollisionSmokeActor.h"
-
-extern "C" uec_result UEC_CALL uec_host_smoke_bootstrap(void);
-extern "C" uec_result UEC_CALL uec_host_reflection_metadata_smoke(void);
-extern "C" uec_result UEC_CALL uec_host_persistence_smoke(void);
-extern "C" uec_result UEC_CALL uec_host_collision_smoke(void);
-extern "C" uec_result UEC_CALL uec_host_reflection_containers_smoke(void);
-extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void);
-extern "C" uec_result UEC_CALL uec_host_blueprint_invocation_smoke(void);
-extern "C" uec_result UEC_CALL uec_host_gc_smoke(void);
-extern "C" uec_result UEC_CALL uec_host_physics_smoke_start(void);
-extern "C" uec_bool UEC_CALL uec_host_physics_smoke_poll(uec_result* out_result);
-extern "C" void UEC_CALL uec_host_physics_smoke_cancel(void);
-extern "C" uec_result UEC_CALL uec_host_authority_smoke(void);
-extern "C" uec_result UEC_CALL uec_host_event_bridge_smoke(void);
-extern "C" uec_result UEC_CALL uec_host_latent_smoke_start(void);
-extern "C" uec_bool UEC_CALL uec_host_latent_smoke_poll(uec_result* out_result);
-extern "C" void UEC_CALL uec_host_latent_smoke_cancel(void);
-extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void);
-extern "C" uec_bool UEC_CALL uec_host_input_smoke_poll(uec_result* out_result);
-extern "C" void UEC_CALL uec_host_input_smoke_cancel(void);
-extern "C" uec_result UEC_CALL uec_host_queue_smoke_start(void);
-extern "C" uec_bool UEC_CALL uec_host_queue_smoke_poll(uec_result* out_result);
-extern "C" void UEC_CALL uec_host_queue_smoke_cancel(void);
-extern "C" uec_result UEC_CALL uec_host_async_save_smoke_start(void);
-extern "C" uec_bool UEC_CALL uec_host_async_save_smoke_poll(uec_result* out_result);
-extern "C" void UEC_CALL uec_host_async_save_smoke_cancel(void);
-extern "C" uec_result UEC_CALL uec_host_object_load_smoke_start(void);
-extern "C" uec_bool UEC_CALL uec_host_object_load_smoke_poll(uec_result* out_result);
-extern "C" void UEC_CALL uec_host_object_load_smoke_cancel(void);
-extern "C" uec_result UEC_CALL uec_host_gameplay_example_smoke_start(void);
-extern "C" uec_bool UEC_CALL uec_host_gameplay_example_smoke_poll(uec_result* out_result);
-extern "C" void UEC_CALL uec_host_gameplay_example_smoke_cancel(void);
-extern "C" uec_result UEC_CALL uec_host_travel_smoke_start(void);
-extern "C" uec_bool UEC_CALL uec_host_travel_smoke_poll(uec_result* out_result);
-extern "C" void UEC_CALL uec_host_travel_smoke_cancel(void);
-extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_capture(UWorld* world);
-extern "C" uec_result UEC_CALL uec_host_pie_restart_smoke_verify(void);
-extern "C" void UEC_CALL uec_host_pie_restart_smoke_cancel(void);
-extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_arm(void);
-extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_prepare(void);
-extern "C" uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void);
-extern "C" uec_result UEC_CALL uec_host_multi_pie_smoke(void);
-extern "C" uec_result UEC_CALL uec_host_listen_server_authority_smoke(void);
-extern "C" void UEC_CALL uec_host_dedicated_server_context_smoke_start(void);
+#include "uec_host_smoke_exports.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealCAPIHost, Log, All);
 

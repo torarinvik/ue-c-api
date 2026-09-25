@@ -577,11 +577,13 @@ changes affect the selected component and, when requested, its children.
 components attached to an actor; each returned component handle must be
 released independently.
 
-Timers are owned by the selected world and run on the game thread. The bridge
-does not copy `user_data`; callers must keep it valid until the timer callback
-fires or `clear_timer` succeeds. One-shot timers are removed after their
-callback. Looping timers remain active until cleared, their world is
-invalidated, or module shutdown begins.
+Timers are owned by the selected world and run on the game thread. Pass that
+same world to `clear_timer`; passing a different valid world returns
+`UEC_RESULT_INVALID_ARGUMENT` and leaves the timer active. The bridge does not
+copy `user_data`; callers must keep it valid until the timer callback fires or
+`clear_timer` succeeds. One-shot timers are removed after their callback.
+Looping timers remain active until cleared, their world is invalidated, or
+module shutdown begins.
 
 Class metadata is read through an opaque class handle obtained from a loadable
 Unreal class path. The current metadata surface reports the class name,

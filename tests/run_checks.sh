@@ -147,7 +147,8 @@ if ! git -C "$repo_dir" check-ignore -q --no-index IMPLEMENTATION_PLAN.md; then
 fi
 
 for source_file in "$public_dir/uec_api.h" "$private_dir/uec_api.cpp" \
-    "$private_dir"/API/*.inl "$host_consumer"; do
+    "$private_dir"/API/*.inl "$host_consumer" \
+    "$repo_dir/Source/UnrealCAPIHost/Private/UnrealCAPIHost.cpp"; do
     line_count=$(wc -l < "$source_file" | tr -d ' ')
     if [ "$line_count" -lt 400 ] || [ "$line_count" -gt 800 ]; then
         printf 'Implementation source unit is outside the 400-800 line budget: %s (%s lines)\n' \

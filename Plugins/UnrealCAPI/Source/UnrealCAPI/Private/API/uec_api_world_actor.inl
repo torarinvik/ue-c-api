@@ -576,10 +576,9 @@
         if (statePtr == nullptr || !statePtr->IsValid()) return UEC_RESULT_INVALID_ARGUMENT;
         TSharedPtr<FUECTimerState> state = *statePtr;
         UWorld* world = worldHandle->Value.Get();
-        if (world != nullptr)
-        {
-            world->GetTimerManager().ClearTimer(state->Handle);
-        }
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (state->World.Get() != world) return UEC_RESULT_INVALID_ARGUMENT;
+        world->GetTimerManager().ClearTimer(state->Handle);
         state->Cancelled = true;
         GTimers.Remove(timerId);
         return UEC_RESULT_OK;
