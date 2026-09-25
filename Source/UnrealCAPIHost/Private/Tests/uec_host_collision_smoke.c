@@ -98,6 +98,8 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     uec_runtime_stats baseline = {0};
     uec_runtime_stats observed = {0};
     uec_hit_smoke_capture hitCapture = {0};
+    uec_vector3 boundsOrigin = {0};
+    uec_vector3 boundsExtent = {0};
     uint32_t overlapCount = 0u;
     uint64_t hitSubscriptionId = 0u;
     int failureLine = 0;
@@ -124,7 +126,7 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         api->get_component_collision_response == NULL || api->line_trace == NULL ||
         api->line_trace_filtered == NULL || api->sweep_trace_filtered == NULL ||
         api->overlap_shape_filtered == NULL || api->trace_detailed_filtered == NULL ||
-        api->get_actor_transform == NULL) {
+        api->get_actor_transform == NULL || api->get_actor_bounds == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
@@ -140,6 +142,14 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         {center.x, center.y, center.z}, {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
     result = api->spawn_actor(world, classPath, &transform, &actor);
     if (result != UEC_RESULT_OK || actor == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->get_actor_bounds(actor, &boundsOrigin, &boundsExtent);
+    if (result != UEC_RESULT_OK ||
+        !IsNear(boundsOrigin.x, center.x) || !IsNear(boundsOrigin.y, center.y) ||
+        !IsNear(boundsOrigin.z, center.z) || !IsNear(boundsExtent.x, 50.0) ||
+        !IsNear(boundsExtent.y, 50.0) || !IsNear(boundsExtent.z, 50.0)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
