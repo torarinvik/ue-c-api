@@ -415,7 +415,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
                 InputSmokeElapsed = 0.0f;
                 InputSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
                     FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunInputSmoke),
-                    0.1f);
+                    0.0f);
             }
             else {
                 UE_LOG(LogUnrealCAPIHost, Error,

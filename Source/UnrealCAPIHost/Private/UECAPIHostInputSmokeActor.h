@@ -28,5 +28,8 @@ public:
     TObjectPtr<UInputAction> SmokeAxis3DAction;
 
     UPROPERTY(Transient)
+    TObjectPtr<UInputAction> SmokeHoldAction;
+
+    UPROPERTY(Transient)
     TObjectPtr<UInputMappingContext> SmokeMappingContext;
 };

@@ -4,6 +4,7 @@
 #include "InputAction.h"
 #include "InputCoreTypes.h"
 #include "InputMappingContext.h"
+#include "InputTriggers.h"
 
 void AUECAPIHostInputSmokeActor::BeginPlay()
 {
@@ -27,6 +28,16 @@ void AUECAPIHostInputSmokeActor::BeginPlay()
         this, TEXT("UECSmokeAxis3DAction"), RF_Transient);
     if (SmokeAxis3DAction != nullptr) {
         SmokeAxis3DAction->ValueType = EInputActionValueType::Axis3D;
+    }
+    SmokeHoldAction = NewObject<UInputAction>(
+        this, TEXT("UECSmokeHoldAction"), RF_Transient);
+    if (SmokeHoldAction != nullptr) {
+        SmokeHoldAction->ValueType = EInputActionValueType::Axis1D;
+        UInputTriggerHold* holdTrigger = NewObject<UInputTriggerHold>(SmokeHoldAction);
+        if (holdTrigger != nullptr) {
+            holdTrigger->HoldTimeThreshold = 60.0f;
+            SmokeHoldAction->Triggers.Add(holdTrigger);
+        }
     }
     SmokeMappingContext = NewObject<UInputMappingContext>(
         this, TEXT("UECSmokeInputMappingContext"), RF_Transient);
