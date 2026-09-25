@@ -12,6 +12,9 @@ gameplay_example="$repo_dir/examples/c_gameplay/c_gameplay.c"
 widget_ui_example="$repo_dir/examples/c_widget_ui/c_widget_ui.c"
 widget_ui_example_dir="$repo_dir/examples/c_widget_ui"
 widget_ui_smoke="$repo_dir/tests/c_smoke/c_widget_ui_smoke.c"
+consumer_drain_example="$repo_dir/examples/c_consumer_drain/c_consumer_drain.c"
+consumer_drain_example_dir="$repo_dir/examples/c_consumer_drain"
+consumer_drain_smoke="$repo_dir/tests/c_smoke/c_consumer_drain_smoke.c"
 host_consumer="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_smoke.c"
 host_abi_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_abi_smoke.c"
 host_collision_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_collision_smoke.c"
@@ -20,6 +23,7 @@ host_authority_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_
 host_event_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_event_bridge_smoke.c"
 host_gameplay_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_gameplay_example_smoke.c"
 host_gameplay_translation_unit="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_gameplay_example.c"
+host_consumer_drain_translation_unit="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_consumer_drain_example.c"
 gameplay_header_consumer="$repo_dir/tests/c_smoke/c_gameplay_header.c"
 gameplay_example_smoke="$repo_dir/tests/c_smoke/c_gameplay_example_smoke.c"
 physics_simulation_smoke="$repo_dir/tests/c_smoke/c_physics_simulation_smoke.c"
@@ -40,6 +44,10 @@ git -C "$repo_dir" diff --check
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$widget_ui_example_dir" -fsyntax-only "$widget_ui_example"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$consumer_drain_example_dir" -fsyntax-only "$consumer_drain_example"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$consumer_drain_example_dir" -fsyntax-only "$consumer_drain_smoke"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$widget_ui_example_dir" -fsyntax-only "$widget_ui_smoke"
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$widget_ui_example_dir" -x c++ -fsyntax-only "$widget_ui_example"
@@ -58,9 +66,12 @@ git -C "$repo_dir" diff --check
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_authority_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_event_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
-    -I "$repo_dir/examples/c_gameplay" -fsyntax-only "$host_gameplay_consumer"
+    -I "$repo_dir/examples/c_gameplay" -I "$consumer_drain_example_dir" \
+    -fsyntax-only "$host_gameplay_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$repo_dir/examples/c_gameplay" -fsyntax-only "$host_gameplay_translation_unit"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$consumer_drain_example_dir" -fsyntax-only "$host_consumer_drain_translation_unit"
 stub_build_dir=$(mktemp -d)
 trap 'rm -rf "$stub_build_dir"' EXIT HUP INT TERM
 sanitizer_flags=
@@ -69,12 +80,19 @@ if [ "${UEC_SANITIZE:-0}" = 1 ]; then
 fi
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     ${sanitizer_flags} -I "$repo_dir/examples/c_gameplay" -I "$widget_ui_example_dir" \
+    -I "$consumer_drain_example_dir" \
     "$consumer" "$layout_consumer" "$widget_ui_smoke" "$gameplay_example_smoke" \
     "$physics_simulation_smoke" \
     "$host_stub" "$host_consumer" "$host_abi_consumer" "$host_event_consumer" \
     "$gameplay_example" "$widget_ui_example" "$host_gameplay_consumer" \
+    "$host_consumer_drain_translation_unit" \
     -o "$stub_build_dir/c_smoke"
 "$stub_build_dir/c_smoke" >/dev/null
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    ${sanitizer_flags} -I "$consumer_drain_example_dir" \
+    "$consumer_drain_example" "$consumer_drain_smoke" \
+    -o "$stub_build_dir/c_consumer_drain_smoke"
+"$stub_build_dir/c_consumer_drain_smoke" >/dev/null
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     ${sanitizer_flags} "$compat_consumer" "$host_stub" -o "$stub_build_dir/c_compat"
 "$stub_build_dir/c_compat" >/dev/null

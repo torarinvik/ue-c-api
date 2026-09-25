@@ -26,14 +26,17 @@ done
     -o "$build_dir/uec_host_stub.dll"
 "$cc" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$repo_dir/examples/c_gameplay" -I "$repo_dir/examples/c_widget_ui" \
+    -I "$repo_dir/examples/c_consumer_drain" \
     "$repo_dir/tests/c_smoke/c_smoke.c" \
     "$repo_dir/tests/c_smoke/c_smoke_layout.c" \
     "$repo_dir/tests/c_smoke/c_widget_ui_smoke.c" \
     "$repo_dir/tests/c_smoke/c_gameplay_example_smoke.c" \
+    "$repo_dir/tests/c_smoke/c_physics_simulation_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/uec_host_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_abi_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_event_bridge_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_gameplay_example_smoke.c" \
+    "$repo_dir/Source/UnrealCAPIHost/Private/uec_host_consumer_drain_example.c" \
     "$repo_dir/examples/c_gameplay/c_gameplay.c" \
     "$repo_dir/examples/c_widget_ui/c_widget_ui.c" \
     -L"$build_dir" -luec_host_stub -o "$build_dir/c_smoke.exe"

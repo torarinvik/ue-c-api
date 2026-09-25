@@ -1,4 +1,5 @@
 #include "c_gameplay.h"
+#include "c_consumer_drain.h"
 
 typedef struct uec_host_gameplay_smoke_state {
     const uec_api* api;
@@ -52,9 +53,10 @@ static void FinishGameplaySmoke(uec_host_gameplay_smoke_state* state,
         state->context != NULL && state->api->get_runtime_stats != NULL) {
         uec_runtime_stats observed = {0};
         observed.struct_size = sizeof(observed);
-        const uec_result statsResult = state->api->get_runtime_stats(
-            state->context, &observed);
-        if (statsResult != UEC_RESULT_OK ||
+        uec_bool drained = UEC_FALSE;
+        const uec_result statsResult = uec_consumer_drain_poll(
+            state->api, state->context, &drained, &observed);
+        if (statsResult != UEC_RESULT_OK || drained != UEC_TRUE ||
             GameplayStatsMatch(&state->baseline, &observed, UEC_FALSE) != UEC_TRUE) {
             if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         }

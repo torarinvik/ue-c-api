@@ -12,8 +12,11 @@ public class UnrealCAPIHost : ModuleRules
         {
             PrivateDependencyModuleNames.Add("UnrealEd");
         }
-        PrivateIncludePaths.Add(Path.GetFullPath(
-            Path.Combine(ModuleDirectory, "../../examples/c_gameplay")));
+        PrivateIncludePaths.AddRange(new[]
+        {
+            Path.GetFullPath(Path.Combine(ModuleDirectory, "../../examples/c_gameplay")),
+            Path.GetFullPath(Path.Combine(ModuleDirectory, "../../examples/c_consumer_drain"))
+        });
 
         // The packaged macOS host links Unreal's TBB runtime, but installed-engine
         // receipts do not stage these dylibs with this project target.

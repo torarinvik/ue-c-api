@@ -52,6 +52,13 @@ all are zero. ABI 87 appends `live_contexts`, `live_worlds`, `live_actors`,
 `struct_size` to read them and use the original prefix when targeting older
 bridges.
 
+`examples/c_consumer_drain/` provides a C helper that performs this poll and a
+portable test for each nonzero counter. Call it from the game thread after the
+consumer has stopped submissions and canceled all owned work; keep its API
+table, context, callback code, and user data alive while it reports not
+drained. Once all three counters are zero, release remaining handles and the
+context before unloading the consumer library.
+
 The bridge checks null/count consistency, size-tagged structures, and opaque
 handle membership. It cannot determine whether an arbitrary non-null pointer
 from the caller is readable or whether its allocation is as large as the
