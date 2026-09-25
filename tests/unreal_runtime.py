@@ -108,7 +108,6 @@ def run_smoke(
         "-nosplash",
         "-nop4",
         "-nullrhi",
-        "-nosound",
         "-stdout",
         "-FullStdOutLogOutput",
     ]

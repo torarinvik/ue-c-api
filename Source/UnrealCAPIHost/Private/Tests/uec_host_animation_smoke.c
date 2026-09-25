@@ -11,22 +11,31 @@ typedef struct uec_animation_smoke_state {
     uec_scene_component* component;
     uec_object* audio_component;
     uec_object* destroyable_audio_component;
+    uec_object* stoppable_audio_component;
+    uec_object* completion_audio_component;
+    uec_object* sound;
     uec_object* mesh;
     uec_object* animation;
     uec_object* wrong_object;
     uint64_t animation_subscription_id;
     uint64_t audio_subscription_id;
     uint64_t destroyable_audio_subscription_id;
+    uint64_t stopped_audio_subscription_id;
+    uint64_t completion_audio_subscription_id;
     uint64_t tick_subscription_id;
     uint32_t completion_count;
     uint32_t audio_callback_count;
+    uint32_t stopped_audio_callback_count;
+    uint32_t completion_audio_callback_count;
     uint32_t reentrant_unbind_count;
     uint32_t callbacks_observed_in_flight;
+    uint32_t audio_callbacks_observed_in_flight;
     uint32_t baseline_subscriptions;
     double elapsed_seconds;
     uec_result callback_result;
     uec_bool running;
     uec_bool animation_playing;
+    uec_bool audio_callbacks_verified;
 } uec_animation_smoke_state;
 
 static uec_animation_smoke_state g_animation_smoke;
@@ -64,6 +73,20 @@ static uec_result ReleaseAnimationSmokeState(uec_animation_smoke_state* state)
             result = unbindResult;
         state->audio_subscription_id = 0u;
     }
+    if (api != NULL && context != NULL && state->stopped_audio_subscription_id != 0u) {
+        const uec_result unbindResult = api->unbind_audio_finished(
+            context, state->stopped_audio_subscription_id);
+        if (result == UEC_RESULT_OK && unbindResult != UEC_RESULT_OK)
+            result = unbindResult;
+        state->stopped_audio_subscription_id = 0u;
+    }
+    if (api != NULL && context != NULL && state->completion_audio_subscription_id != 0u) {
+        const uec_result unbindResult = api->unbind_audio_finished(
+            context, state->completion_audio_subscription_id);
+        if (result == UEC_RESULT_OK && unbindResult != UEC_RESULT_OK)
+            result = unbindResult;
+        state->completion_audio_subscription_id = 0u;
+    }
     if (api != NULL && context != NULL &&
         state->destroyable_audio_subscription_id != 0u) {
         const uec_result unbindResult = api->unbind_audio_finished(
@@ -96,6 +119,26 @@ static uec_result ReleaseAnimationSmokeState(uec_animation_smoke_state* state)
         if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK)
             result = releaseResult;
         state->destroyable_audio_component = NULL;
+    }
+    if (api != NULL && state->stoppable_audio_component != NULL) {
+        const uec_result releaseResult = api->release_object(
+            state->stoppable_audio_component);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK)
+            result = releaseResult;
+        state->stoppable_audio_component = NULL;
+    }
+    if (api != NULL && state->completion_audio_component != NULL) {
+        const uec_result releaseResult = api->release_object(
+            state->completion_audio_component);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK)
+            result = releaseResult;
+        state->completion_audio_component = NULL;
+    }
+    if (api != NULL && state->sound != NULL) {
+        const uec_result releaseResult = api->release_object(state->sound);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK)
+            result = releaseResult;
+        state->sound = NULL;
     }
     if (api != NULL && state->wrong_object != NULL) {
         const uec_result releaseResult = api->release_object(state->wrong_object);
@@ -165,11 +208,144 @@ static void UEC_CALL AudioFinished(uint64_t subscriptionId, void* userData)
 {
     uec_animation_smoke_state* state = (uec_animation_smoke_state*)userData;
     if (state != &g_animation_smoke || state->running != UEC_TRUE) return;
+    if (subscriptionId == state->stopped_audio_subscription_id ||
+        subscriptionId == state->completion_audio_subscription_id) {
+        uec_runtime_stats stats = {0};
+        stats.struct_size = sizeof(stats);
+        const uec_result result = state->api->get_runtime_stats(state->context, &stats);
+        if (result != UEC_RESULT_OK || stats.active_callbacks != 1u) {
+            state->callback_result = result == UEC_RESULT_OK ?
+                UEC_RESULT_INTERNAL_ERROR : result;
+        } else {
+            ++state->audio_callbacks_observed_in_flight;
+        }
+        if (subscriptionId == state->stopped_audio_subscription_id)
+            ++state->stopped_audio_callback_count;
+        else
+            ++state->completion_audio_callback_count;
+        return;
+    }
     if (subscriptionId != state->audio_subscription_id &&
         subscriptionId != state->destroyable_audio_subscription_id) {
         state->callback_result = UEC_RESULT_INTERNAL_ERROR;
     }
     ++state->audio_callback_count;
+}
+
+static uec_result BeginAudioPlaybackSmoke(uec_animation_smoke_state* state)
+{
+    uec_result result = state->api->get_actor_property_object(
+        state->actor, AnimationSmokeView("CookedTestSound"), &state->sound);
+    if (result != UEC_RESULT_OK || state->sound == NULL)
+        return AnimationCleanupStepFailed(
+            "sound-fixture", result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
+
+    uec_bool isSound = UEC_FALSE;
+    result = state->api->object_is_a(
+        state->sound, AnimationSmokeView("/Script/Engine.SoundBase"), &isSound);
+    if (result != UEC_RESULT_OK || isSound != UEC_TRUE)
+        return AnimationCleanupStepFailed(
+            "sound-type", result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result);
+
+    const uec_vector3 location = {50000.0, 50000.0, 50000.0};
+    result = state->api->play_sound_at_location(
+        state->world, state->sound, location, 0.01, 1.0);
+    if (result != UEC_RESULT_OK)
+        return AnimationCleanupStepFailed("play-at-location", result);
+    if (state->api->play_sound_at_location(
+            state->world, state->wrong_object, location, 1.0, 1.0) !=
+        UEC_RESULT_INVALID_ARGUMENT ||
+        state->api->play_sound_at_location(
+            state->world, state->sound, location, 1.0, 0.0) !=
+        UEC_RESULT_INVALID_ARGUMENT) {
+        return AnimationCleanupStepFailed(
+            "play-at-location-validation", UEC_RESULT_INTERNAL_ERROR);
+    }
+
+    uec_object* rejectedAudio = state->sound;
+    if (state->api->spawn_sound_attached(
+            state->component, state->sound, AnimationSmokeView(""), 1.0, 0.0,
+            &rejectedAudio) != UEC_RESULT_INVALID_ARGUMENT || rejectedAudio != NULL) {
+        return AnimationCleanupStepFailed(
+            "attached-playback-validation", UEC_RESULT_INTERNAL_ERROR);
+    }
+    result = state->api->spawn_sound_attached(
+        state->component, state->sound, AnimationSmokeView(""), 0.01, 1.0,
+        &state->stoppable_audio_component);
+    if (result != UEC_RESULT_OK || state->stoppable_audio_component == NULL)
+        return AnimationCleanupStepFailed(
+            "attached-playback", result == UEC_RESULT_OK ?
+                UEC_RESULT_INTERNAL_ERROR : result);
+
+    uec_bool isPlaying = UEC_FALSE;
+    result = state->api->get_audio_component_playing(
+        state->stoppable_audio_component, &isPlaying);
+    if (result != UEC_RESULT_OK || isPlaying != UEC_TRUE)
+        return AnimationCleanupStepFailed(
+            "attached-playing-state", result == UEC_RESULT_OK ?
+                UEC_RESULT_INTERNAL_ERROR : result);
+    result = state->api->bind_audio_finished(
+        state->stoppable_audio_component, AudioFinished, state,
+        &state->stopped_audio_subscription_id);
+    if (result != UEC_RESULT_OK || state->stopped_audio_subscription_id == 0u)
+        return AnimationCleanupStepFailed(
+            "stopped-audio-bind", result == UEC_RESULT_OK ?
+                UEC_RESULT_INTERNAL_ERROR : result);
+    result = state->api->stop_audio_component(state->stoppable_audio_component);
+    if (result != UEC_RESULT_OK)
+        return AnimationCleanupStepFailed("stop-audio-component", result);
+    isPlaying = UEC_TRUE;
+    result = state->api->get_audio_component_playing(
+        state->stoppable_audio_component, &isPlaying);
+    if (result != UEC_RESULT_OK || isPlaying != UEC_FALSE)
+        return AnimationCleanupStepFailed(
+            "stopped-playing-state", result == UEC_RESULT_OK ?
+                UEC_RESULT_INTERNAL_ERROR : result);
+
+    result = state->api->spawn_sound_attached(
+        state->component, state->sound, AnimationSmokeView(""), 0.01, 1.0,
+        &state->completion_audio_component);
+    if (result != UEC_RESULT_OK || state->completion_audio_component == NULL)
+        return AnimationCleanupStepFailed(
+            "completion-playback", result == UEC_RESULT_OK ?
+                UEC_RESULT_INTERNAL_ERROR : result);
+    result = state->api->bind_audio_finished(
+        state->completion_audio_component, AudioFinished, state,
+        &state->completion_audio_subscription_id);
+    if (result != UEC_RESULT_OK || state->completion_audio_subscription_id == 0u)
+        return AnimationCleanupStepFailed(
+            "completion-audio-bind", result == UEC_RESULT_OK ?
+                UEC_RESULT_INTERNAL_ERROR : result);
+    return UEC_RESULT_OK;
+}
+
+static uec_result VerifyAudioPlaybackCompletions(uec_animation_smoke_state* state)
+{
+    if (state->stopped_audio_callback_count != 1u ||
+        state->completion_audio_callback_count != 1u ||
+        state->audio_callbacks_observed_in_flight != 2u) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    uec_bool isPlaying = UEC_TRUE;
+    uec_result result = state->api->get_audio_component_playing(
+        state->stoppable_audio_component, &isPlaying);
+    if (result != UEC_RESULT_OK || isPlaying != UEC_FALSE)
+        return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+    result = state->api->get_audio_component_playing(
+        state->completion_audio_component, &isPlaying);
+    if (result != UEC_RESULT_OK || isPlaying != UEC_FALSE)
+        return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+
+    result = state->api->unbind_audio_finished(
+        state->context, state->stopped_audio_subscription_id);
+    if (result != UEC_RESULT_INVALID_ARGUMENT) return UEC_RESULT_INTERNAL_ERROR;
+    state->stopped_audio_subscription_id = 0u;
+    result = state->api->unbind_audio_finished(
+        state->context, state->completion_audio_subscription_id);
+    if (result != UEC_RESULT_INVALID_ARGUMENT) return UEC_RESULT_INTERNAL_ERROR;
+    state->completion_audio_subscription_id = 0u;
+    state->audio_callbacks_verified = UEC_TRUE;
+    return UEC_RESULT_OK;
 }
 
 static uec_result VerifyAnimationSubscriptionActorCleanup(
@@ -347,11 +523,21 @@ static void UEC_CALL AnimationSmokeTick(
         FinishAnimationSmoke(UEC_RESULT_INTERNAL_ERROR);
         return;
     }
-    if (state->completion_count > 1u) {
+    if (state->completion_count > 1u || state->stopped_audio_callback_count > 1u ||
+        state->completion_audio_callback_count > 1u) {
         FinishAnimationSmoke(UEC_RESULT_INTERNAL_ERROR);
         return;
     }
-    if (state->completion_count == 1u) {
+    if (state->audio_callbacks_verified != UEC_TRUE &&
+        state->stopped_audio_callback_count == 1u &&
+        state->completion_audio_callback_count == 1u) {
+        const uec_result audioResult = VerifyAudioPlaybackCompletions(state);
+        if (audioResult != UEC_RESULT_OK) {
+            FinishAnimationSmoke(audioResult);
+            return;
+        }
+    }
+    if (state->completion_count == 1u && state->audio_callbacks_verified == UEC_TRUE) {
         if (state->reentrant_unbind_count != 1u ||
             state->callbacks_observed_in_flight != 1u) {
             FinishAnimationSmoke(UEC_RESULT_INTERNAL_ERROR);
@@ -403,6 +589,8 @@ uec_result UEC_CALL uec_host_animation_smoke_start(void)
         api->get_actor_component_count_by_class == NULL ||
         api->get_actor_component_at_by_class == NULL ||
         api->get_actor_property_object == NULL ||
+        api->object_is_a == NULL || api->play_sound_at_location == NULL ||
+        api->spawn_sound_attached == NULL || api->stop_audio_component == NULL ||
         api->bind_audio_finished == NULL || api->unbind_audio_finished == NULL ||
         api->destroy_audio_component == NULL ||
         api->get_audio_component_playing == NULL ||
@@ -546,6 +734,8 @@ uec_result UEC_CALL uec_host_animation_smoke_start(void)
     if (result != UEC_RESULT_OK) return AbortAnimationSmoke(result);
 
     state->running = UEC_TRUE;
+    result = BeginAudioPlaybackSmoke(state);
+    if (result != UEC_RESULT_OK) return AbortAnimationSmoke(result);
     return UEC_RESULT_OK;
 }
 

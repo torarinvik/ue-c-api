@@ -7,6 +7,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- The UE 5.8.3 Editor PIE and packaged Development presentation smoke now
+  exercises one-shot and attached sound playback, playing-state readback,
+  stop-triggered and natural completion callbacks at 1% volume, and one-shot
+  token retirement.
 - ABI minor 147 adds `set_config_bool` for game-thread game-INI writes and
   flushes updates. The UE 5.8.3 persistence smoke verifies false/true roundtrips
   and rejects invalid boolean values without changing the stored setting.

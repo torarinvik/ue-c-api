@@ -12,6 +12,7 @@ class USkeletalMeshComponent;
 class UStaticMesh;
 class UStaticMeshComponent;
 class UMaterialInterface;
+class USoundBase;
 
 UCLASS(NotBlueprintable)
 class AUECAPIHostPlayerFlowPawn final : public APawn
@@ -32,6 +33,9 @@ public:
 
     UPROPERTY()
     TObjectPtr<UAudioComponent> FlowAudioForDestroySmoke;
+
+    UPROPERTY()
+    TObjectPtr<USoundBase> CookedTestSound;
 
     UPROPERTY()
     TObjectPtr<UStaticMeshComponent> FlowMesh;

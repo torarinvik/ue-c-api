@@ -11,6 +11,11 @@ build, launch, and exercise the C smoke path.
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 
+The UE 5.8.3 audio smoke uses the engine's `1kSineTonePing` sound asset. The
+NullRHI PIE and packaged runtime launchers leave the audio device enabled for
+these checks and play the fixture at 1% volume while verifying attached
+playback, stop state, and completion callbacks.
+
 The UE 5.8.3 local Editor PIE and packaged Development runs also verify live
 reflected `TArray<int32>`, `TMap<int32, int32>`, `TSet<int32>`, and nested
 `FVector` field reads and writes. The probe checks typed and text adapters,

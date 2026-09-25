@@ -191,7 +191,6 @@ def run_smoke(
         str(executable),
         str(repo_root / "UnrealCAPIHost.uproject"),
         "-nullrhi",
-        "-nosound",
         "-unattended",
         "-nosplash",
         "-nop4",

@@ -8,6 +8,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
+#include "Sound/SoundBase.h"
 #include "UObject/ConstructorHelpers.h"
 
 AUECAPIHostPlayerFlowPawn::AUECAPIHostPlayerFlowPawn()
@@ -24,6 +25,9 @@ AUECAPIHostPlayerFlowPawn::AUECAPIHostPlayerFlowPawn()
         TEXT("FlowAudioForDestroySmoke"));
     FlowAudioForDestroySmoke->SetupAttachment(root);
     FlowAudioForDestroySmoke->SetAutoActivate(false);
+    static ConstructorHelpers::FObjectFinder<USoundBase> soundAsset(
+        TEXT("/Engine/EngineSounds/1kSineTonePing.1kSineTonePing"));
+    if (soundAsset.Succeeded()) CookedTestSound = soundAsset.Object;
     FlowMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FlowMesh"));
     FlowMesh->SetupAttachment(root);
     FlowMesh->SetMobility(EComponentMobility::Movable);
