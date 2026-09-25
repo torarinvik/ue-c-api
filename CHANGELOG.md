@@ -42,9 +42,10 @@ development; they do not imply a published or runtime-verified release.
   world-owned streaming completion requests before invalidating handles. The
   animation PIE smoke verifies skeletal-animation completion and audio-token
   cancellation with callback suppression on explicit component destruction and
-  actor destruction; the PIE restart smoke verifies widget-token cancellation
-  across three cleanup cycles; the async travel smoke verifies that the widget
-  token is already retired when the travel call returns.
+  actor destruction; the three-cycle PIE restart smoke verifies audio and
+  widget token cancellation, callback suppression, and stale audio-component
+  invalidation; the async travel smoke verifies that the widget token is already
+  retired when the travel call returns.
 - Actor-destroyed notifications now invalidate actor, component, and object
   handles by clearing their weak references without pre-releasing them, so
   consumers can still release handles after Unreal destroys their objects.
