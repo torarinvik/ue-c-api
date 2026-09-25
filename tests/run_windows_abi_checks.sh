@@ -33,6 +33,7 @@ done
     "$repo_dir/tests/c_smoke/c_gameplay_example_smoke.c" \
     "$repo_dir/tests/c_smoke/c_physics_simulation_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/uec_host_smoke.c" \
+    "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_travel_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_abi_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_event_bridge_smoke.c" \
     "$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_reflection_metadata_smoke.c" \

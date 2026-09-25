@@ -98,6 +98,10 @@
         if (path.IsEmpty()) return UEC_RESULT_INVALID_ARGUMENT;
         CancelTimersFor(world);
         CancelTickSubscriptionsFor(world);
+        CancelAudioSubscriptionsForWorld(world);
+        CancelWidgetSubscriptionsForWorld(world);
+        CancelAnimationSubscriptionsForWorld(world);
+        CancelStreamingRequestsFor(world);
         InvalidateWorldHandles(world);
         UGameplayStatics::OpenLevel(world, FName(*path));
         return UEC_RESULT_OK;
@@ -201,6 +205,10 @@
         *outRequestId = request->Id;
         CancelTimersFor(world);
         CancelTickSubscriptionsFor(world);
+        CancelAudioSubscriptionsForWorld(world);
+        CancelWidgetSubscriptionsForWorld(world);
+        CancelAnimationSubscriptionsForWorld(world);
+        CancelStreamingRequestsFor(world);
         InvalidateWorldHandles(world);
         UGameplayStatics::OpenLevel(world, FName(*request->LevelPath));
         return UEC_RESULT_OK;
