@@ -38,6 +38,8 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     double PhysicsSmokeNextPollTime = 0.0;
     double AuthoritySmokeDeadline = 0.0;
     bool bPIERestartStarted = false;
+    bool bInputSmokeCompleted = false;
+    int32 AnimationSmokeQuiescentTicks = 0;
     int32 PIERestartCyclesCompleted = 0;
 
     bool FinishTestRunAfterPIE(float)
@@ -354,6 +356,12 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             return false;
         }
         UE_LOG(LogUnrealCAPIHost, Log, TEXT("C player-flow and camera smoke completed"));
+        const uec_result animationSmokeResult = uec_host_animation_smoke_start();
+        if (animationSmokeResult != UEC_RESULT_OK) {
+            UE_LOG(LogUnrealCAPIHost, Error,
+                TEXT("C skeletal animation smoke failed to start with result %d"),
+                static_cast<int32>(animationSmokeResult));
+        }
 
         const uec_result blueprintInvocationResult =
             uec_host_blueprint_invocation_smoke();
@@ -463,33 +471,43 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
 
     bool RunInputSmoke(float deltaSeconds)
     {
-        InputSmokeElapsed += deltaSeconds;
-        uec_result result = UEC_RESULT_NOT_INITIALIZED;
-        const bool complete = uec_host_input_smoke_poll(&result) == UEC_TRUE;
-        if (!complete && InputSmokeElapsed < 10.0f) return true;
-        if (!complete) {
-            uec_host_input_smoke_cancel();
-            result = UEC_RESULT_INTERNAL_ERROR;
-        }
-        if (result == UEC_RESULT_OK) {
-            UE_LOG(LogUnrealCAPIHost, Log, TEXT("C Enhanced Input smoke completed"));
-            const uec_result queueResult = uec_host_queue_smoke_start();
-            if (queueResult == UEC_RESULT_OK) {
-                QueueSmokeElapsed = 0.0f;
-                QueueSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
-                    FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunQueueSmoke),
-                    0.1f);
+        if (!bInputSmokeCompleted) {
+            InputSmokeElapsed += deltaSeconds;
+            uec_result result = UEC_RESULT_NOT_INITIALIZED;
+            const bool complete = uec_host_input_smoke_poll(&result) == UEC_TRUE;
+            if (!complete && InputSmokeElapsed < 10.0f) return true;
+            if (!complete) {
+                uec_host_input_smoke_cancel();
+                result = UEC_RESULT_INTERNAL_ERROR;
             }
-            else {
+            if (result != UEC_RESULT_OK) {
                 UE_LOG(LogUnrealCAPIHost, Error,
-                    TEXT("C game-thread queue smoke failed to start with result %d"),
-                    static_cast<int32>(queueResult));
+                    TEXT("C Enhanced Input smoke failed with result %d"),
+                    static_cast<int32>(result));
+                InputSmokeHandle.Reset();
+                return false;
             }
+            UE_LOG(LogUnrealCAPIHost, Log, TEXT("C Enhanced Input smoke completed"));
+            bInputSmokeCompleted = true;
+        }
+        if (uec_host_animation_smoke_is_running() == UEC_TRUE) {
+            AnimationSmokeQuiescentTicks = 0;
+            return true;
+        }
+        if (AnimationSmokeQuiescentTicks++ == 0) return true;
+        AnimationSmokeQuiescentTicks = 0;
+        bInputSmokeCompleted = false;
+        const uec_result queueResult = uec_host_queue_smoke_start();
+        if (queueResult == UEC_RESULT_OK) {
+            QueueSmokeElapsed = 0.0f;
+            QueueSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
+                FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunQueueSmoke),
+                0.1f);
         }
         else {
             UE_LOG(LogUnrealCAPIHost, Error,
-                TEXT("C Enhanced Input smoke failed with result %d"),
-                static_cast<int32>(result));
+                TEXT("C game-thread queue smoke failed to start with result %d"),
+                static_cast<int32>(queueResult));
         }
         InputSmokeHandle.Reset();
         return false;
@@ -752,6 +770,7 @@ public:
             FTSTicker::GetCoreTicker().RemoveTicker(GameplayExampleSmokeHandle);
             uec_host_gameplay_example_smoke_cancel();
         }
+        uec_host_animation_smoke_cancel();
         if (TravelSmokeHandle.IsValid()) {
             FTSTicker::GetCoreTicker().RemoveTicker(TravelSmokeHandle);
             uec_host_travel_smoke_cancel();

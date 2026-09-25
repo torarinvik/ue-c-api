@@ -21,6 +21,7 @@ DEDICATED_SERVER_FAILURE_MARKER = "C dedicated-server runtime context smoke fail
 SUCCESS_MARKERS = (
     "C consumer bootstrap completed",
     "C player-flow and camera smoke completed",
+    "C skeletal animation smoke completed",
     RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
     "C cooked reflection metadata smoke completed",
     "C persistence and configuration smoke completed",
@@ -49,6 +50,7 @@ MULTI_PIE_SUCCESS_MARKER = "C multi-PIE context smoke completed"
 FAILURE_MARKERS = (
     "C consumer bootstrap failed",
     "C player-flow and camera smoke failed",
+    "C skeletal animation smoke failed",
     RUNTIME_MODULE_UNLOAD_FAILURE_MARKER,
     DEDICATED_SERVER_FAILURE_MARKER,
     "C cooked reflection metadata smoke failed",

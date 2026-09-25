@@ -114,6 +114,7 @@ class UnrealRuntimeTests(unittest.TestCase):
             RUNTIME_MODULE_UNLOAD_SUCCESS_MARKER,
             "C consumer bootstrap completed",
             "C player-flow and camera smoke completed",
+            "C skeletal animation smoke completed",
             "C cooked reflection metadata smoke completed",
             "C persistence and configuration smoke completed",
             "C reflected scalar property smoke completed",

@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- The UE 5.8.3 Editor PIE and packaged Development smoke now plays a cooked
+  skeletal animation to completion and checks exactly-once delivery, canceled
+  completion-subscription suppression, and invalid component/asset rejection.
 - ABI minor 143 adds game-thread component physics-simulation controls. Enabling
   simulation requires a movable primitive component and a collision mode that
   includes physics; the getter reports deterministic false output on failure.

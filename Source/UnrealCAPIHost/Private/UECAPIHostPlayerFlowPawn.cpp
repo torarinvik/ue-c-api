@@ -3,6 +3,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimSequence.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "UObject/ConstructorHelpers.h"
@@ -27,4 +28,10 @@ AUECAPIHostPlayerFlowPawn::AUECAPIHostPlayerFlowPawn()
     static ConstructorHelpers::FObjectFinder<USkeletalMesh> skeletalMeshAsset(
         TEXT("/Engine/EngineMeshes/SkeletalCube.SkeletalCube"));
     if (skeletalMeshAsset.Succeeded()) CookedTestSkeletalMesh = skeletalMeshAsset.Object;
+    static ConstructorHelpers::FObjectFinder<USkeletalMesh> animationMeshAsset(
+        TEXT("/Engine/Tutorial/SubEditors/TutorialAssets/Character/TutorialTPP.TutorialTPP"));
+    if (animationMeshAsset.Succeeded()) CookedAnimationTestMesh = animationMeshAsset.Object;
+    static ConstructorHelpers::FObjectFinder<UAnimSequence> animationAsset(
+        TEXT("/Engine/Tutorial/SubEditors/TutorialAssets/Character/Tutorial_Walk_Fwd.Tutorial_Walk_Fwd"));
+    if (animationAsset.Succeeded()) CookedTestAnimation = animationAsset.Object;
 }

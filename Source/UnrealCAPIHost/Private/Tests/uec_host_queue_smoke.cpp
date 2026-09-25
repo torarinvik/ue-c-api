@@ -54,7 +54,7 @@ namespace
             state.Api->get_runtime_stats(state.Context, &observed) != UEC_RESULT_OK) {
             return false;
         }
-        return observed.pending_requests == state.Baseline.pending_requests &&
+        const bool matches = observed.pending_requests == state.Baseline.pending_requests &&
             observed.active_callbacks == state.Baseline.active_callbacks &&
             observed.live_contexts == state.Baseline.live_contexts &&
             observed.live_worlds == state.Baseline.live_worlds &&
@@ -62,6 +62,20 @@ namespace
             observed.live_components == state.Baseline.live_components &&
             observed.live_classes == state.Baseline.live_classes &&
             observed.live_objects == state.Baseline.live_objects;
+        if (!matches) {
+            UE_LOG(LogTemp, Error,
+                TEXT("C queue counts: requests=%u/%u callbacks=%u/%u contexts=%u/%u "
+                     "worlds=%u/%u actors=%u/%u components=%u/%u classes=%u/%u objects=%u/%u"),
+                observed.pending_requests, state.Baseline.pending_requests,
+                observed.active_callbacks, state.Baseline.active_callbacks,
+                observed.live_contexts, state.Baseline.live_contexts,
+                observed.live_worlds, state.Baseline.live_worlds,
+                observed.live_actors, state.Baseline.live_actors,
+                observed.live_components, state.Baseline.live_components,
+                observed.live_classes, state.Baseline.live_classes,
+                observed.live_objects, state.Baseline.live_objects);
+        }
+        return matches;
     }
 
     void FinishQueueSmoke(FQueueSmokeState& state,
@@ -352,15 +366,27 @@ extern "C" uec_bool UEC_CALL uec_host_queue_smoke_poll(uec_result* outResult)
                 break;
             }
         }
+        const bool staleContextRejected = ReleasedContextSubmissionIsRejected(state);
+        const bool concurrentReleaseWasAtomic = ConcurrentContextReleaseSubmissionIsAtomic(state);
+        const bool statsReturnedToBaseline = HasRuntimeStatsReturnedToBaseline(state);
         const bool valid = state.CallbackCount == state.ExpectedCallbackCount &&
             callbacksMatchExpectedSubmissions && state.CallbackStatsValid &&
             state.AcceptedCount == static_cast<uint32>(QueueCapacity) &&
             state.RejectedCount == static_cast<uint32>(ExtraSubmissions) &&
             state.CancelledCount == CancellationBatch &&
-            state.CancelAfterDispatchChecks == 1u &&
-            ReleasedContextSubmissionIsRejected(state) &&
-            ConcurrentContextReleaseSubmissionIsAtomic(state) &&
-            HasRuntimeStatsReturnedToBaseline(state);
+            state.CancelAfterDispatchChecks == 1u && staleContextRejected &&
+            concurrentReleaseWasAtomic && statsReturnedToBaseline;
+        if (!valid) {
+            UE_LOG(LogTemp, Error,
+                TEXT("C queue smoke detail: callbacks=%u/%u matches=%d callback_stats=%d "
+                     "accepted=%u rejected=%u cancelled=%u after_dispatch=%u "
+                     "stale_context=%d concurrent_release=%d baseline=%d"),
+                state.CallbackCount, state.ExpectedCallbackCount,
+                callbacksMatchExpectedSubmissions, state.CallbackStatsValid,
+                state.AcceptedCount, state.RejectedCount, state.CancelledCount,
+                state.CancelAfterDispatchChecks, staleContextRejected,
+                concurrentReleaseWasAtomic, statsReturnedToBaseline);
+        }
         FinishQueueSmoke(state,
                          valid ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR,
                          !valid);
