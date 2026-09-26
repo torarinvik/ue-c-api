@@ -109,6 +109,93 @@ namespace
              !Near(output.struct_value.value.linear_color.a, 0.5))) {
             result = UEC_RESULT_INTERNAL_ERROR;
         }
+        if (result == UEC_RESULT_OK) {
+            argument.struct_value.kind = UEC_FUNCTION_STRUCT_COLOR;
+            argument.struct_value.value.color = {17u, 65u, 129u, 255u};
+            result = InvokeTypedStructEcho(api, actor, "EchoColor", argument,
+                                          UEC_FUNCTION_STRUCT_COLOR, output);
+        }
+        if (result == UEC_RESULT_OK &&
+            (output.struct_value.value.color.r != 17u ||
+             output.struct_value.value.color.g != 65u ||
+             output.struct_value.value.color.b != 129u ||
+             output.struct_value.value.color.a != 255u)) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+
+        if (result == UEC_RESULT_OK) {
+            uec_property_struct_value observed{};
+            observed.struct_size = sizeof(observed);
+            result = api->get_actor_property_struct_value(
+                actor, View("PackedTint"), &observed);
+            if (result == UEC_RESULT_OK &&
+                (observed.kind != UEC_PROPERTY_STRUCT_COLOR ||
+                 observed.value.color.r != 32u || observed.value.color.g != 64u ||
+                 observed.value.color.b != 128u || observed.value.color.a != 255u)) {
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+            uec_property_struct_value colorValue{};
+            colorValue.struct_size = sizeof(colorValue);
+            colorValue.kind = UEC_PROPERTY_STRUCT_COLOR;
+            colorValue.value.color = {201u, 77u, 9u, 128u};
+            if (result == UEC_RESULT_OK) {
+                result = api->set_actor_property_struct_value(
+                    actor, View("PackedTint"), &colorValue);
+            }
+            uec_object* selfObject = nullptr;
+            if (result == UEC_RESULT_OK) {
+                result = api->get_actor_property_object(
+                    actor, View("SelfObject"), &selfObject);
+            }
+            if (result == UEC_RESULT_OK && selfObject == nullptr) {
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+            if (result == UEC_RESULT_OK) {
+                observed = {};
+                observed.struct_size = sizeof(observed);
+                result = api->get_object_property_struct_value(
+                    selfObject, View("PackedTint"), &observed);
+            }
+            if (result == UEC_RESULT_OK &&
+                (observed.kind != UEC_PROPERTY_STRUCT_COLOR ||
+                 observed.value.color.r != 201u || observed.value.color.g != 77u ||
+                 observed.value.color.b != 9u || observed.value.color.a != 128u)) {
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+            if (result == UEC_RESULT_OK) {
+                colorValue.value.color = {1u, 3u, 5u, 7u};
+                result = api->set_object_property_struct_value(
+                    selfObject, View("PackedTint"), &colorValue);
+            }
+            if (selfObject != nullptr) {
+                const uec_result releaseResult = api->release_object(selfObject);
+                if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                    result = releaseResult;
+                }
+            }
+            if (result == UEC_RESULT_OK) {
+                observed = {};
+                observed.struct_size = sizeof(observed);
+                result = api->get_actor_property_struct_value(
+                    actor, View("PackedTint"), &observed);
+            }
+            if (result == UEC_RESULT_OK &&
+                (observed.kind != UEC_PROPERTY_STRUCT_COLOR ||
+                 observed.value.color.r != 1u || observed.value.color.g != 3u ||
+                 observed.value.color.b != 5u || observed.value.color.a != 7u)) {
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+            uec_property_struct_value wrongKind{};
+            wrongKind.struct_size = sizeof(wrongKind);
+            wrongKind.kind = UEC_PROPERTY_STRUCT_VECTOR2;
+            wrongKind.value.vector2 = {1.0, 2.0};
+            if (result == UEC_RESULT_OK &&
+                api->set_actor_property_struct_value(
+                    actor, View("PackedTint"), &wrongKind) !=
+                    UEC_RESULT_INVALID_ARGUMENT) {
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+        }
 
         if (result == UEC_RESULT_OK) {
             argument.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR2;
@@ -482,7 +569,14 @@ extern "C" uec_result UEC_CALL uec_host_blueprint_invocation_smoke(void)
         api->release_actor == nullptr || api->get_actor_count_by_class == nullptr ||
         api->get_actor_at_by_class == nullptr ||
         api->get_class_property_count == nullptr || api->get_class_property_at == nullptr ||
-        api->invoke_actor_function_value == nullptr)
+        api->invoke_actor_function_value == nullptr ||
+        api->invoke_actor_function_arguments == nullptr ||
+        api->get_actor_property_struct_value == nullptr ||
+        api->set_actor_property_struct_value == nullptr ||
+        api->get_object_property_struct_value == nullptr ||
+        api->set_object_property_struct_value == nullptr ||
+        api->get_actor_property_object == nullptr ||
+        api->release_object == nullptr)
     {
         if (api->release_context != nullptr) api->release_context(context);
         return UEC_RESULT_INTERNAL_ERROR;

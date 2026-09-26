@@ -548,29 +548,6 @@
         FMemory::Memzero(value->value);
     }
 
-    static bool IsFinitePropertyRotator(const uec_rotator& value)
-    {
-        return FMath::IsFinite(value.pitch) && FMath::IsFinite(value.yaw) &&
-            FMath::IsFinite(value.roll);
-    }
-
-    static bool IsValidPropertyLinearColor(const uec_linear_color& value)
-    {
-        return IsRepresentableFloat(value.r) && IsRepresentableFloat(value.g) &&
-            IsRepresentableFloat(value.b) && IsRepresentableFloat(value.a);
-    }
-
-    static bool IsFinitePropertyVector2(const uec_vector2& value)
-    {
-        return FMath::IsFinite(value.x) && FMath::IsFinite(value.y);
-    }
-
-    static bool IsFinitePropertyVector4(const uec_vector4& value)
-    {
-        return FMath::IsFinite(value.x) && FMath::IsFinite(value.y) &&
-            FMath::IsFinite(value.z) && FMath::IsFinite(value.w);
-    }
-
     static uec_result ReadTypedStructPropertyValue(
         UObject* object,
         uec_string_view propertyName,
@@ -586,47 +563,6 @@
             FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
 
-        const FStructProperty* structProperty = CastField<FStructProperty>(property);
-        if (structProperty != nullptr &&
-            structProperty->Struct == TBaseStructure<FRotator>::Get()) {
-            const FRotator& value = *structProperty->ContainerPtrToValuePtr<FRotator>(object);
-            const uec_rotator rotator{value.Pitch, value.Yaw, value.Roll};
-            if (!IsFinitePropertyRotator(rotator)) return UEC_RESULT_INTERNAL_ERROR;
-            outValue->kind = UEC_PROPERTY_STRUCT_ROTATOR;
-            outValue->value.rotator = rotator;
-            return UEC_RESULT_OK;
-        }
-        if (structProperty != nullptr &&
-            structProperty->Struct == TBaseStructure<FLinearColor>::Get()) {
-            const FLinearColor& value =
-                *structProperty->ContainerPtrToValuePtr<FLinearColor>(object);
-            const uec_linear_color color{value.R, value.G, value.B, value.A};
-            if (!IsValidPropertyLinearColor(color)) return UEC_RESULT_INTERNAL_ERROR;
-            outValue->kind = UEC_PROPERTY_STRUCT_LINEAR_COLOR;
-            outValue->value.linear_color = color;
-            return UEC_RESULT_OK;
-        }
-        if (structProperty != nullptr &&
-            structProperty->Struct == TBaseStructure<FVector2D>::Get()) {
-            const FVector2D& value =
-                *structProperty->ContainerPtrToValuePtr<FVector2D>(object);
-            const uec_vector2 vector{value.X, value.Y};
-            if (!IsFinitePropertyVector2(vector)) return UEC_RESULT_INTERNAL_ERROR;
-            outValue->kind = UEC_PROPERTY_STRUCT_VECTOR2;
-            outValue->value.vector2 = vector;
-            return UEC_RESULT_OK;
-        }
-        if (structProperty != nullptr &&
-            structProperty->Struct == TBaseStructure<FVector4>::Get()) {
-            const FVector4& value =
-                *structProperty->ContainerPtrToValuePtr<FVector4>(object);
-            const uec_vector4 vector{value.X, value.Y, value.Z, value.W};
-            if (!IsFinitePropertyVector4(vector)) return UEC_RESULT_INTERNAL_ERROR;
-            outValue->kind = UEC_PROPERTY_STRUCT_VECTOR4;
-            outValue->value.vector4 = vector;
-            return UEC_RESULT_OK;
-        }
-
         uec_function_struct_value typedValue{};
         const uec_result result = ReadInvocationStructValue(
             property, object, &typedValue);
@@ -636,17 +572,33 @@
         {
         case UEC_FUNCTION_STRUCT_VECTOR3:
             outValue->value.vector3 = typedValue.value.vector3;
-            return UEC_RESULT_OK;
+            break;
         case UEC_FUNCTION_STRUCT_QUATERNION:
             outValue->value.quaternion = typedValue.value.quaternion;
-            return UEC_RESULT_OK;
+            break;
         case UEC_FUNCTION_STRUCT_TRANSFORM:
             outValue->value.transform = typedValue.value.transform;
-            return UEC_RESULT_OK;
+            break;
+        case UEC_FUNCTION_STRUCT_ROTATOR:
+            outValue->value.rotator = typedValue.value.rotator;
+            break;
+        case UEC_FUNCTION_STRUCT_LINEAR_COLOR:
+            outValue->value.linear_color = typedValue.value.linear_color;
+            break;
+        case UEC_FUNCTION_STRUCT_VECTOR2:
+            outValue->value.vector2 = typedValue.value.vector2;
+            break;
+        case UEC_FUNCTION_STRUCT_VECTOR4:
+            outValue->value.vector4 = typedValue.value.vector4;
+            break;
+        case UEC_FUNCTION_STRUCT_COLOR:
+            outValue->value.color = typedValue.value.color;
+            break;
         default:
             ResetPropertyStructValue(outValue);
             return UEC_RESULT_UNSUPPORTED;
         }
+        return UEC_RESULT_OK;
     }
 
     static uec_result WriteTypedStructPropertyValue(
@@ -666,54 +618,9 @@
             return UEC_RESULT_UNSUPPORTED;
         }
 
-        const FStructProperty* structProperty = CastField<FStructProperty>(property);
-        const bool isRotator = structProperty != nullptr &&
-            structProperty->Struct == TBaseStructure<FRotator>::Get();
-        const bool isLinearColor = structProperty != nullptr &&
-            structProperty->Struct == TBaseStructure<FLinearColor>::Get();
-        const bool isVector2 = structProperty != nullptr &&
-            structProperty->Struct == TBaseStructure<FVector2D>::Get();
-        const bool isVector4 = structProperty != nullptr &&
-            structProperty->Struct == TBaseStructure<FVector4>::Get();
-        const uec_function_struct_kind expectedKind = isRotator
-            ? UEC_PROPERTY_STRUCT_ROTATOR : isLinearColor
-            ? UEC_PROPERTY_STRUCT_LINEAR_COLOR : isVector2
-            ? UEC_PROPERTY_STRUCT_VECTOR2 : isVector4
-            ? UEC_PROPERTY_STRUCT_VECTOR4 : GetInvocationStructKind(property);
-        if (expectedKind == UEC_PROPERTY_STRUCT_NONE) {
-            return UEC_RESULT_UNSUPPORTED;
-        }
+        const uec_function_struct_kind expectedKind = GetInvocationStructKind(property);
+        if (expectedKind == UEC_FUNCTION_STRUCT_NONE) return UEC_RESULT_UNSUPPORTED;
         if (value->kind != expectedKind) return UEC_RESULT_INVALID_ARGUMENT;
-        if (isRotator) {
-            const uec_rotator& input = value->value.rotator;
-            if (!IsFinitePropertyRotator(input)) return UEC_RESULT_INVALID_ARGUMENT;
-            *structProperty->ContainerPtrToValuePtr<FRotator>(object) =
-                FRotator(input.pitch, input.yaw, input.roll);
-            return UEC_RESULT_OK;
-        }
-        if (isLinearColor) {
-            const uec_linear_color& input = value->value.linear_color;
-            if (!IsValidPropertyLinearColor(input)) return UEC_RESULT_INVALID_ARGUMENT;
-            *structProperty->ContainerPtrToValuePtr<FLinearColor>(object) =
-                FLinearColor(static_cast<float>(input.r), static_cast<float>(input.g),
-                             static_cast<float>(input.b), static_cast<float>(input.a));
-            return UEC_RESULT_OK;
-        }
-        if (isVector2) {
-            const uec_vector2& input = value->value.vector2;
-            if (!IsFinitePropertyVector2(input)) return UEC_RESULT_INVALID_ARGUMENT;
-            *structProperty->ContainerPtrToValuePtr<FVector2D>(object) =
-                FVector2D(input.x, input.y);
-            return UEC_RESULT_OK;
-        }
-        if (isVector4) {
-            const uec_vector4& input = value->value.vector4;
-            if (!IsFinitePropertyVector4(input)) return UEC_RESULT_INVALID_ARGUMENT;
-            *structProperty->ContainerPtrToValuePtr<FVector4>(object) =
-                FVector4(input.x, input.y, input.z, input.w);
-            return UEC_RESULT_OK;
-        }
-
         uec_function_struct_value typedValue{};
         typedValue.kind = value->kind;
         switch (value->kind)
@@ -726,6 +633,21 @@
             break;
         case UEC_FUNCTION_STRUCT_TRANSFORM:
             typedValue.value.transform = value->value.transform;
+            break;
+        case UEC_FUNCTION_STRUCT_ROTATOR:
+            typedValue.value.rotator = value->value.rotator;
+            break;
+        case UEC_FUNCTION_STRUCT_LINEAR_COLOR:
+            typedValue.value.linear_color = value->value.linear_color;
+            break;
+        case UEC_FUNCTION_STRUCT_VECTOR2:
+            typedValue.value.vector2 = value->value.vector2;
+            break;
+        case UEC_FUNCTION_STRUCT_VECTOR4:
+            typedValue.value.vector4 = value->value.vector4;
+            break;
+        case UEC_FUNCTION_STRUCT_COLOR:
+            typedValue.value.color = value->value.color;
             break;
         default:
             return UEC_RESULT_INVALID_ARGUMENT;

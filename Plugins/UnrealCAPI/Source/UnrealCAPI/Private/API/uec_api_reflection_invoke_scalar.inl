@@ -173,6 +173,9 @@
         if (structProperty->Struct == TBaseStructure<FVector4>::Get()) {
             return UEC_FUNCTION_STRUCT_VECTOR4;
         }
+        if (structProperty->Struct == TBaseStructure<FColor>::Get()) {
+            return UEC_FUNCTION_STRUCT_COLOR;
+        }
         return UEC_FUNCTION_STRUCT_NONE;
     }
 
@@ -185,7 +188,8 @@
             kind == UEC_FUNCTION_STRUCT_ROTATOR ||
             kind == UEC_FUNCTION_STRUCT_LINEAR_COLOR ||
             kind == UEC_FUNCTION_STRUCT_VECTOR2 ||
-            kind == UEC_FUNCTION_STRUCT_VECTOR4;
+            kind == UEC_FUNCTION_STRUCT_VECTOR4 ||
+            kind == UEC_FUNCTION_STRUCT_COLOR;
     }
 
     static uec_result SetInvocationStructValue(
@@ -257,6 +261,13 @@
             if (!IsFiniteInvocationVector4(input)) return UEC_RESULT_INVALID_ARGUMENT;
             *structProperty->ContainerPtrToValuePtr<FVector4>(container) =
                 FVector4(input.x, input.y, input.z, input.w);
+            return UEC_RESULT_OK;
+        }
+        case UEC_FUNCTION_STRUCT_COLOR:
+        {
+            const uec_color& input = value.value.color;
+            *structProperty->ContainerPtrToValuePtr<FColor>(container) =
+                FColor(input.r, input.g, input.b, input.a);
             return UEC_RESULT_OK;
         }
         default:
@@ -331,6 +342,13 @@
             outValue->value.vector4 = {value.X, value.Y, value.Z, value.W};
             return IsFiniteInvocationVector4(outValue->value.vector4)
                 ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;
+        }
+        case UEC_FUNCTION_STRUCT_COLOR:
+        {
+            const FColor& value = *CastFieldChecked<FStructProperty>(property)
+                ->ContainerPtrToValuePtr<FColor>(container);
+            outValue->value.color = {value.R, value.G, value.B, value.A};
+            return UEC_RESULT_OK;
         }
         default:
             outValue->kind = UEC_FUNCTION_STRUCT_NONE;

@@ -32,6 +32,9 @@ public:
     UFUNCTION()
     FLinearColor EchoLinearColor(FLinearColor value);
 
+    UFUNCTION()
+    FColor EchoColor(FColor value);
+
     UPROPERTY()
     TArray<int32> Numbers;
 
@@ -58,6 +61,9 @@ public:
 
     UPROPERTY()
     FLinearColor Tint;
+
+    UPROPERTY()
+    FColor PackedTint;
 
     UPROPERTY()
     FTransform Pose;

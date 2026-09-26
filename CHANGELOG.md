@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 161 adds typed whole-property and mixed-call `FColor` values as raw
+  RGBA bytes, without gamma conversion. The existing size-tagged records keep
+  their layout.
 - ABI minor 160 extends typed reflected function arguments and outputs to
   `FVector2D`, `FVector4`, `FRotator`, and `FLinearColor`; the ABI struct-value
   record retains its existing size and prefix layout.

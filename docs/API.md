@@ -365,6 +365,8 @@ ABI minor 160 extends the same mixed-call path with `FVector2D`, `FVector4`,
 `FRotator`, and `FLinearColor`. Rotators use pitch/yaw/roll degrees; linear
 colors use unclamped linear-light RGBA and must fit Unreal's float range. The
 two vector types use finite double-precision components.
+ABI minor 161 adds `FColor` as raw RGBA bytes without an automatic gamma
+conversion.
 
 ABI minor 135 appends versioned application-data save/load calls to the function
 table. Their schema version is owned by the consumer, and the bridge preserves
@@ -686,7 +688,9 @@ ABI 157 adds `FRotator` using pitch, yaw, and roll in degrees, and ABI 158 adds
 `FLinearColor` as linear-light RGBA values. Linear color values are not clamped
 to `[0, 1]`; every component must be finite and representable as an Unreal
 `float`. ABI 159 adds exact `FVector2D` and `FVector4` property values with
-finite double-precision components.
+finite double-precision components. ABI 161 adds `FColor` as raw RGBA bytes;
+the bridge does not convert between gamma-encoded `FColor` and linear-light
+`FLinearColor` values.
 The `kind` selects the matching union member. Inputs must be finite, and
 quaternion values must have nonzero length; mismatched or unsupported struct
 types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`

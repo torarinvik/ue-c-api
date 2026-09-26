@@ -10,11 +10,12 @@ typedef enum uec_function_struct_kind {
     UEC_FUNCTION_STRUCT_ROTATOR = 4,
     UEC_FUNCTION_STRUCT_LINEAR_COLOR = 5,
     UEC_FUNCTION_STRUCT_VECTOR2 = 6,
-    UEC_FUNCTION_STRUCT_VECTOR4 = 7
+    UEC_FUNCTION_STRUCT_VECTOR4 = 7,
+    UEC_FUNCTION_STRUCT_COLOR = 8
 } uec_function_struct_kind;
 
 typedef uec_function_struct_kind uec_property_struct_kind;
-/* ABI 1.156 property tags remain stable; ABI 1.160 adds these call value tags. */
+/* ABI 1.156 property tags remain stable; ABI 1.160+ adds matching call tags. */
 #define UEC_PROPERTY_STRUCT_NONE UEC_FUNCTION_STRUCT_NONE
 #define UEC_PROPERTY_STRUCT_VECTOR3 UEC_FUNCTION_STRUCT_VECTOR3
 #define UEC_PROPERTY_STRUCT_QUATERNION UEC_FUNCTION_STRUCT_QUATERNION
@@ -23,6 +24,7 @@ typedef uec_function_struct_kind uec_property_struct_kind;
 #define UEC_PROPERTY_STRUCT_LINEAR_COLOR UEC_FUNCTION_STRUCT_LINEAR_COLOR
 #define UEC_PROPERTY_STRUCT_VECTOR2 UEC_FUNCTION_STRUCT_VECTOR2
 #define UEC_PROPERTY_STRUCT_VECTOR4 UEC_FUNCTION_STRUCT_VECTOR4
+#define UEC_PROPERTY_STRUCT_COLOR UEC_FUNCTION_STRUCT_COLOR
 
 /* Unreal FVector2D components in X, Y order. */
 typedef struct uec_vector2 {
@@ -53,6 +55,14 @@ typedef struct uec_linear_color {
     double a;
 } uec_linear_color;
 
+/* Unreal FColor raw RGBA bytes; this descriptor performs no gamma conversion. */
+typedef struct uec_color {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t a;
+} uec_color;
+
 typedef struct uec_function_struct_value {
     uec_function_struct_kind kind;
     union {
@@ -63,10 +73,11 @@ typedef struct uec_function_struct_value {
         uec_linear_color linear_color;
         uec_vector2 vector2;
         uec_vector4 vector4;
+        uec_color color;
     } value;
 } uec_function_struct_value;
 
-/* Size-tagged whole-property values for supported Unreal math structs. */
+/* Size-tagged whole-property values for supported Unreal math and color structs. */
 typedef struct uec_property_struct_value {
     uint32_t struct_size;
     uec_property_struct_kind kind;
@@ -78,6 +89,7 @@ typedef struct uec_property_struct_value {
         uec_linear_color linear_color;
         uec_vector2 vector2;
         uec_vector4 vector4;
+        uec_color color;
     } value;
 } uec_property_struct_value;
 
