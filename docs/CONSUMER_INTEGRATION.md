@@ -329,6 +329,14 @@ ABI minor 150 adds `get_controller_player_state`, which returns a weak object
 handle for the controller's initialized `APlayerState`. The handle is
 world-bound, is invalidated during world cleanup, and must be released with
 `release_object`.
+ABI minor 151 adds `get_combo_box_selected_option` and
+`set_combo_box_selected_option` for `UComboBoxString`. The getter uses a
+caller-owned UTF-8 buffer with the standard required-size query and retry
+behavior. The setter accepts a nonempty option already present in the widget;
+unknown options and handles for other widget types are rejected. Both calls
+require the game thread. The
+[named UMG child example](../examples/c_widget_ui/README.md) shows selection
+readback and update.
 ABI minor 143 adds `set_component_simulating_physics` and
 `get_component_simulating_physics` for primitive components. They require the
 game thread; the setter accepts only the declared boolean values and requires

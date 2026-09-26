@@ -8,6 +8,8 @@ static int gSetCalls;
 static int gGetCalls;
 static int gSliderGetCalls;
 static int gSliderSetCalls;
+static int gComboBoxGetCalls;
+static int gComboBoxSetCalls;
 static int gReleaseCalls;
 static int gMismatch;
 static uec_object* gExpectedWidget;
@@ -20,6 +22,8 @@ static uec_result gGetResult;
 static uec_result gReleaseResult;
 static uec_result gSliderGetResult;
 static uec_result gSliderSetResult;
+static uec_result gComboBoxGetResult;
+static uec_result gComboBoxSetResult;
 static double gSliderValue;
 
 static uec_result UEC_CALL MockGetWidgetChild(uec_object* userWidget,
@@ -92,6 +96,32 @@ static uec_result UEC_CALL MockSetSliderValue(uec_object* slider, double value)
     return UEC_RESULT_OK;
 }
 
+static uec_result UEC_CALL MockGetComboBoxSelectedOption(
+    uec_object* comboBox, char* buffer, size_t bufferSize, size_t* requiredSize)
+{
+    ++gComboBoxGetCalls;
+    if (requiredSize != NULL) *requiredSize = 0u;
+    if (requiredSize == NULL || comboBox != gExpectedChild) {
+        gMismatch = 1;
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    if (gComboBoxGetResult != UEC_RESULT_OK) return gComboBoxGetResult;
+    *requiredSize = gExpectedText.size + 1u;
+    if (buffer == NULL || bufferSize < *requiredSize) return UEC_RESULT_BUFFER_TOO_SMALL;
+    memcpy(buffer, gExpectedText.data, gExpectedText.size);
+    buffer[gExpectedText.size] = '\0';
+    return UEC_RESULT_OK;
+}
+
+static uec_result UEC_CALL MockSetComboBoxSelectedOption(
+    uec_object* comboBox, uec_string_view option)
+{
+    ++gComboBoxSetCalls;
+    if (comboBox != gExpectedChild || option.data != gExpectedText.data ||
+        option.size != gExpectedText.size) gMismatch = 1;
+    return gComboBoxSetResult;
+}
+
 static uec_result UEC_CALL MockReleaseObject(uec_object* object)
 {
     ++gReleaseCalls;
@@ -106,6 +136,8 @@ static void ResetMocks(void)
     gGetCalls = 0;
     gSliderGetCalls = 0;
     gSliderSetCalls = 0;
+    gComboBoxGetCalls = 0;
+    gComboBoxSetCalls = 0;
     gReleaseCalls = 0;
     gMismatch = 0;
     gLookupResult = UEC_RESULT_OK;
@@ -114,6 +146,8 @@ static void ResetMocks(void)
     gReleaseResult = UEC_RESULT_OK;
     gSliderGetResult = UEC_RESULT_OK;
     gSliderSetResult = UEC_RESULT_OK;
+    gComboBoxGetResult = UEC_RESULT_OK;
+    gComboBoxSetResult = UEC_RESULT_OK;
     gSliderValue = 0.0;
 }
 
@@ -133,6 +167,8 @@ int uec_widget_ui_smoke_test(void)
     api.set_editable_text_box_text = &MockSetEditableTextBoxText;
     api.get_slider_value = &MockGetSliderValue;
     api.set_slider_value = &MockSetSliderValue;
+    api.get_combo_box_selected_option = &MockGetComboBoxSelectedOption;
+    api.set_combo_box_selected_option = &MockSetComboBoxSelectedOption;
     api.release_object = &MockReleaseObject;
     gExpectedWidget = (uec_object*)&widgetStorage;
     gExpectedChild = (uec_object*)&childStorage;
@@ -277,6 +313,57 @@ int uec_widget_ui_smoke_test(void)
                 &api, gExpectedWidget, nameView, &value) != UEC_RESULT_UNSUPPORTED ||
             value != 0.0 || gLookupCalls != 0 || gSliderGetCalls != 0 ||
             gReleaseCalls != 0) return 17;
+    }
+
+    ResetMocks();
+    api.struct_size = (uint32_t)sizeof(api);
+    if (uec_widget_set_combo_box_selected_option_child(
+            &api, gExpectedWidget, nameView, textView) != UEC_RESULT_OK ||
+        gMismatch != 0 || gLookupCalls != 1 || gComboBoxSetCalls != 1 ||
+        gReleaseCalls != 1) return 18;
+
+    ResetMocks();
+    {
+        char buffer[16] = {0};
+        size_t requiredSize = 0u;
+        if (uec_widget_get_combo_box_selected_option_child(
+                &api, gExpectedWidget, nameView, buffer, sizeof(buffer),
+                &requiredSize) != UEC_RESULT_OK ||
+            requiredSize != sizeof(text) || strcmp(buffer, text) != 0 ||
+            gMismatch != 0 || gLookupCalls != 1 || gComboBoxGetCalls != 1 ||
+            gReleaseCalls != 1) return 19;
+    }
+
+    ResetMocks();
+    gComboBoxSetResult = UEC_RESULT_INVALID_ARGUMENT;
+    if (uec_widget_set_combo_box_selected_option_child(
+            &api, gExpectedWidget, nameView, textView) != UEC_RESULT_INVALID_ARGUMENT ||
+        gMismatch != 0 || gLookupCalls != 1 || gComboBoxSetCalls != 1 ||
+        gReleaseCalls != 1) return 20;
+
+    ResetMocks();
+    gComboBoxGetResult = UEC_RESULT_UNSUPPORTED;
+    {
+        char buffer[16] = {0};
+        size_t requiredSize = 99u;
+        if (uec_widget_get_combo_box_selected_option_child(
+                &api, gExpectedWidget, nameView, buffer, sizeof(buffer),
+                &requiredSize) != UEC_RESULT_UNSUPPORTED || requiredSize != 0u ||
+            gMismatch != 0 || gLookupCalls != 1 || gComboBoxGetCalls != 1 ||
+            gReleaseCalls != 1) return 21;
+    }
+
+    ResetMocks();
+    api.struct_size = (uint32_t)offsetof(uec_api, get_combo_box_selected_option);
+    {
+        char buffer[16] = {0};
+        size_t requiredSize = 99u;
+        if (uec_widget_get_combo_box_selected_option_child(
+                &api, gExpectedWidget, nameView, buffer, sizeof(buffer),
+                &requiredSize) != UEC_RESULT_UNSUPPORTED || requiredSize != 0u ||
+            gLookupCalls != 0 || gComboBoxGetCalls != 0 || gReleaseCalls != 0) {
+            return 22;
+        }
     }
     return 0;
 }

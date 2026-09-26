@@ -214,6 +214,41 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetComboBoxSelectedOption(uec_object* rawComboBox,
+                                                  char* buffer,
+                                                  size_t bufferSize,
+                                                  size_t* requiredSize)
+    {
+        if (requiredSize != nullptr) *requiredSize = 0u;
+        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECObject*>(rawComboBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UComboBoxString* comboBox = Cast<UComboBoxString>(handle->Value.Get());
+        if (comboBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        return CopyFStringToUtf8(comboBox->GetSelectedOption(),
+                                 buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL SetComboBoxSelectedOption(uec_object* rawComboBox,
+                                                  uec_string_view option)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawComboBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(option) || option.size == 0u) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        UComboBoxString* comboBox = Cast<UComboBoxString>(handle->Value.Get());
+        if (comboBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const FString optionText = ToFString(option);
+        if (comboBox->FindOptionIndex(optionText) == INDEX_NONE) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        comboBox->SetSelectedOption(optionText);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetWidgetEnabled(uec_object* rawWidget, uec_bool* outEnabled)
     {
         if (outEnabled != nullptr) *outEnabled = UEC_FALSE;

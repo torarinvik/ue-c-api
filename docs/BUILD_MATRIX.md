@@ -11,6 +11,17 @@ build, launch, and exercise the C smoke path.
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | Linux CI | GCC and Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 | UE 5.8.3 (latest 5.8.x hotfix as of September 2026; descriptor target 5.8) | macOS CI | Clang | C11/C++17 syntax and linked host-stub smoke verified | Engine build unavailable |
 
+On 2026-09-26, the UE 5.8.3 Mac Development host rebuilt, cooked, staged, and
+packaged with Xcode 27.0 and Metal Toolchain 27A266a. The first cold Editor PIE
+launch exceeded the runner's 150-second startup limit before producing smoke
+markers; a warm-cache retry completed the Editor PIE smoke cleanly with a
+300-second timeout. The staged Development app then passed both the runtime
+smoke and the pending-work shutdown smoke. The travel probe verified ABI 151
+`UComboBoxString` selected-option readback, rejection of an absent option
+without changing the selection, wrong-widget rejection, and stale child-handle
+invalidation after travel. No Editor, packaged host, build, or Zen process was
+left running after validation.
+
 The UE 5.8.3 audio smoke uses the engine's `1kSineTonePing` sound asset. The
 NullRHI PIE and packaged runtime launchers leave the audio device enabled for
 these checks and play the fixture at 1% volume while verifying attached

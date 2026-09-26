@@ -45,6 +45,7 @@
 #include "Components/CheckBox.h"
 #include "Components/ProgressBar.h"
 #include "Components/Slider.h"
+#include "Components/ComboBoxString.h"
 #include "UECEventBridgeComponent.h"
 #include "UECButtonClickBridge.h"
 #include "UECComponentHitBridge.h"
@@ -398,7 +399,8 @@ namespace
         &SetConfigBool,
         &GetEditableTextBoxText, &SetEditableTextBoxText,
         &GetSliderValue, &SetSliderValue,
-        &GetControllerPlayerState
+        &GetControllerPlayerState,
+        &GetComboBoxSelectedOption, &SetComboBoxSelectedOption
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

@@ -29,7 +29,7 @@ int main(void)
     {
         return 1;
     }
-    if (api->get_editable_text_box_text == NULL || api->set_editable_text_box_text == NULL || api->get_slider_value == NULL || api->set_slider_value == NULL || api->get_controller_player_state == NULL) { api->release_context(context); return 6; }
+    if (api->get_editable_text_box_text == NULL || api->set_editable_text_box_text == NULL || api->get_slider_value == NULL || api->set_slider_value == NULL || api->get_controller_player_state == NULL || api->get_combo_box_selected_option == NULL || api->set_combo_box_selected_option == NULL) { api->release_context(context); return 6; }
 
     const uec_api* rejected_api = api;
     uec_context* rejected_context = context;

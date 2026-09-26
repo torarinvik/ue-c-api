@@ -427,6 +427,12 @@ handle for the controller's current `APlayerState`. The handle belongs to the
 controller's world, is invalidated when that world is cleaned up, and must be
 released with `release_object`. Controllers without an initialized player
 state return `UEC_RESULT_NOT_INITIALIZED`.
+ABI minor 151 appends `get_combo_box_selected_option` and
+`set_combo_box_selected_option` for `UComboBoxString`. The getter follows the
+standard required-size UTF-8 buffer contract and clears the required-size
+output on failure. The setter accepts a nonempty UTF-8 option that already
+exists in the combo box; absent options and other widget types return
+`UEC_RESULT_INVALID_ARGUMENT`. Both calls require the game thread.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

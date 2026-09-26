@@ -7,6 +7,11 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 151 adds selected-option read/write for `UComboBoxString`. Writes
+  accept only options already present in the widget; the C child-widget example
+  covers lookup and handle cleanup, and UE 5.8.3 travel smoke checks UTF-8
+  readback, invalid-option stability, wrong-type rejection, and stale-handle
+  invalidation.
 - ABI minor 150 adds `get_controller_player_state`, returning a caller-owned
   weak object handle for the controller's current `APlayerState`. The C
   gameplay example checks the append-only table boundary; UE 5.8.3 Editor PIE

@@ -16,6 +16,7 @@ typedef struct uec_travel_smoke_state {
     uec_object* button;
     uec_object* editable_text_box;
     uec_object* slider;
+    uec_object* combo_box;
     uint64_t request_id;
     uint64_t button_subscription_id;
     uint64_t audio_subscription_id;
@@ -141,6 +142,14 @@ static void FinishTravelSmoke(uec_travel_smoke_state* state,
         }
     }
     state->slider = NULL;
+    if (state->combo_box != NULL && state->api != NULL &&
+        state->api->release_object != NULL) {
+        const uec_result releaseResult = state->api->release_object(state->combo_box);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+            result = releaseResult;
+        }
+    }
+    state->combo_box = NULL;
     if (state->widget != NULL && state->api != NULL &&
         state->api->release_object != NULL) {
         const uec_result releaseResult = state->api->release_object(state->widget);
@@ -264,6 +273,8 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         state->api->get_editable_text_box_text == NULL ||
         state->api->set_editable_text_box_text == NULL ||
         state->api->get_slider_value == NULL || state->api->set_slider_value == NULL ||
+        state->api->get_combo_box_selected_option == NULL ||
+        state->api->set_combo_box_selected_option == NULL ||
         state->api->add_widget_to_viewport == NULL ||
         state->api->spawn_actor == NULL || state->api->get_actor_property_object == NULL ||
         state->api->bind_audio_finished == NULL ||
@@ -325,6 +336,9 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         static const char buttonNameData[] = "CleanupButton";
         static const char editableTextBoxNameData[] = "CleanupEditableTextBox";
         static const char sliderNameData[] = "CleanupSlider";
+        static const char comboBoxNameData[] = "CleanupComboBox";
+        static const char comboOptionData[] = "High";
+        static const char missingComboOptionData[] = "Ultra";
         static const char unicodeTextData[] = "Player – 世界 🌍";
         const uec_string_view widgetClassPath = {
             widgetClassPathData, sizeof(widgetClassPathData) - 1u};
@@ -334,6 +348,12 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
             editableTextBoxNameData, sizeof(editableTextBoxNameData) - 1u};
         const uec_string_view sliderName = {
             sliderNameData, sizeof(sliderNameData) - 1u};
+        const uec_string_view comboBoxName = {
+            comboBoxNameData, sizeof(comboBoxNameData) - 1u};
+        const uec_string_view comboOption = {
+            comboOptionData, sizeof(comboOptionData) - 1u};
+        const uec_string_view missingComboOption = {
+            missingComboOptionData, sizeof(missingComboOptionData) - 1u};
         const uec_string_view unicodeText = {
             unicodeTextData, sizeof(unicodeTextData) - 1u};
         result = state->api->create_widget(
@@ -429,6 +449,61 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
                 UEC_RESULT_INVALID_ARGUMENT || sliderValue != 0.0) {
             FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
             return UEC_RESULT_INTERNAL_ERROR;
+        }
+        result = state->api->get_widget_child(
+            state->widget, comboBoxName, &state->combo_box);
+        if (result != UEC_RESULT_OK || state->combo_box == NULL) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        result = state->api->set_combo_box_selected_option(
+            state->combo_box, comboOption);
+        if (result != UEC_RESULT_OK) {
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        size_t selectedOptionRequired = 0u;
+        result = state->api->get_combo_box_selected_option(
+            state->combo_box, NULL, 0u, &selectedOptionRequired);
+        if (result != UEC_RESULT_BUFFER_TOO_SMALL ||
+            selectedOptionRequired != sizeof(comboOptionData)) {
+            FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        char selectedOption[16] = {0};
+        result = state->api->get_combo_box_selected_option(
+            state->combo_box, selectedOption, sizeof(selectedOption),
+            &selectedOptionRequired);
+        if (result != UEC_RESULT_OK ||
+            selectedOptionRequired != sizeof(comboOptionData) ||
+            strcmp(selectedOption, comboOptionData) != 0) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        if (state->api->set_combo_box_selected_option(
+                state->combo_box, missingComboOption) != UEC_RESULT_INVALID_ARGUMENT) {
+            FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        selectedOptionRequired = 99u;
+        if (state->api->get_combo_box_selected_option(
+                state->editable_text_box, selectedOption, sizeof(selectedOption),
+                &selectedOptionRequired) != UEC_RESULT_INVALID_ARGUMENT ||
+            selectedOptionRequired != 0u) {
+            FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        memset(selectedOption, 0, sizeof(selectedOption));
+        selectedOptionRequired = 0u;
+        result = state->api->get_combo_box_selected_option(
+            state->combo_box, selectedOption, sizeof(selectedOption),
+            &selectedOptionRequired);
+        if (result != UEC_RESULT_OK || strcmp(selectedOption, comboOptionData) != 0) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
         }
         result = state->api->add_widget_to_viewport(state->widget, 0);
         if (result != UEC_RESULT_OK) {
@@ -530,6 +605,13 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
     double staleSliderValue = -1.0;
     if (state->api->get_slider_value(state->slider, &staleSliderValue) !=
             UEC_RESULT_INVALID_HANDLE || staleSliderValue != 0.0) {
+        FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_TRUE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    size_t staleComboOptionRequired = 99u;
+    if (state->api->get_combo_box_selected_option(
+            state->combo_box, NULL, 0u, &staleComboOptionRequired) !=
+            UEC_RESULT_INVALID_HANDLE || staleComboOptionRequired != 0u) {
         FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_TRUE);
         return UEC_RESULT_INTERNAL_ERROR;
     }
