@@ -7,6 +7,12 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 156 adds size-tagged typed whole-property reads and writes for
+  `FVector`, `FQuat`, and `FTransform` on actor and UObject handles. Writes
+  validate struct kind and finite/valid values; other reflected structs remain
+  available through Unreal's text import/export path. UE 5.8.3 Editor PIE and
+  packaged Development smoke checks round trips and rejects mismatched,
+  non-finite, invalid-quaternion, and non-struct inputs.
 - ABI minor 155 adds filtered enumeration of classes already loaded by Unreal
   and full class-path readback. Enumeration does not load assets, requires a
   path prefix beginning with `/`, runs on the game thread, and returns paths in

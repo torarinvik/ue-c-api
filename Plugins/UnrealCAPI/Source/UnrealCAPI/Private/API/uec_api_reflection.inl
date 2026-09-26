@@ -1,3 +1,13 @@
+    static uec_function_struct_kind GetInvocationStructKind(FProperty* property);
+    static uec_result ReadInvocationStructValue(
+        FProperty* property,
+        const void* container,
+        uec_function_struct_value* outValue);
+    static uec_result SetInvocationStructValue(
+        FProperty* property,
+        void* container,
+        const uec_function_struct_value& value);
+
     static bool IsValidEnumValue(const FProperty* property, int64 value)
     {
         const UEnum* enumeration = nullptr;
@@ -529,4 +539,155 @@
         }
         objectProperty->SetObjectPropertyValue_InContainer(owner, value);
         return UEC_RESULT_OK;
+    }
+
+    static void ResetPropertyStructValue(uec_property_struct_value* value)
+    {
+        if (value == nullptr) return;
+        value->kind = UEC_FUNCTION_STRUCT_NONE;
+        FMemory::Memzero(value->value);
+    }
+
+    static uec_result ReadTypedStructPropertyValue(
+        UObject* object,
+        uec_string_view propertyName,
+        uec_property_struct_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(*outValue)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        ResetPropertyStructValue(outValue);
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = object->GetClass()->FindPropertyByName(
+            FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+
+        uec_function_struct_value typedValue{};
+        const uec_result result = ReadInvocationStructValue(
+            property, object, &typedValue);
+        if (result != UEC_RESULT_OK) return result;
+        outValue->kind = typedValue.kind;
+        switch (typedValue.kind)
+        {
+        case UEC_FUNCTION_STRUCT_VECTOR3:
+            outValue->value.vector3 = typedValue.value.vector3;
+            return UEC_RESULT_OK;
+        case UEC_FUNCTION_STRUCT_QUATERNION:
+            outValue->value.quaternion = typedValue.value.quaternion;
+            return UEC_RESULT_OK;
+        case UEC_FUNCTION_STRUCT_TRANSFORM:
+            outValue->value.transform = typedValue.value.transform;
+            return UEC_RESULT_OK;
+        default:
+            ResetPropertyStructValue(outValue);
+            return UEC_RESULT_UNSUPPORTED;
+        }
+    }
+
+    static uec_result WriteTypedStructPropertyValue(
+        UObject* object,
+        uec_string_view propertyName,
+        const uec_property_struct_value* value)
+    {
+        if (value == nullptr || value->struct_size < sizeof(*value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsValidStringView(propertyName)) return UEC_RESULT_INVALID_ARGUMENT;
+        FProperty* property = object->GetClass()->FindPropertyByName(
+            FName(*ToFString(propertyName)));
+        if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!IsWritablePropertyForObject(object, property)) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+
+        const uec_function_struct_kind expectedKind =
+            GetInvocationStructKind(property);
+        if (expectedKind == UEC_FUNCTION_STRUCT_NONE) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (value->kind != expectedKind) return UEC_RESULT_INVALID_ARGUMENT;
+
+        uec_function_struct_value typedValue{};
+        typedValue.kind = value->kind;
+        switch (value->kind)
+        {
+        case UEC_FUNCTION_STRUCT_VECTOR3:
+            typedValue.value.vector3 = value->value.vector3;
+            break;
+        case UEC_FUNCTION_STRUCT_QUATERNION:
+            typedValue.value.quaternion = value->value.quaternion;
+            break;
+        case UEC_FUNCTION_STRUCT_TRANSFORM:
+            typedValue.value.transform = value->value.transform;
+            break;
+        default:
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return SetInvocationStructValue(property, object, typedValue);
+    }
+
+    uec_result UEC_CALL GetActorPropertyStructValue(
+        uec_actor* rawActor,
+        uec_string_view propertyName,
+        uec_property_struct_value* outValue)
+    {
+        if (outValue != nullptr && outValue->struct_size >= sizeof(*outValue)) {
+            ResetPropertyStructValue(outValue);
+        }
+        if (outValue == nullptr || outValue->struct_size < sizeof(*outValue)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ReadTypedStructPropertyValue(actor, propertyName, outValue);
+    }
+
+    uec_result UEC_CALL SetActorPropertyStructValue(
+        uec_actor* rawActor,
+        uec_string_view propertyName,
+        const uec_property_struct_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return WriteTypedStructPropertyValue(actor, propertyName, value);
+    }
+
+    uec_result UEC_CALL GetObjectPropertyStructValue(
+        uec_object* rawObject,
+        uec_string_view propertyName,
+        uec_property_struct_value* outValue)
+    {
+        if (outValue != nullptr && outValue->struct_size >= sizeof(*outValue)) {
+            ResetPropertyStructValue(outValue);
+        }
+        if (outValue == nullptr || outValue->struct_size < sizeof(*outValue)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return ReadTypedStructPropertyValue(object, propertyName, outValue);
+    }
+
+    uec_result UEC_CALL SetObjectPropertyStructValue(
+        uec_object* rawObject,
+        uec_string_view propertyName,
+        const uec_property_struct_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        if (object == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return WriteTypedStructPropertyValue(object, propertyName, value);
     }

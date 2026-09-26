@@ -675,6 +675,15 @@ signed 64-bit values, so reads and writes reject unsigned values above
 `INT64_MAX`. Float properties reject finite doubles outside Unreal's `float`
 range before conversion.
 
+ABI 156 adds size-tagged `uec_property_struct_value` reads and writes for exact
+`FVector`, `FQuat`, and `FTransform` properties on actor and UObject handles.
+The `kind` selects the matching union member. Inputs must be finite, and
+quaternion values must have nonzero length; mismatched or unsupported struct
+types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`
+respectively. These calls run on the game thread and honor the same property
+write restrictions. Other struct types continue to use reflected text import
+and export where Unreal supports it.
+
 `invoke_actor_function` supports only reflected actor functions with no
 parameters, no return or out values, and no latent or network flag. The bridge
 also rejects authority-only reflected functions when their actor belongs to a

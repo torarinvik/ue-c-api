@@ -33,6 +33,12 @@ public:
     FVector Position;
 
     UPROPERTY()
+    FQuat Orientation;
+
+    UPROPERTY()
+    FTransform Pose;
+
+    UPROPERTY()
     bool Enabled;
 
     UPROPERTY()

@@ -38,6 +38,39 @@ namespace
         return result;
     }
 
+    uec_property_struct_value VectorValue(double x, double y, double z)
+    {
+        uec_property_struct_value result{};
+        result.struct_size = sizeof(result);
+        result.kind = UEC_FUNCTION_STRUCT_VECTOR3;
+        result.value.vector3 = {x, y, z};
+        return result;
+    }
+
+    uec_property_struct_value QuaternionValue(double x, double y,
+                                               double z, double w)
+    {
+        uec_property_struct_value result{};
+        result.struct_size = sizeof(result);
+        result.kind = UEC_FUNCTION_STRUCT_QUATERNION;
+        result.value.quaternion = {x, y, z, w};
+        return result;
+    }
+
+    uec_property_struct_value TransformValue(const uec_transform& transform)
+    {
+        uec_property_struct_value result{};
+        result.struct_size = sizeof(result);
+        result.kind = UEC_FUNCTION_STRUCT_TRANSFORM;
+        result.value.transform = transform;
+        return result;
+    }
+
+    bool Near(double actual, double expected)
+    {
+        return std::fabs(actual - expected) <= 0.0001;
+    }
+
     uec_result ReadValue(const uec_api* api,
                          uec_actor* actor,
                          const char* propertyName,
@@ -187,6 +220,8 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
         api->set_actor_property_value == nullptr ||
         api->get_actor_property_string == nullptr ||
         api->set_actor_property_string == nullptr ||
+        api->get_actor_property_struct_value == nullptr ||
+        api->set_actor_property_struct_value == nullptr ||
         api->get_actor_property_soft_value == nullptr ||
         api->set_actor_property_soft_value == nullptr) {
         result = UEC_RESULT_INTERNAL_ERROR;
@@ -273,6 +308,115 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
         api, actor, "Ratio", UEC_PROPERTY_FLOAT, observed);
     if (result == UEC_RESULT_OK && std::fabs(observed.real_value + 3.5) > 0.0001)
         result = UEC_RESULT_INTERNAL_ERROR;
+
+    if (result == UEC_RESULT_OK) stage = "typed FVector property";
+    uec_property_struct_value structObserved{};
+    structObserved.struct_size = sizeof(structObserved);
+    if (result == UEC_RESULT_OK) result = api->get_actor_property_struct_value(
+        actor, View("Position"), &structObserved);
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_FUNCTION_STRUCT_VECTOR3 ||
+         !Near(structObserved.value.vector3.x, 1.0) ||
+         !Near(structObserved.value.vector3.y, 2.0) ||
+         !Near(structObserved.value.vector3.z, 3.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value updated = VectorValue(4.0, -5.0, 6.0);
+        result = api->set_actor_property_struct_value(actor, View("Position"), &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Position"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_FUNCTION_STRUCT_VECTOR3 ||
+         !Near(structObserved.value.vector3.x, 4.0) ||
+         !Near(structObserved.value.vector3.y, -5.0) ||
+         !Near(structObserved.value.vector3.z, 6.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value wrongKind = QuaternionValue(0.0, 0.0, 0.0, 1.0);
+        if (api->set_actor_property_struct_value(actor, View("Position"), &wrongKind) !=
+            UEC_RESULT_INVALID_ARGUMENT) result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value invalid = VectorValue(NAN, 0.0, 0.0);
+        if (api->set_actor_property_struct_value(actor, View("Position"), &invalid) !=
+            UEC_RESULT_INVALID_ARGUMENT) result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Position"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_FUNCTION_STRUCT_VECTOR3 ||
+         !Near(structObserved.value.vector3.x, 4.0) ||
+         !Near(structObserved.value.vector3.y, -5.0) ||
+         !Near(structObserved.value.vector3.z, 6.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    if (result == UEC_RESULT_OK) stage = "typed FQuat property";
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Orientation"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_FUNCTION_STRUCT_QUATERNION ||
+         !Near(structObserved.value.quaternion.w, 1.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value updated = QuaternionValue(0.0, 0.0, 1.0, 0.0);
+        result = api->set_actor_property_struct_value(actor, View("Orientation"),
+                                                       &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value invalid = QuaternionValue(0.0, 0.0, 0.0, 0.0);
+        if (api->set_actor_property_struct_value(actor, View("Orientation"), &invalid) !=
+            UEC_RESULT_INVALID_ARGUMENT) result = UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    if (result == UEC_RESULT_OK) stage = "typed FTransform property";
+    if (result == UEC_RESULT_OK) {
+        const uec_transform updatedTransform{
+            {7.0, 8.0, 9.0}, {0.0, 0.0, 0.0, 1.0}, {2.0, 3.0, 4.0}};
+        const uec_property_struct_value updated = TransformValue(updatedTransform);
+        result = api->set_actor_property_struct_value(actor, View("Pose"), &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Pose"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_FUNCTION_STRUCT_TRANSFORM ||
+         !Near(structObserved.value.transform.translation.x, 7.0) ||
+         !Near(structObserved.value.transform.translation.y, 8.0) ||
+         !Near(structObserved.value.transform.translation.z, 9.0) ||
+         !Near(structObserved.value.transform.scale.x, 2.0) ||
+         !Near(structObserved.value.transform.scale.y, 3.0) ||
+         !Near(structObserved.value.transform.scale.z, 4.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        if (api->get_actor_property_struct_value(actor, View("Count"), &structObserved) !=
+                UEC_RESULT_UNSUPPORTED ||
+            structObserved.kind != UEC_FUNCTION_STRUCT_NONE) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+    }
 
     if (result == UEC_RESULT_OK) stage = "FString property";
     if (result == UEC_RESULT_OK) result = CheckTextProperty(

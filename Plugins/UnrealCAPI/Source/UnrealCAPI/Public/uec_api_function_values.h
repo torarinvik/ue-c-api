@@ -18,6 +18,17 @@ typedef struct uec_function_struct_value {
     } value;
 } uec_function_struct_value;
 
+/* Size-tagged whole-property values for FVector, FQuat, and FTransform. */
+typedef struct uec_property_struct_value {
+    uint32_t struct_size;
+    uec_function_struct_kind kind;
+    union {
+        uec_vector3 vector3;
+        uec_quaternion quaternion;
+        uec_transform transform;
+    } value;
+} uec_property_struct_value;
+
 /*
  * The struct_value member extends the ABI 1.133 prefix. Set struct_size to
  * sizeof the current record before using typed values. Older record sizes keep

@@ -63,7 +63,7 @@ UEC_TEST_ASSERT(UEC_RESULT_OK == 0 && UEC_RESULT_INVALID_ARGUMENT == 1 &&
 UEC_TEST_ASSERT(UEC_MAX_COLLISION_QUERY_ACTORS == 1024u,
                "collision query input bound changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 155u, "ABI minor must include loaded-class enumeration");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 156u, "ABI minor must include typed reflected structs");
 UEC_TEST_ASSERT(UEC_CHECKBOX_UNCHECKED == 0 && UEC_CHECKBOX_CHECKED == 1 &&
                    UEC_CHECKBOX_UNDETERMINED == 2,
                "checkbox state enum values changed");
@@ -607,3 +607,15 @@ UEC_TEST_ASSERT(offsetof(uec_api, get_loaded_class_at) >
 UEC_TEST_ASSERT(offsetof(uec_api, get_class_path) >
                    offsetof(uec_api, get_loaded_class_at),
                "full class paths must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_actor_property_struct_value) >
+                   offsetof(uec_api, get_class_path),
+               "typed actor struct reads must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_actor_property_struct_value) >
+                   offsetof(uec_api, get_actor_property_struct_value),
+               "typed actor struct writes must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_object_property_struct_value) >
+                   offsetof(uec_api, set_actor_property_struct_value),
+               "typed object struct reads must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, set_object_property_struct_value) >
+                   offsetof(uec_api, get_object_property_struct_value),
+               "typed object struct writes must append to uec_api");

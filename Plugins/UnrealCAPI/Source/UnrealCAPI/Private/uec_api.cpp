@@ -404,7 +404,9 @@ namespace
         &GetComboBoxSelectedOption, &SetComboBoxSelectedOption,
         &GetComboBoxOptionCount, &GetComboBoxOptionAt,
         &AddComboBoxOption, &RemoveComboBoxOption, &ClearComboBoxOptions,
-        &GetLoadedClassCount, &GetLoadedClassAt, &GetClassPath
+        &GetLoadedClassCount, &GetLoadedClassAt, &GetClassPath,
+        &GetActorPropertyStructValue, &SetActorPropertyStructValue,
+        &GetObjectPropertyStructValue, &SetObjectPropertyStructValue
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
