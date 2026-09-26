@@ -680,7 +680,8 @@ ABI 156 adds size-tagged `uec_property_struct_value` reads and writes for exact
 ABI 157 adds `FRotator` using pitch, yaw, and roll in degrees, and ABI 158 adds
 `FLinearColor` as linear-light RGBA values. Linear color values are not clamped
 to `[0, 1]`; every component must be finite and representable as an Unreal
-`float`.
+`float`. ABI 159 adds exact `FVector2D` and `FVector4` property values with
+finite double-precision components.
 The `kind` selects the matching union member. Inputs must be finite, and
 quaternion values must have nonzero length; mismatched or unsupported struct
 types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`

@@ -47,6 +47,24 @@ namespace
         return result;
     }
 
+    uec_property_struct_value Vector2Value(double x, double y)
+    {
+        uec_property_struct_value result{};
+        result.struct_size = sizeof(result);
+        result.kind = UEC_PROPERTY_STRUCT_VECTOR2;
+        result.value.vector2 = {x, y};
+        return result;
+    }
+
+    uec_property_struct_value Vector4Value(double x, double y, double z, double w)
+    {
+        uec_property_struct_value result{};
+        result.struct_size = sizeof(result);
+        result.kind = UEC_PROPERTY_STRUCT_VECTOR4;
+        result.value.vector4 = {x, y, z, w};
+        return result;
+    }
+
     uec_property_struct_value QuaternionValue(double x, double y,
                                                double z, double w)
     {
@@ -565,6 +583,106 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
          !Near(structObserved.value.linear_color.g, 1.25) ||
          !Near(structObserved.value.linear_color.b, 0.125) ||
          !Near(structObserved.value.linear_color.a, 2.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    if (result == UEC_RESULT_OK) stage = "typed FVector2D property";
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Coordinates2D"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_VECTOR2 ||
+         !Near(structObserved.value.vector2.x, 11.5) ||
+         !Near(structObserved.value.vector2.y, -22.25))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value updated = Vector2Value(-100.5, 200.25);
+        result = api->set_actor_property_struct_value(actor, View("Coordinates2D"),
+                                                       &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value notFinite = Vector2Value(NAN, 1.0);
+        if (api->set_actor_property_struct_value(actor, View("Coordinates2D"),
+                                                  &notFinite) != UEC_RESULT_INVALID_ARGUMENT)
+            result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Coordinates2D"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_VECTOR2 ||
+         !Near(structObserved.value.vector2.x, -100.5) ||
+         !Near(structObserved.value.vector2.y, 200.25))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value updated = Vector2Value(3.75, -8.5);
+        result = api->set_object_property_struct_value(selfObject, View("Coordinates2D"),
+                                                        &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Coordinates2D"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_VECTOR2 ||
+         !Near(structObserved.value.vector2.x, 3.75) ||
+         !Near(structObserved.value.vector2.y, -8.5))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    if (result == UEC_RESULT_OK) stage = "typed FVector4 property";
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("HomogeneousPoint"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_VECTOR4 ||
+         !Near(structObserved.value.vector4.x, 1.0) ||
+         !Near(structObserved.value.vector4.y, 2.0) ||
+         !Near(structObserved.value.vector4.z, 3.0) ||
+         !Near(structObserved.value.vector4.w, 4.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value updated = Vector4Value(-4.0, 5.0, -6.0, 7.0);
+        result = api->set_actor_property_struct_value(actor, View("HomogeneousPoint"),
+                                                       &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value notFinite = Vector4Value(1.0, 2.0, 3.0, NAN);
+        if (api->set_actor_property_struct_value(actor, View("HomogeneousPoint"),
+                                                  &notFinite) != UEC_RESULT_INVALID_ARGUMENT)
+            result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value updated = Vector4Value(0.5, -1.5, 2.5, -3.5);
+        result = api->set_object_property_struct_value(selfObject, View("HomogeneousPoint"),
+                                                        &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("HomogeneousPoint"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_VECTOR4 ||
+         !Near(structObserved.value.vector4.x, 0.5) ||
+         !Near(structObserved.value.vector4.y, -1.5) ||
+         !Near(structObserved.value.vector4.z, 2.5) ||
+         !Near(structObserved.value.vector4.w, -3.5))) {
         result = UEC_RESULT_INTERNAL_ERROR;
     }
 

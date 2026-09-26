@@ -560,6 +560,17 @@
             IsRepresentableFloat(value.b) && IsRepresentableFloat(value.a);
     }
 
+    static bool IsFinitePropertyVector2(const uec_vector2& value)
+    {
+        return FMath::IsFinite(value.x) && FMath::IsFinite(value.y);
+    }
+
+    static bool IsFinitePropertyVector4(const uec_vector4& value)
+    {
+        return FMath::IsFinite(value.x) && FMath::IsFinite(value.y) &&
+            FMath::IsFinite(value.z) && FMath::IsFinite(value.w);
+    }
+
     static uec_result ReadTypedStructPropertyValue(
         UObject* object,
         uec_string_view propertyName,
@@ -593,6 +604,26 @@
             if (!IsValidPropertyLinearColor(color)) return UEC_RESULT_INTERNAL_ERROR;
             outValue->kind = UEC_PROPERTY_STRUCT_LINEAR_COLOR;
             outValue->value.linear_color = color;
+            return UEC_RESULT_OK;
+        }
+        if (structProperty != nullptr &&
+            structProperty->Struct == TBaseStructure<FVector2D>::Get()) {
+            const FVector2D& value =
+                *structProperty->ContainerPtrToValuePtr<FVector2D>(object);
+            const uec_vector2 vector{value.X, value.Y};
+            if (!IsFinitePropertyVector2(vector)) return UEC_RESULT_INTERNAL_ERROR;
+            outValue->kind = UEC_PROPERTY_STRUCT_VECTOR2;
+            outValue->value.vector2 = vector;
+            return UEC_RESULT_OK;
+        }
+        if (structProperty != nullptr &&
+            structProperty->Struct == TBaseStructure<FVector4>::Get()) {
+            const FVector4& value =
+                *structProperty->ContainerPtrToValuePtr<FVector4>(object);
+            const uec_vector4 vector{value.X, value.Y, value.Z, value.W};
+            if (!IsFinitePropertyVector4(vector)) return UEC_RESULT_INTERNAL_ERROR;
+            outValue->kind = UEC_PROPERTY_STRUCT_VECTOR4;
+            outValue->value.vector4 = vector;
             return UEC_RESULT_OK;
         }
 
@@ -640,9 +671,15 @@
             structProperty->Struct == TBaseStructure<FRotator>::Get();
         const bool isLinearColor = structProperty != nullptr &&
             structProperty->Struct == TBaseStructure<FLinearColor>::Get();
+        const bool isVector2 = structProperty != nullptr &&
+            structProperty->Struct == TBaseStructure<FVector2D>::Get();
+        const bool isVector4 = structProperty != nullptr &&
+            structProperty->Struct == TBaseStructure<FVector4>::Get();
         const uec_function_struct_kind expectedKind = isRotator
             ? UEC_PROPERTY_STRUCT_ROTATOR : isLinearColor
-            ? UEC_PROPERTY_STRUCT_LINEAR_COLOR : GetInvocationStructKind(property);
+            ? UEC_PROPERTY_STRUCT_LINEAR_COLOR : isVector2
+            ? UEC_PROPERTY_STRUCT_VECTOR2 : isVector4
+            ? UEC_PROPERTY_STRUCT_VECTOR4 : GetInvocationStructKind(property);
         if (expectedKind == UEC_PROPERTY_STRUCT_NONE) {
             return UEC_RESULT_UNSUPPORTED;
         }
@@ -660,6 +697,20 @@
             *structProperty->ContainerPtrToValuePtr<FLinearColor>(object) =
                 FLinearColor(static_cast<float>(input.r), static_cast<float>(input.g),
                              static_cast<float>(input.b), static_cast<float>(input.a));
+            return UEC_RESULT_OK;
+        }
+        if (isVector2) {
+            const uec_vector2& input = value->value.vector2;
+            if (!IsFinitePropertyVector2(input)) return UEC_RESULT_INVALID_ARGUMENT;
+            *structProperty->ContainerPtrToValuePtr<FVector2D>(object) =
+                FVector2D(input.x, input.y);
+            return UEC_RESULT_OK;
+        }
+        if (isVector4) {
+            const uec_vector4& input = value->value.vector4;
+            if (!IsFinitePropertyVector4(input)) return UEC_RESULT_INVALID_ARGUMENT;
+            *structProperty->ContainerPtrToValuePtr<FVector4>(object) =
+                FVector4(input.x, input.y, input.z, input.w);
             return UEC_RESULT_OK;
         }
 

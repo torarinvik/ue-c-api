@@ -33,6 +33,12 @@ public:
     FVector Position;
 
     UPROPERTY()
+    FVector2D Coordinates2D;
+
+    UPROPERTY()
+    FVector4 HomogeneousPoint;
+
+    UPROPERTY()
     FQuat Orientation;
 
     UPROPERTY()

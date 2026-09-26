@@ -7,6 +7,8 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 159 adds typed whole-property `FVector2D` and `FVector4` reads and
+  writes with finite double-precision component validation.
 - ABI minor 158 adds typed whole-property `FLinearColor` reads and writes.
   Values use linear-light RGBA channels, remain unclamped, and reject non-finite
   components or values outside Unreal's `float` range.

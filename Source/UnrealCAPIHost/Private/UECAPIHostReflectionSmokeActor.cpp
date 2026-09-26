@@ -2,6 +2,7 @@
 
 AUECAPIHostReflectionSmokeActor::AUECAPIHostReflectionSmokeActor()
     : Numbers{3, 5}, Position(1.0, 2.0, 3.0),
+      Coordinates2D(11.5, -22.25), HomogeneousPoint(1.0, 2.0, 3.0, 4.0),
       Orientation(FQuat::Identity), Rotation(10.0, 20.0, 30.0),
       Tint(0.25f, 0.5f, 0.75f, 1.0f), Pose(FTransform::Identity),
       Enabled(true), Count(7),

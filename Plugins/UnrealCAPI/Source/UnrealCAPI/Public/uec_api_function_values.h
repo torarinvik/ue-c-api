@@ -17,6 +17,22 @@ typedef uec_function_struct_kind uec_property_struct_kind;
 #define UEC_PROPERTY_STRUCT_TRANSFORM UEC_FUNCTION_STRUCT_TRANSFORM
 #define UEC_PROPERTY_STRUCT_ROTATOR ((uec_property_struct_kind)4)
 #define UEC_PROPERTY_STRUCT_LINEAR_COLOR ((uec_property_struct_kind)5)
+#define UEC_PROPERTY_STRUCT_VECTOR2 ((uec_property_struct_kind)6)
+#define UEC_PROPERTY_STRUCT_VECTOR4 ((uec_property_struct_kind)7)
+
+/* Unreal FVector2D components in X, Y order. */
+typedef struct uec_vector2 {
+    double x;
+    double y;
+} uec_vector2;
+
+/* Unreal FVector4 components in X, Y, Z, W order. */
+typedef struct uec_vector4 {
+    double x;
+    double y;
+    double z;
+    double w;
+} uec_vector4;
 
 /* Unreal FRotator fields are pitch, yaw, and roll in degrees. */
 typedef struct uec_rotator {
@@ -52,6 +68,8 @@ typedef struct uec_property_struct_value {
         uec_transform transform;
         uec_rotator rotator;
         uec_linear_color linear_color;
+        uec_vector2 vector2;
+        uec_vector4 vector4;
     } value;
 } uec_property_struct_value;
 

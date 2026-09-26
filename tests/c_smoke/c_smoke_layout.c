@@ -40,6 +40,8 @@ UEC_TEST_ASSERT(sizeof(uec_quaternion) == 32, "uec_quaternion ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_rotator) == 24, "uec_rotator ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_linear_color) == 32,
                "uec_linear_color ABI changed");
+UEC_TEST_ASSERT(sizeof(uec_vector2) == 16, "uec_vector2 ABI changed");
+UEC_TEST_ASSERT(sizeof(uec_vector4) == 32, "uec_vector4 ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_transform) == 80, "uec_transform ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_property_struct_value) == 88,
                "uec_property_struct_value ABI changed");
@@ -56,7 +58,9 @@ UEC_TEST_ASSERT(UEC_FUNCTION_STRUCT_NONE == 0 &&
                "typed function struct tags changed");
 UEC_TEST_ASSERT(UEC_PROPERTY_STRUCT_NONE == 0 &&
                    UEC_PROPERTY_STRUCT_ROTATOR == 4 &&
-                   UEC_PROPERTY_STRUCT_LINEAR_COLOR == 5,
+                   UEC_PROPERTY_STRUCT_LINEAR_COLOR == 5 &&
+                   UEC_PROPERTY_STRUCT_VECTOR2 == 6 &&
+                   UEC_PROPERTY_STRUCT_VECTOR4 == 7,
                "typed property struct tags changed");
 UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
@@ -72,7 +76,7 @@ UEC_TEST_ASSERT(UEC_RESULT_OK == 0 && UEC_RESULT_INVALID_ARGUMENT == 1 &&
 UEC_TEST_ASSERT(UEC_MAX_COLLISION_QUERY_ACTORS == 1024u,
                "collision query input bound changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 158u, "ABI minor must include typed reflected structs");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 159u, "ABI minor must include typed reflected structs");
 UEC_TEST_ASSERT(UEC_CHECKBOX_UNCHECKED == 0 && UEC_CHECKBOX_CHECKED == 1 &&
                    UEC_CHECKBOX_UNDETERMINED == 2,
                "checkbox state enum values changed");
