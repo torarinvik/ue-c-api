@@ -7,6 +7,12 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 155 adds filtered enumeration of classes already loaded by Unreal
+  and full class-path readback. Enumeration does not load assets, requires a
+  path prefix beginning with `/`, runs on the game thread, and returns paths in
+  stable lexical order for the current loaded-class set. The UE 5.8.3 reflection
+  smoke checks path filtering, short-buffer sizing, invalid prefixes, and
+  out-of-range indices.
 - ABI minor 154 adds `UEC_RESULT_AMBIGUOUS_CONTEXT`. `get_default_world` now
   rejects multiple active Game/PIE worlds with a null output and a diagnostic,
   requiring callers to select the intended world through explicit enumeration.

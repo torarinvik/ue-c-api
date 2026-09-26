@@ -1,6 +1,6 @@
 # Initial C API contract
 
-The current runtime slice is intentionally small and versioned as ABI `1.143`.
+The current runtime slice is versioned as ABI `1.155`.
 Consumers call `uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, ...)` and use the
 returned function table. The table and public structures contain only C types;
 Unreal headers and C++ types stay inside the plugin.
@@ -642,7 +642,16 @@ Looping timers remain active until cleared, their world is invalidated, or
 module shutdown begins.
 
 Class metadata is read through an opaque class handle obtained from a loadable
-Unreal class path. The current metadata surface reports the class name,
+Unreal class path or from `get_loaded_class_at`. ABI 155 adds
+`get_loaded_class_count` and `get_loaded_class_at`; both take a nonempty,
+case-sensitive Unreal object-path prefix beginning with `/` and enumerate only
+classes currently loaded in memory. Enumeration never loads an asset. The
+indexed results are sorted by full class path for a stable order while the
+loaded-class set remains unchanged; each call scans the current set, so callers
+should enumerate synchronously on the game thread and re-query after loading,
+unloading, or recompiling classes. `get_class_path` returns a class's full
+Unreal object path using the standard caller-sized UTF-8 buffer contract.
+The metadata surface reports the class name,
 inheritance checks, and reflected property names and broad property kinds. A
 property index is only meaningful for the class state at the time of the call;
 consumers should re-enumerate after hot reload or class reinstancing. Scalar,

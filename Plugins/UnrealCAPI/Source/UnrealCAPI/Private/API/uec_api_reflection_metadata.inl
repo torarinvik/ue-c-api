@@ -424,6 +424,95 @@
         return handle;
     }
 
+    struct FUECLoadedClassEntry final
+    {
+        FString Path;
+        UClass* Value = nullptr;
+    };
+
+    static TArray<FUECLoadedClassEntry> CollectLoadedClasses(
+        const FString& pathPrefix)
+    {
+        TArray<FUECLoadedClassEntry> classes;
+        for (TObjectIterator<UClass> iterator; iterator; ++iterator)
+        {
+            UClass* klass = *iterator;
+            if (klass == nullptr || klass->HasAnyClassFlags(CLASS_NewerVersionExists)) {
+                continue;
+            }
+            FString path = klass->GetPathName();
+            if (!path.StartsWith(pathPrefix, ESearchCase::CaseSensitive)) continue;
+            FUECLoadedClassEntry& entry = classes.AddDefaulted_GetRef();
+            entry.Path = MoveTemp(path);
+            entry.Value = klass;
+        }
+        classes.Sort([](const FUECLoadedClassEntry& left,
+                        const FUECLoadedClassEntry& right) {
+            return left.Path < right.Path;
+        });
+        return classes;
+    }
+
+    static bool IsValidClassPathPrefix(uec_string_view pathPrefix)
+    {
+        return IsValidStringView(pathPrefix) && pathPrefix.size > 0u &&
+            pathPrefix.data[0] == '/';
+    }
+
+    uec_result UEC_CALL GetLoadedClassCount(uec_context* rawContext,
+                                             uec_string_view pathPrefix,
+                                             uint32_t* outCount)
+    {
+        if (outCount != nullptr) *outCount = 0u;
+        if (outCount == nullptr || !IsValidClassPathPrefix(pathPrefix)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        const TArray<FUECLoadedClassEntry> classes =
+            CollectLoadedClasses(ToFString(pathPrefix));
+        *outCount = static_cast<uint32_t>(classes.Num());
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetLoadedClassAt(uec_context* rawContext,
+                                          uec_string_view pathPrefix,
+                                          uint32_t index,
+                                          uec_class** outClass)
+    {
+        if (outClass != nullptr) *outClass = nullptr;
+        if (outClass == nullptr || !IsValidClassPathPrefix(pathPrefix)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        const TArray<FUECLoadedClassEntry> classes =
+            CollectLoadedClasses(ToFString(pathPrefix));
+        if (index >= static_cast<uint32_t>(classes.Num())) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FUECClass* handle = MakeClassPropertyHandle(classes[index].Value);
+        if (handle == nullptr) return UEC_RESULT_INTERNAL_ERROR;
+        *outClass = reinterpret_cast<uec_class*>(handle);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetClassPath(uec_class* rawClass,
+                                      char* buffer,
+                                      size_t bufferSize,
+                                      size_t* requiredSize)
+    {
+        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        *requiredSize = 0u;
+        auto* handle = reinterpret_cast<FUECClass*>(rawClass);
+        if (!IsValidClass(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UClass* klass = handle->Value.Get();
+        if (klass == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        return CopyFStringToUtf8(klass->GetPathName(), buffer, bufferSize,
+                                 requiredSize);
+    }
+
     static FClassProperty* FindClassProperty(UObject* owner, uec_string_view propertyName)
     {
         if (owner == nullptr || !IsValidStringView(propertyName)) return nullptr;

@@ -60,6 +60,7 @@
 #include "TimerManager.h"
 #include "UObject/UnrealType.h"
 #include "UObject/UObjectGlobals.h"
+#include "UObject/UObjectIterator.h"
 #include "UObject/StrongObjectPtrTemplates.h"
 #include "UObject/StructOnScope.h"
 namespace
@@ -402,7 +403,8 @@ namespace
         &GetControllerPlayerState,
         &GetComboBoxSelectedOption, &SetComboBoxSelectedOption,
         &GetComboBoxOptionCount, &GetComboBoxOptionAt,
-        &AddComboBoxOption, &RemoveComboBoxOption, &ClearComboBoxOptions
+        &AddComboBoxOption, &RemoveComboBoxOption, &ClearComboBoxOptions,
+        &GetLoadedClassCount, &GetLoadedClassAt, &GetClassPath
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

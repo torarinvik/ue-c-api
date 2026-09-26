@@ -63,7 +63,7 @@ UEC_TEST_ASSERT(UEC_RESULT_OK == 0 && UEC_RESULT_INVALID_ARGUMENT == 1 &&
 UEC_TEST_ASSERT(UEC_MAX_COLLISION_QUERY_ACTORS == 1024u,
                "collision query input bound changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 154u, "ABI minor must include explicit-world ambiguity reporting");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 155u, "ABI minor must include loaded-class enumeration");
 UEC_TEST_ASSERT(UEC_CHECKBOX_UNCHECKED == 0 && UEC_CHECKBOX_CHECKED == 1 &&
                    UEC_CHECKBOX_UNDETERMINED == 2,
                "checkbox state enum values changed");
@@ -598,3 +598,12 @@ UEC_TEST_ASSERT(offsetof(uec_api, remove_combo_box_option) >
 UEC_TEST_ASSERT(offsetof(uec_api, clear_combo_box_options) >
                    offsetof(uec_api, remove_combo_box_option),
                "combo-box clear options must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_loaded_class_count) >
+                   offsetof(uec_api, clear_combo_box_options),
+               "loaded-class count must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_loaded_class_at) >
+                   offsetof(uec_api, get_loaded_class_count),
+               "loaded-class index must append to uec_api");
+UEC_TEST_ASSERT(offsetof(uec_api, get_class_path) >
+                   offsetof(uec_api, get_loaded_class_at),
+               "full class paths must append to uec_api");

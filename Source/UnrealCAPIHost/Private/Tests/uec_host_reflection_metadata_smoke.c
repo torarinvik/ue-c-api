@@ -7,6 +7,7 @@ uec_result UEC_CALL uec_host_reflection_metadata_smoke(void)
     static const char actorClassPath[] = "/Script/Engine.Actor";
     static const char objectClassPath[] = "/Script/CoreUObject.Object";
     static const char actorClassName[] = "Actor";
+    static const char engineClassPathPrefix[] = "/Script/Engine.";
     static const char replicationPropertyName[] = "bReplicates";
     static const char targetFunctionName[] = "K2_GetActorLocation";
     const uec_string_view objectClass = {
@@ -15,6 +16,7 @@ uec_result UEC_CALL uec_host_reflection_metadata_smoke(void)
     const uec_api* api = NULL;
     uec_context* context = NULL;
     uec_class* actorClass = NULL;
+    uec_class* loadedClass = NULL;
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
     uint32_t functionCount = 0u;
     uint32_t targetFunctionIndex = UINT32_MAX;
@@ -28,17 +30,78 @@ uec_result UEC_CALL uec_host_reflection_metadata_smoke(void)
     size_t replicationPropertyRequiredSize = 0u;
     char className[64] = {0};
     size_t classNameRequiredSize = 0u;
+    uint32_t loadedClassCount = 0u;
+    char loadedClassPath[256] = {0};
+    size_t loadedClassPathRequiredSize = 0u;
 
     if (result != UEC_RESULT_OK) return result;
     if (api == NULL || context == NULL || api->find_class == NULL ||
         api->release_class == NULL || api->release_context == NULL ||
         api->get_class_name == NULL || api->class_is_a == NULL ||
+        api->get_loaded_class_count == NULL || api->get_loaded_class_at == NULL ||
+        api->get_class_path == NULL ||
         api->get_class_property_count == NULL || api->get_class_property_at == NULL ||
         api->get_class_function_count == NULL || api->get_class_function_at == NULL ||
         api->get_class_function_flags == NULL ||
         api->get_class_function_parameter_at == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
+    }
+
+    result = api->get_loaded_class_count(context,
+        (uec_string_view){engineClassPathPrefix,
+                          sizeof(engineClassPathPrefix) - 1u},
+        &loadedClassCount);
+    if (result != UEC_RESULT_OK || loadedClassCount == 0u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_loaded_class_at(context,
+        (uec_string_view){engineClassPathPrefix,
+                          sizeof(engineClassPathPrefix) - 1u},
+        0u, &loadedClass);
+    if (result != UEC_RESULT_OK || loadedClass == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_class_path(loadedClass, loadedClassPath,
+        sizeof(loadedClassPath), &loadedClassPathRequiredSize);
+    if (result != UEC_RESULT_OK || loadedClassPathRequiredSize == 0u ||
+        strncmp(loadedClassPath, engineClassPathPrefix,
+                sizeof(engineClassPathPrefix) - 1u) != 0) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    {
+        char shortPath[1] = {0};
+        size_t requiredSize = 0u;
+        result = api->get_class_path(loadedClass, shortPath, sizeof(shortPath),
+                                     &requiredSize);
+        if (result != UEC_RESULT_BUFFER_TOO_SMALL ||
+            requiredSize != loadedClassPathRequiredSize) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+    }
+    {
+        const uec_string_view emptyPrefix = {"", 0u};
+        uint32_t invalidCount = UINT32_MAX;
+        result = api->get_loaded_class_count(context, emptyPrefix, &invalidCount);
+        if (result != UEC_RESULT_INVALID_ARGUMENT || invalidCount != 0u) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+    }
+    {
+        uec_class* invalidClass = loadedClass;
+        result = api->get_loaded_class_at(context,
+            (uec_string_view){engineClassPathPrefix,
+                              sizeof(engineClassPathPrefix) - 1u},
+            loadedClassCount, &invalidClass);
+        if (result != UEC_RESULT_INVALID_ARGUMENT || invalidClass != NULL) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
     }
 
     result = api->find_class(context,
@@ -166,6 +229,12 @@ uec_result UEC_CALL uec_host_reflection_metadata_smoke(void)
     result = UEC_RESULT_OK;
 
 cleanup:
+    if (loadedClass != NULL && api != NULL && api->release_class != NULL) {
+        const uec_result releaseResult = api->release_class(loadedClass);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+            result = releaseResult;
+        }
+    }
     if (actorClass != NULL && api != NULL && api->release_class != NULL) {
         const uec_result releaseResult = api->release_class(actorClass);
         if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
