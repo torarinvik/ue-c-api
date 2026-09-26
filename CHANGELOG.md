@@ -7,6 +7,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 149 adds normalized `USlider` value read/write. The C widget
+  helpers and portable mocks cover child-handle cleanup; the UE 5.8.3 travel
+  smoke checks endpoints, fractional readback, rejected out-of-range writes,
+  wrong-widget rejection, and stale-handle clearing after travel.
 - ABI minor 148 adds UTF-8 read/write access for `UEditableTextBox`. The C
   widget example now looks up, updates, and reads editable text, and the UE
   travel smoke round-trips Unicode input before verifying travel invalidates

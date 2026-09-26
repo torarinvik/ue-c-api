@@ -81,3 +81,50 @@ uec_result UEC_CALL uec_widget_get_editable_text_child(
     const uec_result release_result = api->release_object(child);
     return result == UEC_RESULT_OK ? release_result : result;
 }
+
+uec_result UEC_CALL uec_widget_set_slider_child(const uec_api* api,
+                                                uec_object* user_widget,
+                                                uec_string_view child_name,
+                                                double value)
+{
+    if (api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, set_slider_value) +
+                               sizeof(api->set_slider_value)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->get_widget_child == NULL || api->set_slider_value == NULL ||
+        api->release_object == NULL) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    uec_object* child = NULL;
+    uec_result result = api->get_widget_child(user_widget, child_name, &child);
+    if (result != UEC_RESULT_OK) return result;
+    if (child == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    result = api->set_slider_value(child, value);
+    const uec_result release_result = api->release_object(child);
+    return result == UEC_RESULT_OK ? release_result : result;
+}
+
+uec_result UEC_CALL uec_widget_get_slider_child(const uec_api* api,
+                                                uec_object* user_widget,
+                                                uec_string_view child_name,
+                                                double* out_value)
+{
+    if (out_value != NULL) *out_value = 0.0;
+    if (out_value == NULL || api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, get_slider_value) +
+                               sizeof(api->get_slider_value)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->get_widget_child == NULL || api->get_slider_value == NULL ||
+        api->release_object == NULL) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    uec_object* child = NULL;
+    uec_result result = api->get_widget_child(user_widget, child_name, &child);
+    if (result != UEC_RESULT_OK) return result;
+    if (child == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    result = api->get_slider_value(child, out_value);
+    const uec_result release_result = api->release_object(child);
+    return result == UEC_RESULT_OK ? release_result : result;
+}

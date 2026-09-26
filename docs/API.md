@@ -418,6 +418,10 @@ ABI minor 148 appends `get_editable_text_box_text` and
 text through the standard required-size buffer and string-view contracts, clear
 the required-size output before reads, and require the game thread. Handles to
 other widget types return `UEC_RESULT_INVALID_ARGUMENT`.
+ABI minor 149 appends `get_slider_value` and `set_slider_value` for `USlider`.
+Values are normalized to `[0, 1]`; writes outside the range or outside Unreal's
+`float` range return `UEC_RESULT_INVALID_ARGUMENT`. Reads clear the output to
+zero before validation, and both calls require the game thread.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
@@ -742,6 +746,10 @@ the appended ABI 1.148 table fields only when `struct_size` reaches the field
 being called. The
 [named UMG child example](../examples/c_widget_ui/README.md) includes a C helper
 that looks up and releases the child handle around either operation.
+`get_slider_value` and `set_slider_value` read and write a `USlider`'s normalized
+value. The setter accepts only finite, float-representable values in `[0, 1]`;
+the getter clears its output on failure. The ABI 1.149 table fields are
+append-only and require the usual `struct_size` check.
 `get_progress_bar_percent` and `set_progress_bar_percent` read and write a
 `UProgressBar`'s normalized percentage on the game thread. Writes outside
 `[0, 1]` or values that cannot be represented as an Unreal `float` return

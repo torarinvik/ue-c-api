@@ -27,6 +27,16 @@ uec_result UEC_CALL uec_widget_get_editable_text_child(
     size_t buffer_size,
     size_t* required_size);
 
+uec_result UEC_CALL uec_widget_set_slider_child(const uec_api* api,
+                                                uec_object* user_widget,
+                                                uec_string_view child_name,
+                                                double value);
+
+uec_result UEC_CALL uec_widget_get_slider_child(const uec_api* api,
+                                                uec_object* user_widget,
+                                                uec_string_view child_name,
+                                                double* out_value);
+
 #ifdef __cplusplus
 }
 #endif

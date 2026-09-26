@@ -235,6 +235,20 @@ static uec_result UEC_CALL StubSetEditableTextBoxText(uec_object* editableTextBo
     return editableTextBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetSliderValue(uec_object* slider, double* outValue)
+{
+    if (outValue != NULL) *outValue = 0.0;
+    if (outValue == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return slider == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetSliderValue(uec_object* slider, double value)
+{
+    if (value < 0.0 || value > 1.0 || value != value)
+        return UEC_RESULT_INVALID_ARGUMENT;
+    return slider == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetWidgetChild(uec_object* userWidget,
                                               uec_string_view childName,
                                               uec_object** outChild)

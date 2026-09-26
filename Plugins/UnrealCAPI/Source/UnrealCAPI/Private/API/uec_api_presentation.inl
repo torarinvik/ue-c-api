@@ -185,6 +185,35 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetSliderValue(uec_object* rawSlider, double* outValue)
+    {
+        if (outValue != nullptr) *outValue = 0.0;
+        if (outValue == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECObject*>(rawSlider);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USlider* slider = Cast<USlider>(handle->Value.Get());
+        if (slider == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const float value = slider->GetValue();
+        if (!FMath::IsFinite(value)) return UEC_RESULT_INTERNAL_ERROR;
+        *outValue = static_cast<double>(value);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetSliderValue(uec_object* rawSlider, double value)
+    {
+        if (!IsRepresentableFloat(value) || value < 0.0 || value > 1.0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* handle = reinterpret_cast<FUECObject*>(rawSlider);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        USlider* slider = Cast<USlider>(handle->Value.Get());
+        if (slider == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        slider->SetValue(static_cast<float>(value));
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetWidgetEnabled(uec_object* rawWidget, uec_bool* outEnabled)
     {
         if (outEnabled != nullptr) *outEnabled = UEC_FALSE;

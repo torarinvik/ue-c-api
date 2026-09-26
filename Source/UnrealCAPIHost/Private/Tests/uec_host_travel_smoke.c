@@ -13,6 +13,7 @@ typedef struct uec_travel_smoke_state {
     uec_object* widget;
     uec_object* button;
     uec_object* editable_text_box;
+    uec_object* slider;
     uint64_t request_id;
     uint64_t button_subscription_id;
     uint64_t audio_subscription_id;
@@ -114,6 +115,14 @@ static void FinishTravelSmoke(uec_travel_smoke_state* state,
         }
     }
     state->editable_text_box = NULL;
+    if (state->slider != NULL && state->api != NULL &&
+        state->api->release_object != NULL) {
+        const uec_result releaseResult = state->api->release_object(state->slider);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+            result = releaseResult;
+        }
+    }
+    state->slider = NULL;
     if (state->widget != NULL && state->api != NULL &&
         state->api->release_object != NULL) {
         const uec_result releaseResult = state->api->release_object(state->widget);
@@ -233,6 +242,7 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         state->api->create_widget == NULL || state->api->get_widget_child == NULL ||
         state->api->get_editable_text_box_text == NULL ||
         state->api->set_editable_text_box_text == NULL ||
+        state->api->get_slider_value == NULL || state->api->set_slider_value == NULL ||
         state->api->add_widget_to_viewport == NULL ||
         state->api->spawn_actor == NULL || state->api->get_actor_property_object == NULL ||
         state->api->bind_audio_finished == NULL ||
@@ -270,6 +280,7 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
             "/Script/UnrealCAPIHost.ECAPIHostCleanupWidget";
         static const char buttonNameData[] = "CleanupButton";
         static const char editableTextBoxNameData[] = "CleanupEditableTextBox";
+        static const char sliderNameData[] = "CleanupSlider";
         static const char unicodeTextData[] = "Player – 世界 🌍";
         const uec_string_view widgetClassPath = {
             widgetClassPathData, sizeof(widgetClassPathData) - 1u};
@@ -277,6 +288,8 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
             buttonNameData, sizeof(buttonNameData) - 1u};
         const uec_string_view editableTextBoxName = {
             editableTextBoxNameData, sizeof(editableTextBoxNameData) - 1u};
+        const uec_string_view sliderName = {
+            sliderNameData, sizeof(sliderNameData) - 1u};
         const uec_string_view unicodeText = {
             unicodeTextData, sizeof(unicodeTextData) - 1u};
         result = state->api->create_widget(
@@ -322,6 +335,56 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
             if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
             FinishTravelSmoke(state, result, UEC_FALSE);
             return result;
+        }
+        result = state->api->get_widget_child(state->widget, sliderName, &state->slider);
+        if (result != UEC_RESULT_OK || state->slider == NULL) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        result = state->api->set_slider_value(state->slider, 0.0);
+        if (result != UEC_RESULT_OK) {
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        double sliderValue = -1.0;
+        result = state->api->get_slider_value(state->slider, &sliderValue);
+        if (result != UEC_RESULT_OK || sliderValue != 0.0) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        result = state->api->set_slider_value(state->slider, 0.375);
+        if (result != UEC_RESULT_OK) {
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        result = state->api->get_slider_value(state->slider, &sliderValue);
+        if (result != UEC_RESULT_OK || sliderValue < 0.374999 || sliderValue > 0.375001) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        if (state->api->set_slider_value(state->slider, -0.01) !=
+                UEC_RESULT_INVALID_ARGUMENT ||
+            state->api->set_slider_value(state->slider, 1.01) !=
+                UEC_RESULT_INVALID_ARGUMENT ||
+            state->api->set_slider_value(state->slider, 1.0e300) !=
+                UEC_RESULT_INVALID_ARGUMENT) {
+            FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        result = state->api->get_slider_value(state->slider, &sliderValue);
+        if (result != UEC_RESULT_OK || sliderValue < 0.374999 || sliderValue > 0.375001) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        sliderValue = -1.0;
+        if (state->api->get_slider_value(state->editable_text_box, &sliderValue) !=
+                UEC_RESULT_INVALID_ARGUMENT || sliderValue != 0.0) {
+            FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+            return UEC_RESULT_INTERNAL_ERROR;
         }
         result = state->api->add_widget_to_viewport(state->widget, 0);
         if (result != UEC_RESULT_OK) {
@@ -410,6 +473,12 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
     if (state->api->get_editable_text_box_text(
             state->editable_text_box, NULL, 0u, &staleTextRequired) !=
             UEC_RESULT_INVALID_HANDLE || staleTextRequired != 0u) {
+        FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_TRUE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    double staleSliderValue = -1.0;
+    if (state->api->get_slider_value(state->slider, &staleSliderValue) !=
+            UEC_RESULT_INVALID_HANDLE || staleSliderValue != 0.0) {
         FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_TRUE);
         return UEC_RESULT_INTERNAL_ERROR;
     }

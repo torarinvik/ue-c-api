@@ -322,6 +322,9 @@ ABI minor 148 adds `get_editable_text_box_text` and
 the getter follows the required-size and short-buffer behavior used by other
 string outputs, and the setter accepts an explicit-length UTF-8 view. Both
 operations require the game thread and reject handles for other widget types.
+ABI minor 149 adds `get_slider_value` and `set_slider_value` for `USlider`.
+Values are normalized to `[0, 1]`; failed reads clear their output, invalid
+writes are rejected without mutation, and the calls require the game thread.
 ABI minor 143 adds `set_component_simulating_physics` and
 `get_component_simulating_physics` for primitive components. They require the
 game thread; the setter accepts only the declared boolean values and requires

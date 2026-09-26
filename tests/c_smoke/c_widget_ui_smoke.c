@@ -6,6 +6,8 @@
 static int gLookupCalls;
 static int gSetCalls;
 static int gGetCalls;
+static int gSliderGetCalls;
+static int gSliderSetCalls;
 static int gReleaseCalls;
 static int gMismatch;
 static uec_object* gExpectedWidget;
@@ -16,6 +18,9 @@ static uec_result gLookupResult;
 static uec_result gSetResult;
 static uec_result gGetResult;
 static uec_result gReleaseResult;
+static uec_result gSliderGetResult;
+static uec_result gSliderSetResult;
+static double gSliderValue;
 
 static uec_result UEC_CALL MockGetWidgetChild(uec_object* userWidget,
                                                uec_string_view childName,
@@ -65,6 +70,28 @@ static uec_result UEC_CALL MockGetEditableTextBoxText(uec_object* textBox,
     return UEC_RESULT_OK;
 }
 
+static uec_result UEC_CALL MockGetSliderValue(uec_object* slider, double* outValue)
+{
+    ++gSliderGetCalls;
+    if (outValue != NULL) *outValue = 0.0;
+    if (outValue == NULL || slider != gExpectedChild) {
+        gMismatch = 1;
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    if (gSliderGetResult != UEC_RESULT_OK) return gSliderGetResult;
+    *outValue = gSliderValue;
+    return UEC_RESULT_OK;
+}
+
+static uec_result UEC_CALL MockSetSliderValue(uec_object* slider, double value)
+{
+    ++gSliderSetCalls;
+    if (slider != gExpectedChild || value != 0.625) gMismatch = 1;
+    if (gSliderSetResult != UEC_RESULT_OK) return gSliderSetResult;
+    gSliderValue = value;
+    return UEC_RESULT_OK;
+}
+
 static uec_result UEC_CALL MockReleaseObject(uec_object* object)
 {
     ++gReleaseCalls;
@@ -77,12 +104,17 @@ static void ResetMocks(void)
     gLookupCalls = 0;
     gSetCalls = 0;
     gGetCalls = 0;
+    gSliderGetCalls = 0;
+    gSliderSetCalls = 0;
     gReleaseCalls = 0;
     gMismatch = 0;
     gLookupResult = UEC_RESULT_OK;
     gSetResult = UEC_RESULT_OK;
     gGetResult = UEC_RESULT_OK;
     gReleaseResult = UEC_RESULT_OK;
+    gSliderGetResult = UEC_RESULT_OK;
+    gSliderSetResult = UEC_RESULT_OK;
+    gSliderValue = 0.0;
 }
 
 int uec_widget_ui_smoke_test(void)
@@ -99,6 +131,8 @@ int uec_widget_ui_smoke_test(void)
     api.set_text_block_text = &MockSetTextBlockText;
     api.get_editable_text_box_text = &MockGetEditableTextBoxText;
     api.set_editable_text_box_text = &MockSetEditableTextBoxText;
+    api.get_slider_value = &MockGetSliderValue;
+    api.set_slider_value = &MockSetSliderValue;
     api.release_object = &MockReleaseObject;
     gExpectedWidget = (uec_object*)&widgetStorage;
     gExpectedChild = (uec_object*)&childStorage;
@@ -198,6 +232,51 @@ int uec_widget_ui_smoke_test(void)
                 &requiredSize) != UEC_RESULT_UNSUPPORTED ||
             requiredSize != 0u || gLookupCalls != 0 || gGetCalls != 0 ||
             gReleaseCalls != 0) return 12;
+    }
+
+    ResetMocks();
+    api.struct_size = (uint32_t)sizeof(api);
+    api.release_object = &MockReleaseObject;
+    if (uec_widget_set_slider_child(
+            &api, gExpectedWidget, nameView, 0.625) != UEC_RESULT_OK ||
+        gSliderValue != 0.625 || gMismatch != 0 || gLookupCalls != 1 ||
+        gSliderSetCalls != 1 || gReleaseCalls != 1) return 13;
+
+    ResetMocks();
+    {
+        double value = -1.0;
+        gSliderValue = 0.625;
+        if (uec_widget_get_slider_child(
+                &api, gExpectedWidget, nameView, &value) != UEC_RESULT_OK ||
+            value != 0.625 || gMismatch != 0 || gLookupCalls != 1 ||
+            gSliderGetCalls != 1 || gReleaseCalls != 1) return 14;
+    }
+
+    ResetMocks();
+    gSliderSetResult = UEC_RESULT_UNSUPPORTED;
+    if (uec_widget_set_slider_child(
+            &api, gExpectedWidget, nameView, 0.625) != UEC_RESULT_UNSUPPORTED ||
+        gMismatch != 0 || gLookupCalls != 1 || gSliderSetCalls != 1 ||
+        gReleaseCalls != 1) return 15;
+
+    ResetMocks();
+    gSliderGetResult = UEC_RESULT_UNSUPPORTED;
+    {
+        double value = -1.0;
+        if (uec_widget_get_slider_child(
+                &api, gExpectedWidget, nameView, &value) != UEC_RESULT_UNSUPPORTED ||
+            value != 0.0 || gMismatch != 0 || gLookupCalls != 1 ||
+            gSliderGetCalls != 1 || gReleaseCalls != 1) return 16;
+    }
+
+    ResetMocks();
+    api.struct_size = (uint32_t)offsetof(uec_api, get_slider_value);
+    {
+        double value = -1.0;
+        if (uec_widget_get_slider_child(
+                &api, gExpectedWidget, nameView, &value) != UEC_RESULT_UNSUPPORTED ||
+            value != 0.0 || gLookupCalls != 0 || gSliderGetCalls != 0 ||
+            gReleaseCalls != 0) return 17;
     }
     return 0;
 }

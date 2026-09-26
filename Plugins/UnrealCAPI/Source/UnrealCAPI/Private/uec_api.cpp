@@ -43,6 +43,7 @@
 #include "Components/Button.h"
 #include "Components/CheckBox.h"
 #include "Components/ProgressBar.h"
+#include "Components/Slider.h"
 #include "UECEventBridgeComponent.h"
 #include "UECButtonClickBridge.h"
 #include "UECComponentHitBridge.h"
@@ -394,7 +395,8 @@ namespace
         &SetComponentSimulatingPhysics, &GetComponentSimulatingPhysics,
         &GetComponentMesh, &GetComponentMaterialScalar, &GetComponentMaterialVector,
         &SetConfigBool,
-        &GetEditableTextBoxText, &SetEditableTextBoxText
+        &GetEditableTextBoxText, &SetEditableTextBoxText,
+        &GetSliderValue, &SetSliderValue
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
