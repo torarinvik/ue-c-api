@@ -422,6 +422,11 @@ ABI minor 149 appends `get_slider_value` and `set_slider_value` for `USlider`.
 Values are normalized to `[0, 1]`; writes outside the range or outside Unreal's
 `float` range return `UEC_RESULT_INVALID_ARGUMENT`. Reads clear the output to
 zero before validation, and both calls require the game thread.
+ABI minor 150 appends `get_controller_player_state`, returning a weak object
+handle for the controller's current `APlayerState`. The handle belongs to the
+controller's world, is invalidated when that world is cleaned up, and must be
+released with `release_object`. Controllers without an initialized player
+state return `UEC_RESULT_NOT_INITIALIZED`.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
@@ -524,7 +529,9 @@ same PIE instance.
 `get_world_game_instance` returns the world-scoped game-instance object as a
 weak handle. Possession and view-target changes are submitted on the game
 thread and require the supplied handles to reference the corresponding Unreal
-types.
+types. `get_controller_player_state` returns the current controller's
+world-bound player-state handle; check it with `object_is_a` and release it
+with `release_object` when finished.
 
 Input polling accepts Unreal key names such as `SpaceBar` or `Gamepad_LeftX`.
 `get_input_key_down` returns the current digital state, while

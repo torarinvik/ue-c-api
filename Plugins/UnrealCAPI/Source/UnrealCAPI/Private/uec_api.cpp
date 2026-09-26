@@ -16,6 +16,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "GameFramework/SaveGame.h"
 #include "InputCoreTypes.h"
 #include "EnhancedInputSubsystems.h"
@@ -396,7 +397,8 @@ namespace
         &GetComponentMesh, &GetComponentMaterialScalar, &GetComponentMaterialVector,
         &SetConfigBool,
         &GetEditableTextBoxText, &SetEditableTextBoxText,
-        &GetSliderValue, &SetSliderValue
+        &GetSliderValue, &SetSliderValue,
+        &GetControllerPlayerState
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

@@ -7,6 +7,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 150 adds `get_controller_player_state`, returning a caller-owned
+  weak object handle for the controller's current `APlayerState`. The C
+  gameplay example checks the append-only table boundary; UE 5.8.3 Editor PIE
+  and packaged smoke verify its type and invalidation when its world travels.
 - ABI minor 149 adds normalized `USlider` value read/write. The C widget
   helpers and portable mocks cover child-handle cleanup; the UE 5.8.3 travel
   smoke checks endpoints, fractional readback, rejected out-of-range writes,

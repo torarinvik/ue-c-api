@@ -28,6 +28,7 @@ namespace
         uec_object* ActiveAction = nullptr;
         uec_object* MappingContext = nullptr;
         uec_object* Subsystem = nullptr;
+        uec_object* PlayerState = nullptr;
         uec_input_action_value ExpectedValue{};
         uint32 ActionIndex = 0u;
         uint64 StartedBindingId = 0u;
@@ -91,6 +92,14 @@ namespace
                 result = releaseResult;
             }
             state.Subsystem = nullptr;
+        }
+        if (state.PlayerState != nullptr && state.Api != nullptr &&
+            state.Api->release_object != nullptr) {
+            const uec_result releaseResult = state.Api->release_object(state.PlayerState);
+            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                result = releaseResult;
+            }
+            state.PlayerState = nullptr;
         }
         if (state.MappingContext != nullptr && state.Api != nullptr &&
             state.Api->release_object != nullptr) {
@@ -262,6 +271,12 @@ namespace
         result = state.Api->get_input_key_value(
             state.Actor, analogKey, &analogValue);
         if (result != UEC_RESULT_INVALID_ARGUMENT || analogValue != 0.0) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        uec_object* unexpectedPlayerState = state.PlayerState;
+        result = state.Api->get_controller_player_state(
+            state.Actor, &unexpectedPlayerState);
+        if (result != UEC_RESULT_INVALID_ARGUMENT || unexpectedPlayerState != nullptr) {
             return UEC_RESULT_INTERNAL_ERROR;
         }
         return UEC_RESULT_OK;
@@ -439,6 +454,7 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
         state.Api->inject_input_action_value == nullptr ||
         state.Api->get_input_key_down == nullptr ||
         state.Api->get_input_key_value == nullptr ||
+        state.Api->get_controller_player_state == nullptr ||
         state.Api->bind_input_action == nullptr || state.Api->unbind_input_action == nullptr) {
         return FailInputSmokeStart(state, UEC_RESULT_INTERNAL_ERROR);
     }
@@ -446,6 +462,25 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
     result = state.Api->get_default_world(state.Context, &state.World);
     if (result == UEC_RESULT_OK) {
         result = state.Api->get_player_controller(state.World, 0u, &state.Controller);
+    }
+    if (result == UEC_RESULT_OK) {
+        result = state.Api->get_controller_player_state(
+            state.Controller, &state.PlayerState);
+    }
+    static constexpr char playerStateClassPathData[] = "/Script/Engine.PlayerState";
+    const uec_string_view playerStateClassPath{
+        playerStateClassPathData, sizeof(playerStateClassPathData) - 1u};
+    uec_bool isPlayerState = UEC_FALSE;
+    if (result == UEC_RESULT_OK) {
+        result = state.Api->object_is_a(
+            state.PlayerState, playerStateClassPath, &isPlayerState);
+        if (result == UEC_RESULT_OK && isPlayerState != UEC_TRUE) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+    }
+    if (result != UEC_RESULT_OK || state.PlayerState == nullptr) {
+        return FailInputSmokeStart(
+            state, result == UEC_RESULT_OK ? UEC_RESULT_NOT_INITIALIZED : result);
     }
     static constexpr char actorClassPathData[] =
         "/Script/UnrealCAPIHost.UECAPIHostInputSmokeActor";

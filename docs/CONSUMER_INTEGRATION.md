@@ -325,6 +325,10 @@ operations require the game thread and reject handles for other widget types.
 ABI minor 149 adds `get_slider_value` and `set_slider_value` for `USlider`.
 Values are normalized to `[0, 1]`; failed reads clear their output, invalid
 writes are rejected without mutation, and the calls require the game thread.
+ABI minor 150 adds `get_controller_player_state`, which returns a weak object
+handle for the controller's initialized `APlayerState`. The handle is
+world-bound, is invalidated during world cleanup, and must be released with
+`release_object`.
 ABI minor 143 adds `set_component_simulating_physics` and
 `get_component_simulating_physics` for primitive components. They require the
 game thread; the setter accepts only the declared boolean values and requires
@@ -439,6 +443,9 @@ replication or RPC behavior; those contracts remain explicit future adapters.
 Use `get_world_game_mode` only on an authoritative world, and use
 `get_world_game_state` when a world-scoped framework object is needed. Both
 return ordinary weak object handles that must be released by the consumer.
+`get_controller_player_state` provides the current controller's player state
+in the same world; validate the returned object's type as needed and release
+the weak handle after use.
 
 ## Verification path
 

@@ -8,7 +8,9 @@ typedef struct uec_travel_smoke_state {
     const uec_api* api;
     uec_context* context;
     uec_world* old_world;
+    uec_actor* controller;
     uec_actor* audio_actor;
+    uec_object* player_state;
     uec_object* audio_component;
     uec_object* widget;
     uec_object* button;
@@ -92,6 +94,22 @@ static void FinishTravelSmoke(uec_travel_smoke_state* state,
         if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) result = releaseResult;
     }
     state->audio_component = NULL;
+    if (state->player_state != NULL && state->api != NULL &&
+        state->api->release_object != NULL) {
+        const uec_result releaseResult = state->api->release_object(state->player_state);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+            result = releaseResult;
+        }
+    }
+    state->player_state = NULL;
+    if (state->controller != NULL && state->api != NULL &&
+        state->api->release_actor != NULL) {
+        const uec_result releaseResult = state->api->release_actor(state->controller);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+            result = releaseResult;
+        }
+    }
+    state->controller = NULL;
     if (state->audio_actor != NULL && state->api != NULL &&
         state->api->release_actor != NULL) {
         const uec_result releaseResult = state->api->release_actor(state->audio_actor);
@@ -238,6 +256,9 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
     if (state->api == NULL || state->context == NULL ||
         state->api->get_runtime_stats == NULL ||
         state->api->get_default_world == NULL ||
+        state->api->get_first_player_controller == NULL ||
+        state->api->get_controller_player_state == NULL ||
+        state->api->object_is_a == NULL ||
         state->api->get_world_name == NULL || state->api->release_world == NULL ||
         state->api->create_widget == NULL || state->api->get_widget_child == NULL ||
         state->api->get_editable_text_box_text == NULL ||
@@ -272,6 +293,29 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
     result = state->api->get_default_world(state->context, &state->old_world);
     if (result != UEC_RESULT_OK || state->old_world == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        FinishTravelSmoke(state, result, UEC_FALSE);
+        return result;
+    }
+    result = state->api->get_first_player_controller(
+        state->old_world, &state->controller);
+    if (result == UEC_RESULT_OK) {
+        result = state->api->get_controller_player_state(
+            state->controller, &state->player_state);
+    }
+    static const char playerStateClassPathData[] = "/Script/Engine.PlayerState";
+    const uec_string_view playerStateClassPath = {
+        playerStateClassPathData, sizeof(playerStateClassPathData) - 1u};
+    uec_bool isPlayerState = UEC_FALSE;
+    if (result == UEC_RESULT_OK) {
+        result = state->api->object_is_a(
+            state->player_state, playerStateClassPath, &isPlayerState);
+        if (result == UEC_RESULT_OK && isPlayerState != UEC_TRUE) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+    }
+    if (result != UEC_RESULT_OK || state->controller == NULL ||
+        state->player_state == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_NOT_INITIALIZED;
         FinishTravelSmoke(state, result, UEC_FALSE);
         return result;
     }
@@ -463,6 +507,13 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         return result;
     }
     state->submitted = UEC_TRUE;
+    isPlayerState = UEC_TRUE;
+    if (state->api->object_is_a(state->player_state, playerStateClassPath,
+                                &isPlayerState) != UEC_RESULT_INVALID_HANDLE ||
+        isPlayerState != UEC_FALSE) {
+        FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_TRUE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
     size_t staleWorldRequired = 1u;
     if (state->api->get_world_name(state->old_world, NULL, 0, &staleWorldRequired) !=
             UEC_RESULT_INVALID_HANDLE || staleWorldRequired != 0u) {

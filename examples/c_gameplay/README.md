@@ -17,3 +17,8 @@ Before reading function pointers, the example checks that the API table reaches
 the `emit_actor_event_bridge` entry and verifies every operation it uses. A
 short table or missing function returns `UEC_RESULT_UNSUPPORTED` and leaves the
 state marked done without starting any work.
+
+The same module also provides `uec_gameplay_get_player_state`. It checks that
+the function table includes the ABI 1.150 accessor and returns the controller's
+weak `APlayerState` handle. The caller owns the returned handle, can verify its
+type with `object_is_a`, and releases it with `release_object`.

@@ -139,6 +139,28 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetControllerPlayerState(
+        uec_actor* rawController,
+        uec_object** outPlayerState)
+    {
+        if (outPlayerState != nullptr) *outPlayerState = nullptr;
+        if (outPlayerState == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        APlayerState* playerState = controller->PlayerState;
+        if (playerState == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        if (playerState->GetWorld() != controller->GetWorld()) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FUECObject* handle = MakeObjectHandle(playerState);
+        if (handle == nullptr) return HandleCreationFailureResult();
+        *outPlayerState = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetActorVelocity(uec_actor* rawActor, uec_vector3* outVelocity)
     {
         if (outVelocity != nullptr) *outVelocity = {};

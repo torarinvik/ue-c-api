@@ -31,6 +31,12 @@ uec_result UEC_CALL uec_gameplay_example_start(
     uec_gameplay_example_state* state);
 void UEC_CALL uec_gameplay_example_cancel(uec_gameplay_example_state* state);
 
+/* The returned weak handle is owned by the caller and must be released. */
+uec_result UEC_CALL uec_gameplay_get_player_state(
+    const uec_api* api,
+    uec_actor* controller,
+    uec_object** out_player_state);
+
 #ifdef __cplusplus
 }
 #endif

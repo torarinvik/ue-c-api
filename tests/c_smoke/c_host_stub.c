@@ -249,6 +249,14 @@ static uec_result UEC_CALL StubSetSliderValue(uec_object* slider, double value)
     return slider == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetControllerPlayerState(
+    uec_actor* controller, uec_object** outPlayerState)
+{
+    if (outPlayerState != NULL) *outPlayerState = NULL;
+    if (outPlayerState == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return controller == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetWidgetChild(uec_object* userWidget,
                                               uec_string_view childName,
                                               uec_object** outChild)

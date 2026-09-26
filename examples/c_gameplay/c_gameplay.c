@@ -239,3 +239,18 @@ void UEC_CALL uec_gameplay_example_cancel(uec_gameplay_example_state* state)
     if (state == NULL || state->done == UEC_TRUE) return;
     FinishGameplayExample(state);
 }
+
+uec_result UEC_CALL uec_gameplay_get_player_state(
+    const uec_api* api,
+    uec_actor* controller,
+    uec_object** out_player_state)
+{
+    if (out_player_state != NULL) *out_player_state = NULL;
+    if (api == NULL || out_player_state == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, get_controller_player_state) +
+                               sizeof(api->get_controller_player_state) ||
+        api->get_controller_player_state == NULL) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    return api->get_controller_player_state(controller, out_player_state);
+}
