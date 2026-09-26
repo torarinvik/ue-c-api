@@ -39,6 +39,9 @@ public:
     FRotator Rotation;
 
     UPROPERTY()
+    FLinearColor Tint;
+
+    UPROPERTY()
     FTransform Pose;
 
     UPROPERTY()

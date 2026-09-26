@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 158 adds typed whole-property `FLinearColor` reads and writes.
+  Values use linear-light RGBA channels, remain unclamped, and reject non-finite
+  components or values outside Unreal's `float` range.
 - ABI minor 157 adds typed whole-property `FRotator` reads and writes through
   the ABI 156 size-tagged struct-value calls. Values use Unreal's pitch, yaw,
   and roll convention in degrees; non-finite components are rejected.

@@ -75,6 +75,15 @@ namespace
         return result;
     }
 
+    uec_property_struct_value LinearColorValue(double r, double g, double b, double a)
+    {
+        uec_property_struct_value result{};
+        result.struct_size = sizeof(result);
+        result.kind = UEC_PROPERTY_STRUCT_LINEAR_COLOR;
+        result.value.linear_color = {r, g, b, a};
+        return result;
+    }
+
     bool Near(double actual, double expected)
     {
         return std::fabs(actual - expected) <= 0.0001;
@@ -470,6 +479,92 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
          !Near(structObserved.value.rotator.pitch, 2.0) ||
          !Near(structObserved.value.rotator.yaw, -30.0) ||
          !Near(structObserved.value.rotator.roll, 45.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    if (result == UEC_RESULT_OK) stage = "typed FLinearColor property";
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Tint"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_LINEAR_COLOR ||
+         !Near(structObserved.value.linear_color.r, 0.25) ||
+         !Near(structObserved.value.linear_color.g, 0.5) ||
+         !Near(structObserved.value.linear_color.b, 0.75) ||
+         !Near(structObserved.value.linear_color.a, 1.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value updated =
+            LinearColorValue(2.0, 0.25, 1.5, 0.5);
+        result = api->set_actor_property_struct_value(actor, View("Tint"), &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value wrongKind = VectorValue(1.0, 2.0, 3.0);
+        if (api->set_actor_property_struct_value(actor, View("Tint"), &wrongKind) !=
+            UEC_RESULT_INVALID_ARGUMENT) result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value notFinite =
+            LinearColorValue(NAN, 0.0, 0.0, 1.0);
+        if (api->set_actor_property_struct_value(actor, View("Tint"), &notFinite) !=
+            UEC_RESULT_INVALID_ARGUMENT) result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value outOfFloatRange =
+            LinearColorValue(1.0e100, 0.0, 0.0, 1.0);
+        if (api->set_actor_property_struct_value(actor, View("Tint"),
+                                                  &outOfFloatRange) !=
+            UEC_RESULT_INVALID_ARGUMENT) result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Tint"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_LINEAR_COLOR ||
+         !Near(structObserved.value.linear_color.r, 2.0) ||
+         !Near(structObserved.value.linear_color.g, 0.25) ||
+         !Near(structObserved.value.linear_color.b, 1.5) ||
+         !Near(structObserved.value.linear_color.a, 0.5))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) stage = "typed UObject FLinearColor property";
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_object_property_struct_value(selfObject, View("Tint"),
+                                                        &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_LINEAR_COLOR ||
+         !Near(structObserved.value.linear_color.r, 2.0) ||
+         !Near(structObserved.value.linear_color.b, 1.5))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value updated =
+            LinearColorValue(-2.0, 1.25, 0.125, 2.0);
+        result = api->set_object_property_struct_value(selfObject, View("Tint"),
+                                                        &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Tint"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_LINEAR_COLOR ||
+         !Near(structObserved.value.linear_color.r, -2.0) ||
+         !Near(structObserved.value.linear_color.g, 1.25) ||
+         !Near(structObserved.value.linear_color.b, 0.125) ||
+         !Near(structObserved.value.linear_color.a, 2.0))) {
         result = UEC_RESULT_INTERNAL_ERROR;
     }
 

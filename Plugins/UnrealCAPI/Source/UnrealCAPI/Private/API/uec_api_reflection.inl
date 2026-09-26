@@ -554,6 +554,12 @@
             FMath::IsFinite(value.roll);
     }
 
+    static bool IsValidPropertyLinearColor(const uec_linear_color& value)
+    {
+        return IsRepresentableFloat(value.r) && IsRepresentableFloat(value.g) &&
+            IsRepresentableFloat(value.b) && IsRepresentableFloat(value.a);
+    }
+
     static uec_result ReadTypedStructPropertyValue(
         UObject* object,
         uec_string_view propertyName,
@@ -577,6 +583,16 @@
             if (!IsFinitePropertyRotator(rotator)) return UEC_RESULT_INTERNAL_ERROR;
             outValue->kind = UEC_PROPERTY_STRUCT_ROTATOR;
             outValue->value.rotator = rotator;
+            return UEC_RESULT_OK;
+        }
+        if (structProperty != nullptr &&
+            structProperty->Struct == TBaseStructure<FLinearColor>::Get()) {
+            const FLinearColor& value =
+                *structProperty->ContainerPtrToValuePtr<FLinearColor>(object);
+            const uec_linear_color color{value.R, value.G, value.B, value.A};
+            if (!IsValidPropertyLinearColor(color)) return UEC_RESULT_INTERNAL_ERROR;
+            outValue->kind = UEC_PROPERTY_STRUCT_LINEAR_COLOR;
+            outValue->value.linear_color = color;
             return UEC_RESULT_OK;
         }
 
@@ -622,8 +638,11 @@
         const FStructProperty* structProperty = CastField<FStructProperty>(property);
         const bool isRotator = structProperty != nullptr &&
             structProperty->Struct == TBaseStructure<FRotator>::Get();
+        const bool isLinearColor = structProperty != nullptr &&
+            structProperty->Struct == TBaseStructure<FLinearColor>::Get();
         const uec_function_struct_kind expectedKind = isRotator
-            ? UEC_PROPERTY_STRUCT_ROTATOR : GetInvocationStructKind(property);
+            ? UEC_PROPERTY_STRUCT_ROTATOR : isLinearColor
+            ? UEC_PROPERTY_STRUCT_LINEAR_COLOR : GetInvocationStructKind(property);
         if (expectedKind == UEC_PROPERTY_STRUCT_NONE) {
             return UEC_RESULT_UNSUPPORTED;
         }
@@ -633,6 +652,14 @@
             if (!IsFinitePropertyRotator(input)) return UEC_RESULT_INVALID_ARGUMENT;
             *structProperty->ContainerPtrToValuePtr<FRotator>(object) =
                 FRotator(input.pitch, input.yaw, input.roll);
+            return UEC_RESULT_OK;
+        }
+        if (isLinearColor) {
+            const uec_linear_color& input = value->value.linear_color;
+            if (!IsValidPropertyLinearColor(input)) return UEC_RESULT_INVALID_ARGUMENT;
+            *structProperty->ContainerPtrToValuePtr<FLinearColor>(object) =
+                FLinearColor(static_cast<float>(input.r), static_cast<float>(input.g),
+                             static_cast<float>(input.b), static_cast<float>(input.a));
             return UEC_RESULT_OK;
         }
 

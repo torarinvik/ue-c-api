@@ -10,12 +10,13 @@ typedef enum uec_function_struct_kind {
 } uec_function_struct_kind;
 
 typedef uec_function_struct_kind uec_property_struct_kind;
-/* Property tags 0-3 preserve ABI 1.156 assignments; ROTATOR is property-only. */
+/* Property tags 0-3 preserve ABI 1.156 assignments; extra tags are property-only. */
 #define UEC_PROPERTY_STRUCT_NONE UEC_FUNCTION_STRUCT_NONE
 #define UEC_PROPERTY_STRUCT_VECTOR3 UEC_FUNCTION_STRUCT_VECTOR3
 #define UEC_PROPERTY_STRUCT_QUATERNION UEC_FUNCTION_STRUCT_QUATERNION
 #define UEC_PROPERTY_STRUCT_TRANSFORM UEC_FUNCTION_STRUCT_TRANSFORM
 #define UEC_PROPERTY_STRUCT_ROTATOR ((uec_property_struct_kind)4)
+#define UEC_PROPERTY_STRUCT_LINEAR_COLOR ((uec_property_struct_kind)5)
 
 /* Unreal FRotator fields are pitch, yaw, and roll in degrees. */
 typedef struct uec_rotator {
@@ -23,6 +24,14 @@ typedef struct uec_rotator {
     double yaw;
     double roll;
 } uec_rotator;
+
+/* Components are linear-light RGBA values; they are not clamped to [0, 1]. */
+typedef struct uec_linear_color {
+    double r;
+    double g;
+    double b;
+    double a;
+} uec_linear_color;
 
 typedef struct uec_function_struct_value {
     uec_function_struct_kind kind;
@@ -33,7 +42,7 @@ typedef struct uec_function_struct_value {
     } value;
 } uec_function_struct_value;
 
-/* Size-tagged whole-property values for FVector, FQuat, FTransform, and FRotator. */
+/* Size-tagged whole-property values for supported Unreal math structs. */
 typedef struct uec_property_struct_value {
     uint32_t struct_size;
     uec_property_struct_kind kind;
@@ -42,6 +51,7 @@ typedef struct uec_property_struct_value {
         uec_quaternion quaternion;
         uec_transform transform;
         uec_rotator rotator;
+        uec_linear_color linear_color;
     } value;
 } uec_property_struct_value;
 
