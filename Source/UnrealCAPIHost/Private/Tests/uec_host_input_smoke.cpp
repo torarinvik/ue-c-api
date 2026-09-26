@@ -217,6 +217,56 @@ namespace
         return IsExpectedInputValue(value, expected);
     }
 
+    uec_result VerifyInputKeyPolling(FInputSmokeState& state)
+    {
+        static constexpr char digitalKeyData[] = "SpaceBar";
+        static constexpr char analogKeyData[] = "Gamepad_LeftX";
+        const uec_string_view digitalKey{digitalKeyData, sizeof(digitalKeyData) - 1u};
+        const uec_string_view analogKey{analogKeyData, sizeof(analogKeyData) - 1u};
+        const uec_string_view emptyKey{nullptr, 0u};
+
+        uec_bool isDown = UEC_TRUE;
+        uec_result result = state.Api->get_input_key_down(
+            state.Controller, digitalKey, &isDown);
+        if (result != UEC_RESULT_OK ||
+            (isDown != UEC_FALSE && isDown != UEC_TRUE)) {
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
+        double analogValue = 0.0;
+        result = state.Api->get_input_key_value(
+            state.Controller, analogKey, &analogValue);
+        if (result != UEC_RESULT_OK || !FMath::IsFinite(analogValue)) {
+            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
+        }
+
+        isDown = UEC_TRUE;
+        result = state.Api->get_input_key_down(
+            state.Controller, emptyKey, &isDown);
+        if (result != UEC_RESULT_INVALID_ARGUMENT || isDown != UEC_FALSE) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        analogValue = 1.0;
+        result = state.Api->get_input_key_value(
+            state.Controller, emptyKey, &analogValue);
+        if (result != UEC_RESULT_INVALID_ARGUMENT || analogValue != 0.0) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+
+        isDown = UEC_TRUE;
+        result = state.Api->get_input_key_down(
+            state.Actor, digitalKey, &isDown);
+        if (result != UEC_RESULT_INVALID_ARGUMENT || isDown != UEC_FALSE) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        analogValue = 1.0;
+        result = state.Api->get_input_key_value(
+            state.Actor, analogKey, &analogValue);
+        if (result != UEC_RESULT_INVALID_ARGUMENT || analogValue != 0.0) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        return UEC_RESULT_OK;
+    }
+
     void UEC_CALL OnInputSmokeAction(uint64_t bindingId,
                                     uec_input_action_value value,
                                     void* userData)
@@ -387,6 +437,8 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
         state.Api->remove_input_mapping_context == nullptr ||
         state.Api->get_input_action_value == nullptr ||
         state.Api->inject_input_action_value == nullptr ||
+        state.Api->get_input_key_down == nullptr ||
+        state.Api->get_input_key_value == nullptr ||
         state.Api->bind_input_action == nullptr || state.Api->unbind_input_action == nullptr) {
         return FailInputSmokeStart(state, UEC_RESULT_INTERNAL_ERROR);
     }
@@ -426,6 +478,7 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
         result = state.Api->spawn_actor(
             state.World, actorClassPath, &transform, &state.Actor);
     }
+    if (result == UEC_RESULT_OK) result = VerifyInputKeyPolling(state);
     for (uint32 index = 0u; result == UEC_RESULT_OK && index < ActionValueCount; ++index) {
         result = state.Api->get_actor_property_object(
             state.Actor, actionProperties[index], &state.Actions[index]);

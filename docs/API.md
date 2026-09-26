@@ -529,8 +529,10 @@ types.
 Input polling accepts Unreal key names such as `SpaceBar` or `Gamepad_LeftX`.
 `get_input_key_down` returns the current digital state, while
 `get_input_key_value` returns the controller's analog value. Both require a
-player-controller handle and run on the game thread. `get_input_action_value`
-reads a loaded `UInputAction` through `UEnhancedPlayerInput` and returns its
+player-controller handle and run on the game thread. Empty key names are
+invalid; failed reads initialize their output to false or zero.
+`get_input_action_value` reads a loaded `UInputAction` through
+`UEnhancedPlayerInput` and returns its
 current boolean, 1D, 2D, or 3D value. Failed reads clear the value payload
 after validating the caller's size tag. An action that is not currently
 triggering returns zero in its configured value type; action events and
