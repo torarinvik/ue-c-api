@@ -39,6 +39,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     double AuthoritySmokeDeadline = 0.0;
     bool bPIERestartStarted = false;
     bool bInputSmokeCompleted = false;
+    bool bInputSmokeStarted = false;
     int32 AnimationSmokeQuiescentTicks = 0;
     int32 PIERestartCyclesCompleted = 0;
 
@@ -447,18 +448,10 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         }
         if (result == UEC_RESULT_OK) {
             UE_LOG(LogUnrealCAPIHost, Log, TEXT("C latent invocation smoke completed"));
-            const uec_result inputResult = uec_host_input_smoke_start();
-            if (inputResult == UEC_RESULT_OK) {
-                InputSmokeElapsed = 0.0f;
-                InputSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
-                    FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunInputSmoke),
-                    0.0f);
-            }
-            else {
-                UE_LOG(LogUnrealCAPIHost, Error,
-                    TEXT("C Enhanced Input smoke failed to start with result %d"),
-                    static_cast<int32>(inputResult));
-            }
+            InputSmokeElapsed = 0.0f;
+            InputSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
+                FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunInputSmoke),
+                0.0f);
         }
         else {
             UE_LOG(LogUnrealCAPIHost, Error,
@@ -471,6 +464,18 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
 
     bool RunInputSmoke(float deltaSeconds)
     {
+        if (!bInputSmokeStarted) {
+            if (uec_host_animation_smoke_is_running() == UEC_TRUE) return true;
+            const uec_result startResult = uec_host_input_smoke_start();
+            if (startResult != UEC_RESULT_OK) {
+                UE_LOG(LogUnrealCAPIHost, Error,
+                    TEXT("C Enhanced Input smoke failed to start with result %d"),
+                    static_cast<int32>(startResult));
+                InputSmokeHandle.Reset();
+                return false;
+            }
+            bInputSmokeStarted = true;
+        }
         if (!bInputSmokeCompleted) {
             InputSmokeElapsed += deltaSeconds;
             uec_result result = UEC_RESULT_NOT_INITIALIZED;
@@ -497,6 +502,7 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         if (AnimationSmokeQuiescentTicks++ == 0) return true;
         AnimationSmokeQuiescentTicks = 0;
         bInputSmokeCompleted = false;
+        bInputSmokeStarted = false;
         const uec_result queueResult = uec_host_queue_smoke_start();
         if (queueResult == UEC_RESULT_OK) {
             QueueSmokeElapsed = 0.0f;

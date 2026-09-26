@@ -153,7 +153,7 @@ if ! git -C "$repo_dir" check-ignore -q --no-index IMPLEMENTATION_PLAN.md; then
 fi
 
 for source_file in "$public_dir/uec_api.h" "$private_dir/uec_api.cpp" \
-    "$private_dir"/API/*.inl "$host_consumer" "$widget_ui_example" \
+    "$private_dir"/API/*.inl "$host_consumer" "$gameplay_example" "$widget_ui_example" \
     "$host_widget_ui_consumer" \
     "$repo_dir/Source/UnrealCAPIHost/Private/UnrealCAPIHost.cpp"; do
     line_count=$(wc -l < "$source_file" | tr -d ' ')

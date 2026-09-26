@@ -1,6 +1,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 
+#include "c_gameplay.h"
 #include "uec_api.h"
 
 namespace
@@ -30,6 +31,7 @@ namespace
         uec_object* Subsystem = nullptr;
         uec_object* PlayerState = nullptr;
         uec_input_action_value ExpectedValue{};
+        uec_gameplay_input_movement_state MovementExample{};
         uint32 ActionIndex = 0u;
         uint64 StartedBindingId = 0u;
         uint64 BindingId = 0;
@@ -61,6 +63,26 @@ namespace
     void FinishInputSmoke(FInputSmokeState& state, uec_result result)
     {
         if (state.Complete) return;
+        if (result != UEC_RESULT_OK) {
+            UE_LOG(LogTemp, Error,
+                TEXT("Input smoke failed: stage=%d action=%u result=%d mover=%d events=%llu moves=%llu axis=(%.3f,%.3f) last=(%.3f,%.3f) bindings=%llu/%llu/%llu"),
+                static_cast<int32>(state.Stage), state.ActionIndex,
+                static_cast<int32>(result), static_cast<int32>(state.MovementExample.last_result),
+                static_cast<unsigned long long>(state.MovementExample.input_event_count),
+                static_cast<unsigned long long>(state.MovementExample.movement_step_count),
+                state.MovementExample.axis_x, state.MovementExample.axis_y,
+                state.MovementExample.last_input_x, state.MovementExample.last_input_y,
+                static_cast<unsigned long long>(state.MovementExample.triggered_binding_id),
+                static_cast<unsigned long long>(state.MovementExample.completed_binding_id),
+                static_cast<unsigned long long>(state.MovementExample.canceled_binding_id));
+        }
+        if (state.MovementExample.started && state.MovementExample.done != UEC_TRUE) {
+            if (result == UEC_RESULT_OK &&
+                state.MovementExample.last_result != UEC_RESULT_OK) {
+                result = state.MovementExample.last_result;
+            }
+            uec_gameplay_input_movement_cancel(&state.MovementExample);
+        }
         if (state.Api != nullptr && state.Context != nullptr &&
             state.Api->unbind_input_action != nullptr) {
             uint64_t* bindingIds[] = {
@@ -546,8 +568,10 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
     }
     if (result != UEC_RESULT_OK) return FailInputSmokeStart(state, result);
 
-    result = state.Api->add_input_mapping_context(
-        state.Controller, state.MappingContext, 37);
+    result = uec_gameplay_input_movement_start(
+        state.Api, state.Context, state.Controller, state.Actor,
+        state.MappingContext, state.Actions[2], 37, 600.0,
+        &state.MovementExample);
     if (result != UEC_RESULT_OK) return FailInputSmokeStart(state, result);
     state.MappingAdded = true;
 
@@ -587,6 +611,19 @@ extern "C" uec_bool UEC_CALL uec_host_input_smoke_poll(uec_result* outResult)
             *outResult = state.Result;
             return UEC_TRUE;
         }
+        if (state.ActionIndex == 2u) {
+            const uec_gameplay_input_movement_state& movement = state.MovementExample;
+            if (movement.last_result != UEC_RESULT_OK || movement.done == UEC_TRUE ||
+                movement.input_event_count == 0u ||
+                !FMath::IsNearlyEqual(static_cast<float>(movement.last_input_x), 0.25f) ||
+                !FMath::IsNearlyEqual(static_cast<float>(movement.last_input_y), -0.5f) ||
+                movement.movement_step_count == 0u) {
+                FinishInputSmoke(state, movement.last_result == UEC_RESULT_OK
+                    ? UEC_RESULT_INTERNAL_ERROR : movement.last_result);
+                *outResult = state.Result;
+                return UEC_TRUE;
+            }
+        }
         const uec_result result = InjectReleasedValue(state);
         if (result != UEC_RESULT_OK) {
             FinishInputSmoke(state, result);
@@ -605,6 +642,16 @@ extern "C" uec_bool UEC_CALL uec_host_input_smoke_poll(uec_result* outResult)
         }
         if (state.CallbackInvalid) {
             FinishInputSmoke(state, UEC_RESULT_INTERNAL_ERROR);
+            *outResult = state.Result;
+            return UEC_TRUE;
+        }
+        if (state.ActionIndex == 2u &&
+            (state.MovementExample.last_result != UEC_RESULT_OK ||
+             state.MovementExample.axis_x != 0.0 ||
+             state.MovementExample.axis_y != 0.0 ||
+             state.MovementExample.input_event_count < 2u)) {
+            FinishInputSmoke(state, state.MovementExample.last_result == UEC_RESULT_OK
+                ? UEC_RESULT_INTERNAL_ERROR : state.MovementExample.last_result);
             *outResult = state.Result;
             return UEC_TRUE;
         }

@@ -18,6 +18,18 @@ the `emit_actor_event_bridge` entry and verifies every operation it uses. A
 short table or missing function returns `UEC_RESULT_UNSUPPORTED` and leaves the
 state marked done without starting any work.
 
+The module also provides `uec_gameplay_input_movement_start` and
+`uec_gameplay_input_movement_cancel`. The consumer supplies a local player
+controller, an input-enabled actor, a mapping context, and an Axis2D action.
+The example installs that context, reads Triggered values through a C callback,
+clears movement on Completed or Canceled, and moves along the actor's local
+plane by a configurable distance per Triggered event using a collision-swept
+transform. The handles and context are borrowed; the caller keeps them and the
+state alive until cleanup.
+The Unreal host's Enhanced Input smoke drives this C implementation with a
+synthetic Axis2D value and verifies the callback value, swept movement, input
+release, unbinding, and mapping removal.
+
 The same module also provides `uec_gameplay_get_player_state`. It checks that
 the function table includes the ABI 1.150 accessor and returns the controller's
 weak `APlayerState` handle. The caller owns the returned handle, can verify its

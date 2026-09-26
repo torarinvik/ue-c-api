@@ -3,6 +3,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define GAMEPLAY_INPUT_MAX_STEP 1000000000.0
+
 static void RecordExampleResult(uec_gameplay_example_state* state,
                                 uec_result result)
 {
@@ -253,4 +255,208 @@ uec_result UEC_CALL uec_gameplay_get_player_state(
         return UEC_RESULT_UNSUPPORTED;
     }
     return api->get_controller_player_state(controller, out_player_state);
+}
+
+static void RememberInputMovementResult(uec_gameplay_input_movement_state* state,
+                                        uec_result result)
+{
+    if (state != NULL && result != UEC_RESULT_OK && state->last_result == UEC_RESULT_OK)
+    {
+        state->last_result = result;
+    }
+}
+
+static uec_result ValidateInputMovementApi(const uec_api* api)
+{
+    const size_t required_size = offsetof(uec_api, unbind_input_action) +
+                                 sizeof(api->unbind_input_action);
+    if (api->struct_size < required_size) return UEC_RESULT_UNSUPPORTED;
+    if (api->set_actor_transform == NULL || api->get_actor_transform == NULL ||
+        api->add_input_mapping_context == NULL ||
+        api->remove_input_mapping_context == NULL ||
+        api->bind_input_action == NULL || api->unbind_input_action == NULL)
+    {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    return UEC_RESULT_OK;
+}
+
+static void FinishInputMovement(uec_gameplay_input_movement_state* state)
+{
+    if (state == NULL || state->done == UEC_TRUE) return;
+
+    if (state->api != NULL && state->context != NULL)
+    {
+        uint64_t* binding_ids[] = {
+            &state->triggered_binding_id,
+            &state->completed_binding_id,
+            &state->canceled_binding_id};
+        for (size_t index = 0; index < sizeof(binding_ids) / sizeof(binding_ids[0]); ++index)
+        {
+            if (*binding_ids[index] == 0) continue;
+            RememberInputMovementResult(state, state->api->unbind_input_action(
+                state->context, *binding_ids[index]));
+            *binding_ids[index] = 0;
+        }
+    }
+    if (state->mapping_installed == UEC_TRUE && state->api != NULL &&
+        state->controller != NULL && state->mapping_context != NULL)
+    {
+        RememberInputMovementResult(state, state->api->remove_input_mapping_context(
+            state->controller, state->mapping_context));
+        state->mapping_installed = UEC_FALSE;
+    }
+
+    state->axis_x = 0.0;
+    state->axis_y = 0.0;
+    state->done = UEC_TRUE;
+}
+
+static uec_result MoveInputActor(uec_gameplay_input_movement_state* state)
+{
+    uec_transform transform;
+    uec_result result = state->api->get_actor_transform(state->actor, &transform);
+    if (result != UEC_RESULT_OK) return result;
+
+    /* Rotate local forward/right input by the actor's world-space quaternion. */
+    const double qx = transform.rotation.x;
+    const double qy = transform.rotation.y;
+    const double qz = transform.rotation.z;
+    const double qw = transform.rotation.w;
+    const double local_x = state->axis_x;
+    const double local_y = state->axis_y;
+    const double world_x = (1.0 - 2.0 * (qy * qy + qz * qz)) * local_x +
+                           2.0 * (qx * qy - qw * qz) * local_y;
+    const double world_y = 2.0 * (qx * qy + qw * qz) * local_x +
+                           (1.0 - 2.0 * (qx * qx + qz * qz)) * local_y;
+    transform.translation.x += world_x * state->movement_units_per_trigger_event;
+    transform.translation.y += world_y * state->movement_units_per_trigger_event;
+    result = state->api->set_actor_transform(state->actor, &transform, UEC_TRUE);
+    if (result == UEC_RESULT_OK && state->movement_step_count != UINT64_MAX)
+    {
+        ++state->movement_step_count;
+    }
+    return result;
+}
+
+static void UEC_CALL UpdateInputMovement(uint64_t binding_id,
+                                         uec_input_action_value value,
+                                         void* raw_state)
+{
+    uec_gameplay_input_movement_state* state =
+        (uec_gameplay_input_movement_state*)raw_state;
+    if (state == NULL || state->done == UEC_TRUE) return;
+    if (value.struct_size < sizeof(uec_input_action_value) ||
+        value.kind != UEC_INPUT_ACTION_VALUE_AXIS_2D)
+    {
+        RememberInputMovementResult(state, UEC_RESULT_INVALID_ARGUMENT);
+        return;
+    }
+
+    if (binding_id == state->triggered_binding_id)
+    {
+        if (!(value.axis.x >= -1.0 && value.axis.x <= 1.0) ||
+            !(value.axis.y >= -1.0 && value.axis.y <= 1.0))
+        {
+            RememberInputMovementResult(state, UEC_RESULT_INVALID_ARGUMENT);
+            return;
+        }
+        state->axis_x = value.axis.x;
+        state->axis_y = value.axis.y;
+        state->last_input_x = value.axis.x;
+        state->last_input_y = value.axis.y;
+        /* Apply one game-thread movement step for this active input event. */
+        const uec_result result = MoveInputActor(state);
+        if (result != UEC_RESULT_OK)
+        {
+            RememberInputMovementResult(state, result);
+            FinishInputMovement(state);
+            return;
+        }
+    }
+    else if (binding_id == state->completed_binding_id ||
+             binding_id == state->canceled_binding_id)
+    {
+        state->axis_x = 0.0;
+        state->axis_y = 0.0;
+    }
+    else
+    {
+        RememberInputMovementResult(state, UEC_RESULT_INTERNAL_ERROR);
+        return;
+    }
+    if (state->input_event_count != UINT64_MAX) ++state->input_event_count;
+}
+
+uec_result UEC_CALL uec_gameplay_input_movement_start(
+    const uec_api* api,
+    uec_context* context,
+    uec_actor* controller,
+    uec_actor* actor,
+    uec_object* mapping_context,
+    uec_object* axis2d_action,
+    int32_t mapping_priority,
+    double movement_units_per_trigger_event,
+    uec_gameplay_input_movement_state* state)
+{
+    if (state == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    *state = (uec_gameplay_input_movement_state){0};
+    state->last_result = UEC_RESULT_OK;
+    if (api == NULL || context == NULL || controller == NULL ||
+        actor == NULL || mapping_context == NULL || axis2d_action == NULL ||
+        !(movement_units_per_trigger_event > 0.0) ||
+        movement_units_per_trigger_event > GAMEPLAY_INPUT_MAX_STEP)
+    {
+        state->last_result = UEC_RESULT_INVALID_ARGUMENT;
+        state->done = UEC_TRUE;
+        return state->last_result;
+    }
+
+    uec_result result = ValidateInputMovementApi(api);
+    if (result != UEC_RESULT_OK)
+    {
+        state->last_result = result;
+        state->done = UEC_TRUE;
+        return result;
+    }
+    state->api = api;
+    state->context = context;
+    state->controller = controller;
+    state->actor = actor;
+    state->mapping_context = mapping_context;
+    state->action = axis2d_action;
+    state->movement_units_per_trigger_event = movement_units_per_trigger_event;
+    state->started = UEC_TRUE;
+
+    result = api->add_input_mapping_context(controller, mapping_context, mapping_priority);
+    if (result == UEC_RESULT_OK) state->mapping_installed = UEC_TRUE;
+    if (result == UEC_RESULT_OK)
+    {
+        result = api->bind_input_action(actor, axis2d_action, UEC_INPUT_TRIGGER_TRIGGERED,
+            &UpdateInputMovement, state, &state->triggered_binding_id);
+    }
+    if (result == UEC_RESULT_OK)
+    {
+        result = api->bind_input_action(actor, axis2d_action, UEC_INPUT_TRIGGER_COMPLETED,
+            &UpdateInputMovement, state, &state->completed_binding_id);
+    }
+    if (result == UEC_RESULT_OK)
+    {
+        result = api->bind_input_action(actor, axis2d_action, UEC_INPUT_TRIGGER_CANCELED,
+            &UpdateInputMovement, state, &state->canceled_binding_id);
+    }
+    if (result != UEC_RESULT_OK)
+    {
+        RememberInputMovementResult(state, result);
+        FinishInputMovement(state);
+        return state->last_result;
+    }
+    return UEC_RESULT_OK;
+}
+
+void UEC_CALL uec_gameplay_input_movement_cancel(
+    uec_gameplay_input_movement_state* state)
+{
+    if (state == NULL || state->done == UEC_TRUE) return;
+    FinishInputMovement(state);
 }
