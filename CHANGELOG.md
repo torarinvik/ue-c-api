@@ -7,6 +7,11 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 154 adds `UEC_RESULT_AMBIGUOUS_CONTEXT`. `get_default_world` now
+  rejects multiple active Game/PIE worlds with a null output and a diagnostic,
+  requiring callers to select the intended world through explicit enumeration.
+  A UE 5.8.3 two-client PIE probe verifies this behavior and confirms that
+  indexed selection still returns distinct world and GameInstance handles.
 - UE 5.8.3 Editor PIE and packaged Development object-load smoke now verifies
   positive and missing object/class path queries, asynchronous load failure and
   cancellation behavior, and successful native `Actor` loading. It retains the

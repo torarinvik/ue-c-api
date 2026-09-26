@@ -94,19 +94,32 @@
         if (!IsValidContext(rawContext)) return UEC_RESULT_INVALID_HANDLE;
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         if (GEngine == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        UWorld* activeWorld = nullptr;
+        EWorldType::Type activeWorldType = EWorldType::None;
+        int32 activePIEInstance = INDEX_NONE;
         for (const FWorldContext& worldContext : GEngine->GetWorldContexts())
         {
             UWorld* world = worldContext.World();
-            if (world != nullptr && (worldContext.WorldType == EWorldType::Game || worldContext.WorldType == EWorldType::PIE))
-            {
-                FUECWorld* handle = MakeWorldHandle(
-                    world, worldContext.WorldType, worldContext.PIEInstance);
-                if (handle == nullptr) return HandleCreationFailureResult();
-                *outWorld = reinterpret_cast<uec_world*>(handle);
-                return UEC_RESULT_OK;
+            if (world == nullptr ||
+                (worldContext.WorldType != EWorldType::Game &&
+                 worldContext.WorldType != EWorldType::PIE)) {
+                continue;
             }
+            if (activeWorld != nullptr) {
+                SetLastErrorMessage(TEXT(
+                    "Multiple active Game/PIE worlds; select a world explicitly by kind and index"));
+                return UEC_RESULT_AMBIGUOUS_CONTEXT;
+            }
+            activeWorld = world;
+            activeWorldType = worldContext.WorldType;
+            activePIEInstance = worldContext.PIEInstance;
         }
-        return UEC_RESULT_NOT_INITIALIZED;
+        if (activeWorld == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        FUECWorld* handle = MakeWorldHandle(
+            activeWorld, activeWorldType, activePIEInstance);
+        if (handle == nullptr) return HandleCreationFailureResult();
+        *outWorld = reinterpret_cast<uec_world*>(handle);
+        return UEC_RESULT_OK;
     }
 
     uec_result UEC_CALL GetWorldCount(uec_context* rawContext, uint32_t* outCount)

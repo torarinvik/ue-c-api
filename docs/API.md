@@ -443,6 +443,12 @@ ABI minor 153 appends `add_combo_box_option`, `remove_combo_box_option`, and
 adds and removal of an absent option return `UEC_RESULT_INVALID_ARGUMENT`.
 Clearing options also clears the selection. These mutators require the game
 thread; re-query the option count after any change.
+ABI minor 154 adds `UEC_RESULT_AMBIGUOUS_CONTEXT`. `get_default_world` returns
+this result with a null output when more than one active Game/PIE world exists,
+instead of silently selecting whichever context Unreal enumerates first. Use
+`get_world_count_by_kind` and `get_world_at_by_kind` to select the intended
+world. A unique active Game/PIE context remains the convenience case; when no
+active context exists, the function returns `UEC_RESULT_NOT_INITIALIZED`.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

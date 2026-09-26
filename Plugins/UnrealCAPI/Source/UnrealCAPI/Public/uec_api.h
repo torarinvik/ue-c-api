@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 153u
+#define UEC_ABI_MINOR 154u
 #define UEC_MAX_COLLISION_QUERY_ACTORS 1024u
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +36,7 @@ typedef enum uec_result {
     UEC_RESULT_UNSUPPORTED = 6,
     UEC_RESULT_SHUTTING_DOWN = 7,
     UEC_RESULT_INTERNAL_ERROR = 8,
-    UEC_RESULT_QUEUE_FULL = 9
+    UEC_RESULT_QUEUE_FULL = 9, UEC_RESULT_AMBIGUOUS_CONTEXT = 10
 } uec_result;
 typedef enum uec_world_kind {
     UEC_WORLD_KIND_UNKNOWN = 0,

@@ -29,6 +29,7 @@ extern "C" uec_result UEC_CALL uec_host_multi_pie_smoke(void)
     if (api == nullptr || context == nullptr || api->get_world_count_by_kind == nullptr ||
         api->get_world_at_by_kind == nullptr || api->get_world_kind == nullptr ||
         api->get_world_pie_instance == nullptr || api->get_first_player_controller == nullptr ||
+        api->get_default_world == nullptr || api->get_last_error == nullptr ||
         api->get_actor_name == nullptr || api->get_world_game_instance == nullptr ||
         api->object_is_a == nullptr || api->get_object_path == nullptr ||
         api->release_object == nullptr || api->get_runtime_stats == nullptr ||
@@ -49,6 +50,34 @@ extern "C" uec_result UEC_CALL uec_host_multi_pie_smoke(void)
         if (result != UEC_RESULT_OK) goto cleanup;
         if (worldCount < 2u) {
             result = UEC_RESULT_NOT_INITIALIZED;
+            goto cleanup;
+        }
+    }
+
+    {
+        static constexpr char expectedError[] =
+            "Multiple active Game/PIE worlds; select a world explicitly by kind and index";
+        uec_world* ambiguousWorld = nullptr;
+        result = api->get_default_world(context, &ambiguousWorld);
+        if (result != UEC_RESULT_AMBIGUOUS_CONTEXT || ambiguousWorld != nullptr) {
+            UE_LOG(LogTemp, Error,
+                TEXT("Ambiguous default-world lookup did not fail with a cleared output: result=%d world=%d"),
+                static_cast<int32>(result), ambiguousWorld != nullptr);
+            if (ambiguousWorld != nullptr) (void)api->release_world(ambiguousWorld);
+            result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+        char error[128]{};
+        size_t requiredErrorSize = 0;
+        result = api->get_last_error(
+            context, error, sizeof(error), &requiredErrorSize);
+        if (result != UEC_RESULT_OK || requiredErrorSize != sizeof(expectedError) ||
+            FMemory::Memcmp(error, expectedError, sizeof(expectedError)) != 0) {
+            UE_LOG(LogTemp, Error,
+                TEXT("Ambiguous world lookup diagnostic mismatch: result=%d required=%llu"),
+                static_cast<int32>(result),
+                static_cast<unsigned long long>(requiredErrorSize));
+            result = UEC_RESULT_INTERNAL_ERROR;
             goto cleanup;
         }
     }

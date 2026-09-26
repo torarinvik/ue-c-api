@@ -30,6 +30,15 @@ clearing the list reset selection, and confirmed the empty-list count and
 invalid-index behavior. The main, multiplayer, dedicated-server, listen-server,
 multi-PIE, and restart Editor tests passed, as did staged runtime and shutdown.
 
+The complete UE 5.8.3 Mac Development gate passed on 2026-09-26 with ABI 154.
+The two-client PIE probe verified that `get_default_world` returns
+`UEC_RESULT_AMBIGUOUS_CONTEXT`, clears its output handle, and exposes a useful
+diagnostic when multiple active Game/PIE worlds exist; indexed selection still
+returned separate PIE instance ids and GameInstance paths. Editor PIE,
+multiplayer, dedicated-server, listen-server, multi-PIE, restart, packaged
+Development, and pending-shutdown checks all passed after the full build, cook,
+stage, and archive.
+
 A full UE 5.8.3 Mac Development gate on 2026-09-26 also compiles
 `examples/c_widget_ui/c_widget_ui.c` into the Unreal host and runs its named-child
 helpers against a live cleanup widget before travel. PIE and packaged smokes

@@ -102,6 +102,11 @@ invalid memory can crash the Unreal process.
 The ABI 83 `get_world_count_by_kind` and `get_world_at_by_kind` entries expose
 explicit editor, PIE, game-preview, inactive, and game-world selection. The
 original Game/PIE lookup remains the convenience path for active gameplay.
+ABI minor 154 makes that convenience lookup safe in multi-world processes:
+`get_default_world` succeeds only when there is exactly one active Game/PIE
+world. If multiple active worlds exist, it returns
+`UEC_RESULT_AMBIGUOUS_CONTEXT`, clears the output handle, and supplies a
+diagnostic. Enumerate by kind and index to choose a world explicitly.
 ABI 84 adds scalar `invoke_actor_function_value`; initialize every argument and
 return `uec_property_value` with its `struct_size` before calling it.
 ABI 85 adds `invoke_actor_function_values`; initialize every argument and each
