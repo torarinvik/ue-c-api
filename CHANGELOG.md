@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 157 adds typed whole-property `FRotator` reads and writes through
+  the ABI 156 size-tagged struct-value calls. Values use Unreal's pitch, yaw,
+  and roll convention in degrees; non-finite components are rejected.
 - ABI minor 156 adds size-tagged typed whole-property reads and writes for
   `FVector`, `FQuat`, and `FTransform` on actor and UObject handles. Writes
   validate struct kind and finite/valid values; other reflected structs remain

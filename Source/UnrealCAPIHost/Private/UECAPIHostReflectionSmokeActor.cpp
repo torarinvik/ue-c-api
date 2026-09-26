@@ -2,7 +2,8 @@
 
 AUECAPIHostReflectionSmokeActor::AUECAPIHostReflectionSmokeActor()
     : Numbers{3, 5}, Position(1.0, 2.0, 3.0),
-      Orientation(FQuat::Identity), Pose(FTransform::Identity),
+      Orientation(FQuat::Identity), Rotation(10.0, 20.0, 30.0),
+      Pose(FTransform::Identity),
       Enabled(true), Count(7),
       Mode(EUECAPIHostReflectionSmokeMode::First), Ratio(1.25f),
       Label(TEXT("initial label")), Identifier(TEXT("InitialName")),
@@ -10,6 +11,7 @@ AUECAPIHostReflectionSmokeActor::AUECAPIHostReflectionSmokeActor()
       SoftMesh(FSoftObjectPath(TEXT("/Engine/BasicShapes/Cube.Cube"))),
       SoftActorClass(FSoftObjectPath(TEXT("/Script/Engine.Actor")))
 {
+    SelfObject = this;
     Counts.Add(7, 70);
     Counts.Add(11, 110);
     Values.Add(13);

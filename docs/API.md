@@ -676,7 +676,8 @@ signed 64-bit values, so reads and writes reject unsigned values above
 range before conversion.
 
 ABI 156 adds size-tagged `uec_property_struct_value` reads and writes for exact
-`FVector`, `FQuat`, and `FTransform` properties on actor and UObject handles.
+`FVector`, `FQuat`, and `FTransform` properties on actor and UObject handles;
+ABI 157 adds `FRotator` using pitch, yaw, and roll in degrees.
 The `kind` selects the matching union member. Inputs must be finite, and
 quaternion values must have nonzero length; mismatched or unsupported struct
 types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`

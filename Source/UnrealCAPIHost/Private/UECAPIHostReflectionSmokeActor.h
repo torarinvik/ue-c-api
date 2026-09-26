@@ -36,7 +36,13 @@ public:
     FQuat Orientation;
 
     UPROPERTY()
+    FRotator Rotation;
+
+    UPROPERTY()
     FTransform Pose;
+
+    UPROPERTY()
+    UObject* SelfObject;
 
     UPROPERTY()
     bool Enabled;

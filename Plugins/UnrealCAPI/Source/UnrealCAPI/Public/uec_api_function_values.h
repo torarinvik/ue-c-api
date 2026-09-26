@@ -9,6 +9,21 @@ typedef enum uec_function_struct_kind {
     UEC_FUNCTION_STRUCT_TRANSFORM = 3
 } uec_function_struct_kind;
 
+typedef uec_function_struct_kind uec_property_struct_kind;
+/* Property tags 0-3 preserve ABI 1.156 assignments; ROTATOR is property-only. */
+#define UEC_PROPERTY_STRUCT_NONE UEC_FUNCTION_STRUCT_NONE
+#define UEC_PROPERTY_STRUCT_VECTOR3 UEC_FUNCTION_STRUCT_VECTOR3
+#define UEC_PROPERTY_STRUCT_QUATERNION UEC_FUNCTION_STRUCT_QUATERNION
+#define UEC_PROPERTY_STRUCT_TRANSFORM UEC_FUNCTION_STRUCT_TRANSFORM
+#define UEC_PROPERTY_STRUCT_ROTATOR ((uec_property_struct_kind)4)
+
+/* Unreal FRotator fields are pitch, yaw, and roll in degrees. */
+typedef struct uec_rotator {
+    double pitch;
+    double yaw;
+    double roll;
+} uec_rotator;
+
 typedef struct uec_function_struct_value {
     uec_function_struct_kind kind;
     union {
@@ -18,14 +33,15 @@ typedef struct uec_function_struct_value {
     } value;
 } uec_function_struct_value;
 
-/* Size-tagged whole-property values for FVector, FQuat, and FTransform. */
+/* Size-tagged whole-property values for FVector, FQuat, FTransform, and FRotator. */
 typedef struct uec_property_struct_value {
     uint32_t struct_size;
-    uec_function_struct_kind kind;
+    uec_property_struct_kind kind;
     union {
         uec_vector3 vector3;
         uec_quaternion quaternion;
         uec_transform transform;
+        uec_rotator rotator;
     } value;
 } uec_property_struct_value;
 

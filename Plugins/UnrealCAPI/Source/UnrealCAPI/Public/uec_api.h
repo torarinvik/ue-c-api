@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 156u
+#define UEC_ABI_MINOR 157u
 #define UEC_MAX_COLLISION_QUERY_ACTORS 1024u
 #ifdef __cplusplus
 extern "C" {

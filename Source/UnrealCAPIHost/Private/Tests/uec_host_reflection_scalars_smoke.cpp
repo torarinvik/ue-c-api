@@ -66,6 +66,15 @@ namespace
         return result;
     }
 
+    uec_property_struct_value RotatorValue(double pitch, double yaw, double roll)
+    {
+        uec_property_struct_value result{};
+        result.struct_size = sizeof(result);
+        result.kind = UEC_PROPERTY_STRUCT_ROTATOR;
+        result.value.rotator = {pitch, yaw, roll};
+        return result;
+    }
+
     bool Near(double actual, double expected)
     {
         return std::fabs(actual - expected) <= 0.0001;
@@ -210,6 +219,7 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
     uec_context* context = nullptr;
     uec_world* world = nullptr;
     uec_actor* actor = nullptr;
+    uec_object* selfObject = nullptr;
     const char* stage = "API bootstrap";
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
     if (result != UEC_RESULT_OK) return result;
@@ -222,6 +232,10 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
         api->set_actor_property_string == nullptr ||
         api->get_actor_property_struct_value == nullptr ||
         api->set_actor_property_struct_value == nullptr ||
+        api->get_object_property_struct_value == nullptr ||
+        api->set_object_property_struct_value == nullptr ||
+        api->get_actor_property_object == nullptr ||
+        api->release_object == nullptr ||
         api->get_actor_property_soft_value == nullptr ||
         api->set_actor_property_soft_value == nullptr) {
         result = UEC_RESULT_INTERNAL_ERROR;
@@ -385,6 +399,80 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
             UEC_RESULT_INVALID_ARGUMENT) result = UEC_RESULT_INTERNAL_ERROR;
     }
 
+    if (result == UEC_RESULT_OK) stage = "typed FRotator property";
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Rotation"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_ROTATOR ||
+         !Near(structObserved.value.rotator.pitch, 10.0) ||
+         !Near(structObserved.value.rotator.yaw, 20.0) ||
+         !Near(structObserved.value.rotator.roll, 30.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value updated = RotatorValue(-15.0, 90.0, 5.0);
+        result = api->set_actor_property_struct_value(actor, View("Rotation"), &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_actor_property_struct_value(actor, View("Rotation"),
+                                                       &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_ROTATOR ||
+         !Near(structObserved.value.rotator.pitch, -15.0) ||
+         !Near(structObserved.value.rotator.yaw, 90.0) ||
+         !Near(structObserved.value.rotator.roll, 5.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value invalid = RotatorValue(NAN, 0.0, 0.0);
+        if (api->set_actor_property_struct_value(actor, View("Rotation"), &invalid) !=
+            UEC_RESULT_INVALID_ARGUMENT) result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) stage = "typed UObject FRotator property";
+    if (result == UEC_RESULT_OK) {
+        result = api->get_actor_property_object(actor, View("SelfObject"), &selfObject);
+    }
+    if (result == UEC_RESULT_OK && selfObject == nullptr)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_object_property_struct_value(selfObject, View("Rotation"),
+                                                        &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_ROTATOR ||
+         !Near(structObserved.value.rotator.pitch, -15.0) ||
+         !Near(structObserved.value.rotator.yaw, 90.0) ||
+         !Near(structObserved.value.rotator.roll, 5.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        const uec_property_struct_value updated = RotatorValue(2.0, -30.0, 45.0);
+        result = api->set_object_property_struct_value(selfObject, View("Rotation"),
+                                                        &updated);
+    }
+    if (result == UEC_RESULT_OK) {
+        structObserved = {};
+        structObserved.struct_size = sizeof(structObserved);
+        result = api->get_object_property_struct_value(selfObject, View("Rotation"),
+                                                        &structObserved);
+    }
+    if (result == UEC_RESULT_OK &&
+        (structObserved.kind != UEC_PROPERTY_STRUCT_ROTATOR ||
+         !Near(structObserved.value.rotator.pitch, 2.0) ||
+         !Near(structObserved.value.rotator.yaw, -30.0) ||
+         !Near(structObserved.value.rotator.roll, 45.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+
     if (result == UEC_RESULT_OK) stage = "typed FTransform property";
     if (result == UEC_RESULT_OK) {
         const uec_transform updatedTransform{
@@ -462,6 +550,11 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
         api->log(context, View(stage));
     }
     if (actor != nullptr) {
+        if (selfObject != nullptr) {
+            const uec_result cleanup = api->release_object(selfObject);
+            selfObject = nullptr;
+            if (result == UEC_RESULT_OK && cleanup != UEC_RESULT_OK) result = cleanup;
+        }
         const uec_result cleanup = DestroyActor(api, actor);
         if (result == UEC_RESULT_OK && cleanup != UEC_RESULT_OK) result = cleanup;
     }

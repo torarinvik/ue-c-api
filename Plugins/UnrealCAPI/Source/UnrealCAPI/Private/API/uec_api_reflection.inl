@@ -544,8 +544,14 @@
     static void ResetPropertyStructValue(uec_property_struct_value* value)
     {
         if (value == nullptr) return;
-        value->kind = UEC_FUNCTION_STRUCT_NONE;
+        value->kind = UEC_PROPERTY_STRUCT_NONE;
         FMemory::Memzero(value->value);
+    }
+
+    static bool IsFinitePropertyRotator(const uec_rotator& value)
+    {
+        return FMath::IsFinite(value.pitch) && FMath::IsFinite(value.yaw) &&
+            FMath::IsFinite(value.roll);
     }
 
     static uec_result ReadTypedStructPropertyValue(
@@ -562,6 +568,17 @@
         FProperty* property = object->GetClass()->FindPropertyByName(
             FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+
+        const FStructProperty* structProperty = CastField<FStructProperty>(property);
+        if (structProperty != nullptr &&
+            structProperty->Struct == TBaseStructure<FRotator>::Get()) {
+            const FRotator& value = *structProperty->ContainerPtrToValuePtr<FRotator>(object);
+            const uec_rotator rotator{value.Pitch, value.Yaw, value.Roll};
+            if (!IsFinitePropertyRotator(rotator)) return UEC_RESULT_INTERNAL_ERROR;
+            outValue->kind = UEC_PROPERTY_STRUCT_ROTATOR;
+            outValue->value.rotator = rotator;
+            return UEC_RESULT_OK;
+        }
 
         uec_function_struct_value typedValue{};
         const uec_result result = ReadInvocationStructValue(
@@ -602,12 +619,22 @@
             return UEC_RESULT_UNSUPPORTED;
         }
 
-        const uec_function_struct_kind expectedKind =
-            GetInvocationStructKind(property);
-        if (expectedKind == UEC_FUNCTION_STRUCT_NONE) {
+        const FStructProperty* structProperty = CastField<FStructProperty>(property);
+        const bool isRotator = structProperty != nullptr &&
+            structProperty->Struct == TBaseStructure<FRotator>::Get();
+        const uec_function_struct_kind expectedKind = isRotator
+            ? UEC_PROPERTY_STRUCT_ROTATOR : GetInvocationStructKind(property);
+        if (expectedKind == UEC_PROPERTY_STRUCT_NONE) {
             return UEC_RESULT_UNSUPPORTED;
         }
         if (value->kind != expectedKind) return UEC_RESULT_INVALID_ARGUMENT;
+        if (isRotator) {
+            const uec_rotator& input = value->value.rotator;
+            if (!IsFinitePropertyRotator(input)) return UEC_RESULT_INVALID_ARGUMENT;
+            *structProperty->ContainerPtrToValuePtr<FRotator>(object) =
+                FRotator(input.pitch, input.yaw, input.roll);
+            return UEC_RESULT_OK;
+        }
 
         uec_function_struct_value typedValue{};
         typedValue.kind = value->kind;
