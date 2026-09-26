@@ -24,7 +24,8 @@ public class UnrealCAPIHost : ModuleRules
         {
             Path.GetFullPath(Path.Combine(ModuleDirectory, "../../examples/c_gameplay")),
             Path.GetFullPath(Path.Combine(ModuleDirectory, "../../examples/c_consumer_drain")),
-            Path.GetFullPath(Path.Combine(ModuleDirectory, "../../examples/c_widget_ui"))
+            Path.GetFullPath(Path.Combine(ModuleDirectory, "../../examples/c_widget_ui")),
+            Path.GetFullPath(Path.Combine(ModuleDirectory, "../../examples/c_playable"))
         });
 
         // The packaged macOS host links Unreal's TBB runtime, but installed-engine

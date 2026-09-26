@@ -256,8 +256,8 @@ def main(argv: list[str]) -> int:
         "Packaged Development host completed the C bootstrap, reflection metadata, "
         "containers, Blueprint invocation, persistence/configuration, collision, "
         "GC lifetime, physics, event, latent, "
-        "Enhanced Input, queue, async save/load, async object load, gameplay, and "
-        "travel and named-widget UMG helper smoke checks."
+        "Enhanced Input and the composed playable C sample, queue, async save/load, "
+        "async object load, gameplay, travel, and named-widget UMG helper smoke checks."
     )
     return 0
 

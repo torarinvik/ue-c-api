@@ -7,6 +7,11 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- Added `examples/c_playable`, a C11 consumer that composes Enhanced Input,
+  swept actor movement, a pawn-filtered collision trace, camera FOV response,
+  named UMG status/progress/buttons, and versioned position save/load. The
+  portable mock and UE 5.8.3 Editor PIE and packaged Development smokes exercise
+  movement, collision feedback, UI updates, save/load interactions, and cleanup.
 - ABI minor 153 adds `add_combo_box_option`, `remove_combo_box_option`, and
   `clear_combo_box_options` for data-driven `UComboBoxString` contents. Duplicate
   adds and removal of absent options return `UEC_RESULT_INVALID_ARGUMENT`;

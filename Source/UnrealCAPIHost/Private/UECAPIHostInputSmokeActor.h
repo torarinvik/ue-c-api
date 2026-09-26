@@ -6,6 +6,7 @@
 
 class UInputAction;
 class UInputMappingContext;
+class UCameraComponent;
 
 UCLASS(NotBlueprintable)
 class AUECAPIHostInputSmokeActor final : public AActor
@@ -13,7 +14,11 @@ class AUECAPIHostInputSmokeActor final : public AActor
     GENERATED_BODY()
 
 public:
+    AUECAPIHostInputSmokeActor();
     virtual void BeginPlay() override;
+
+    UPROPERTY(Transient)
+    TObjectPtr<UCameraComponent> SmokeCamera;
 
     UPROPERTY(Transient)
     TObjectPtr<UInputAction> SmokeAction;

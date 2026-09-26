@@ -9,6 +9,8 @@ layout_consumer="$repo_dir/tests/c_smoke/c_smoke_layout.c"
 compat_consumer="$repo_dir/tests/c_smoke/c_compat.c"
 host_stub="$repo_dir/tests/c_smoke/c_host_stub.c"
 gameplay_example="$repo_dir/examples/c_gameplay/c_gameplay.c"
+playable_example="$repo_dir/examples/c_playable/c_playable.c"
+playable_example_dir="$repo_dir/examples/c_playable"
 widget_ui_example="$repo_dir/examples/c_widget_ui/c_widget_ui.c"
 widget_ui_example_dir="$repo_dir/examples/c_widget_ui"
 widget_ui_smoke="$repo_dir/tests/c_smoke/c_widget_ui_smoke.c"
@@ -29,8 +31,12 @@ host_reflection_metadata_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests
 host_gameplay_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_gameplay_example_smoke.c"
 host_gameplay_translation_unit="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_gameplay_example.c"
 host_consumer_drain_translation_unit="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_consumer_drain_example.c"
+host_playable_translation_unit="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_playable_example.c"
 gameplay_header_consumer="$repo_dir/tests/c_smoke/c_gameplay_header.c"
 gameplay_example_smoke="$repo_dir/tests/c_smoke/c_gameplay_example_smoke.c"
+playable_example_smoke="$repo_dir/tests/c_smoke/c_playable_smoke.c"
+playable_example_smoke_main="$repo_dir/tests/c_smoke/c_playable_smoke_main.c"
+playable_header_consumer="$repo_dir/tests/c_smoke/c_playable_header.c"
 physics_simulation_smoke="$repo_dir/tests/c_smoke/c_physics_simulation_smoke.c"
 private_dir="$plugin_dir/Source/UnrealCAPI/Private"
 
@@ -46,6 +52,12 @@ git -C "$repo_dir" diff --check
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -x c++ -fsyntax-only "$compat_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$repo_dir/examples/c_gameplay" -fsyntax-only "$gameplay_example"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$widget_ui_example_dir" -I "$playable_example_dir" -fsyntax-only "$playable_example"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$playable_example_dir" -fsyntax-only "$playable_header_consumer"
+"${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$playable_example_dir" -x c++ -fsyntax-only "$playable_header_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$widget_ui_example_dir" -fsyntax-only "$widget_ui_example"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
@@ -84,6 +96,9 @@ git -C "$repo_dir" diff --check
     -I "$repo_dir/examples/c_gameplay" -fsyntax-only "$host_gameplay_translation_unit"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$consumer_drain_example_dir" -fsyntax-only "$host_consumer_drain_translation_unit"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -I "$widget_ui_example_dir" -I "$playable_example_dir" \
+    -fsyntax-only "$host_playable_translation_unit"
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$consumer_drain_example_dir" -fsyntax-only \
     "$repo_dir/tests/c_smoke/c_consumer_drain_header_cpp.cpp"
@@ -95,13 +110,14 @@ if [ "${UEC_SANITIZE:-0}" = 1 ]; then
 fi
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     ${sanitizer_flags} -I "$repo_dir/examples/c_gameplay" -I "$widget_ui_example_dir" \
-    -I "$consumer_drain_example_dir" \
+    -I "$consumer_drain_example_dir" -I "$playable_example_dir" \
     "$consumer" "$layout_consumer" "$widget_ui_smoke" "$gameplay_example_smoke" \
+    "$playable_example_smoke" \
     "$physics_simulation_smoke" \
     "$host_stub" "$host_consumer" "$host_travel_consumer" \
     "$host_widget_ui_consumer" "$host_abi_consumer" "$host_event_consumer" \
     "$host_reflection_metadata_consumer" \
-    "$gameplay_example" "$widget_ui_example" "$host_gameplay_consumer" \
+    "$gameplay_example" "$playable_example" "$widget_ui_example" "$host_gameplay_consumer" \
     "$host_consumer_drain_translation_unit" \
     -o "$stub_build_dir/c_smoke"
 "$stub_build_dir/c_smoke" >/dev/null
@@ -110,6 +126,12 @@ fi
     "$consumer_drain_example" "$consumer_drain_smoke" \
     -o "$stub_build_dir/c_consumer_drain_smoke"
 "$stub_build_dir/c_consumer_drain_smoke" >/dev/null
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors \
+    -I "$public_dir" -I "$widget_ui_example_dir" -I "$playable_example_dir" \
+    ${sanitizer_flags} "$playable_example" "$widget_ui_example" \
+    "$playable_example_smoke" "$playable_example_smoke_main" \
+    -lm -o "$stub_build_dir/c_playable_smoke"
+"$stub_build_dir/c_playable_smoke" >/dev/null
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     ${sanitizer_flags} "$compat_consumer" "$host_stub" -o "$stub_build_dir/c_compat"
 "$stub_build_dir/c_compat" >/dev/null
@@ -153,7 +175,7 @@ if ! git -C "$repo_dir" check-ignore -q --no-index IMPLEMENTATION_PLAN.md; then
 fi
 
 for source_file in "$public_dir/uec_api.h" "$private_dir/uec_api.cpp" \
-    "$private_dir"/API/*.inl "$host_consumer" "$gameplay_example" "$widget_ui_example" \
+    "$private_dir"/API/*.inl "$host_consumer" "$gameplay_example" "$playable_example" "$widget_ui_example" \
     "$host_widget_ui_consumer" \
     "$repo_dir/Source/UnrealCAPIHost/Private/UnrealCAPIHost.cpp"; do
     line_count=$(wc -l < "$source_file" | tr -d ' ')

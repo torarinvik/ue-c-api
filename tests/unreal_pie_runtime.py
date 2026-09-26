@@ -385,7 +385,8 @@ def main(argv: list[str]) -> int:
             "Editor PIE completed the C bootstrap, reflection metadata, containers, "
             "Blueprint invocation, "
             "persistence/configuration, collision, "
-            "GC lifetime, physics, event, latent, Enhanced Input, queue, "
+            "GC lifetime, physics, event, latent, Enhanced Input and the composed "
+            "playable C sample, queue, "
             "async save/load, async object load, gameplay, travel, and named-widget "
             "UMG helper smoke checks."
         )

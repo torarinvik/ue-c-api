@@ -1,10 +1,20 @@
 #include "UECAPIHostInputSmokeActor.h"
 
+#include "Camera/CameraComponent.h"
+#include "Components/SceneComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "InputAction.h"
 #include "InputCoreTypes.h"
 #include "InputMappingContext.h"
 #include "InputTriggers.h"
+
+AUECAPIHostInputSmokeActor::AUECAPIHostInputSmokeActor()
+{
+    USceneComponent* root = CreateDefaultSubobject<USceneComponent>(TEXT("SmokeRoot"));
+    SetRootComponent(root);
+    SmokeCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("SmokeCamera"));
+    SmokeCamera->SetupAttachment(root);
+}
 
 void AUECAPIHostInputSmokeActor::BeginPlay()
 {

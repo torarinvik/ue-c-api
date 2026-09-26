@@ -24,14 +24,18 @@ compilation and runtime tests still need an engine installation. See
 [CONTRIBUTING.md](CONTRIBUTING.md) to participate and [CHANGELOG.md](CHANGELOG.md)
 for changes in development. C examples are in
 [examples/c_gameplay/README.md](examples/c_gameplay/README.md) and
-[examples/c_widget_ui/README.md](examples/c_widget_ui/README.md).
+[examples/c_widget_ui/README.md](examples/c_widget_ui/README.md), with a composed
+playable sample in [examples/c_playable/README.md](examples/c_playable/README.md).
 
 When Unreal Engine is installed locally, `UE_ROOT=/path/to/UnrealEngine sh
 tests/run_unreal_build.sh` compiles, cooks, stages, and packages the host project.
 For a same-platform Development build, it launches the packaged host and waits
 for the C bootstrap, collision queries, event-bridge, latent-call, concurrent
 and cancellable game-thread queue, asynchronous save/load, asynchronous object
-load, gameplay-example, and world-travel smoke checks. The collision probe
+load, gameplay-example, composed playable C sample, and world-travel smoke checks.
+The playable consumer combines Enhanced Input, swept movement, filtered collision
+feedback, camera FOV response, named UMG status/progress/buttons, and versioned
+position save/load in both Editor PIE and the packaged runtime. The collision probe
 checks filtered traces, sweeps, overlaps, detailed hit handles, and cleanup.
 The persistence check verifies
 callback accounting and removes its temporary save slot; the object-load check

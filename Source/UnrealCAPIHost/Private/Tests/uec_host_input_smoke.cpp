@@ -4,6 +4,15 @@
 #include "c_gameplay.h"
 #include "uec_api.h"
 
+extern "C" uec_result UEC_CALL uec_host_playable_smoke_start(
+    const uec_api* api, uec_context* context, uec_world* world, uec_actor* controller,
+    uec_actor* pawn, uec_object* mapping_context, uec_object* move_action);
+extern "C" uec_result UEC_CALL uec_host_playable_smoke_verify(void);
+extern "C" uec_result UEC_CALL uec_host_playable_smoke_cancel(void);
+extern "C" uec_result UEC_CALL uec_host_input_key_polling_smoke(
+    const uec_api* api, uec_actor* controller, uec_actor* input_actor,
+    uec_object* expected_player_state);
+
 namespace
 {
     constexpr uint32 ActionValueCount = 4u;
@@ -76,13 +85,6 @@ namespace
                 static_cast<unsigned long long>(state.MovementExample.completed_binding_id),
                 static_cast<unsigned long long>(state.MovementExample.canceled_binding_id));
         }
-        if (state.MovementExample.started && state.MovementExample.done != UEC_TRUE) {
-            if (result == UEC_RESULT_OK &&
-                state.MovementExample.last_result != UEC_RESULT_OK) {
-                result = state.MovementExample.last_result;
-            }
-            uec_gameplay_input_movement_cancel(&state.MovementExample);
-        }
         if (state.Api != nullptr && state.Context != nullptr &&
             state.Api->unbind_input_action != nullptr) {
             uint64_t* bindingIds[] = {
@@ -97,6 +99,16 @@ namespace
                 }
                 *bindingId = 0u;
             }
+        }
+        const uec_result playableCleanupResult = uec_host_playable_smoke_cancel();
+        if (result == UEC_RESULT_OK && playableCleanupResult != UEC_RESULT_OK)
+            result = playableCleanupResult;
+        if (state.MovementExample.started && state.MovementExample.done != UEC_TRUE) {
+            if (result == UEC_RESULT_OK &&
+                state.MovementExample.last_result != UEC_RESULT_OK) {
+                result = state.MovementExample.last_result;
+            }
+            uec_gameplay_input_movement_cancel(&state.MovementExample);
         }
         if (state.MappingAdded && state.Api != nullptr && state.Controller != nullptr &&
             state.MappingContext != nullptr && state.Api->remove_input_mapping_context != nullptr) {
@@ -246,62 +258,6 @@ namespace
         expected.struct_size = sizeof(expected);
         expected.kind = expectedKind;
         return IsExpectedInputValue(value, expected);
-    }
-
-    uec_result VerifyInputKeyPolling(FInputSmokeState& state)
-    {
-        static constexpr char digitalKeyData[] = "SpaceBar";
-        static constexpr char analogKeyData[] = "Gamepad_LeftX";
-        const uec_string_view digitalKey{digitalKeyData, sizeof(digitalKeyData) - 1u};
-        const uec_string_view analogKey{analogKeyData, sizeof(analogKeyData) - 1u};
-        const uec_string_view emptyKey{nullptr, 0u};
-
-        uec_bool isDown = UEC_TRUE;
-        uec_result result = state.Api->get_input_key_down(
-            state.Controller, digitalKey, &isDown);
-        if (result != UEC_RESULT_OK ||
-            (isDown != UEC_FALSE && isDown != UEC_TRUE)) {
-            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
-        }
-        double analogValue = 0.0;
-        result = state.Api->get_input_key_value(
-            state.Controller, analogKey, &analogValue);
-        if (result != UEC_RESULT_OK || !FMath::IsFinite(analogValue)) {
-            return result == UEC_RESULT_OK ? UEC_RESULT_INTERNAL_ERROR : result;
-        }
-
-        isDown = UEC_TRUE;
-        result = state.Api->get_input_key_down(
-            state.Controller, emptyKey, &isDown);
-        if (result != UEC_RESULT_INVALID_ARGUMENT || isDown != UEC_FALSE) {
-            return UEC_RESULT_INTERNAL_ERROR;
-        }
-        analogValue = 1.0;
-        result = state.Api->get_input_key_value(
-            state.Controller, emptyKey, &analogValue);
-        if (result != UEC_RESULT_INVALID_ARGUMENT || analogValue != 0.0) {
-            return UEC_RESULT_INTERNAL_ERROR;
-        }
-
-        isDown = UEC_TRUE;
-        result = state.Api->get_input_key_down(
-            state.Actor, digitalKey, &isDown);
-        if (result != UEC_RESULT_INVALID_ARGUMENT || isDown != UEC_FALSE) {
-            return UEC_RESULT_INTERNAL_ERROR;
-        }
-        analogValue = 1.0;
-        result = state.Api->get_input_key_value(
-            state.Actor, analogKey, &analogValue);
-        if (result != UEC_RESULT_INVALID_ARGUMENT || analogValue != 0.0) {
-            return UEC_RESULT_INTERNAL_ERROR;
-        }
-        uec_object* unexpectedPlayerState = state.PlayerState;
-        result = state.Api->get_controller_player_state(
-            state.Actor, &unexpectedPlayerState);
-        if (result != UEC_RESULT_INVALID_ARGUMENT || unexpectedPlayerState != nullptr) {
-            return UEC_RESULT_INTERNAL_ERROR;
-        }
-        return UEC_RESULT_OK;
     }
 
     void UEC_CALL OnInputSmokeAction(uint64_t bindingId,
@@ -535,7 +491,10 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
         result = state.Api->spawn_actor(
             state.World, actorClassPath, &transform, &state.Actor);
     }
-    if (result == UEC_RESULT_OK) result = VerifyInputKeyPolling(state);
+    if (result == UEC_RESULT_OK) {
+        result = uec_host_input_key_polling_smoke(
+            state.Api, state.Controller, state.Actor, state.PlayerState);
+    }
     for (uint32 index = 0u; result == UEC_RESULT_OK && index < ActionValueCount; ++index) {
         result = state.Api->get_actor_property_object(
             state.Actor, actionProperties[index], &state.Actions[index]);
@@ -574,6 +533,10 @@ extern "C" uec_result UEC_CALL uec_host_input_smoke_start(void)
         &state.MovementExample);
     if (result != UEC_RESULT_OK) return FailInputSmokeStart(state, result);
     state.MappingAdded = true;
+    result = uec_host_playable_smoke_start(
+        state.Api, state.Context, state.World, state.Controller, state.Actor,
+        state.MappingContext, state.Actions[2]);
+    if (result != UEC_RESULT_OK) return FailInputSmokeStart(state, result);
 
     for (uint32 index = 0u; index < ActionValueCount; ++index) {
         uec_input_action_value initialValue{};
@@ -620,6 +583,12 @@ extern "C" uec_bool UEC_CALL uec_host_input_smoke_poll(uec_result* outResult)
                 movement.movement_step_count == 0u) {
                 FinishInputSmoke(state, movement.last_result == UEC_RESULT_OK
                     ? UEC_RESULT_INTERNAL_ERROR : movement.last_result);
+                *outResult = state.Result;
+                return UEC_TRUE;
+            }
+            const uec_result playableResult = uec_host_playable_smoke_verify();
+            if (playableResult != UEC_RESULT_OK) {
+                FinishInputSmoke(state, playableResult);
                 *outResult = state.Result;
                 return UEC_TRUE;
             }
