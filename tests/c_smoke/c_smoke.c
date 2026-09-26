@@ -29,6 +29,7 @@ int main(void)
     {
         return 1;
     }
+    if (api->get_editable_text_box_text == NULL || api->set_editable_text_box_text == NULL) { api->release_context(context); return 6; }
 
     const uec_api* rejected_api = api;
     uec_context* rejected_context = context;

@@ -214,6 +214,27 @@ static uec_result UEC_CALL StubSetTextBlockText(uec_object* textBlock, uec_strin
     return textBlock == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetEditableTextBoxText(uec_object* editableTextBox,
+                                                      char* buffer,
+                                                      size_t bufferSize,
+                                                      size_t* requiredSize)
+{
+    (void)buffer;
+    (void)bufferSize;
+    if (requiredSize != NULL) *requiredSize = 0u;
+    if (requiredSize == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return editableTextBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetEditableTextBoxText(uec_object* editableTextBox,
+                                                      uec_string_view text)
+{
+    if (text.data == NULL && text.size != 0u) return UEC_RESULT_INVALID_ARGUMENT;
+    if (text.size != 0u && memchr(text.data, '\0', text.size) != NULL)
+        return UEC_RESULT_INVALID_ARGUMENT;
+    return editableTextBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetWidgetChild(uec_object* userWidget,
                                               uec_string_view childName,
                                               uec_object** outChild)

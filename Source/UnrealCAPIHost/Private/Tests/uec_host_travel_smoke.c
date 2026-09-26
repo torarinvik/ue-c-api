@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 typedef struct uec_travel_smoke_state {
     const uec_api* api;
@@ -11,6 +12,7 @@ typedef struct uec_travel_smoke_state {
     uec_object* audio_component;
     uec_object* widget;
     uec_object* button;
+    uec_object* editable_text_box;
     uint64_t request_id;
     uint64_t button_subscription_id;
     uint64_t audio_subscription_id;
@@ -103,6 +105,15 @@ static void FinishTravelSmoke(uec_travel_smoke_state* state,
         }
     }
     state->button = NULL;
+    if (state->editable_text_box != NULL && state->api != NULL &&
+        state->api->release_object != NULL) {
+        const uec_result releaseResult =
+            state->api->release_object(state->editable_text_box);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+            result = releaseResult;
+        }
+    }
+    state->editable_text_box = NULL;
     if (state->widget != NULL && state->api != NULL &&
         state->api->release_object != NULL) {
         const uec_result releaseResult = state->api->release_object(state->widget);
@@ -220,6 +231,8 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         state->api->get_default_world == NULL ||
         state->api->get_world_name == NULL || state->api->release_world == NULL ||
         state->api->create_widget == NULL || state->api->get_widget_child == NULL ||
+        state->api->get_editable_text_box_text == NULL ||
+        state->api->set_editable_text_box_text == NULL ||
         state->api->add_widget_to_viewport == NULL ||
         state->api->spawn_actor == NULL || state->api->get_actor_property_object == NULL ||
         state->api->bind_audio_finished == NULL ||
@@ -256,10 +269,16 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         static const char widgetClassPathData[] =
             "/Script/UnrealCAPIHost.ECAPIHostCleanupWidget";
         static const char buttonNameData[] = "CleanupButton";
+        static const char editableTextBoxNameData[] = "CleanupEditableTextBox";
+        static const char unicodeTextData[] = "Player – 世界 🌍";
         const uec_string_view widgetClassPath = {
             widgetClassPathData, sizeof(widgetClassPathData) - 1u};
         const uec_string_view buttonName = {
             buttonNameData, sizeof(buttonNameData) - 1u};
+        const uec_string_view editableTextBoxName = {
+            editableTextBoxNameData, sizeof(editableTextBoxNameData) - 1u};
+        const uec_string_view unicodeText = {
+            unicodeTextData, sizeof(unicodeTextData) - 1u};
         result = state->api->create_widget(
             state->old_world, widgetClassPath, &state->widget);
         if (result != UEC_RESULT_OK || state->widget == NULL) {
@@ -269,6 +288,37 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         }
         result = state->api->get_widget_child(state->widget, buttonName, &state->button);
         if (result != UEC_RESULT_OK || state->button == NULL) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        result = state->api->get_widget_child(
+            state->widget, editableTextBoxName, &state->editable_text_box);
+        if (result != UEC_RESULT_OK || state->editable_text_box == NULL) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        result = state->api->set_editable_text_box_text(
+            state->editable_text_box, unicodeText);
+        if (result != UEC_RESULT_OK) {
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        size_t requiredTextSize = 0u;
+        result = state->api->get_editable_text_box_text(
+            state->editable_text_box, NULL, 0u, &requiredTextSize);
+        if (result != UEC_RESULT_BUFFER_TOO_SMALL ||
+            requiredTextSize != sizeof(unicodeTextData)) {
+            FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        char textReadback[64] = {0};
+        result = state->api->get_editable_text_box_text(
+            state->editable_text_box, textReadback, sizeof(textReadback),
+            &requiredTextSize);
+        if (result != UEC_RESULT_OK || requiredTextSize != sizeof(unicodeTextData) ||
+            memcmp(textReadback, unicodeTextData, sizeof(unicodeTextData)) != 0) {
             if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
             FinishTravelSmoke(state, result, UEC_FALSE);
             return result;
@@ -353,6 +403,13 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
     size_t staleWorldRequired = 1u;
     if (state->api->get_world_name(state->old_world, NULL, 0, &staleWorldRequired) !=
             UEC_RESULT_INVALID_HANDLE || staleWorldRequired != 0u) {
+        FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_TRUE);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    size_t staleTextRequired = 1u;
+    if (state->api->get_editable_text_box_text(
+            state->editable_text_box, NULL, 0u, &staleTextRequired) !=
+            UEC_RESULT_INVALID_HANDLE || staleTextRequired != 0u) {
         FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_TRUE);
         return UEC_RESULT_INTERNAL_ERROR;
     }

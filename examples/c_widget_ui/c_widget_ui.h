@@ -13,6 +13,20 @@ uec_result UEC_CALL uec_widget_set_text_child(const uec_api* api,
                                               uec_string_view child_name,
                                               uec_string_view text);
 
+uec_result UEC_CALL uec_widget_set_editable_text_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_string_view text);
+
+uec_result UEC_CALL uec_widget_get_editable_text_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    char* buffer,
+    size_t buffer_size,
+    size_t* required_size);
+
 #ifdef __cplusplus
 }
 #endif

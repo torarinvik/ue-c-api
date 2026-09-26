@@ -413,6 +413,11 @@ material defines a parameter of the requested type.
 ABI minor 147 appends `set_config_bool`. It writes only declared `UEC_FALSE` or
 `UEC_TRUE` values to the game INI, requires the game thread, and flushes the
 updated configuration so a following read observes the new value.
+ABI minor 148 appends `get_editable_text_box_text` and
+`set_editable_text_box_text` for `UEditableTextBox`. They read and write UTF-8
+text through the standard required-size buffer and string-view contracts, clear
+the required-size output before reads, and require the game thread. Handles to
+other widget types return `UEC_RESULT_INVALID_ARGUMENT`.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice
@@ -731,6 +736,12 @@ collapsed, hidden, and both hit-test-invisible states for any `UWidget`; the
 two hit-test modes control whether children can still receive pointer input.
 `set_text_block_text` updates the text of a `UTextBlock` using a culture-neutral
 `FText`.
+`get_editable_text_box_text` and `set_editable_text_box_text` read and update a
+`UEditableTextBox`, preserving its current user-entered string as UTF-8. Use
+the appended ABI 1.148 table fields only when `struct_size` reaches the field
+being called. The
+[named UMG child example](../examples/c_widget_ui/README.md) includes a C helper
+that looks up and releases the child handle around either operation.
 `get_progress_bar_percent` and `set_progress_bar_percent` read and write a
 `UProgressBar`'s normalized percentage on the game thread. Writes outside
 `[0, 1]` or values that cannot be represented as an Unreal `float` return

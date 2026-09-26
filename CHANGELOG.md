@@ -7,6 +7,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 148 adds UTF-8 read/write access for `UEditableTextBox`. The C
+  widget example now looks up, updates, and reads editable text, and the UE
+  travel smoke round-trips Unicode input before verifying travel invalidates
+  the child handle.
 - The UE 5.8.3 Editor PIE and packaged Development presentation smoke now
   exercises one-shot and attached sound playback, playing-state readback,
   stop-triggered and natural completion callbacks at 1% volume, and one-shot

@@ -125,6 +125,35 @@
         return CopyFStringToUtf8(textBlock->GetText().ToString(), buffer, bufferSize, requiredSize);
     }
 
+    uec_result UEC_CALL GetEditableTextBoxText(uec_object* rawEditableTextBox,
+                                               char* buffer,
+                                               size_t bufferSize,
+                                               size_t* requiredSize)
+    {
+        if (requiredSize != nullptr) *requiredSize = 0u;
+        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECObject*>(rawEditableTextBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UEditableTextBox* editableTextBox = Cast<UEditableTextBox>(handle->Value.Get());
+        if (editableTextBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        return CopyFStringToUtf8(
+            editableTextBox->GetText().ToString(), buffer, bufferSize, requiredSize);
+    }
+
+    uec_result UEC_CALL SetEditableTextBoxText(uec_object* rawEditableTextBox,
+                                               uec_string_view text)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawEditableTextBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(text)) return UEC_RESULT_INVALID_ARGUMENT;
+        UEditableTextBox* editableTextBox = Cast<UEditableTextBox>(handle->Value.Get());
+        if (editableTextBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        editableTextBox->SetText(FText::FromString(ToFString(text)));
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetProgressBarPercent(uec_object* rawProgressBar,
                                               double* outPercent)
     {

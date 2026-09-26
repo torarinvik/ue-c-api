@@ -317,6 +317,11 @@ and release it like any other object handle. A child absent from the current
 widget tree returns `UEC_RESULT_NOT_INITIALIZED`. The
 [named UMG child example](../examples/c_widget_ui/README.md) shows lookup,
 text update, and handle release in C.
+ABI minor 148 adds `get_editable_text_box_text` and
+`set_editable_text_box_text` for `UEditableTextBox` children. Text uses UTF-8;
+the getter follows the required-size and short-buffer behavior used by other
+string outputs, and the setter accepts an explicit-length UTF-8 view. Both
+operations require the game thread and reject handles for other widget types.
 ABI minor 143 adds `set_component_simulating_physics` and
 `get_component_simulating_physics` for primitive components. They require the
 game thread; the setter accepts only the declared boolean values and requires

@@ -39,6 +39,7 @@
 #include "Sound/SoundBase.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
+#include "Components/EditableTextBox.h"
 #include "Components/Button.h"
 #include "Components/CheckBox.h"
 #include "Components/ProgressBar.h"
@@ -392,7 +393,8 @@ namespace
         &GetCheckBoxState, &SetCheckBoxState, &GetWidgetChild,
         &SetComponentSimulatingPhysics, &GetComponentSimulatingPhysics,
         &GetComponentMesh, &GetComponentMaterialScalar, &GetComponentMaterialVector,
-        &SetConfigBool
+        &SetConfigBool,
+        &GetEditableTextBoxText, &SetEditableTextBoxText
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface
