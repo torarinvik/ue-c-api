@@ -257,7 +257,7 @@ def main(argv: list[str]) -> int:
         "containers, Blueprint invocation, persistence/configuration, collision, "
         "GC lifetime, physics, event, latent, "
         "Enhanced Input, queue, async save/load, async object load, gameplay, and "
-        "travel smoke checks."
+        "travel and named-widget UMG helper smoke checks."
     )
     return 0
 

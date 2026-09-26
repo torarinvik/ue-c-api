@@ -30,6 +30,17 @@ clearing the list reset selection, and confirmed the empty-list count and
 invalid-index behavior. The main, multiplayer, dedicated-server, listen-server,
 multi-PIE, and restart Editor tests passed, as did staged runtime and shutdown.
 
+A full UE 5.8.3 Mac Development gate on 2026-09-26 also compiles
+`examples/c_widget_ui/c_widget_ui.c` into the Unreal host and runs its named-child
+helpers against a live cleanup widget before travel. PIE and packaged smokes
+verify display/editable text including Unicode and short-buffer sizing, slider
+and progress values with invalid-write stability, tri-state checkbox access,
+combo-box enumeration and mutation, wrong-widget rejection, one-shot button
+delivery with callback-time diagnostics and reentrant unbinding, cancel-before-
+click suppression, and baseline handle/subscription drainage. The main,
+multiplayer, dedicated-server, listen-server, two-client, three-cycle restart,
+packaged runtime, and pending-shutdown checks passed.
+
 The complete Mac Development gate was rerun after ABI 152. Plugin and host
 build, cook, stage, and package passed; the primary, client-authority,
 dedicated-server, listen-server, multi-PIE, and three-cycle restart checks all

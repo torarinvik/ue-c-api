@@ -17,6 +17,7 @@ consumer_drain_example_dir="$repo_dir/examples/c_consumer_drain"
 consumer_drain_smoke="$repo_dir/tests/c_smoke/c_consumer_drain_smoke.c"
 host_consumer="$repo_dir/Source/UnrealCAPIHost/Private/uec_host_smoke.c"
 host_travel_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_travel_smoke.c"
+host_widget_ui_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_widget_ui_smoke.c"
 host_abi_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_abi_smoke.c"
 host_collision_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_collision_smoke.c"
 host_physics_consumer="$repo_dir/Source/UnrealCAPIHost/Private/Tests/uec_host_physics_smoke.c"
@@ -65,6 +66,8 @@ git -C "$repo_dir" diff --check
     -fsyntax-only "$physics_simulation_smoke"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_travel_consumer"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors \
+    -I "$public_dir" -I "$widget_ui_example_dir" -fsyntax-only "$host_widget_ui_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_abi_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_collision_consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$host_physics_consumer"
@@ -95,7 +98,8 @@ fi
     -I "$consumer_drain_example_dir" \
     "$consumer" "$layout_consumer" "$widget_ui_smoke" "$gameplay_example_smoke" \
     "$physics_simulation_smoke" \
-    "$host_stub" "$host_consumer" "$host_travel_consumer" "$host_abi_consumer" "$host_event_consumer" \
+    "$host_stub" "$host_consumer" "$host_travel_consumer" \
+    "$host_widget_ui_consumer" "$host_abi_consumer" "$host_event_consumer" \
     "$host_reflection_metadata_consumer" \
     "$gameplay_example" "$widget_ui_example" "$host_gameplay_consumer" \
     "$host_consumer_drain_translation_unit" \
@@ -149,7 +153,8 @@ if ! git -C "$repo_dir" check-ignore -q --no-index IMPLEMENTATION_PLAN.md; then
 fi
 
 for source_file in "$public_dir/uec_api.h" "$private_dir/uec_api.cpp" \
-    "$private_dir"/API/*.inl "$host_consumer" \
+    "$private_dir"/API/*.inl "$host_consumer" "$widget_ui_example" \
+    "$host_widget_ui_consumer" \
     "$repo_dir/Source/UnrealCAPIHost/Private/UnrealCAPIHost.cpp"; do
     line_count=$(wc -l < "$source_file" | tr -d ' ')
     if [ "$line_count" -lt 400 ] || [ "$line_count" -gt 800 ]; then

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <string.h>
 
+uec_result UEC_CALL uec_host_widget_ui_smoke(void);
+
 typedef struct uec_travel_smoke_state {
     const uec_api* api;
     uec_context* context;
@@ -251,6 +253,8 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
     static const char targetMapPath[] = "/Engine/Maps/Templates/OpenWorld";
     uec_travel_smoke_state* state = &g_travel_smoke_state;
     if (state->started == UEC_TRUE) return UEC_RESULT_INVALID_ARGUMENT;
+    const uec_result widgetResult = uec_host_widget_ui_smoke();
+    if (widgetResult != UEC_RESULT_OK) return widgetResult;
     *state = (uec_travel_smoke_state){0};
     state->started = UEC_TRUE;
     state->result = UEC_RESULT_INTERNAL_ERROR;

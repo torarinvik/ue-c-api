@@ -335,3 +335,8 @@ static uec_result UEC_CALL StubGetWidgetChild(uec_object* userWidget,
 }
 
 #include "c_host_stub_reflection.inl"
+
+int UEC_CALL uec_host_cleanup_widget_click_last_button(void)
+{
+    return 1;
+}

@@ -660,7 +660,8 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             result = UEC_RESULT_INTERNAL_ERROR;
         }
         if (result == UEC_RESULT_OK) {
-            UE_LOG(LogUnrealCAPIHost, Log, TEXT("C travel smoke completed"));
+            UE_LOG(LogUnrealCAPIHost, Log,
+                TEXT("C travel smoke completed (named-widget helper included)"));
             if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-exit"))) {
                 RequestSmokeExit();
             }

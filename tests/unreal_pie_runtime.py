@@ -386,7 +386,8 @@ def main(argv: list[str]) -> int:
             "Blueprint invocation, "
             "persistence/configuration, collision, "
             "GC lifetime, physics, event, latent, Enhanced Input, queue, "
-            "async save/load, async object load, gameplay, and travel smoke checks."
+            "async save/load, async object load, gameplay, travel, and named-widget "
+            "UMG helper smoke checks."
         )
     return 0
 
