@@ -2,6 +2,8 @@
 
 #include "uec_api.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogObjectLoadSmoke, Log, All);
+
 namespace
 {
     enum class EObjectLoadSmokeStage : uint8
@@ -10,7 +12,7 @@ namespace
         FailingLoad,
         StartSuccessfulLoad,
         Loading,
-        ConfirmCancellation
+        ConfirmRetention
     };
 
     struct FObjectLoadSmokeState
@@ -20,6 +22,7 @@ namespace
         uec_runtime_stats Baseline{};
         uint64_t RequestId = 0;
         uint64_t CancelledRequestId = 0;
+        uec_object* RetainedObject = nullptr;
         uec_result Result = UEC_RESULT_NOT_INITIALIZED;
         EObjectLoadSmokeStage Stage = EObjectLoadSmokeStage::ObserveCancellation;
         uec_result PendingResult = UEC_RESULT_NOT_INITIALIZED;
@@ -37,6 +40,14 @@ namespace
             state.Api->cancel_object_load != nullptr) {
             state.Api->cancel_object_load(state.Context, state.RequestId);
             state.RequestId = 0;
+        }
+        if (state.RetainedObject != nullptr && state.Api != nullptr &&
+            state.Api->release_object != nullptr) {
+            const uec_result releaseResult = state.Api->release_object(state.RetainedObject);
+            if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) {
+                result = releaseResult;
+            }
+            state.RetainedObject = nullptr;
         }
         if (state.Context != nullptr && state.Api != nullptr &&
             state.Api->release_context != nullptr) {
@@ -78,6 +89,48 @@ namespace
             observed.active_callbacks == state.Baseline.active_callbacks &&
             observed.live_contexts == state.Baseline.live_contexts &&
             observed.live_objects == state.Baseline.live_objects;
+    }
+
+    bool VerifyMissingPathQueries(FObjectLoadSmokeState& state)
+    {
+        const FString missingPath = FString::Printf(
+            TEXT("/UECAPI/PathQuery_%s.Missing"),
+            *FGuid::NewGuid().ToString(EGuidFormats::Digits));
+        FTCHARToUTF8 pathUtf8(*missingPath);
+        const uec_string_view path{pathUtf8.Get(),
+                                   static_cast<size_t>(pathUtf8.Length())};
+        uec_bool objectLoaded = UEC_TRUE;
+        uec_bool classLoaded = UEC_TRUE;
+        if (state.Api == nullptr || state.Context == nullptr ||
+            state.Api->is_object_path_loaded == nullptr ||
+            state.Api->is_class_path_loaded == nullptr) return false;
+        const uec_result objectResult = state.Api->is_object_path_loaded(
+            state.Context, path, &objectLoaded);
+        const uec_result classResult = state.Api->is_class_path_loaded(
+            state.Context, path, &classLoaded);
+        const bool valid = objectResult == UEC_RESULT_OK && classResult == UEC_RESULT_OK &&
+            objectLoaded == UEC_FALSE && classLoaded == UEC_FALSE;
+        if (!valid) {
+            UE_LOG(LogTemp, Error,
+                TEXT("Missing path query failed: object=%d/%u class=%d/%u path=%s"),
+                static_cast<int32>(objectResult), static_cast<uint32>(objectLoaded),
+                static_cast<int32>(classResult), static_cast<uint32>(classLoaded),
+                *missingPath);
+        }
+        return valid;
+    }
+
+    bool RetainedObjectStatsAreValid(FObjectLoadSmokeState& state)
+    {
+        if (state.Baseline.live_objects == UINT32_MAX) return false;
+        uec_runtime_stats observed{};
+        observed.struct_size = sizeof(observed);
+        return state.Api != nullptr && state.Context != nullptr &&
+            state.Api->get_runtime_stats(state.Context, &observed) == UEC_RESULT_OK &&
+            observed.pending_requests == state.Baseline.pending_requests &&
+            observed.active_callbacks == state.Baseline.active_callbacks + 1u &&
+            observed.live_contexts == state.Baseline.live_contexts &&
+            observed.live_objects == state.Baseline.live_objects + 1u;
     }
 
     using FGetObjectText = uec_result (UEC_CALL *)(uec_object*, char*, size_t, size_t*);
@@ -175,12 +228,26 @@ cleanup:
         if (missingObject != nullptr) (void)state.Api->release_object(missingObject);
         if (loadedObject != nullptr) (void)state.Api->release_object(loadedObject);
         if (foundObject != nullptr) (void)state.Api->release_object(foundObject);
-        if (result != UEC_RESULT_OK) return false;
+        if (result != UEC_RESULT_OK) {
+            UE_LOG(LogTemp, Error, TEXT("Synchronous object lookup failed: result=%d"),
+                   static_cast<int32>(result));
+            return false;
+        }
         observed.struct_size = sizeof(observed);
-        return state.Api->get_runtime_stats(state.Context, &observed) == UEC_RESULT_OK &&
+        const uec_result statsResult = state.Api->get_runtime_stats(state.Context, &observed);
+        const bool statsValid = statsResult == UEC_RESULT_OK &&
             observed.live_objects == state.Baseline.live_objects &&
             observed.pending_requests == state.Baseline.pending_requests &&
             observed.active_callbacks == state.Baseline.active_callbacks;
+        if (!statsValid) {
+            UE_LOG(LogTemp, Error,
+                TEXT("Synchronous object lookup stats failed: result=%d objects=%u/%u pending=%u/%u callbacks=%u/%u"),
+                static_cast<int32>(statsResult), observed.live_objects,
+                state.Baseline.live_objects, observed.pending_requests,
+                state.Baseline.pending_requests, observed.active_callbacks,
+                state.Baseline.active_callbacks);
+        }
+        return statsValid;
     }
 
     void UEC_CALL OnObjectLoadSmokeComplete(uint64_t requestId,
@@ -234,7 +301,7 @@ cleanup:
             return;
         }
 
-        FTCHARToUTF8 expectedPath(TEXT("/Script/Engine.Actor"));
+        static constexpr char expectedPath[] = "/Script/Engine.Actor";
         char pathBuffer[128]{};
         size_t requiredSize = 0;
         const uec_result pathResult = loadedObject != nullptr && state->Api != nullptr &&
@@ -245,10 +312,26 @@ cleanup:
         const bool valid = result == UEC_RESULT_OK && loadedObject != nullptr &&
             state->Stage == EObjectLoadSmokeStage::Loading &&
             CallbackStatsAreValid(*state, loadedObject) && pathResult == UEC_RESULT_OK &&
-            requiredSize == static_cast<size_t>(expectedPath.Length()) + 1u &&
-            FMemory::Memcmp(pathBuffer, expectedPath.Get(),
-                            static_cast<size_t>(expectedPath.Length())) == 0;
+            requiredSize == sizeof(expectedPath) &&
+            FMemory::Memcmp(pathBuffer, expectedPath, sizeof(expectedPath)) == 0;
+        uec_bool objectPathLoaded = UEC_FALSE;
+        uec_bool classPathLoaded = UEC_FALSE;
+        const uec_string_view loadedPath{expectedPath, sizeof(expectedPath) - 1u};
+        const bool pathQueriesValid = valid &&
+            state->Api->is_object_path_loaded(state->Context, loadedPath,
+                                              &objectPathLoaded) == UEC_RESULT_OK &&
+            state->Api->is_class_path_loaded(state->Context, loadedPath,
+                                             &classPathLoaded) == UEC_RESULT_OK &&
+            objectPathLoaded == UEC_TRUE && classPathLoaded == UEC_TRUE;
         uec_result completionResult = valid ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;
+        if (completionResult == UEC_RESULT_OK && !pathQueriesValid) {
+            completionResult = UEC_RESULT_INTERNAL_ERROR;
+        }
+        uec_object* retainedObject = nullptr;
+        if (completionResult == UEC_RESULT_OK &&
+            state->Api->retain_object(loadedObject, &retainedObject) != UEC_RESULT_OK) {
+            completionResult = UEC_RESULT_INTERNAL_ERROR;
+        }
         if (loadedObject != nullptr && state->Api != nullptr &&
             state->Api->release_object != nullptr) {
             const uec_result releaseResult = state->Api->release_object(loadedObject);
@@ -256,10 +339,21 @@ cleanup:
                 completionResult = releaseResult;
             }
         }
+        if (completionResult == UEC_RESULT_OK && !RetainedObjectStatsAreValid(*state)) {
+            completionResult = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (completionResult == UEC_RESULT_OK) {
+            state->RetainedObject = retainedObject;
+            retainedObject = nullptr;
+        }
+        if (retainedObject != nullptr && state->Api != nullptr &&
+            state->Api->release_object != nullptr) {
+            (void)state->Api->release_object(retainedObject);
+        }
         if (completionResult == UEC_RESULT_OK) {
             state->PendingResult = completionResult;
             state->PollsInStage = 0;
-            state->Stage = EObjectLoadSmokeStage::ConfirmCancellation;
+            state->Stage = EObjectLoadSmokeStage::ConfirmRetention;
         }
         else {
             FinishObjectLoadSmoke(*state, completionResult);
@@ -286,6 +380,9 @@ extern "C" uec_result UEC_CALL uec_host_object_load_smoke_start(void)
         state.Api->get_object_class_name == nullptr || state.Api->object_is_a == nullptr ||
         state.Api->request_object_load == nullptr ||
         state.Api->cancel_object_load == nullptr ||
+        state.Api->retain_object == nullptr ||
+        state.Api->is_object_path_loaded == nullptr ||
+        state.Api->is_class_path_loaded == nullptr ||
         state.Api->get_object_path == nullptr ||
         state.Api->get_runtime_stats == nullptr ||
         state.Api->release_object == nullptr ||
@@ -307,22 +404,41 @@ extern "C" uec_result UEC_CALL uec_host_object_load_smoke_start(void)
         return UEC_RESULT_INTERNAL_ERROR;
     }
 
+    if (!VerifyMissingPathQueries(state)) {
+        FinishObjectLoadSmoke(state, UEC_RESULT_INTERNAL_ERROR);
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+
     FTCHARToUTF8 objectPathUtf8(TEXT("/Script/Engine.Actor"));
     const uec_string_view objectPath{objectPathUtf8.Get(),
                                      static_cast<size_t>(objectPathUtf8.Length())};
     result = state.Api->request_object_load(
         state.Context, objectPath, &OnObjectLoadSmokeComplete, &state, &state.RequestId);
     if (result != UEC_RESULT_OK) {
+        UE_LOG(LogTemp, Error, TEXT("Object-load cancellation request failed: %d"),
+               static_cast<int32>(result));
         FinishObjectLoadSmoke(state, result);
         return result;
     }
     state.CancelledRequestId = state.RequestId;
     result = state.Api->cancel_object_load(state.Context, state.RequestId);
     if (result != UEC_RESULT_OK) {
+        UE_LOG(LogTemp, Error, TEXT("Object-load cancellation failed: %d"),
+               static_cast<int32>(result));
         FinishObjectLoadSmoke(state, result);
         return result;
     }
     if (!RuntimeStatsReturnedToBaseline(state)) {
+        uec_runtime_stats observed{};
+        observed.struct_size = sizeof(observed);
+        const uec_result statsResult = state.Api->get_runtime_stats(state.Context, &observed);
+        UE_LOG(LogObjectLoadSmoke, Error,
+            TEXT("Post-cancel stats mismatch: result=%d context=%u/%u objects=%u/%u requests=%u/%u callbacks=%u/%u"),
+            static_cast<int32>(statsResult), observed.live_contexts,
+            state.Baseline.live_contexts, observed.live_objects,
+            state.Baseline.live_objects, observed.pending_requests,
+            state.Baseline.pending_requests, observed.active_callbacks,
+            state.Baseline.active_callbacks);
         FinishObjectLoadSmoke(state, UEC_RESULT_INTERNAL_ERROR);
         return UEC_RESULT_INTERNAL_ERROR;
     }
@@ -386,9 +502,22 @@ extern "C" uec_bool UEC_CALL uec_host_object_load_smoke_poll(uec_result* outResu
                  state.PollsInStage >= 1u) {
             StartVerifiedObjectLoad(state);
         }
-        else if (state.Stage == EObjectLoadSmokeStage::ConfirmCancellation &&
+        else if (state.Stage == EObjectLoadSmokeStage::ConfirmRetention &&
                  state.PollsInStage >= 2u) {
-            FinishObjectLoadSmoke(state, state.PendingResult);
+            CollectGarbage(RF_NoFlags);
+            const bool retainedObjectValid = state.RetainedObject != nullptr &&
+                CheckObjectText(state.Api, state.RetainedObject,
+                                state.Api->get_object_path,
+                                "/Script/Engine.Actor");
+            const uec_result releaseResult = state.RetainedObject != nullptr
+                ? state.Api->release_object(state.RetainedObject)
+                : UEC_RESULT_INVALID_HANDLE;
+            state.RetainedObject = nullptr;
+            const bool baselineRestored = RuntimeStatsReturnedToBaseline(state);
+            FinishObjectLoadSmoke(
+                state, state.PendingResult == UEC_RESULT_OK && retainedObjectValid &&
+                    releaseResult == UEC_RESULT_OK && baselineRestored
+                    ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR);
         }
     }
     *outResult = state.Complete ? state.Result : UEC_RESULT_NOT_INITIALIZED;

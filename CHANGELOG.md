@@ -7,6 +7,11 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- UE 5.8.3 Editor PIE and packaged Development object-load smoke now verifies
+  positive and missing object/class path queries, asynchronous load failure and
+  cancellation behavior, and successful native `Actor` loading. It retains the
+  callback object across forced garbage collection, then releases all handles
+  and checks runtime counts return to baseline.
 - Added `examples/c_playable`, a C11 consumer that composes Enhanced Input,
   swept actor movement, a pawn-filtered collision trace, camera FOV response,
   named UMG status/progress/buttons, and versioned position save/load. The
