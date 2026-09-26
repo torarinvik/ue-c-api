@@ -234,3 +234,74 @@ uec_result UEC_CALL uec_widget_get_combo_box_option_child(
     const uec_result release_result = api->release_object(child);
     return result == UEC_RESULT_OK ? release_result : result;
 }
+
+uec_result UEC_CALL uec_widget_add_combo_box_option_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_string_view option)
+{
+    if (api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, add_combo_box_option) +
+                               sizeof(api->add_combo_box_option)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->get_widget_child == NULL || api->add_combo_box_option == NULL ||
+        api->release_object == NULL) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    uec_object* child = NULL;
+    uec_result result = api->get_widget_child(user_widget, child_name, &child);
+    if (result != UEC_RESULT_OK) return result;
+    if (child == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    result = api->add_combo_box_option(child, option);
+    const uec_result release_result = api->release_object(child);
+    return result == UEC_RESULT_OK ? release_result : result;
+}
+
+uec_result UEC_CALL uec_widget_remove_combo_box_option_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_string_view option)
+{
+    if (api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, remove_combo_box_option) +
+                               sizeof(api->remove_combo_box_option)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->get_widget_child == NULL || api->remove_combo_box_option == NULL ||
+        api->release_object == NULL) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    uec_object* child = NULL;
+    uec_result result = api->get_widget_child(user_widget, child_name, &child);
+    if (result != UEC_RESULT_OK) return result;
+    if (child == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    result = api->remove_combo_box_option(child, option);
+    const uec_result release_result = api->release_object(child);
+    return result == UEC_RESULT_OK ? release_result : result;
+}
+
+uec_result UEC_CALL uec_widget_clear_combo_box_options_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name)
+{
+    if (api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, clear_combo_box_options) +
+                               sizeof(api->clear_combo_box_options)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->get_widget_child == NULL || api->clear_combo_box_options == NULL ||
+        api->release_object == NULL) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    uec_object* child = NULL;
+    uec_result result = api->get_widget_child(user_widget, child_name, &child);
+    if (result != UEC_RESULT_OK) return result;
+    if (child == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    result = api->clear_combo_box_options(child);
+    const uec_result release_result = api->release_object(child);
+    return result == UEC_RESULT_OK ? release_result : result;
+}

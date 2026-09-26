@@ -285,6 +285,53 @@
                                  buffer, bufferSize, requiredSize);
     }
 
+    uec_result UEC_CALL AddComboBoxOption(uec_object* rawComboBox,
+                                           uec_string_view option)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawComboBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(option) || option.size == 0u) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        UComboBoxString* comboBox = Cast<UComboBoxString>(handle->Value.Get());
+        if (comboBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const FString optionText = ToFString(option);
+        if (comboBox->FindOptionIndex(optionText) != INDEX_NONE) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        comboBox->AddOption(optionText);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL RemoveComboBoxOption(uec_object* rawComboBox,
+                                              uec_string_view option)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawComboBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        if (!IsValidStringView(option) || option.size == 0u) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        UComboBoxString* comboBox = Cast<UComboBoxString>(handle->Value.Get());
+        if (comboBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!comboBox->RemoveOption(ToFString(option))) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL ClearComboBoxOptions(uec_object* rawComboBox)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawComboBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UComboBoxString* comboBox = Cast<UComboBoxString>(handle->Value.Get());
+        if (comboBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        comboBox->ClearOptions();
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetWidgetEnabled(uec_object* rawWidget, uec_bool* outEnabled)
     {
         if (outEnabled != nullptr) *outEnabled = UEC_FALSE;

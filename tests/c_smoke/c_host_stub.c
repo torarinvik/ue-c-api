@@ -297,6 +297,31 @@ static uec_result UEC_CALL StubGetComboBoxOptionAt(
     return comboBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubAddComboBoxOption(
+    uec_object* comboBox, uec_string_view option)
+{
+    if (option.data == NULL || option.size == 0u ||
+        memchr(option.data, '\0', option.size) != NULL) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    return comboBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubRemoveComboBoxOption(
+    uec_object* comboBox, uec_string_view option)
+{
+    if (option.data == NULL || option.size == 0u ||
+        memchr(option.data, '\0', option.size) != NULL) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    return comboBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubClearComboBoxOptions(uec_object* comboBox)
+{
+    return comboBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetWidgetChild(uec_object* userWidget,
                                               uec_string_view childName,
                                               uec_object** outChild)

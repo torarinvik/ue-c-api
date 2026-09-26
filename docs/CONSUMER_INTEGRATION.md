@@ -342,6 +342,9 @@ ABI minor 152 adds `get_combo_box_option_count` and
 indexed reader uses the required-size UTF-8 buffer contract and clears its
 required-size output for an invalid index. Re-query the count after changing
 the widget's options.
+ABI minor 153 adds and removes individual options and clears the full list.
+Duplicate additions and absent removals are rejected; clearing also clears the
+selection. These calls require the game thread.
 ABI minor 143 adds `set_component_simulating_physics` and
 `get_component_simulating_physics` for primitive components. They require the
 game thread; the setter accepts only the declared boolean values and requires

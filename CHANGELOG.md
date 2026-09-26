@@ -7,6 +7,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 153 adds `add_combo_box_option`, `remove_combo_box_option`, and
+  `clear_combo_box_options` for data-driven `UComboBoxString` contents. Duplicate
+  adds and removal of absent options return `UEC_RESULT_INVALID_ARGUMENT`;
+  clearing options clears the current selection.
 - ABI minor 152 adds `get_combo_box_option_count` and
   `get_combo_box_option_at` for enumerating a `UComboBoxString`'s choices. The
   indexed reader uses the bounded UTF-8 buffer contract, rejects out-of-range

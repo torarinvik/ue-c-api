@@ -438,6 +438,11 @@ ABI minor 152 appends `get_combo_box_option_count` and
 indexed reader uses the standard required-size UTF-8 buffer contract and
 rejects indices outside the current option list with
 `UEC_RESULT_INVALID_ARGUMENT`. Both calls require the game thread.
+ABI minor 153 appends `add_combo_box_option`, `remove_combo_box_option`, and
+`clear_combo_box_options`. Options must be nonempty UTF-8 strings; duplicate
+adds and removal of an absent option return `UEC_RESULT_INVALID_ARGUMENT`.
+Clearing options also clears the selection. These mutators require the game
+thread; re-query the option count after any change.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

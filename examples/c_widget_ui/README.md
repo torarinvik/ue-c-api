@@ -1,6 +1,6 @@
 # Named UMG child example
 
-This C helper demonstrates ABI 1.152 widget text, slider, and combo-box
+This C helper demonstrates ABI 1.153 widget text, slider, and combo-box
 access. It looks up a named child of an existing `UUserWidget`, uses the
 type-specific `UTextBlock`, `UEditableTextBox`, `USlider`, or
 `UComboBoxString` operation, and releases the returned weak object handle after
@@ -41,6 +41,10 @@ if (result == UEC_RESULT_OK) {
     result = uec_widget_get_slider_child(api, widget, slider_name_view, &volume);
 }
 if (result == UEC_RESULT_OK) {
+    result = uec_widget_add_combo_box_option_child(
+        api, widget, quality_name_view, quality_option_view);
+}
+if (result == UEC_RESULT_OK) {
     result = uec_widget_set_combo_box_selected_option_child(
         api, widget, quality_name_view, quality_option_view);
 }
@@ -58,12 +62,21 @@ if (result == UEC_RESULT_OK) {
         api, widget, quality_name_view, current_option, sizeof(current_option),
         &required_size);
 }
+if (result == UEC_RESULT_OK) {
+    result = uec_widget_remove_combo_box_option_child(
+        api, widget, quality_name_view, quality_option_view);
+}
+if (result == UEC_RESULT_OK) {
+    result = uec_widget_clear_combo_box_options_child(
+        api, widget, quality_name_view);
+}
 ```
 
 The display-text child must be a `UTextBlock`; editable-text children must be a
 `UEditableTextBox`. The read helper follows the API's required-size and UTF-8
 buffer convention. Slider values are normalized to `[0, 1]`. Missing children
-and wrong widget types return an error. Combo-box options use zero-based indices;
-re-query the count after changing the option list. Selection accepts only an
-option that already exists in the named `UComboBoxString`. Each helper releases
-its child handle on every path after successful lookup.
+and wrong widget types return an error. Start with an empty combo box for this
+example. Options use zero-based indices; re-query the count after changing the
+list. Add rejects duplicates, remove rejects absent options, and clear also
+clears the selection. Each helper releases its child handle on every path after
+successful lookup.

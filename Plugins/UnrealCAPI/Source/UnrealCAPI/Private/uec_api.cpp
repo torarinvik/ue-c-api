@@ -401,7 +401,8 @@ namespace
         &GetSliderValue, &SetSliderValue,
         &GetControllerPlayerState,
         &GetComboBoxSelectedOption, &SetComboBoxSelectedOption,
-        &GetComboBoxOptionCount, &GetComboBoxOptionAt
+        &GetComboBoxOptionCount, &GetComboBoxOptionAt,
+        &AddComboBoxOption, &RemoveComboBoxOption, &ClearComboBoxOptions
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

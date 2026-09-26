@@ -22,6 +22,14 @@ without changing the selection, wrong-widget rejection, and stale child-handle
 invalidation after travel. No Editor, packaged host, build, or Zen process was
 left running after validation.
 
+The complete UE 5.8.3 Mac Development gate passed again on 2026-09-26 with ABI
+153. In addition to the ABI 151–152 selection and enumeration checks, the
+travel smoke added a unique option, rejected a duplicate and an absent removal,
+read the new option by index, verified that removing the selected option and
+clearing the list reset selection, and confirmed the empty-list count and
+invalid-index behavior. The main, multiplayer, dedicated-server, listen-server,
+multi-PIE, and restart Editor tests passed, as did staged runtime and shutdown.
+
 The complete Mac Development gate was rerun after ABI 152. Plugin and host
 build, cook, stage, and package passed; the primary, client-authority,
 dedicated-server, listen-server, multi-PIE, and three-cycle restart checks all

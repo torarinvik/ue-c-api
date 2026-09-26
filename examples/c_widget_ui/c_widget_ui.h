@@ -66,6 +66,23 @@ uec_result UEC_CALL uec_widget_get_combo_box_option_child(
     size_t buffer_size,
     size_t* required_size);
 
+uec_result UEC_CALL uec_widget_add_combo_box_option_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_string_view option);
+
+uec_result UEC_CALL uec_widget_remove_combo_box_option_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_string_view option);
+
+uec_result UEC_CALL uec_widget_clear_combo_box_options_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name);
+
 #ifdef __cplusplus
 }
 #endif
