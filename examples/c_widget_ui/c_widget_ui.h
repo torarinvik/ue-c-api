@@ -107,6 +107,20 @@ uec_result UEC_CALL uec_widget_get_progress_bar_child(
     uec_string_view child_name,
     double* out_percent);
 
+/* The event is one-shot; user_data is borrowed until delivery or unbinding. */
+uec_result UEC_CALL uec_widget_bind_button_clicked_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_widget_event_callback callback,
+    void* user_data,
+    uint64_t* out_subscription_id);
+
+uec_result UEC_CALL uec_widget_unbind_button_clicked(
+    const uec_api* api,
+    uec_context* context,
+    uint64_t subscription_id);
+
 #ifdef __cplusplus
 }
 #endif

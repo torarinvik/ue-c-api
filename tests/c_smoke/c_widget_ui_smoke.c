@@ -15,6 +15,9 @@ static int gComboBoxOptionCalls;
 static int gComboBoxAddCalls;
 static int gComboBoxRemoveCalls;
 static int gComboBoxClearCalls;
+static int gButtonBindCalls;
+static int gButtonUnbindCalls;
+static int gButtonCallbackCalls;
 static int gReleaseCalls;
 static int gMismatch;
 static uec_object* gExpectedWidget;
@@ -38,9 +41,23 @@ static uec_result gCheckBoxGetResult;
 static uec_result gCheckBoxSetResult;
 static uec_result gProgressBarGetResult;
 static uec_result gProgressBarSetResult;
+static uec_result gButtonBindResult;
+static uec_result gButtonUnbindResult;
 static double gSliderValue;
 static double gProgressBarPercent;
 static uec_checkbox_state gCheckBoxState;
+static uec_context* gExpectedContext;
+static void* gExpectedButtonUserData;
+static uec_widget_event_callback gBoundButtonCallback;
+static void* gBoundButtonUserData;
+
+static void UEC_CALL MockWidgetCallback(uint64_t subscriptionId, void* userData)
+{
+    ++gButtonCallbackCalls;
+    if (subscriptionId != UINT64_C(73) || userData != gExpectedButtonUserData) {
+        gMismatch = 1;
+    }
+}
 
 static uec_result UEC_CALL MockGetWidgetChild(uec_object* userWidget,
                                                uec_string_view childName,
@@ -235,6 +252,33 @@ static uec_result UEC_CALL MockSetProgressBarPercent(
     return gProgressBarSetResult;
 }
 
+static uec_result UEC_CALL MockBindButtonClicked(
+    uec_object* button,
+    uec_widget_event_callback callback,
+    void* userData,
+    uint64_t* outSubscriptionId)
+{
+    ++gButtonBindCalls;
+    if (button != gExpectedChild || callback != &MockWidgetCallback ||
+        userData != gExpectedButtonUserData || outSubscriptionId == NULL) {
+        gMismatch = 1;
+    }
+    gBoundButtonCallback = callback;
+    gBoundButtonUserData = userData;
+    if (outSubscriptionId != NULL) *outSubscriptionId = UINT64_C(73);
+    return gButtonBindResult;
+}
+
+static uec_result UEC_CALL MockUnbindButtonClicked(
+    uec_context* context, uint64_t subscriptionId)
+{
+    ++gButtonUnbindCalls;
+    if (context != gExpectedContext || subscriptionId != UINT64_C(73)) {
+        gMismatch = 1;
+    }
+    return gButtonUnbindResult;
+}
+
 static uec_result UEC_CALL MockReleaseObject(uec_object* object)
 {
     ++gReleaseCalls;
@@ -256,6 +300,9 @@ static void ResetMocks(void)
     gComboBoxAddCalls = 0;
     gComboBoxRemoveCalls = 0;
     gComboBoxClearCalls = 0;
+    gButtonBindCalls = 0;
+    gButtonUnbindCalls = 0;
+    gButtonCallbackCalls = 0;
     gReleaseCalls = 0;
     gMismatch = 0;
     gLookupResult = UEC_RESULT_OK;
@@ -275,6 +322,10 @@ static void ResetMocks(void)
     gCheckBoxSetResult = UEC_RESULT_OK;
     gProgressBarGetResult = UEC_RESULT_OK;
     gProgressBarSetResult = UEC_RESULT_OK;
+    gButtonBindResult = UEC_RESULT_OK;
+    gButtonUnbindResult = UEC_RESULT_OK;
+    gBoundButtonCallback = NULL;
+    gBoundButtonUserData = NULL;
     gSliderValue = 0.0;
     gProgressBarPercent = 0.625;
     gCheckBoxState = UEC_CHECKBOX_UNDETERMINED;
@@ -284,6 +335,8 @@ int uec_widget_ui_smoke_test(void)
 {
     static char widgetStorage;
     static char childStorage;
+    static char contextStorage;
+    static int buttonUserData;
     static const char childName[] = "StatusText";
     static const char text[] = "Ready";
     const uec_string_view nameView = {childName, sizeof(childName) - 1u};
@@ -307,9 +360,13 @@ int uec_widget_ui_smoke_test(void)
     api.set_checkbox_state = &MockSetCheckBoxState;
     api.get_progress_bar_percent = &MockGetProgressBarPercent;
     api.set_progress_bar_percent = &MockSetProgressBarPercent;
+    api.bind_button_clicked = &MockBindButtonClicked;
+    api.unbind_button_clicked = &MockUnbindButtonClicked;
     api.release_object = &MockReleaseObject;
     gExpectedWidget = (uec_object*)&widgetStorage;
     gExpectedChild = (uec_object*)&childStorage;
+    gExpectedContext = (uec_context*)&contextStorage;
+    gExpectedButtonUserData = &buttonUserData;
     gExpectedName = nameView;
     gExpectedText = textView;
 
@@ -652,5 +709,70 @@ int uec_widget_ui_smoke_test(void)
             percent != 0.0 || gMismatch != 0 || gLookupCalls != 1 ||
             gReleaseCalls != 1) return 40;
     }
+
+    ResetMocks();
+    {
+        uint64_t subscriptionId = 0u;
+        if (uec_widget_bind_button_clicked_child(
+                &api, gExpectedWidget, nameView, &MockWidgetCallback,
+                gExpectedButtonUserData, &subscriptionId) != UEC_RESULT_OK ||
+            subscriptionId != UINT64_C(73) || gMismatch != 0 ||
+            gLookupCalls != 1 || gButtonBindCalls != 1 || gReleaseCalls != 1 ||
+            gBoundButtonCallback != &MockWidgetCallback ||
+            gBoundButtonUserData != gExpectedButtonUserData) return 41;
+        gBoundButtonCallback(subscriptionId, gBoundButtonUserData);
+        if (gButtonCallbackCalls != 1 || gMismatch != 0) return 42;
+    }
+
+    ResetMocks();
+    gButtonBindResult = UEC_RESULT_QUEUE_FULL;
+    {
+        uint64_t subscriptionId = UINT64_C(91);
+        if (uec_widget_bind_button_clicked_child(
+                &api, gExpectedWidget, nameView, &MockWidgetCallback,
+                gExpectedButtonUserData, &subscriptionId) != UEC_RESULT_QUEUE_FULL ||
+            subscriptionId != 0u || gMismatch != 0 || gLookupCalls != 1 ||
+            gButtonBindCalls != 1 || gReleaseCalls != 1) return 43;
+    }
+
+    ResetMocks();
+    {
+        uint64_t subscriptionId = UINT64_C(91);
+        if (uec_widget_bind_button_clicked_child(
+                &api, gExpectedWidget, nameView, NULL, gExpectedButtonUserData,
+                &subscriptionId) != UEC_RESULT_INVALID_ARGUMENT ||
+            subscriptionId != 0u || gLookupCalls != 0 ||
+            gButtonBindCalls != 0 || gReleaseCalls != 0) return 44;
+    }
+
+    ResetMocks();
+    api.struct_size = (uint32_t)offsetof(uec_api, get_widget_child);
+    {
+        uint64_t subscriptionId = UINT64_C(91);
+        if (uec_widget_bind_button_clicked_child(
+                &api, gExpectedWidget, nameView, &MockWidgetCallback,
+                gExpectedButtonUserData, &subscriptionId) != UEC_RESULT_UNSUPPORTED ||
+            subscriptionId != 0u || gLookupCalls != 0 ||
+            gButtonBindCalls != 0 || gReleaseCalls != 0) return 45;
+    }
+    api.struct_size = (uint32_t)sizeof(api);
+
+    ResetMocks();
+    if (uec_widget_unbind_button_clicked(
+            &api, gExpectedContext, UINT64_C(73)) != UEC_RESULT_OK ||
+        gMismatch != 0 || gButtonUnbindCalls != 1) return 46;
+
+    ResetMocks();
+    api.struct_size = (uint32_t)offsetof(uec_api, unbind_button_clicked);
+    if (uec_widget_unbind_button_clicked(
+            &api, gExpectedContext, UINT64_C(73)) != UEC_RESULT_UNSUPPORTED ||
+        gButtonUnbindCalls != 0) return 47;
+
+    ResetMocks();
+    api.struct_size = (uint32_t)sizeof(api);
+    gButtonUnbindResult = UEC_RESULT_INVALID_ARGUMENT;
+    if (uec_widget_unbind_button_clicked(
+            &api, gExpectedContext, UINT64_C(73)) != UEC_RESULT_INVALID_ARGUMENT ||
+        gMismatch != 0 || gButtonUnbindCalls != 1) return 48;
     return 0;
 }

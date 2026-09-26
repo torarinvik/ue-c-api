@@ -399,3 +399,48 @@ uec_result UEC_CALL uec_widget_get_progress_bar_child(
     const uec_result release_result = api->release_object(child);
     return result == UEC_RESULT_OK ? release_result : result;
 }
+
+uec_result UEC_CALL uec_widget_bind_button_clicked_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_widget_event_callback callback,
+    void* user_data,
+    uint64_t* out_subscription_id)
+{
+    if (out_subscription_id != NULL) *out_subscription_id = 0u;
+    if (api == NULL || callback == NULL || out_subscription_id == NULL) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    if (api->struct_size < offsetof(uec_api, get_widget_child) +
+                               sizeof(api->get_widget_child)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->get_widget_child == NULL || api->bind_button_clicked == NULL ||
+        api->release_object == NULL) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    uec_object* child = NULL;
+    uec_result result = api->get_widget_child(user_widget, child_name, &child);
+    if (result != UEC_RESULT_OK) return result;
+    if (child == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    result = api->bind_button_clicked(
+        child, callback, user_data, out_subscription_id);
+    if (result != UEC_RESULT_OK) *out_subscription_id = 0u;
+    const uec_result release_result = api->release_object(child);
+    return result == UEC_RESULT_OK ? release_result : result;
+}
+
+uec_result UEC_CALL uec_widget_unbind_button_clicked(
+    const uec_api* api,
+    uec_context* context,
+    uint64_t subscription_id)
+{
+    if (api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, unbind_button_clicked) +
+                               sizeof(api->unbind_button_clicked)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->unbind_button_clicked == NULL) return UEC_RESULT_UNSUPPORTED;
+    return api->unbind_button_clicked(context, subscription_id);
+}

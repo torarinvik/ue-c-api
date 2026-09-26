@@ -1,10 +1,22 @@
 # Named UMG child example
 
 This C helper demonstrates ABI 1.153 named-child access for text, slider,
-checkbox, progress-bar, and combo-box widgets. It uses each widget's typed API
-and releases the returned weak object handle after a successful lookup. The
-widget class must already be created, and calls must run on Unreal's game
-thread.
+checkbox, progress-bar, and combo-box widgets, plus one-shot button clicks. It
+uses each widget's typed API and releases the returned weak object handle after
+a successful lookup. The widget class must already be created, and calls must
+run on Unreal's game thread.
+
+The click helper binds a one-shot `UButton` callback. Keep its user data alive
+until the click arrives or the token is explicitly unbound:
+
+```c
+static void UEC_CALL on_confirm_clicked(uint64_t subscription_id, void* user_data)
+{
+    int* confirmed = (int*)user_data;
+    (void)subscription_id;
+    *confirmed = 1;
+}
+```
 
 Include `c_widget_ui.h`, compile `c_widget_ui.c`, and pass UTF-8 string views
 whose lengths exclude any trailing NUL byte:
@@ -15,6 +27,7 @@ const char slider_name[] = "Volume";
 const char quality_name[] = "Quality";
 const char ready_check_name[] = "ReadyCheck";
 const char loading_progress_name[] = "LoadingProgress";
+const char confirm_button_name[] = "ConfirmButton";
 const char quality_option[] = "High";
 const char initial_name[] = "Ada";
 char current_name[64];
@@ -23,6 +36,8 @@ char first_quality_option[32];
 uint32_t quality_option_count = 0u;
 uec_checkbox_state ready_state = UEC_CHECKBOX_UNCHECKED;
 double loading_progress = 0.0;
+uint64_t confirm_subscription_id = 0u;
+int confirmed = 0;
 size_t required_size = 0;
 uec_string_view child_name_view = {child_name, sizeof(child_name) - 1u};
 uec_string_view slider_name_view = {slider_name, sizeof(slider_name) - 1u};
@@ -31,6 +46,8 @@ uec_string_view ready_check_name_view = {
     ready_check_name, sizeof(ready_check_name) - 1u};
 uec_string_view loading_progress_name_view = {
     loading_progress_name, sizeof(loading_progress_name) - 1u};
+uec_string_view confirm_button_name_view = {
+    confirm_button_name, sizeof(confirm_button_name) - 1u};
 uec_string_view quality_option_view = {quality_option, sizeof(quality_option) - 1u};
 uec_string_view initial_name_view = {initial_name, sizeof(initial_name) - 1u};
 uec_result result = uec_widget_set_editable_text_child(
@@ -62,6 +79,11 @@ if (result == UEC_RESULT_OK) {
 if (result == UEC_RESULT_OK) {
     result = uec_widget_get_progress_bar_child(
         api, widget, loading_progress_name_view, &loading_progress);
+}
+if (result == UEC_RESULT_OK) {
+    result = uec_widget_bind_button_clicked_child(
+        api, widget, confirm_button_name_view, &on_confirm_clicked, &confirmed,
+        &confirm_subscription_id);
 }
 if (result == UEC_RESULT_OK) {
     result = uec_widget_add_combo_box_option_child(
@@ -102,5 +124,7 @@ checkbox helpers preserve unchecked, checked, and undetermined states. Missing
 children and wrong widget types return an error. Start with an empty combo box
 for this example. Options use zero-based indices; re-query the count after
 changing the list. Add rejects duplicates, remove rejects absent options, and
-clear also clears the selection. Each helper releases its child handle on every
-path after successful lookup.
+clear also clears the selection. Each helper releases its child handle after
+successful lookup. Click callbacks run on the game thread; the one-shot token
+is retired after delivery. Call `uec_widget_unbind_button_clicked` with the
+live context and token to cancel before delivery.
