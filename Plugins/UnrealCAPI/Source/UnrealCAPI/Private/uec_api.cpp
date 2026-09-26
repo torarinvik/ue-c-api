@@ -400,7 +400,8 @@ namespace
         &GetEditableTextBoxText, &SetEditableTextBoxText,
         &GetSliderValue, &SetSliderValue,
         &GetControllerPlayerState,
-        &GetComboBoxSelectedOption, &SetComboBoxSelectedOption
+        &GetComboBoxSelectedOption, &SetComboBoxSelectedOption,
+        &GetComboBoxOptionCount, &GetComboBoxOptionAt
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

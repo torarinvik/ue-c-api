@@ -249,6 +249,42 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetComboBoxOptionCount(uec_object* rawComboBox,
+                                                uint32_t* outCount)
+    {
+        if (outCount != nullptr) *outCount = 0u;
+        if (outCount == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECObject*>(rawComboBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UComboBoxString* comboBox = Cast<UComboBoxString>(handle->Value.Get());
+        if (comboBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const int32 count = comboBox->GetOptionCount();
+        if (count < 0) return UEC_RESULT_INTERNAL_ERROR;
+        *outCount = static_cast<uint32_t>(count);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL GetComboBoxOptionAt(uec_object* rawComboBox,
+                                             uint32_t index,
+                                             char* buffer,
+                                             size_t bufferSize,
+                                             size_t* requiredSize)
+    {
+        if (requiredSize != nullptr) *requiredSize = 0u;
+        if (requiredSize == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECObject*>(rawComboBox);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UComboBoxString* comboBox = Cast<UComboBoxString>(handle->Value.Get());
+        if (comboBox == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const int32 count = comboBox->GetOptionCount();
+        if (count < 0) return UEC_RESULT_INTERNAL_ERROR;
+        if (index >= static_cast<uint32_t>(count)) return UEC_RESULT_INVALID_ARGUMENT;
+        return CopyFStringToUtf8(comboBox->GetOptionAtIndex(static_cast<int32>(index)),
+                                 buffer, bufferSize, requiredSize);
+    }
+
     uec_result UEC_CALL GetWidgetEnabled(uec_object* rawWidget, uec_bool* outEnabled)
     {
         if (outEnabled != nullptr) *outEnabled = UEC_FALSE;

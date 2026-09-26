@@ -277,6 +277,26 @@ static uec_result UEC_CALL StubSetComboBoxSelectedOption(
     return comboBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetComboBoxOptionCount(
+    uec_object* comboBox, uint32_t* outCount)
+{
+    if (outCount != NULL) *outCount = 0u;
+    if (outCount == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return comboBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetComboBoxOptionAt(
+    uec_object* comboBox, uint32_t index, char* buffer, size_t bufferSize,
+    size_t* requiredSize)
+{
+    (void)index;
+    (void)buffer;
+    (void)bufferSize;
+    if (requiredSize != NULL) *requiredSize = 0u;
+    if (requiredSize == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return comboBox == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetWidgetChild(uec_object* userWidget,
                                               uec_string_view childName,
                                               uec_object** outChild)

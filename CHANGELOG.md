@@ -7,6 +7,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 152 adds `get_combo_box_option_count` and
+  `get_combo_box_option_at` for enumerating a `UComboBoxString`'s choices. The
+  indexed reader uses the bounded UTF-8 buffer contract, rejects out-of-range
+  indices, and clears required-size output on failure.
 - ABI minor 151 adds selected-option read/write for `UComboBoxString`. Writes
   accept only options already present in the widget; the C child-widget example
   covers lookup and handle cleanup, and UE 5.8.3 travel smoke checks UTF-8

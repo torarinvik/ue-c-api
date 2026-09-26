@@ -337,6 +337,11 @@ unknown options and handles for other widget types are rejected. Both calls
 require the game thread. The
 [named UMG child example](../examples/c_widget_ui/README.md) shows selection
 readback and update.
+ABI minor 152 adds `get_combo_box_option_count` and
+`get_combo_box_option_at` to enumerate the choices on a `UComboBoxString`. The
+indexed reader uses the required-size UTF-8 buffer contract and clears its
+required-size output for an invalid index. Re-query the count after changing
+the widget's options.
 ABI minor 143 adds `set_component_simulating_physics` and
 `get_component_simulating_physics` for primitive components. They require the
 game thread; the setter accepts only the declared boolean values and requires

@@ -51,6 +51,21 @@ uec_result UEC_CALL uec_widget_get_combo_box_selected_option_child(
     size_t buffer_size,
     size_t* required_size);
 
+uec_result UEC_CALL uec_widget_get_combo_box_option_count_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uint32_t* out_count);
+
+uec_result UEC_CALL uec_widget_get_combo_box_option_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uint32_t index,
+    char* buffer,
+    size_t buffer_size,
+    size_t* required_size);
+
 #ifdef __cplusplus
 }
 #endif

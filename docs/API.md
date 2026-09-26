@@ -433,6 +433,11 @@ standard required-size UTF-8 buffer contract and clears the required-size
 output on failure. The setter accepts a nonempty UTF-8 option that already
 exists in the combo box; absent options and other widget types return
 `UEC_RESULT_INVALID_ARGUMENT`. Both calls require the game thread.
+ABI minor 152 appends `get_combo_box_option_count` and
+`get_combo_box_option_at`. The count output is cleared before validation; the
+indexed reader uses the standard required-size UTF-8 buffer contract and
+rejects indices outside the current option list with
+`UEC_RESULT_INVALID_ARGUMENT`. Both calls require the game thread.
 
 World, object, class, actor, and component operations must run on Unreal's game
 thread. The initial slice

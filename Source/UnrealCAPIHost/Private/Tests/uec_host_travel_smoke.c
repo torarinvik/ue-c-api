@@ -275,6 +275,8 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         state->api->get_slider_value == NULL || state->api->set_slider_value == NULL ||
         state->api->get_combo_box_selected_option == NULL ||
         state->api->set_combo_box_selected_option == NULL ||
+        state->api->get_combo_box_option_count == NULL ||
+        state->api->get_combo_box_option_at == NULL ||
         state->api->add_widget_to_viewport == NULL ||
         state->api->spawn_actor == NULL || state->api->get_actor_property_object == NULL ||
         state->api->bind_audio_finished == NULL ||
@@ -462,6 +464,47 @@ uec_result UEC_CALL uec_host_travel_smoke_start(void)
         if (result != UEC_RESULT_OK) {
             FinishTravelSmoke(state, result, UEC_FALSE);
             return result;
+        }
+        uint32_t comboOptionCount = 99u;
+        result = state->api->get_combo_box_option_count(
+            state->combo_box, &comboOptionCount);
+        if (result != UEC_RESULT_OK || comboOptionCount != 2u) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        size_t optionRequired = 0u;
+        result = state->api->get_combo_box_option_at(
+            state->combo_box, 0u, NULL, 0u, &optionRequired);
+        if (result != UEC_RESULT_BUFFER_TOO_SMALL ||
+            optionRequired != sizeof("Low")) {
+            FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        char firstOption[16] = {0};
+        result = state->api->get_combo_box_option_at(
+            state->combo_box, 0u, firstOption, sizeof(firstOption),
+            &optionRequired);
+        if (result != UEC_RESULT_OK || strcmp(firstOption, "Low") != 0) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            FinishTravelSmoke(state, result, UEC_FALSE);
+            return result;
+        }
+        optionRequired = 99u;
+        if (state->api->get_combo_box_option_at(
+                state->combo_box, 2u, firstOption, sizeof(firstOption),
+                &optionRequired) != UEC_RESULT_INVALID_ARGUMENT ||
+            optionRequired != 0u) {
+            FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        optionRequired = 99u;
+        if (state->api->get_combo_box_option_at(
+                state->editable_text_box, 0u, firstOption, sizeof(firstOption),
+                &optionRequired) != UEC_RESULT_INVALID_ARGUMENT ||
+            optionRequired != 0u) {
+            FinishTravelSmoke(state, UEC_RESULT_INTERNAL_ERROR, UEC_FALSE);
+            return UEC_RESULT_INTERNAL_ERROR;
         }
         size_t selectedOptionRequired = 0u;
         result = state->api->get_combo_box_selected_option(

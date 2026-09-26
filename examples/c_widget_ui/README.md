@@ -1,6 +1,6 @@
 # Named UMG child example
 
-This C helper demonstrates ABI 1.151 widget text, slider, and selection
+This C helper demonstrates ABI 1.152 widget text, slider, and combo-box
 access. It looks up a named child of an existing `UUserWidget`, uses the
 type-specific `UTextBlock`, `UEditableTextBox`, `USlider`, or
 `UComboBoxString` operation, and releases the returned weak object handle after
@@ -18,6 +18,8 @@ const char quality_option[] = "High";
 const char initial_name[] = "Ada";
 char current_name[64];
 char current_option[32];
+char first_quality_option[32];
+uint32_t quality_option_count = 0u;
 size_t required_size = 0;
 uec_string_view child_name_view = {child_name, sizeof(child_name) - 1u};
 uec_string_view slider_name_view = {slider_name, sizeof(slider_name) - 1u};
@@ -43,6 +45,15 @@ if (result == UEC_RESULT_OK) {
         api, widget, quality_name_view, quality_option_view);
 }
 if (result == UEC_RESULT_OK) {
+    result = uec_widget_get_combo_box_option_count_child(
+        api, widget, quality_name_view, &quality_option_count);
+}
+if (result == UEC_RESULT_OK && quality_option_count > 0u) {
+    result = uec_widget_get_combo_box_option_child(
+        api, widget, quality_name_view, 0u, first_quality_option,
+        sizeof(first_quality_option), &required_size);
+}
+if (result == UEC_RESULT_OK) {
     result = uec_widget_get_combo_box_selected_option_child(
         api, widget, quality_name_view, current_option, sizeof(current_option),
         &required_size);
@@ -52,6 +63,7 @@ if (result == UEC_RESULT_OK) {
 The display-text child must be a `UTextBlock`; editable-text children must be a
 `UEditableTextBox`. The read helper follows the API's required-size and UTF-8
 buffer convention. Slider values are normalized to `[0, 1]`. Missing children
-and wrong widget types return an error. Combo boxes accept only an option that
-already exists in the named `UComboBoxString`. Each helper releases its child
-handle on every path after successful lookup.
+and wrong widget types return an error. Combo-box options use zero-based indices;
+re-query the count after changing the option list. Selection accepts only an
+option that already exists in the named `UComboBoxString`. Each helper releases
+its child handle on every path after successful lookup.

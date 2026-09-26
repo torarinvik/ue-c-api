@@ -22,6 +22,15 @@ without changing the selection, wrong-widget rejection, and stale child-handle
 invalidation after travel. No Editor, packaged host, build, or Zen process was
 left running after validation.
 
+The complete Mac Development gate was rerun after ABI 152. Plugin and host
+build, cook, stage, and package passed; the primary, client-authority,
+dedicated-server, listen-server, multi-PIE, and three-cycle restart checks all
+completed, followed by the staged runtime and pending-work shutdown smokes. The
+travel fixture verified combo-box option count, UTF-8 indexed readback,
+out-of-range and wrong-widget rejection with cleared outputs, selected-option
+roundtrip, absent-option rejection without mutation, and old-world handle
+invalidation.
+
 The UE 5.8.3 audio smoke uses the engine's `1kSineTonePing` sound asset. The
 NullRHI PIE and packaged runtime launchers leave the audio device enabled for
 these checks and play the fixture at 1% volume while verifying attached
