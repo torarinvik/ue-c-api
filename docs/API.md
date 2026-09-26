@@ -361,6 +361,11 @@ behavior. The fields are appended after the ABI 1.133 record prefix, so older
 record sizes keep their prior text-backed behavior. Typed inputs reject
 non-finite components, and quaternion values must be nonzero.
 
+ABI minor 160 extends the same mixed-call path with `FVector2D`, `FVector4`,
+`FRotator`, and `FLinearColor`. Rotators use pitch/yaw/roll degrees; linear
+colors use unclamped linear-light RGBA and must fit Unreal's float range. The
+two vector types use finite double-precision components.
+
 ABI minor 135 appends versioned application-data save/load calls to the function
 table. Their schema version is owned by the consumer, and the bridge preserves
 the opaque bytes without attempting schema migration.

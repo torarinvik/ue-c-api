@@ -291,6 +291,7 @@ namespace
     #include "API/uec_api_reflection_containers.inl"
     #include "API/uec_api_reflection_map_set.inl"
     #include "API/uec_api_reflection_invoke.inl"
+    #include "API/uec_api_reflection_invoke_scalar.inl"
     #include "API/uec_api_reflection_invoke_typed.inl"
     #include "API/uec_api_reflection_latent.inl"
     #include "API/uec_api_presentation.inl"

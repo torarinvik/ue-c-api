@@ -6,19 +6,23 @@ typedef enum uec_function_struct_kind {
     UEC_FUNCTION_STRUCT_NONE = 0,
     UEC_FUNCTION_STRUCT_VECTOR3 = 1,
     UEC_FUNCTION_STRUCT_QUATERNION = 2,
-    UEC_FUNCTION_STRUCT_TRANSFORM = 3
+    UEC_FUNCTION_STRUCT_TRANSFORM = 3,
+    UEC_FUNCTION_STRUCT_ROTATOR = 4,
+    UEC_FUNCTION_STRUCT_LINEAR_COLOR = 5,
+    UEC_FUNCTION_STRUCT_VECTOR2 = 6,
+    UEC_FUNCTION_STRUCT_VECTOR4 = 7
 } uec_function_struct_kind;
 
 typedef uec_function_struct_kind uec_property_struct_kind;
-/* Property tags 0-3 preserve ABI 1.156 assignments; extra tags are property-only. */
+/* ABI 1.156 property tags remain stable; ABI 1.160 adds these call value tags. */
 #define UEC_PROPERTY_STRUCT_NONE UEC_FUNCTION_STRUCT_NONE
 #define UEC_PROPERTY_STRUCT_VECTOR3 UEC_FUNCTION_STRUCT_VECTOR3
 #define UEC_PROPERTY_STRUCT_QUATERNION UEC_FUNCTION_STRUCT_QUATERNION
 #define UEC_PROPERTY_STRUCT_TRANSFORM UEC_FUNCTION_STRUCT_TRANSFORM
-#define UEC_PROPERTY_STRUCT_ROTATOR ((uec_property_struct_kind)4)
-#define UEC_PROPERTY_STRUCT_LINEAR_COLOR ((uec_property_struct_kind)5)
-#define UEC_PROPERTY_STRUCT_VECTOR2 ((uec_property_struct_kind)6)
-#define UEC_PROPERTY_STRUCT_VECTOR4 ((uec_property_struct_kind)7)
+#define UEC_PROPERTY_STRUCT_ROTATOR UEC_FUNCTION_STRUCT_ROTATOR
+#define UEC_PROPERTY_STRUCT_LINEAR_COLOR UEC_FUNCTION_STRUCT_LINEAR_COLOR
+#define UEC_PROPERTY_STRUCT_VECTOR2 UEC_FUNCTION_STRUCT_VECTOR2
+#define UEC_PROPERTY_STRUCT_VECTOR4 UEC_FUNCTION_STRUCT_VECTOR4
 
 /* Unreal FVector2D components in X, Y order. */
 typedef struct uec_vector2 {
@@ -55,6 +59,10 @@ typedef struct uec_function_struct_value {
         uec_vector3 vector3;
         uec_quaternion quaternion;
         uec_transform transform;
+        uec_rotator rotator;
+        uec_linear_color linear_color;
+        uec_vector2 vector2;
+        uec_vector4 vector4;
     } value;
 } uec_function_struct_value;
 

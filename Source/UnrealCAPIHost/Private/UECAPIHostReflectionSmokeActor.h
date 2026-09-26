@@ -20,6 +20,18 @@ class AUECAPIHostReflectionSmokeActor final : public AActor
 public:
     AUECAPIHostReflectionSmokeActor();
 
+    UFUNCTION()
+    FVector2D EchoVector2D(FVector2D value);
+
+    UFUNCTION()
+    FVector4 EchoVector4(FVector4 value);
+
+    UFUNCTION()
+    FRotator EchoRotator(FRotator value);
+
+    UFUNCTION()
+    FLinearColor EchoLinearColor(FLinearColor value);
+
     UPROPERTY()
     TArray<int32> Numbers;
 

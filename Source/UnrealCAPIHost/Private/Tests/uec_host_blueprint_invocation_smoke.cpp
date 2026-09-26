@@ -1,5 +1,8 @@
 #include "uec_api.h"
 
+#include "UECAPIHostReflectionSmokeActor.h"
+
+#include <cmath>
 #include <cstring>
 
 #if WITH_EDITOR
@@ -13,6 +16,138 @@ namespace
     uec_string_view View(const char* text)
     {
         return {text, std::strlen(text)};
+    }
+
+    bool Near(double actual, double expected)
+    {
+        return std::fabs(actual - expected) <= 0.0001;
+    }
+
+    uec_result InvokeTypedStructEcho(const uec_api* api,
+                                     uec_actor* actor,
+                                     const char* functionName,
+                                     const uec_function_argument& argument,
+                                     uec_function_struct_kind requestedKind,
+                                     uec_function_output& output)
+    {
+        output = {};
+        output.struct_size = sizeof(output);
+        output.struct_value.kind = requestedKind;
+        uint32_t outputCount = 0u;
+        const uec_result result = api->invoke_actor_function_arguments(
+            actor, View(functionName), &argument, 1u, &output, 1u, &outputCount);
+        if (result != UEC_RESULT_OK) return result;
+        return outputCount == 1u && output.kind == UEC_PROPERTY_STRUCT &&
+            output.struct_value.kind == requestedKind
+            ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    uec_result VerifyTypedMathStructInvocation(const uec_api* api, uec_world* world)
+    {
+        static constexpr char classPathData[] =
+            "/Script/UnrealCAPIHost.UECAPIHostReflectionSmokeActor";
+        uec_actor* actor = nullptr;
+        const uec_transform transform{
+            {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
+        uec_result result = api->spawn_actor(
+            world, View(classPathData), &transform, &actor);
+        if (result == UEC_RESULT_OK && actor == nullptr) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+
+        uec_function_argument argument{};
+        argument.struct_size = sizeof(argument);
+        argument.kind = UEC_PROPERTY_STRUCT;
+        uec_function_output output{};
+
+        if (result == UEC_RESULT_OK) {
+            argument.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR2;
+            argument.struct_value.value.vector2 = {2.5, -4.0};
+            result = InvokeTypedStructEcho(api, actor, "EchoVector2D", argument,
+                                          UEC_FUNCTION_STRUCT_VECTOR2, output);
+        }
+        if (result == UEC_RESULT_OK &&
+            (!Near(output.struct_value.value.vector2.x, 2.5) ||
+             !Near(output.struct_value.value.vector2.y, -4.0))) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result == UEC_RESULT_OK) {
+            argument.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR4;
+            argument.struct_value.value.vector4 = {0.5, -1.5, 2.5, -3.5};
+            result = InvokeTypedStructEcho(api, actor, "EchoVector4", argument,
+                                          UEC_FUNCTION_STRUCT_VECTOR4, output);
+        }
+        if (result == UEC_RESULT_OK &&
+            (!Near(output.struct_value.value.vector4.x, 0.5) ||
+             !Near(output.struct_value.value.vector4.y, -1.5) ||
+             !Near(output.struct_value.value.vector4.z, 2.5) ||
+             !Near(output.struct_value.value.vector4.w, -3.5))) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result == UEC_RESULT_OK) {
+            argument.struct_value.kind = UEC_FUNCTION_STRUCT_ROTATOR;
+            argument.struct_value.value.rotator = {2.0, -30.0, 45.0};
+            result = InvokeTypedStructEcho(api, actor, "EchoRotator", argument,
+                                          UEC_FUNCTION_STRUCT_ROTATOR, output);
+        }
+        if (result == UEC_RESULT_OK &&
+            (!Near(output.struct_value.value.rotator.pitch, 2.0) ||
+             !Near(output.struct_value.value.rotator.yaw, -30.0) ||
+             !Near(output.struct_value.value.rotator.roll, 45.0))) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result == UEC_RESULT_OK) {
+            argument.struct_value.kind = UEC_FUNCTION_STRUCT_LINEAR_COLOR;
+            argument.struct_value.value.linear_color = {2.0, 0.25, 1.5, 0.5};
+            result = InvokeTypedStructEcho(api, actor, "EchoLinearColor", argument,
+                                          UEC_FUNCTION_STRUCT_LINEAR_COLOR, output);
+        }
+        if (result == UEC_RESULT_OK &&
+            (!Near(output.struct_value.value.linear_color.r, 2.0) ||
+             !Near(output.struct_value.value.linear_color.g, 0.25) ||
+             !Near(output.struct_value.value.linear_color.b, 1.5) ||
+             !Near(output.struct_value.value.linear_color.a, 0.5))) {
+            result = UEC_RESULT_INTERNAL_ERROR;
+        }
+
+        if (result == UEC_RESULT_OK) {
+            argument.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR2;
+            argument.struct_value.value.vector2 = {NAN, 1.0};
+            output = {};
+            output.struct_size = sizeof(output);
+            output.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR2;
+            uint32_t outputCount = 0u;
+            if (api->invoke_actor_function_arguments(
+                    actor, View("EchoVector2D"), &argument, 1u,
+                    &output, 1u, &outputCount) != UEC_RESULT_INVALID_ARGUMENT) {
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+        }
+        if (result == UEC_RESULT_OK) {
+            argument.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR2;
+            argument.struct_value.value.vector2 = {1.0, 2.0};
+            output = {};
+            output.struct_size = sizeof(output);
+            output.struct_value.kind = UEC_FUNCTION_STRUCT_ROTATOR;
+            uint32_t outputCount = 0u;
+            if (api->invoke_actor_function_arguments(
+                    actor, View("EchoRotator"), &argument, 1u,
+                    &output, 1u, &outputCount) != UEC_RESULT_INVALID_ARGUMENT) {
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+        }
+
+        if (actor != nullptr) {
+            const uec_result destroyResult = api->destroy_actor(actor);
+            if (destroyResult != UEC_RESULT_OK) {
+                const uec_result releaseResult = api->release_actor(actor);
+                if (result == UEC_RESULT_OK) {
+                    result = releaseResult == UEC_RESULT_OK
+                        ? destroyResult : releaseResult;
+                }
+            }
+        }
+        return result;
     }
 
     uec_result VerifyBlueprintFunctionMetadata(
@@ -402,6 +537,9 @@ extern "C" uec_result UEC_CALL uec_host_blueprint_invocation_smoke(void)
          returnValue.kind != UEC_PROPERTY_INTEGER || returnValue.integer_value != 868))
     {
         result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        result = VerifyTypedMathStructInvocation(api, world);
     }
 
     if (actor != nullptr) {

@@ -21,8 +21,10 @@ headers and are not compiled as independent translation units.
   iteration and mutation together, plus typed scalar map-key reads.
 - `uec_api_reflection_invoke.inl` owns text-marshaled invocation, class function
   metadata, and actor/UObject property-reference adapters.
-- `uec_api_reflection_invoke_typed.inl` owns typed scalar invocation plus mixed
-  scalar, hard reference, and text-backed argument/output marshaling.
+- `uec_api_reflection_invoke_scalar.inl` owns scalar invocation and typed
+  FVector, FQuat, FTransform, and reflected math-struct value conversion.
+- `uec_api_reflection_invoke_typed.inl` owns mixed scalar, hard reference,
+  text-backed, and typed-struct argument/output marshaling.
 - `uec_api_event_bridge.inl` owns the Blueprint event component's C callback
   registry, actor-destruction cleanup, and world/shutdown subscription cleanup.
 - `uec_api_presentation.inl` owns UMG, camera, audio (including completion

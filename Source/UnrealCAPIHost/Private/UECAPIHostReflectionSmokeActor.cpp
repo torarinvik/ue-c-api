@@ -18,3 +18,23 @@ AUECAPIHostReflectionSmokeActor::AUECAPIHostReflectionSmokeActor()
     Values.Add(13);
     Values.Add(17);
 }
+
+FVector2D AUECAPIHostReflectionSmokeActor::EchoVector2D(FVector2D value)
+{
+    return value;
+}
+
+FVector4 AUECAPIHostReflectionSmokeActor::EchoVector4(FVector4 value)
+{
+    return value;
+}
+
+FRotator AUECAPIHostReflectionSmokeActor::EchoRotator(FRotator value)
+{
+    return value;
+}
+
+FLinearColor AUECAPIHostReflectionSmokeActor::EchoLinearColor(FLinearColor value)
+{
+    return value;
+}

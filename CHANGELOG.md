@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 160 extends typed reflected function arguments and outputs to
+  `FVector2D`, `FVector4`, `FRotator`, and `FLinearColor`; the ABI struct-value
+  record retains its existing size and prefix layout.
 - ABI minor 159 adds typed whole-property `FVector2D` and `FVector4` reads and
   writes with finite double-precision component validation.
 - ABI minor 158 adds typed whole-property `FLinearColor` reads and writes.
