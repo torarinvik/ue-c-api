@@ -83,6 +83,30 @@ uec_result UEC_CALL uec_widget_clear_combo_box_options_child(
     uec_object* user_widget,
     uec_string_view child_name);
 
+uec_result UEC_CALL uec_widget_set_checkbox_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_checkbox_state state);
+
+uec_result UEC_CALL uec_widget_get_checkbox_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_checkbox_state* out_state);
+
+uec_result UEC_CALL uec_widget_set_progress_bar_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    double percent);
+
+uec_result UEC_CALL uec_widget_get_progress_bar_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    double* out_percent);
+
 #ifdef __cplusplus
 }
 #endif

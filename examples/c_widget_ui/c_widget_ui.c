@@ -305,3 +305,97 @@ uec_result UEC_CALL uec_widget_clear_combo_box_options_child(
     const uec_result release_result = api->release_object(child);
     return result == UEC_RESULT_OK ? release_result : result;
 }
+
+/* Preserve Unreal's unchecked, checked, and undetermined states. */
+uec_result UEC_CALL uec_widget_set_checkbox_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_checkbox_state state)
+{
+    if (api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, set_checkbox_state) +
+                               sizeof(api->set_checkbox_state)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->get_widget_child == NULL || api->set_checkbox_state == NULL ||
+        api->release_object == NULL) return UEC_RESULT_UNSUPPORTED;
+    uec_object* child = NULL;
+    uec_result result = api->get_widget_child(user_widget, child_name, &child);
+    if (result != UEC_RESULT_OK) return result;
+    if (child == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    result = api->set_checkbox_state(child, state);
+    const uec_result release_result = api->release_object(child);
+    return result == UEC_RESULT_OK ? release_result : result;
+}
+
+/* Getter output is set to unchecked before any lookup can fail. */
+uec_result UEC_CALL uec_widget_get_checkbox_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    uec_checkbox_state* out_state)
+{
+    if (out_state != NULL) *out_state = UEC_CHECKBOX_UNCHECKED;
+    if (out_state == NULL || api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, get_checkbox_state) +
+                               sizeof(api->get_checkbox_state)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->get_widget_child == NULL || api->get_checkbox_state == NULL ||
+        api->release_object == NULL) return UEC_RESULT_UNSUPPORTED;
+    uec_object* child = NULL;
+    uec_result result = api->get_widget_child(user_widget, child_name, &child);
+    if (result != UEC_RESULT_OK) return result;
+    if (child == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    result = api->get_checkbox_state(child, out_state);
+    const uec_result release_result = api->release_object(child);
+    return result == UEC_RESULT_OK ? release_result : result;
+}
+
+/* Progress bars use the same normalized percentage range as sliders: [0, 1]. */
+uec_result UEC_CALL uec_widget_set_progress_bar_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    double percent)
+{
+    if (api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, set_progress_bar_percent) +
+                               sizeof(api->set_progress_bar_percent)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->get_widget_child == NULL || api->set_progress_bar_percent == NULL ||
+        api->release_object == NULL) return UEC_RESULT_UNSUPPORTED;
+    uec_object* child = NULL;
+    uec_result result = api->get_widget_child(user_widget, child_name, &child);
+    if (result != UEC_RESULT_OK) return result;
+    if (child == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    result = api->set_progress_bar_percent(child, percent);
+    const uec_result release_result = api->release_object(child);
+    return result == UEC_RESULT_OK ? release_result : result;
+}
+
+/* A failed progress lookup leaves the caller's output at zero. */
+uec_result UEC_CALL uec_widget_get_progress_bar_child(
+    const uec_api* api,
+    uec_object* user_widget,
+    uec_string_view child_name,
+    double* out_percent)
+{
+    if (out_percent != NULL) *out_percent = 0.0;
+    if (out_percent == NULL || api == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    if (api->struct_size < offsetof(uec_api, get_progress_bar_percent) +
+                               sizeof(api->get_progress_bar_percent)) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    if (api->get_widget_child == NULL || api->get_progress_bar_percent == NULL ||
+        api->release_object == NULL) return UEC_RESULT_UNSUPPORTED;
+    uec_object* child = NULL;
+    uec_result result = api->get_widget_child(user_widget, child_name, &child);
+    if (result != UEC_RESULT_OK) return result;
+    if (child == NULL) return UEC_RESULT_INTERNAL_ERROR;
+    result = api->get_progress_bar_percent(child, out_percent);
+    const uec_result release_result = api->release_object(child);
+    return result == UEC_RESULT_OK ? release_result : result;
+}

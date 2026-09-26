@@ -1,11 +1,10 @@
 # Named UMG child example
 
-This C helper demonstrates ABI 1.153 widget text, slider, and combo-box
-access. It looks up a named child of an existing `UUserWidget`, uses the
-type-specific `UTextBlock`, `UEditableTextBox`, `USlider`, or
-`UComboBoxString` operation, and releases the returned weak object handle after
-a successful lookup. The widget class must already be created, and calls must
-run on Unreal's game thread.
+This C helper demonstrates ABI 1.153 named-child access for text, slider,
+checkbox, progress-bar, and combo-box widgets. It uses each widget's typed API
+and releases the returned weak object handle after a successful lookup. The
+widget class must already be created, and calls must run on Unreal's game
+thread.
 
 Include `c_widget_ui.h`, compile `c_widget_ui.c`, and pass UTF-8 string views
 whose lengths exclude any trailing NUL byte:
@@ -14,16 +13,24 @@ whose lengths exclude any trailing NUL byte:
 const char child_name[] = "PlayerName";
 const char slider_name[] = "Volume";
 const char quality_name[] = "Quality";
+const char ready_check_name[] = "ReadyCheck";
+const char loading_progress_name[] = "LoadingProgress";
 const char quality_option[] = "High";
 const char initial_name[] = "Ada";
 char current_name[64];
 char current_option[32];
 char first_quality_option[32];
 uint32_t quality_option_count = 0u;
+uec_checkbox_state ready_state = UEC_CHECKBOX_UNCHECKED;
+double loading_progress = 0.0;
 size_t required_size = 0;
 uec_string_view child_name_view = {child_name, sizeof(child_name) - 1u};
 uec_string_view slider_name_view = {slider_name, sizeof(slider_name) - 1u};
 uec_string_view quality_name_view = {quality_name, sizeof(quality_name) - 1u};
+uec_string_view ready_check_name_view = {
+    ready_check_name, sizeof(ready_check_name) - 1u};
+uec_string_view loading_progress_name_view = {
+    loading_progress_name, sizeof(loading_progress_name) - 1u};
 uec_string_view quality_option_view = {quality_option, sizeof(quality_option) - 1u};
 uec_string_view initial_name_view = {initial_name, sizeof(initial_name) - 1u};
 uec_result result = uec_widget_set_editable_text_child(
@@ -39,6 +46,22 @@ if (result == UEC_RESULT_OK) {
 }
 if (result == UEC_RESULT_OK) {
     result = uec_widget_get_slider_child(api, widget, slider_name_view, &volume);
+}
+if (result == UEC_RESULT_OK) {
+    result = uec_widget_set_checkbox_child(
+        api, widget, ready_check_name_view, UEC_CHECKBOX_CHECKED);
+}
+if (result == UEC_RESULT_OK) {
+    result = uec_widget_get_checkbox_child(
+        api, widget, ready_check_name_view, &ready_state);
+}
+if (result == UEC_RESULT_OK) {
+    result = uec_widget_set_progress_bar_child(
+        api, widget, loading_progress_name_view, 0.6);
+}
+if (result == UEC_RESULT_OK) {
+    result = uec_widget_get_progress_bar_child(
+        api, widget, loading_progress_name_view, &loading_progress);
 }
 if (result == UEC_RESULT_OK) {
     result = uec_widget_add_combo_box_option_child(
@@ -74,9 +97,10 @@ if (result == UEC_RESULT_OK) {
 
 The display-text child must be a `UTextBlock`; editable-text children must be a
 `UEditableTextBox`. The read helper follows the API's required-size and UTF-8
-buffer convention. Slider values are normalized to `[0, 1]`. Missing children
-and wrong widget types return an error. Start with an empty combo box for this
-example. Options use zero-based indices; re-query the count after changing the
-list. Add rejects duplicates, remove rejects absent options, and clear also
-clears the selection. Each helper releases its child handle on every path after
-successful lookup.
+buffer convention. Slider and progress-bar values are normalized to `[0, 1]`;
+checkbox helpers preserve unchecked, checked, and undetermined states. Missing
+children and wrong widget types return an error. Start with an empty combo box
+for this example. Options use zero-based indices; re-query the count after
+changing the list. Add rejects duplicates, remove rejects absent options, and
+clear also clears the selection. Each helper releases its child handle on every
+path after successful lookup.

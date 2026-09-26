@@ -34,7 +34,13 @@ static uec_result gComboBoxOptionResult;
 static uec_result gComboBoxAddResult;
 static uec_result gComboBoxRemoveResult;
 static uec_result gComboBoxClearResult;
+static uec_result gCheckBoxGetResult;
+static uec_result gCheckBoxSetResult;
+static uec_result gProgressBarGetResult;
+static uec_result gProgressBarSetResult;
 static double gSliderValue;
+static double gProgressBarPercent;
+static uec_checkbox_state gCheckBoxState;
 
 static uec_result UEC_CALL MockGetWidgetChild(uec_object* userWidget,
                                                uec_string_view childName,
@@ -189,6 +195,46 @@ static uec_result UEC_CALL MockClearComboBoxOptions(uec_object* comboBox)
     return gComboBoxClearResult;
 }
 
+static uec_result UEC_CALL MockGetCheckBoxState(
+    uec_object* checkBox, uec_checkbox_state* outState)
+{
+    if (outState != NULL) *outState = UEC_CHECKBOX_UNCHECKED;
+    if (outState == NULL || checkBox != gExpectedChild) {
+        gMismatch = 1;
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    if (gCheckBoxGetResult == UEC_RESULT_OK) *outState = gCheckBoxState;
+    return gCheckBoxGetResult;
+}
+
+static uec_result UEC_CALL MockSetCheckBoxState(
+    uec_object* checkBox, uec_checkbox_state state)
+{
+    if (checkBox != gExpectedChild || state != UEC_CHECKBOX_CHECKED) {
+        gMismatch = 1;
+    }
+    return gCheckBoxSetResult;
+}
+
+static uec_result UEC_CALL MockGetProgressBarPercent(
+    uec_object* progressBar, double* outPercent)
+{
+    if (outPercent != NULL) *outPercent = 0.0;
+    if (outPercent == NULL || progressBar != gExpectedChild) {
+        gMismatch = 1;
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    if (gProgressBarGetResult == UEC_RESULT_OK) *outPercent = gProgressBarPercent;
+    return gProgressBarGetResult;
+}
+
+static uec_result UEC_CALL MockSetProgressBarPercent(
+    uec_object* progressBar, double percent)
+{
+    if (progressBar != gExpectedChild || percent != 0.375) gMismatch = 1;
+    return gProgressBarSetResult;
+}
+
 static uec_result UEC_CALL MockReleaseObject(uec_object* object)
 {
     ++gReleaseCalls;
@@ -225,7 +271,13 @@ static void ResetMocks(void)
     gComboBoxAddResult = UEC_RESULT_OK;
     gComboBoxRemoveResult = UEC_RESULT_OK;
     gComboBoxClearResult = UEC_RESULT_OK;
+    gCheckBoxGetResult = UEC_RESULT_OK;
+    gCheckBoxSetResult = UEC_RESULT_OK;
+    gProgressBarGetResult = UEC_RESULT_OK;
+    gProgressBarSetResult = UEC_RESULT_OK;
     gSliderValue = 0.0;
+    gProgressBarPercent = 0.625;
+    gCheckBoxState = UEC_CHECKBOX_UNDETERMINED;
 }
 
 int uec_widget_ui_smoke_test(void)
@@ -251,6 +303,10 @@ int uec_widget_ui_smoke_test(void)
     api.add_combo_box_option = &MockAddComboBoxOption;
     api.remove_combo_box_option = &MockRemoveComboBoxOption;
     api.clear_combo_box_options = &MockClearComboBoxOptions;
+    api.get_checkbox_state = &MockGetCheckBoxState;
+    api.set_checkbox_state = &MockSetCheckBoxState;
+    api.get_progress_bar_percent = &MockGetProgressBarPercent;
+    api.set_progress_bar_percent = &MockSetProgressBarPercent;
     api.release_object = &MockReleaseObject;
     gExpectedWidget = (uec_object*)&widgetStorage;
     gExpectedChild = (uec_object*)&childStorage;
@@ -541,5 +597,60 @@ int uec_widget_ui_smoke_test(void)
             &api, gExpectedWidget, nameView) != UEC_RESULT_UNSUPPORTED ||
         gMismatch != 0 || gLookupCalls != 1 || gComboBoxClearCalls != 1 ||
         gReleaseCalls != 1) return 33;
+
+    ResetMocks();
+    if (uec_widget_set_checkbox_child(
+            &api, gExpectedWidget, nameView, UEC_CHECKBOX_CHECKED) != UEC_RESULT_OK ||
+        gMismatch != 0 || gLookupCalls != 1 || gReleaseCalls != 1) return 34;
+
+    ResetMocks();
+    {
+        uec_checkbox_state state = UEC_CHECKBOX_UNCHECKED;
+        if (uec_widget_get_checkbox_child(
+                &api, gExpectedWidget, nameView, &state) != UEC_RESULT_OK ||
+            state != UEC_CHECKBOX_UNDETERMINED || gMismatch != 0 ||
+            gLookupCalls != 1 || gReleaseCalls != 1) return 35;
+    }
+
+    ResetMocks();
+    gCheckBoxGetResult = UEC_RESULT_UNSUPPORTED;
+    {
+        uec_checkbox_state state = UEC_CHECKBOX_CHECKED;
+        if (uec_widget_get_checkbox_child(
+                &api, gExpectedWidget, nameView, &state) != UEC_RESULT_UNSUPPORTED ||
+            state != UEC_CHECKBOX_UNCHECKED || gMismatch != 0 ||
+            gLookupCalls != 1 || gReleaseCalls != 1) return 36;
+    }
+
+    ResetMocks();
+    gCheckBoxSetResult = UEC_RESULT_INVALID_ARGUMENT;
+    if (uec_widget_set_checkbox_child(
+            &api, gExpectedWidget, nameView, UEC_CHECKBOX_CHECKED) !=
+            UEC_RESULT_INVALID_ARGUMENT || gMismatch != 0 || gLookupCalls != 1 ||
+        gReleaseCalls != 1) return 37;
+
+    ResetMocks();
+    if (uec_widget_set_progress_bar_child(
+            &api, gExpectedWidget, nameView, 0.375) != UEC_RESULT_OK ||
+        gMismatch != 0 || gLookupCalls != 1 || gReleaseCalls != 1) return 38;
+
+    ResetMocks();
+    {
+        double percent = -1.0;
+        if (uec_widget_get_progress_bar_child(
+                &api, gExpectedWidget, nameView, &percent) != UEC_RESULT_OK ||
+            percent != 0.625 || gMismatch != 0 || gLookupCalls != 1 ||
+            gReleaseCalls != 1) return 39;
+    }
+
+    ResetMocks();
+    gProgressBarGetResult = UEC_RESULT_UNSUPPORTED;
+    {
+        double percent = -1.0;
+        if (uec_widget_get_progress_bar_child(
+                &api, gExpectedWidget, nameView, &percent) != UEC_RESULT_UNSUPPORTED ||
+            percent != 0.0 || gMismatch != 0 || gLookupCalls != 1 ||
+            gReleaseCalls != 1) return 40;
+    }
     return 0;
 }
