@@ -61,6 +61,15 @@ static int QueryHitIsClear(const uec_hit_result* hit)
         hit->normal.x == 0.0 && hit->normal.y == 0.0 && hit->normal.z == 0.0;
 }
 
+static int ResponseHitMatches(const uec_api* api, const uec_hit_result* hit,
+                              uec_collision_response response,
+                              uec_vector3 expectedLocation)
+{
+    if (response != UEC_COLLISION_RESPONSE_BLOCK) return QueryHitIsClear(hit);
+    return hit->actor != NULL && hit->blocking_hit == UEC_TRUE &&
+        QueryActorAt(api, hit->actor, expectedLocation);
+}
+
 static int InvalidShapeSweepClears(const uec_api* api, uec_world* world,
                                    uec_vector3 start, uec_vector3 end,
                                    const uec_collision_shape* shape,
@@ -574,6 +583,29 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
             if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
             UEC_COLLISION_QUERIES_FAIL();
         }
+        const uec_vector3 responseTraceStart =
+            {center.x - 100.0, center.y, center.z};
+        const uec_vector3 responseTraceEnd =
+            {center.x + 100.0, center.y, center.z};
+        result = api->line_trace_filtered(world, responseTraceStart,
+            responseTraceEnd, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
+        if (result != UEC_RESULT_OK || !ResponseHitMatches(
+                api, &hit, collisionResponses[index], center)) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            ReleaseQueryHit(api, &hit);
+            UEC_COLLISION_QUERIES_FAIL();
+        }
+        ReleaseQueryHit(api, &hit);
+        result = api->sweep_trace_filtered(world, responseTraceStart,
+            responseTraceEnd, &sphere, UEC_TRACE_VISIBILITY, UEC_FALSE,
+            NULL, 0u, &hit);
+        if (result != UEC_RESULT_OK || !ResponseHitMatches(
+                api, &hit, collisionResponses[index], center)) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            ReleaseQueryHit(api, &hit);
+            UEC_COLLISION_QUERIES_FAIL();
+        }
+        ReleaseQueryHit(api, &hit);
         const uint32_t expectedOverlapCount =
             collisionResponses[index] == UEC_COLLISION_RESPONSE_IGNORE ? 0u : 1u;
         for (size_t queryIndex = 0u; queryIndex < 2u; ++queryIndex) {
