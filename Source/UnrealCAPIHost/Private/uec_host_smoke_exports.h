@@ -9,6 +9,7 @@ extern "C" {
     uec_result UEC_CALL uec_host_reflection_metadata_smoke(void);
     uec_result UEC_CALL uec_host_persistence_smoke(void);
     uec_result UEC_CALL uec_host_collision_smoke(void);
+    uec_result UEC_CALL uec_host_collision_queries_smoke(void);
     uec_result UEC_CALL uec_host_reflection_containers_smoke(void);
     uec_result UEC_CALL uec_host_reflection_scalars_smoke(void);
     uec_result UEC_CALL uec_host_reflection_guid_smoke(void);

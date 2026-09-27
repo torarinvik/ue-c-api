@@ -378,7 +378,9 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         }
         UE_LOG(LogUnrealCAPIHost, Log, TEXT("C Blueprint invocation smoke completed"));
 
-        const uec_result collisionResult = uec_host_collision_smoke();
+        uec_result collisionResult = uec_host_collision_smoke();
+        if (collisionResult == UEC_RESULT_OK)
+            collisionResult = uec_host_collision_queries_smoke();
         if (collisionResult != UEC_RESULT_OK) {
             UE_LOG(LogUnrealCAPIHost, Error,
                 TEXT("C collision smoke failed with result %d"),
