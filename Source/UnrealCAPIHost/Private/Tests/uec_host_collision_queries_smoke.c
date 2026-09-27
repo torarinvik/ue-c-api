@@ -132,6 +132,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         api->get_actor_bounds == NULL || api->get_actor_root_component == NULL ||
         api->release_scene_component == NULL || api->set_component_collision_enabled == NULL ||
         api->set_component_collision_channel_response == NULL ||
+        api->get_component_collision_response == NULL ||
         api->sweep_trace_filtered == NULL || api->line_trace_filtered == NULL ||
         api->overlap_shape_filtered == NULL || api->trace_detailed_filtered == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
@@ -418,6 +419,24 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         goto cleanup;
     }
     ReleaseQueryHit(api, &hit);
+
+    const uec_collision_response collisionResponses[] = {
+        UEC_COLLISION_RESPONSE_IGNORE,
+        UEC_COLLISION_RESPONSE_OVERLAP,
+        UEC_COLLISION_RESPONSE_BLOCK};
+    for (size_t index = 0u;
+         index < sizeof(collisionResponses) / sizeof(collisionResponses[0]); ++index) {
+        uec_collision_response response = (uec_collision_response)99;
+        result = api->set_component_collision_channel_response(
+            root, UEC_TRACE_VISIBILITY, collisionResponses[index]);
+        if (result != UEC_RESULT_OK) goto cleanup;
+        result = api->get_component_collision_response(
+            root, UEC_TRACE_VISIBILITY, &response);
+        if (result != UEC_RESULT_OK || response != collisionResponses[index]) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            goto cleanup;
+        }
+    }
     result = UEC_RESULT_OK;
 
 cleanup:
