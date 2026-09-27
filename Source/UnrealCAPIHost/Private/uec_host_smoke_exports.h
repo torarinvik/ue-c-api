@@ -54,5 +54,8 @@ extern "C" {
     uec_result UEC_CALL uec_host_shutdown_pending_smoke_verify(void);
     uec_result UEC_CALL uec_host_multi_pie_smoke(void);
     uec_result UEC_CALL uec_host_listen_server_authority_smoke(void);
+    uec_result UEC_CALL uec_host_listen_server_impulse_smoke_start(void);
+    uec_bool UEC_CALL uec_host_listen_server_impulse_smoke_poll(uec_result* out_result);
+    void UEC_CALL uec_host_listen_server_impulse_smoke_cancel(void);
     void UEC_CALL uec_host_dedicated_server_context_smoke_start(void);
 }

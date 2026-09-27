@@ -9,6 +9,7 @@
 #endif
 
 #include "UECAPIHostCollisionSmokeActor.h"
+#include "uec_host_physics_smoke_runner.h"
 #include "uec_host_smoke_exports.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogUnrealCAPIHost, Log, All);
@@ -16,7 +17,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogUnrealCAPIHost, Log, All);
 class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
 {
     FTSTicker::FDelegateHandle EventBridgeSmokeHandle;
-    FTSTicker::FDelegateHandle PhysicsSmokeHandle;
+    FUECPhysicsSmokeRunner PhysicsSmokeRunner;
     FTSTicker::FDelegateHandle LatentSmokeHandle;
     FTSTicker::FDelegateHandle InputSmokeHandle;
     FTSTicker::FDelegateHandle QueueSmokeHandle;
@@ -34,8 +35,6 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
     float ObjectLoadSmokeElapsed = 0.0f;
     float GameplayExampleSmokeElapsed = 0.0f;
     float TravelSmokeElapsed = 0.0f;
-    double PhysicsSmokeDeadline = 0.0;
-    double PhysicsSmokeNextPollTime = 0.0;
     double AuthoritySmokeDeadline = 0.0;
     bool bPIERestartStarted = false;
     bool bInputSmokeCompleted = false;
@@ -305,6 +304,29 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             }
             if (result == UEC_RESULT_OK && requireListenServer) {
                 result = uec_host_listen_server_authority_smoke();
+                if (result == UEC_RESULT_OK) {
+                    result = PhysicsSmokeRunner.Start(
+                        uec_host_listen_server_impulse_smoke_start,
+                        uec_host_listen_server_impulse_smoke_poll,
+                        uec_host_listen_server_impulse_smoke_cancel,
+                        [this](uec_result smokeResult) {
+                            if (smokeResult == UEC_RESULT_OK) {
+                                UE_LOG(LogUnrealCAPIHost, Log,
+                                    TEXT("C listen-server authority smoke completed"));
+                            }
+                            else {
+                                UE_LOG(LogUnrealCAPIHost, Error,
+                                    TEXT("C listen-server authority smoke failed with result %d"),
+                                    static_cast<int32>(smokeResult));
+                            }
+                            RequestSmokeExit();
+                        },
+                        0.1, 0.05);
+                    if (result == UEC_RESULT_OK) {
+                        EventBridgeSmokeHandle.Reset();
+                        return false;
+                    }
+                }
             }
             const TCHAR* authorityKind = requireListenServer
                 ? TEXT("listen-server") : TEXT("client");
@@ -396,44 +418,25 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
         }
         UE_LOG(LogUnrealCAPIHost, Log, TEXT("C GC lifetime smoke completed"));
 
-        const uec_result physicsResult = uec_host_physics_smoke_start();
-        if (physicsResult == UEC_RESULT_OK) {
-            PhysicsSmokeNextPollTime = FPlatformTime::Seconds() + 0.5;
-            PhysicsSmokeDeadline = FPlatformTime::Seconds() + 10.0;
-            PhysicsSmokeHandle = FTSTicker::GetCoreTicker().AddTicker(
-                FTickerDelegate::CreateRaw(this, &FUnrealCAPIHostModule::RunPhysicsSmoke),
-                0.1f);
-        }
-        else {
+        const uec_result physicsResult = PhysicsSmokeRunner.Start(
+            uec_host_physics_smoke_start, uec_host_physics_smoke_poll,
+            uec_host_physics_smoke_cancel, [this](uec_result result) {
+                if (result == UEC_RESULT_OK) {
+                    UE_LOG(LogUnrealCAPIHost, Log, TEXT("C physics smoke completed"));
+                    StartEventBridgeSmokeChain();
+                }
+                else {
+                    UE_LOG(LogUnrealCAPIHost, Error,
+                        TEXT("C physics smoke failed with result %d"), static_cast<int32>(result));
+                }
+            },
+            0.5, 0.5);
+        if (physicsResult != UEC_RESULT_OK) {
             UE_LOG(LogUnrealCAPIHost, Error,
                 TEXT("C physics smoke failed to start with result %d"),
                 static_cast<int32>(physicsResult));
         }
         EventBridgeSmokeHandle.Reset();
-        return false;
-    }
-
-    bool RunPhysicsSmoke(float)
-    {
-        const double now = FPlatformTime::Seconds();
-        if (now < PhysicsSmokeNextPollTime) return true;
-        PhysicsSmokeNextPollTime = now + 0.5;
-        uec_result result = UEC_RESULT_NOT_INITIALIZED;
-        const bool complete = uec_host_physics_smoke_poll(&result) == UEC_TRUE;
-        if (!complete && now < PhysicsSmokeDeadline) return true;
-        if (!complete) {
-            uec_host_physics_smoke_cancel();
-            result = UEC_RESULT_INTERNAL_ERROR;
-        }
-        if (result == UEC_RESULT_OK) {
-            UE_LOG(LogUnrealCAPIHost, Log, TEXT("C physics smoke completed"));
-            StartEventBridgeSmokeChain();
-        }
-        else {
-            UE_LOG(LogUnrealCAPIHost, Error,
-                TEXT("C physics smoke failed with result %d"), static_cast<int32>(result));
-        }
-        PhysicsSmokeHandle.Reset();
         return false;
     }
 
@@ -750,10 +753,7 @@ public:
         if (EventBridgeSmokeHandle.IsValid()) {
             FTSTicker::GetCoreTicker().RemoveTicker(EventBridgeSmokeHandle);
         }
-        if (PhysicsSmokeHandle.IsValid()) {
-            FTSTicker::GetCoreTicker().RemoveTicker(PhysicsSmokeHandle);
-            uec_host_physics_smoke_cancel();
-        }
+        PhysicsSmokeRunner.Shutdown();
         if (LatentSmokeHandle.IsValid()) {
             FTSTicker::GetCoreTicker().RemoveTicker(LatentSmokeHandle);
             uec_host_latent_smoke_cancel();

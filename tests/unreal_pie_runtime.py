@@ -77,6 +77,7 @@ AUTHORITY_FAILURE_MARKERS = (
     RUNTIME_MODULE_UNLOAD_FAILURE_MARKER,
     "C player-flow and camera smoke failed",
     "C client authority smoke failed",
+    "C listen-server authority smoke failed",
     "LogPython: Error",
 )
 
