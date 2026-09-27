@@ -113,6 +113,10 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     const uec_vector3 orientedStart = {center.x + 120.0, center.y - 200.0, center.z};
     const uec_vector3 orientedEnd = {center.x + 120.0, center.y + 200.0, center.z};
     const uec_vector3 orientedCenter = {center.x + 120.0, center.y, center.z};
+    const uec_vector3 scaledOrientedStart = {center.x + 160.0, center.y - 200.0, center.z};
+    const uec_vector3 scaledOrientedEnd = {center.x + 160.0, center.y + 200.0, center.z};
+    const uec_vector3 scaledOverlapNear = {center.x + 115.0, center.y, center.z};
+    const uec_vector3 scaledOverlapFar = {center.x + 125.0, center.y, center.z};
     const uec_transform movingTransform = {
         {center.x - 300.0, center.y, center.z}, {0.0, 0.0, 0.0, 1.0},
         {1.0, 1.0, 1.0}};
@@ -277,6 +281,39 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     result = api->release_actor(hit.actor);
     hit.actor = NULL;
     if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->sweep_trace_filtered(world, scaledOrientedStart, scaledOrientedEnd,
+        &legacyBox, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
+    if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_TRUE || hit.actor == NULL ||
+        !IsAt(api, hit.actor, center)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->release_actor(hit.actor);
+    hit.actor = NULL;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->sweep_trace_filtered(world, scaledOrientedStart, scaledOrientedEnd,
+        &rotatedBox, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
+    if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_FALSE || hit.actor != NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->overlap_shape_filtered(world, scaledOverlapNear, &sphere,
+        UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
+    if (result != UEC_RESULT_OK || overlapCount != 1u || overlaps[0] == NULL ||
+        !IsAt(api, overlaps[0], center)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->release_actor(overlaps[0]);
+    overlaps[0] = NULL;
+    overlapCount = 0u;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->overlap_shape_filtered(world, scaledOverlapFar, &sphere,
+        UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
+    if (result != UEC_RESULT_OK || overlapCount != 0u || overlaps[0] != NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
     result = api->set_actor_transform(actor, &transform, UEC_FALSE);
     if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
     result = api->get_component_transform(component, &scaleReadback);
