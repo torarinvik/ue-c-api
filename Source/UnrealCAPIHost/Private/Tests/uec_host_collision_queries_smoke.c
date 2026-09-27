@@ -118,6 +118,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     uec_context* context = NULL;
     uec_world* world = NULL;
     uec_actor* actor = NULL;
+    uec_actor* secondActor = NULL;
     uec_scene_component* root = NULL;
     uec_actor* ignored[1] = {NULL};
     uec_actor* overlaps[4] = {NULL};
@@ -440,6 +441,54 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     }
     ReleaseQueryHit(api, &hit);
 
+    const uec_vector3 secondCenter = {center.x + 200.0, center.y, center.z};
+    const uec_transform secondTransform = {
+        {secondCenter.x, secondCenter.y, secondCenter.z},
+        {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
+    result = api->spawn_actor(world, classPath, &secondTransform, &secondActor);
+    if (result != UEC_RESULT_OK || secondActor == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    const uec_collision_shape pairOverlap = {
+        sizeof(uec_collision_shape), UEC_COLLISION_SHAPE_SPHERE, 0u,
+        160.0, {0.0, 0.0, 0.0}, 0.0, {0.0, 0.0, 0.0, 1.0}};
+    const uec_vector3 betweenActors = {center.x + 100.0, center.y, center.z};
+    result = api->overlap_shape_filtered(world, betweenActors, &pairOverlap,
+        UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
+    if (result != UEC_RESULT_OK || overlapCount != 2u || overlaps[0] == NULL ||
+        overlaps[1] == NULL || overlaps[0] == overlaps[1]) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    int foundFirst = 0;
+    int foundSecond = 0;
+    for (uint32_t index = 0u; index < overlapCount; ++index) {
+        if (QueryActorAt(api, overlaps[index], center)) foundFirst = 1;
+        if (QueryActorAt(api, overlaps[index], secondCenter)) foundSecond = 1;
+    }
+    if (!foundFirst || !foundSecond) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    for (uint32_t index = 0u; index < overlapCount; ++index) {
+        (void)api->release_actor(overlaps[index]);
+        overlaps[index] = NULL;
+    }
+    overlapCount = 0u;
+    ignored[0] = actor;
+    result = api->overlap_shape_filtered(world, betweenActors, &pairOverlap,
+        UEC_TRACE_VISIBILITY, 4u, (const uec_actor* const*)ignored,
+        1u, overlaps, &overlapCount);
+    if (result != UEC_RESULT_OK || overlapCount != 1u || overlaps[0] == NULL ||
+        !QueryActorAt(api, overlaps[0], secondCenter)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    (void)api->release_actor(overlaps[0]);
+    overlaps[0] = NULL;
+    overlapCount = 0u;
+
     const uec_collision_response collisionResponses[] = {
         UEC_COLLISION_RESPONSE_IGNORE,
         UEC_COLLISION_RESPONSE_OVERLAP,
@@ -467,6 +516,11 @@ cleanup:
             if (overlaps[index] != NULL) (void)api->release_actor(overlaps[index]);
         }
         if (root != NULL) (void)api->release_scene_component(root);
+        if (secondActor != NULL) {
+            const uec_result destroyResult = api->destroy_actor(secondActor);
+            if (destroyResult != UEC_RESULT_OK) (void)api->release_actor(secondActor);
+            else secondActor = NULL;
+        }
         if (actor != NULL) {
             const uec_result destroyResult = api->destroy_actor(actor);
             if (destroyResult != UEC_RESULT_OK) (void)api->release_actor(actor);
