@@ -4,7 +4,15 @@
 
 static uec_actor* gExpectedController;
 static uec_object* gExpectedPlayerState;
+static uec_actor* gExpectedPawn;
+static uec_actor* gExpectedCharacter;
+static uec_vector3 gExpectedMovementDirection;
+static double gExpectedMovementScale;
+static uec_bool gExpectedMovementForce;
 static int gPlayerStateLookupCalls;
+static int gMovementInputCalls;
+static int gJumpCalls;
+static int gStopJumpCalls;
 
 static uec_result UEC_CALL MockGetControllerPlayerState(
     uec_actor* controller, uec_object** outPlayerState)
@@ -15,6 +23,29 @@ static uec_result UEC_CALL MockGetControllerPlayerState(
     }
     *outPlayerState = gExpectedPlayerState;
     return UEC_RESULT_OK;
+}
+
+static uec_result UEC_CALL MockAddPawnMovementInput(
+    uec_actor* pawn, uec_vector3 direction, double scale, uec_bool force)
+{
+    ++gMovementInputCalls;
+    if (pawn != gExpectedPawn || direction.x != gExpectedMovementDirection.x ||
+        direction.y != gExpectedMovementDirection.y ||
+        direction.z != gExpectedMovementDirection.z || scale != gExpectedMovementScale ||
+        force != gExpectedMovementForce) return UEC_RESULT_INVALID_ARGUMENT;
+    return UEC_RESULT_OK;
+}
+
+static uec_result UEC_CALL MockJumpCharacter(uec_actor* character)
+{
+    ++gJumpCalls;
+    return character == gExpectedCharacter ? UEC_RESULT_OK : UEC_RESULT_INVALID_ARGUMENT;
+}
+
+static uec_result UEC_CALL MockStopCharacterJumping(uec_actor* character)
+{
+    ++gStopJumpCalls;
+    return character == gExpectedCharacter ? UEC_RESULT_OK : UEC_RESULT_INVALID_ARGUMENT;
 }
 
 int uec_gameplay_example_table_smoke(void)
@@ -65,6 +96,49 @@ int uec_gameplay_example_table_smoke(void)
         if (uec_gameplay_get_player_state(&api, controller, &playerState) !=
                 UEC_RESULT_OK || playerState != expectedPlayerState ||
             gPlayerStateLookupCalls != 1) return 6;
+    }
+    {
+        static char pawnStorage;
+        static char characterStorage;
+        uec_actor* pawn = (uec_actor*)&pawnStorage;
+        uec_actor* character = (uec_actor*)&characterStorage;
+        const uec_vector3 direction = {0.25, -1.0, 0.5};
+        api.struct_size = (uint32_t)offsetof(uec_api, add_pawn_movement_input);
+        if (uec_gameplay_apply_pawn_movement_input(
+                &api, pawn, direction, -0.75, UEC_TRUE) != UEC_RESULT_UNSUPPORTED ||
+            gMovementInputCalls != 0) return 7;
+
+        api.struct_size = (uint32_t)sizeof(api);
+        gExpectedPawn = pawn;
+        gExpectedMovementDirection = direction;
+        gExpectedMovementScale = -0.75;
+        gExpectedMovementForce = UEC_TRUE;
+        api.add_pawn_movement_input = &MockAddPawnMovementInput;
+        if (uec_gameplay_apply_pawn_movement_input(
+                &api, pawn, direction, -0.75, (uec_bool)2) !=
+                UEC_RESULT_INVALID_ARGUMENT || gMovementInputCalls != 0) return 8;
+        if (uec_gameplay_apply_pawn_movement_input(
+                &api, pawn, direction, -0.75, UEC_TRUE) != UEC_RESULT_OK ||
+            gMovementInputCalls != 1) return 9;
+
+        gExpectedCharacter = character;
+        api.jump_character = &MockJumpCharacter;
+        api.stop_character_jumping = &MockStopCharacterJumping;
+        api.struct_size = (uint32_t)offsetof(uec_api, stop_character_jumping);
+        if (uec_gameplay_set_character_jump_pressed(
+                &api, character, UEC_TRUE) != UEC_RESULT_UNSUPPORTED ||
+            gJumpCalls != 0 || gStopJumpCalls != 0) return 10;
+
+        api.struct_size = (uint32_t)sizeof(api);
+        if (uec_gameplay_set_character_jump_pressed(
+                &api, character, (uec_bool)2) != UEC_RESULT_INVALID_ARGUMENT ||
+            gJumpCalls != 0 || gStopJumpCalls != 0) return 11;
+        if (uec_gameplay_set_character_jump_pressed(
+                &api, character, UEC_TRUE) != UEC_RESULT_OK || gJumpCalls != 1)
+            return 12;
+        if (uec_gameplay_set_character_jump_pressed(
+                &api, character, UEC_FALSE) != UEC_RESULT_OK || gStopJumpCalls != 1)
+            return 13;
     }
     return 0;
 }

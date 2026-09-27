@@ -257,6 +257,43 @@ uec_result UEC_CALL uec_gameplay_get_player_state(
     return api->get_controller_player_state(controller, out_player_state);
 }
 
+uec_result UEC_CALL uec_gameplay_apply_pawn_movement_input(
+    const uec_api* api,
+    uec_actor* pawn,
+    uec_vector3 world_direction,
+    double scale,
+    uec_bool force)
+{
+    if (api == NULL || pawn == NULL ||
+        (force != UEC_FALSE && force != UEC_TRUE)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    const size_t required_size = offsetof(uec_api, add_pawn_movement_input) +
+                                 sizeof(api->add_pawn_movement_input);
+    if (api->struct_size < required_size || api->add_pawn_movement_input == NULL)
+        return UEC_RESULT_UNSUPPORTED;
+    return api->add_pawn_movement_input(pawn, world_direction, scale, force);
+}
+
+uec_result UEC_CALL uec_gameplay_set_character_jump_pressed(
+    const uec_api* api,
+    uec_actor* character,
+    uec_bool pressed)
+{
+    if (api == NULL || character == NULL ||
+        (pressed != UEC_FALSE && pressed != UEC_TRUE)) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    const size_t required_size = offsetof(uec_api, stop_character_jumping) +
+                                 sizeof(api->stop_character_jumping);
+    if (api->struct_size < required_size || api->jump_character == NULL ||
+        api->stop_character_jumping == NULL) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+    return pressed == UEC_TRUE ? api->jump_character(character) :
+                                 api->stop_character_jumping(character);
+}
+
 uec_result UEC_CALL uec_gameplay_add_look_delta(
     const uec_api* api,
     uec_actor* controller,

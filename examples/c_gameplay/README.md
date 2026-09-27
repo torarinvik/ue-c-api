@@ -30,6 +30,15 @@ The Unreal host's Enhanced Input smoke drives this C implementation with a
 synthetic Axis2D value and verifies the callback value, swept movement, input
 release, unbinding, and mapping removal.
 
+For projects using Unreal's native Pawn movement, call
+`uec_gameplay_apply_pawn_movement_input` with the world-space direction and
+analog scale for each input update. Movement-capable Pawn subclasses consume
+that accumulated input through their movement component. Pair a Character's
+jump press and release with `uec_gameplay_set_character_jump_pressed`, passing
+`UEC_TRUE` on press and `UEC_FALSE` on release so held-jump state is cleared.
+The helpers check that the negotiated API table contains the required entries;
+the host smoke reads back accumulated input and `bPressedJump` in UE.
+
 The same module also provides `uec_gameplay_get_player_state`. It checks that
 the function table includes the ABI 1.150 accessor and returns the controller's
 weak `APlayerState` handle. The caller owns the returned handle, can verify its

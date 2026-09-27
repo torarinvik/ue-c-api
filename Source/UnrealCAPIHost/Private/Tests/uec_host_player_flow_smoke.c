@@ -2,6 +2,7 @@
 #include "c_gameplay.h"
 
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 static uec_string_view PlayerFlowView(const char* text)
@@ -12,6 +13,38 @@ static uec_string_view PlayerFlowView(const char* text)
 static int PlayerFlowNear(double actual, double expected)
 {
     return fabs(actual - expected) <= 0.01;
+}
+
+static uec_result ReadPawnMovementVector(const uec_api* api,
+                                         uec_actor* pawn,
+                                         const char* functionName,
+                                         uec_vector3* outVector)
+{
+    char buffer[128] = {0};
+    if (outVector != NULL) *outVector = (uec_vector3){0};
+    if (api == NULL || pawn == NULL || functionName == NULL || outVector == NULL ||
+        api->invoke_actor_function_text_values == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+
+    const uec_string_view name = {functionName, strlen(functionName)};
+    uec_text_output output = {
+        sizeof(output), UEC_PROPERTY_UNKNOWN, buffer, sizeof(buffer), 0u};
+    uint32_t outputCount = 0u;
+    const uec_result result = api->invoke_actor_function_text_values(
+        pawn, name, NULL, 0u, &output, 1u, &outputCount);
+    if (result != UEC_RESULT_OK) return result;
+    if (outputCount != 1u || output.kind != UEC_PROPERTY_STRUCT ||
+        output.required_size == 0u || output.required_size >= sizeof(buffer)) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    int parsed = sscanf(buffer, "(X=%lf,Y=%lf,Z=%lf)", &x, &y, &z);
+    if (parsed != 3) parsed = sscanf(buffer, "X=%lf,Y=%lf,Z=%lf", &x, &y, &z);
+    if (parsed != 3) return UEC_RESULT_INTERNAL_ERROR;
+    *outVector = (uec_vector3){x, y, z};
+    return UEC_RESULT_OK;
 }
 
 static uec_result VerifyComponentMeshPath(const uec_api* api,
@@ -52,6 +85,7 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
 {
     static const char pawnClassPath[] =
         "/Script/UnrealCAPIHost.UECAPIHostPlayerFlowPawn";
+    static const char characterClassPath[] = "/Script/Engine.Character";
     static const char cameraClassPath[] = "/Script/Engine.CameraComponent";
     static const char cameraManagerClassPath[] = "/Script/Engine.PlayerCameraManager";
     static const char localPlayerClassPath[] = "/Script/Engine.LocalPlayer";
@@ -64,6 +98,9 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     static const char vectorParameterPath[] = "TintColorAndOpacity";
     static const char missingParameterPath[] = "UECAPI_MissingMaterialParameter";
     static const char markerProperty[] = "CApiMarker";
+    static const char jumpPressedProperty[] = "bPressedJump";
+    static const char pendingMovementFunction[] = "GetPendingMovementInputVector";
+    static const char consumeMovementFunction[] = "ConsumeMovementInputVector";
     const uec_string_view cameraClass = {
         cameraClassPath, sizeof(cameraClassPath) - 1u};
     const uec_string_view meshComponentClass = {
@@ -84,12 +121,17 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         missingParameterPath, sizeof(missingParameterPath) - 1u};
     const uec_string_view markerName = {
         markerProperty, sizeof(markerProperty) - 1u};
+    const uec_string_view characterClass = {
+        characterClassPath, sizeof(characterClassPath) - 1u};
+    const uec_string_view jumpPressedName = {
+        jumpPressedProperty, sizeof(jumpPressedProperty) - 1u};
     const uec_api* api = NULL;
     uec_context* context = NULL;
     uec_world* world = NULL;
     uec_actor* controller = NULL;
     uec_actor* originalPawn = NULL;
     uec_actor* pawn = NULL;
+    uec_actor* character = NULL;
     uec_actor* possessedPawn = NULL;
     uec_actor* viewTarget = NULL;
     uec_object* cameraManager = NULL;
@@ -124,6 +166,9 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         api->get_actor_component_at_by_class == NULL || api->release_scene_component == NULL ||
         api->get_camera_field_of_view == NULL || api->set_camera_field_of_view == NULL ||
         api->get_actor_property_value == NULL || api->load_object == NULL ||
+        api->add_pawn_movement_input == NULL || api->jump_character == NULL ||
+        api->stop_character_jumping == NULL ||
+        api->invoke_actor_function_text_values == NULL ||
         api->release_object == NULL || api->set_static_mesh == NULL ||
         api->set_skeletal_mesh == NULL || api->get_component_mesh == NULL ||
         api->get_component_material_scalar == NULL ||
@@ -251,6 +296,108 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     if (result == UEC_RESULT_OK)
         result = api->spawn_actor(world, PlayerFlowView(pawnClassPath), &transform, &pawn);
     if (result == UEC_RESULT_OK && pawn == NULL) result = UEC_RESULT_INTERNAL_ERROR;
+
+    const uec_vector3 movementForward = {1.0, 0.0, 0.0};
+    const uec_vector3 movementRight = {0.0, 1.0, 0.0};
+    uec_vector3 pendingMovement = {0};
+    if (result == UEC_RESULT_OK) {
+        result = uec_gameplay_apply_pawn_movement_input(
+            api, pawn, movementForward, 0.5, UEC_TRUE);
+    }
+    if (result == UEC_RESULT_OK) {
+        result = uec_gameplay_apply_pawn_movement_input(
+            api, pawn, movementRight, -0.25, UEC_TRUE);
+    }
+    if (result == UEC_RESULT_OK) {
+        result = ReadPawnMovementVector(api, pawn, pendingMovementFunction,
+                                        &pendingMovement);
+    }
+    if (result == UEC_RESULT_OK &&
+        (!PlayerFlowNear(pendingMovement.x, 0.5) ||
+         !PlayerFlowNear(pendingMovement.y, -0.25) ||
+         !PlayerFlowNear(pendingMovement.z, 0.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK && api->add_pawn_movement_input(
+            controller, movementForward, 1.0, UEC_TRUE) != UEC_RESULT_INVALID_ARGUMENT) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK && uec_gameplay_apply_pawn_movement_input(
+            api, pawn, movementForward, NAN, UEC_TRUE) != UEC_RESULT_INVALID_ARGUMENT) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        result = ReadPawnMovementVector(api, pawn, pendingMovementFunction,
+                                        &pendingMovement);
+    }
+    if (result == UEC_RESULT_OK &&
+        (!PlayerFlowNear(pendingMovement.x, 0.5) ||
+         !PlayerFlowNear(pendingMovement.y, -0.25) ||
+         !PlayerFlowNear(pendingMovement.z, 0.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        result = ReadPawnMovementVector(api, pawn, consumeMovementFunction,
+                                        &pendingMovement);
+    }
+    if (result == UEC_RESULT_OK &&
+        (!PlayerFlowNear(pendingMovement.x, 0.5) ||
+         !PlayerFlowNear(pendingMovement.y, -0.25) ||
+         !PlayerFlowNear(pendingMovement.z, 0.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        result = ReadPawnMovementVector(api, pawn, pendingMovementFunction,
+                                        &pendingMovement);
+    }
+    if (result == UEC_RESULT_OK &&
+        (!PlayerFlowNear(pendingMovement.x, 0.0) ||
+         !PlayerFlowNear(pendingMovement.y, 0.0) ||
+         !PlayerFlowNear(pendingMovement.z, 0.0))) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    const uec_transform characterTransform = {
+        {100100.0, 100000.0, 100000.0},
+        {0.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0}};
+    if (result == UEC_RESULT_OK) {
+        result = api->spawn_actor(world, characterClass, &characterTransform, &character);
+    }
+    if (result == UEC_RESULT_OK && character == NULL) result = UEC_RESULT_INTERNAL_ERROR;
+    uec_property_value jumpPressed = {0};
+    jumpPressed.struct_size = sizeof(jumpPressed);
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_value(character, jumpPressedName, &jumpPressed);
+    if (result == UEC_RESULT_OK &&
+        (jumpPressed.kind != UEC_PROPERTY_BOOL || jumpPressed.bool_value != UEC_FALSE)) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        result = uec_gameplay_set_character_jump_pressed(api, character, UEC_TRUE);
+    }
+    jumpPressed = (uec_property_value){0};
+    jumpPressed.struct_size = sizeof(jumpPressed);
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_value(character, jumpPressedName, &jumpPressed);
+    if (result == UEC_RESULT_OK &&
+        (jumpPressed.kind != UEC_PROPERTY_BOOL || jumpPressed.bool_value != UEC_TRUE)) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK && uec_gameplay_set_character_jump_pressed(
+            api, pawn, UEC_TRUE) != UEC_RESULT_INVALID_ARGUMENT) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK) {
+        result = uec_gameplay_set_character_jump_pressed(api, character, UEC_FALSE);
+    }
+    jumpPressed = (uec_property_value){0};
+    jumpPressed.struct_size = sizeof(jumpPressed);
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_value(character, jumpPressedName, &jumpPressed);
+    if (result == UEC_RESULT_OK &&
+        (jumpPressed.kind != UEC_PROPERTY_BOOL || jumpPressed.bool_value != UEC_FALSE)) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+    }
 
     uint32_t cameraCount = 0u;
     if (result == UEC_RESULT_OK)
@@ -523,6 +670,11 @@ cleanup:
     if (playerStart != NULL && api != NULL) {
         const uec_result releaseResult = api->release_actor(playerStart);
         if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) result = releaseResult;
+    }
+    if (character != NULL && api != NULL) {
+        const uec_result destroyResult = DestroyPlayerFlowPawn(api, &character);
+        if (result == UEC_RESULT_OK && destroyResult != UEC_RESULT_OK)
+            result = destroyResult;
     }
     if (pawn != NULL && api != NULL) {
         const uec_result destroyResult = DestroyPlayerFlowPawn(api, &pawn);

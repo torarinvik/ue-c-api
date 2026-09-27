@@ -7,6 +7,10 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- The `examples/c_gameplay` consumer now demonstrates world-space Pawn movement
+  input and Character jump press/release helpers. UE 5.8.3 PIE and packaged
+  Development smoke verifies input accumulation and consumption plus jump
+  state transitions.
 - ABI minor 174 adds controller control-rotation read/write in pitch, yaw, and
   roll degrees, permitting client writes only for local controllers.
 - ABI minor 173 adds primitive-component mass readback and authority-gated

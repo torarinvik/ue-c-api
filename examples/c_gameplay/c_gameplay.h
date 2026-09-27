@@ -87,6 +87,18 @@ uec_result UEC_CALL uec_gameplay_get_player_state(
     uec_actor* controller,
     uec_object** out_player_state);
 
+/* Forward world-space input and a character's pressed/released jump state. */
+uec_result UEC_CALL uec_gameplay_apply_pawn_movement_input(
+    const uec_api* api,
+    uec_actor* pawn,
+    uec_vector3 world_direction,
+    double scale,
+    uec_bool force);
+uec_result UEC_CALL uec_gameplay_set_character_jump_pressed(
+    const uec_api* api,
+    uec_actor* character,
+    uec_bool pressed);
+
 /* Apply game-thread look deltas in degrees and preserve the current roll. */
 uec_result UEC_CALL uec_gameplay_add_look_delta(
     const uec_api* api,
