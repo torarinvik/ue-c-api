@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 166 adds typed reads and writes for supported struct elements in
+  reflected actor and UObject arrays, using the existing size-tagged property
+  struct values.
 - ABI minor 165 adds typed `FDateTime` and `FTimespan` values to whole-property
   access and mixed reflected calls, preserving Unreal's 100-nanosecond ticks.
 - ABI minor 164 adds typed `FGuid` values to whole-property access and mixed

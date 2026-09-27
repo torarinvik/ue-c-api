@@ -708,6 +708,17 @@ promise.
 ABI 165 adds typed `FDateTime` and `FTimespan` property values with exact ticks.
 Date/time values outside `FDateTime::MinValue()` through `FDateTime::MaxValue()`
 are rejected; signed time spans are not range-converted.
+ABI 166 adds typed struct-element reads and writes for existing actor and UObject
+arrays through `get_actor_property_array_struct_value`,
+`get_object_property_array_struct_value`,
+`set_actor_property_array_struct_value`, and
+`set_object_property_array_struct_value`. These calls support the same exact
+reflected structs listed above, including math, color, integer, GUID, date-time,
+and time-span values. They address an existing index;
+they do not grow or reorder the array. Out-of-range indexes return
+`UEC_RESULT_INVALID_ARGUMENT`, non-struct or unsupported element types return
+`UEC_RESULT_UNSUPPORTED`, and writes retain the whole-property access and
+authority restrictions.
 The `kind` selects the matching union member. Inputs must be finite, and
 quaternion values must have nonzero length; mismatched or unsupported struct
 types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`

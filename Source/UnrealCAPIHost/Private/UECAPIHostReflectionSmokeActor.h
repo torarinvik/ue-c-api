@@ -57,6 +57,9 @@ public:
     TArray<int32> Numbers;
 
     UPROPERTY()
+    TArray<FVector> VectorPositions;
+
+    UPROPERTY()
     TMap<int32, int32> Counts;
 
     UPROPERTY()

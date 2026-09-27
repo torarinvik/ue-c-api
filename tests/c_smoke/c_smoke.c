@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-uec_result UEC_CALL uec_host_smoke_bootstrap(void); int uec_widget_ui_smoke_test(void); int uec_gameplay_example_table_smoke(void); int uec_physics_simulation_smoke_test(void);
+uec_result UEC_CALL uec_host_smoke_bootstrap(void); int uec_widget_ui_smoke_test(void); int uec_gameplay_example_table_smoke(void); int uec_physics_simulation_smoke_test(void); int uec_test_property_struct_array_stubs(const uec_api* api);
 
 static void UEC_CALL NoopGameThreadCallback(void* user_data)
 {
@@ -751,7 +751,8 @@ int main(void)
         return 52;
     }
 
-    if (api->set_actor_property_set_element_text(NULL, streaming_package, 0u, streaming_package) !=
+    if (uec_test_property_struct_array_stubs(api) != 0 ||
+        api->set_actor_property_set_element_text(NULL, streaming_package, 0u, streaming_package) !=
             UEC_RESULT_UNSUPPORTED ||
         api->set_object_property_set_element_text(NULL, streaming_package, 0u, streaming_package) !=
             UEC_RESULT_UNSUPPORTED ||
@@ -763,7 +764,6 @@ int main(void)
         api->release_context(context);
         return 53;
     }
-
     const char message[] = "C ABI smoke test";
     const uec_string_view message_view = {message, sizeof(message) - 1u};
     result = api->log(context, message_view);

@@ -18,6 +18,8 @@ AUECAPIHostReflectionSmokeActor::AUECAPIHostReflectionSmokeActor()
       SoftActorClass(FSoftObjectPath(TEXT("/Script/Engine.Actor")))
 {
     SelfObject = this;
+    VectorPositions.Add(FVector(4.0, -5.5, 6.25));
+    VectorPositions.Add(FVector(-7.0, 8.5, 9.0));
     Counts.Add(7, 70);
     Counts.Add(11, 110);
     Values.Add(13);

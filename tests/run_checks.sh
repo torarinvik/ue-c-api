@@ -5,6 +5,7 @@ repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 plugin_dir="$repo_dir/Plugins/UnrealCAPI"
 public_dir="$plugin_dir/Source/UnrealCAPI/Public"
 consumer="$repo_dir/tests/c_smoke/c_smoke.c"
+struct_array_consumer="$repo_dir/tests/c_smoke/c_smoke_reflection_struct_array.c"
 layout_consumer="$repo_dir/tests/c_smoke/c_smoke_layout.c"
 compat_consumer="$repo_dir/tests/c_smoke/c_compat.c"
 host_stub="$repo_dir/tests/c_smoke/c_host_stub.c"
@@ -44,6 +45,8 @@ git -C "$repo_dir" diff --check
 
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$widget_ui_example_dir" -fsyntax-only "$consumer"
+"${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
+    -fsyntax-only "$struct_array_consumer"
 "${CXX:-c++}" -std=c++17 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     -I "$widget_ui_example_dir" -x c++ -fsyntax-only "$consumer"
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" -fsyntax-only "$layout_consumer"
@@ -111,7 +114,7 @@ fi
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -pedantic-errors -I "$public_dir" \
     ${sanitizer_flags} -I "$repo_dir/examples/c_gameplay" -I "$widget_ui_example_dir" \
     -I "$consumer_drain_example_dir" -I "$playable_example_dir" \
-    "$consumer" "$layout_consumer" "$widget_ui_smoke" "$gameplay_example_smoke" \
+    "$consumer" "$struct_array_consumer" "$layout_consumer" "$widget_ui_smoke" "$gameplay_example_smoke" \
     "$playable_example_smoke" \
     "$physics_simulation_smoke" \
     "$host_stub" "$host_consumer" "$host_travel_consumer" \

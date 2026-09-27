@@ -408,7 +408,9 @@ namespace
         &GetLoadedClassCount, &GetLoadedClassAt, &GetClassPath,
         &GetActorPropertyStructValue, &SetActorPropertyStructValue,
         &GetObjectPropertyStructValue, &SetObjectPropertyStructValue,
-        &MoveActorSwept
+        &MoveActorSwept,
+        &GetActorPropertyArrayStructValue, &GetObjectPropertyArrayStructValue,
+        &SetActorPropertyArrayStructValue, &SetObjectPropertyArrayStructValue
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

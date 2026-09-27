@@ -529,6 +529,71 @@
         return GetArrayElementValue(object, propertyName, index, outValue);
     }
 
+    static uec_result GetArrayElementStructValue(
+        UObject* owner,
+        uec_string_view propertyName,
+        uint32_t index,
+        uec_property_struct_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(*outValue)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        ResetPropertyStructValue(outValue);
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FArrayProperty* arrayProperty = CastField<FArrayProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (arrayProperty == nullptr || arrayProperty->Inner == nullptr) return UEC_RESULT_UNSUPPORTED;
+        const uec_function_struct_kind kind = GetInvocationStructKind(arrayProperty->Inner);
+        if (!IsSupportedInvocationStructKind(kind) || kind == UEC_FUNCTION_STRUCT_NONE) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        FScriptArrayHelper helper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(owner));
+        if (helper.Num() < 0 || static_cast<uint64>(helper.Num()) > UINT32_MAX) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (index >= static_cast<uint32_t>(helper.Num())) return UEC_RESULT_INVALID_ARGUMENT;
+        return ExportTypedStructValue(arrayProperty->Inner,
+                                      helper.GetRawPtr(static_cast<int32>(index)), outValue);
+    }
+
+    uec_result UEC_CALL GetActorPropertyArrayStructValue(
+        uec_actor* rawActor,
+        uec_string_view propertyName,
+        uint32_t index,
+        uec_property_struct_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(*outValue)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        ResetPropertyStructValue(outValue);
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        return actor == nullptr ? UEC_RESULT_INVALID_HANDLE :
+            GetArrayElementStructValue(actor, propertyName, index, outValue);
+    }
+
+    uec_result UEC_CALL GetObjectPropertyArrayStructValue(
+        uec_object* rawObject,
+        uec_string_view propertyName,
+        uint32_t index,
+        uec_property_struct_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(*outValue)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        ResetPropertyStructValue(outValue);
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        return object == nullptr ? UEC_RESULT_INVALID_HANDLE :
+            GetArrayElementStructValue(object, propertyName, index, outValue);
+    }
+
     static uec_result GetStructFieldValue(UObject* owner,
                                           uec_string_view propertyName,
                                           uec_string_view fieldName,
@@ -619,6 +684,63 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UObject* object = handle->Value.Get();
         return object == nullptr ? UEC_RESULT_INVALID_HANDLE : SetArrayElementValue(object, propertyName, index, value);
+    }
+
+    static uec_result SetArrayElementStructValue(
+        UObject* owner,
+        uec_string_view propertyName,
+        uint32_t index,
+        const uec_property_struct_value* value)
+    {
+        if (value == nullptr || value->struct_size < sizeof(*value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FArrayProperty* arrayProperty = CastField<FArrayProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (arrayProperty == nullptr || arrayProperty->Inner == nullptr) return UEC_RESULT_UNSUPPORTED;
+        const uec_function_struct_kind kind = GetInvocationStructKind(arrayProperty->Inner);
+        if (!IsSupportedInvocationStructKind(kind) || kind == UEC_FUNCTION_STRUCT_NONE) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (!IsWritablePropertyForObject(owner, arrayProperty)) return UEC_RESULT_UNSUPPORTED;
+        FScriptArrayHelper helper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(owner));
+        if (helper.Num() < 0 || static_cast<uint64>(helper.Num()) > UINT32_MAX) {
+            return UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (index >= static_cast<uint32_t>(helper.Num())) return UEC_RESULT_INVALID_ARGUMENT;
+        return ImportTypedStructValue(arrayProperty->Inner,
+                                      helper.GetRawPtr(static_cast<int32>(index)), value);
+    }
+
+    uec_result UEC_CALL SetActorPropertyArrayStructValue(
+        uec_actor* rawActor,
+        uec_string_view propertyName,
+        uint32_t index,
+        const uec_property_struct_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        return actor == nullptr ? UEC_RESULT_INVALID_HANDLE :
+            SetArrayElementStructValue(actor, propertyName, index, value);
+    }
+
+    uec_result UEC_CALL SetObjectPropertyArrayStructValue(
+        uec_object* rawObject,
+        uec_string_view propertyName,
+        uint32_t index,
+        const uec_property_struct_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        return object == nullptr ? UEC_RESULT_INVALID_HANDLE :
+            SetArrayElementStructValue(object, propertyName, index, value);
     }
 
     static uec_result SetStructFieldValue(UObject* owner,

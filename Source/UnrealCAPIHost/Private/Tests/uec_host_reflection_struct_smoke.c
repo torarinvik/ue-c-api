@@ -37,6 +37,10 @@ uec_result UEC_CALL uec_host_reflection_guid_smoke(void)
         api->set_actor_property_struct_value == NULL ||
         api->get_object_property_struct_value == NULL ||
         api->set_object_property_struct_value == NULL ||
+        api->get_actor_property_array_struct_value == NULL ||
+        api->get_object_property_array_struct_value == NULL ||
+        api->set_actor_property_array_struct_value == NULL ||
+        api->set_object_property_array_struct_value == NULL ||
         api->get_actor_property_object == NULL || api->release_object == NULL ||
         api->invoke_actor_function_arguments == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
@@ -263,6 +267,81 @@ uec_result UEC_CALL uec_host_reflection_temporal_smoke(void)
         (outputCount != 1u || output.kind != UEC_PROPERTY_STRUCT ||
          output.struct_value.kind != UEC_FUNCTION_STRUCT_TIMESPAN ||
          output.struct_value.value.timespan.ticks != functionTimespan))
+        result = UEC_RESULT_INTERNAL_ERROR;
+
+    property = (uec_property_struct_value){0};
+    property.struct_size = sizeof(property);
+    if (result == UEC_RESULT_OK) stage = "typed FVector array actor read";
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_array_struct_value(
+            actor, View("VectorPositions"), 0u, &property);
+    if (result == UEC_RESULT_OK &&
+        (property.kind != UEC_PROPERTY_STRUCT_VECTOR3 ||
+         property.value.vector3.x != 4.0 || property.value.vector3.y != -5.5 ||
+         property.value.vector3.z != 6.25)) result = UEC_RESULT_INTERNAL_ERROR;
+
+    memset(&property, 0, sizeof(property));
+    property.struct_size = sizeof(property);
+    if (result == UEC_RESULT_OK) stage = "typed FVector array UObject read";
+    if (result == UEC_RESULT_OK)
+        result = api->get_object_property_array_struct_value(
+            selfObject, View("VectorPositions"), 0u, &property);
+    if (result == UEC_RESULT_OK &&
+        (property.kind != UEC_PROPERTY_STRUCT_VECTOR3 ||
+         property.value.vector3.x != 4.0 || property.value.vector3.y != -5.5 ||
+         property.value.vector3.z != 6.25)) result = UEC_RESULT_INTERNAL_ERROR;
+
+    uec_property_struct_value vectorValue = {0};
+    vectorValue.struct_size = sizeof(vectorValue);
+    vectorValue.kind = UEC_PROPERTY_STRUCT_VECTOR3;
+    vectorValue.value.vector3 = (uec_vector3){-10.0, 20.25, 30.5};
+    if (result == UEC_RESULT_OK) stage = "typed FVector array actor write";
+    if (result == UEC_RESULT_OK)
+        result = api->set_actor_property_array_struct_value(
+            actor, View("VectorPositions"), 1u, &vectorValue);
+    memset(&property, 0, sizeof(property));
+    property.struct_size = sizeof(property);
+    if (result == UEC_RESULT_OK)
+        result = api->get_object_property_array_struct_value(
+            selfObject, View("VectorPositions"), 1u, &property);
+    if (result == UEC_RESULT_OK &&
+        (property.kind != UEC_PROPERTY_STRUCT_VECTOR3 ||
+         property.value.vector3.x != -10.0 || property.value.vector3.y != 20.25 ||
+         property.value.vector3.z != 30.5)) result = UEC_RESULT_INTERNAL_ERROR;
+
+    vectorValue.value.vector3 = (uec_vector3){1.5, -2.5, 3.5};
+    if (result == UEC_RESULT_OK) stage = "typed FVector array UObject write";
+    if (result == UEC_RESULT_OK)
+        result = api->set_object_property_array_struct_value(
+            selfObject, View("VectorPositions"), 0u, &vectorValue);
+    memset(&property, 0, sizeof(property));
+    property.struct_size = sizeof(property);
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_array_struct_value(
+            actor, View("VectorPositions"), 0u, &property);
+    if (result == UEC_RESULT_OK &&
+        (property.kind != UEC_PROPERTY_STRUCT_VECTOR3 ||
+         property.value.vector3.x != 1.5 || property.value.vector3.y != -2.5 ||
+         property.value.vector3.z != 3.5)) result = UEC_RESULT_INTERNAL_ERROR;
+
+    vectorValue.kind = UEC_PROPERTY_STRUCT_COLOR;
+    if (result == UEC_RESULT_OK &&
+        api->set_actor_property_array_struct_value(
+            actor, View("VectorPositions"), 0u, &vectorValue) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    property.kind = UEC_PROPERTY_STRUCT_VECTOR3;
+    property.value.vector3 = (uec_vector3){9.0, 9.0, 9.0};
+    if (result == UEC_RESULT_OK &&
+        api->get_actor_property_array_struct_value(
+            actor, View("VectorPositions"), 2u, &property) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK &&
+        (property.kind != UEC_PROPERTY_STRUCT_NONE || property.value.vector3.x != 0.0 ||
+         property.value.vector3.y != 0.0 || property.value.vector3.z != 0.0))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK &&
+        api->get_actor_property_array_struct_value(
+            actor, View("Numbers"), 0u, &property) != UEC_RESULT_UNSUPPORTED)
         result = UEC_RESULT_INTERNAL_ERROR;
 
     if (result != UEC_RESULT_OK && api != NULL && api->log != NULL && context != NULL)

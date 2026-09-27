@@ -1,4 +1,5 @@
     static uec_function_struct_kind GetInvocationStructKind(FProperty* property);
+    static bool IsSupportedInvocationStructKind(uec_function_struct_kind kind);
     static uec_result ReadInvocationStructValue(
         FProperty* property,
         const void* container,
@@ -548,6 +549,78 @@
         FMemory::Memzero(value->value);
     }
 
+    static uec_result ExportTypedStructValue(
+        FProperty* property,
+        const void* container,
+        uec_property_struct_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(*outValue)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        ResetPropertyStructValue(outValue);
+        if (property == nullptr || container == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+
+        uec_function_struct_value typedValue{};
+        const uec_result result = ReadInvocationStructValue(property, container, &typedValue);
+        if (result != UEC_RESULT_OK) return result;
+        outValue->kind = typedValue.kind;
+        switch (typedValue.kind)
+        {
+        case UEC_FUNCTION_STRUCT_VECTOR3: outValue->value.vector3 = typedValue.value.vector3; break;
+        case UEC_FUNCTION_STRUCT_QUATERNION: outValue->value.quaternion = typedValue.value.quaternion; break;
+        case UEC_FUNCTION_STRUCT_TRANSFORM: outValue->value.transform = typedValue.value.transform; break;
+        case UEC_FUNCTION_STRUCT_ROTATOR: outValue->value.rotator = typedValue.value.rotator; break;
+        case UEC_FUNCTION_STRUCT_LINEAR_COLOR: outValue->value.linear_color = typedValue.value.linear_color; break;
+        case UEC_FUNCTION_STRUCT_VECTOR2: outValue->value.vector2 = typedValue.value.vector2; break;
+        case UEC_FUNCTION_STRUCT_VECTOR4: outValue->value.vector4 = typedValue.value.vector4; break;
+        case UEC_FUNCTION_STRUCT_COLOR: outValue->value.color = typedValue.value.color; break;
+        case UEC_FUNCTION_STRUCT_INT_POINT: outValue->value.int_point = typedValue.value.int_point; break;
+        case UEC_FUNCTION_STRUCT_INT_VECTOR: outValue->value.int_vector = typedValue.value.int_vector; break;
+        case UEC_FUNCTION_STRUCT_GUID: outValue->value.guid = typedValue.value.guid; break;
+        case UEC_FUNCTION_STRUCT_DATETIME: outValue->value.datetime = typedValue.value.datetime; break;
+        case UEC_FUNCTION_STRUCT_TIMESPAN: outValue->value.timespan = typedValue.value.timespan; break;
+        default:
+            ResetPropertyStructValue(outValue);
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        return UEC_RESULT_OK;
+    }
+
+    static uec_result ImportTypedStructValue(
+        FProperty* property,
+        void* container,
+        const uec_property_struct_value* value)
+    {
+        if (value == nullptr || value->struct_size < sizeof(*value) ||
+            property == nullptr || container == nullptr) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        const uec_function_struct_kind expectedKind = GetInvocationStructKind(property);
+        if (expectedKind == UEC_FUNCTION_STRUCT_NONE) return UEC_RESULT_UNSUPPORTED;
+        if (value->kind != expectedKind) return UEC_RESULT_INVALID_ARGUMENT;
+
+        uec_function_struct_value typedValue{};
+        typedValue.kind = value->kind;
+        switch (value->kind)
+        {
+        case UEC_FUNCTION_STRUCT_VECTOR3: typedValue.value.vector3 = value->value.vector3; break;
+        case UEC_FUNCTION_STRUCT_QUATERNION: typedValue.value.quaternion = value->value.quaternion; break;
+        case UEC_FUNCTION_STRUCT_TRANSFORM: typedValue.value.transform = value->value.transform; break;
+        case UEC_FUNCTION_STRUCT_ROTATOR: typedValue.value.rotator = value->value.rotator; break;
+        case UEC_FUNCTION_STRUCT_LINEAR_COLOR: typedValue.value.linear_color = value->value.linear_color; break;
+        case UEC_FUNCTION_STRUCT_VECTOR2: typedValue.value.vector2 = value->value.vector2; break;
+        case UEC_FUNCTION_STRUCT_VECTOR4: typedValue.value.vector4 = value->value.vector4; break;
+        case UEC_FUNCTION_STRUCT_COLOR: typedValue.value.color = value->value.color; break;
+        case UEC_FUNCTION_STRUCT_INT_POINT: typedValue.value.int_point = value->value.int_point; break;
+        case UEC_FUNCTION_STRUCT_INT_VECTOR: typedValue.value.int_vector = value->value.int_vector; break;
+        case UEC_FUNCTION_STRUCT_GUID: typedValue.value.guid = value->value.guid; break;
+        case UEC_FUNCTION_STRUCT_DATETIME: typedValue.value.datetime = value->value.datetime; break;
+        case UEC_FUNCTION_STRUCT_TIMESPAN: typedValue.value.timespan = value->value.timespan; break;
+        default: return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        return SetInvocationStructValue(property, container, typedValue);
+    }
+
     static uec_result ReadTypedStructPropertyValue(
         UObject* object,
         uec_string_view propertyName,
@@ -562,58 +635,7 @@
         FProperty* property = object->GetClass()->FindPropertyByName(
             FName(*ToFString(propertyName)));
         if (property == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
-
-        uec_function_struct_value typedValue{};
-        const uec_result result = ReadInvocationStructValue(
-            property, object, &typedValue);
-        if (result != UEC_RESULT_OK) return result;
-        outValue->kind = typedValue.kind;
-        switch (typedValue.kind)
-        {
-        case UEC_FUNCTION_STRUCT_VECTOR3:
-            outValue->value.vector3 = typedValue.value.vector3;
-            break;
-        case UEC_FUNCTION_STRUCT_QUATERNION:
-            outValue->value.quaternion = typedValue.value.quaternion;
-            break;
-        case UEC_FUNCTION_STRUCT_TRANSFORM:
-            outValue->value.transform = typedValue.value.transform;
-            break;
-        case UEC_FUNCTION_STRUCT_ROTATOR:
-            outValue->value.rotator = typedValue.value.rotator;
-            break;
-        case UEC_FUNCTION_STRUCT_LINEAR_COLOR:
-            outValue->value.linear_color = typedValue.value.linear_color;
-            break;
-        case UEC_FUNCTION_STRUCT_VECTOR2:
-            outValue->value.vector2 = typedValue.value.vector2;
-            break;
-        case UEC_FUNCTION_STRUCT_VECTOR4:
-            outValue->value.vector4 = typedValue.value.vector4;
-            break;
-        case UEC_FUNCTION_STRUCT_COLOR:
-            outValue->value.color = typedValue.value.color;
-            break;
-        case UEC_FUNCTION_STRUCT_INT_POINT:
-            outValue->value.int_point = typedValue.value.int_point;
-            break;
-        case UEC_FUNCTION_STRUCT_INT_VECTOR:
-            outValue->value.int_vector = typedValue.value.int_vector;
-            break;
-        case UEC_FUNCTION_STRUCT_GUID:
-            outValue->value.guid = typedValue.value.guid;
-            break;
-        case UEC_FUNCTION_STRUCT_DATETIME:
-            outValue->value.datetime = typedValue.value.datetime;
-            break;
-        case UEC_FUNCTION_STRUCT_TIMESPAN:
-            outValue->value.timespan = typedValue.value.timespan;
-            break;
-        default:
-            ResetPropertyStructValue(outValue);
-            return UEC_RESULT_UNSUPPORTED;
-        }
-        return UEC_RESULT_OK;
+        return ExportTypedStructValue(property, object, outValue);
     }
 
     static uec_result WriteTypedStructPropertyValue(
@@ -632,57 +654,7 @@
         if (!IsWritablePropertyForObject(object, property)) {
             return UEC_RESULT_UNSUPPORTED;
         }
-
-        const uec_function_struct_kind expectedKind = GetInvocationStructKind(property);
-        if (expectedKind == UEC_FUNCTION_STRUCT_NONE) return UEC_RESULT_UNSUPPORTED;
-        if (value->kind != expectedKind) return UEC_RESULT_INVALID_ARGUMENT;
-        uec_function_struct_value typedValue{};
-        typedValue.kind = value->kind;
-        switch (value->kind)
-        {
-        case UEC_FUNCTION_STRUCT_VECTOR3:
-            typedValue.value.vector3 = value->value.vector3;
-            break;
-        case UEC_FUNCTION_STRUCT_QUATERNION:
-            typedValue.value.quaternion = value->value.quaternion;
-            break;
-        case UEC_FUNCTION_STRUCT_TRANSFORM:
-            typedValue.value.transform = value->value.transform;
-            break;
-        case UEC_FUNCTION_STRUCT_ROTATOR:
-            typedValue.value.rotator = value->value.rotator;
-            break;
-        case UEC_FUNCTION_STRUCT_LINEAR_COLOR:
-            typedValue.value.linear_color = value->value.linear_color;
-            break;
-        case UEC_FUNCTION_STRUCT_VECTOR2:
-            typedValue.value.vector2 = value->value.vector2;
-            break;
-        case UEC_FUNCTION_STRUCT_VECTOR4:
-            typedValue.value.vector4 = value->value.vector4;
-            break;
-        case UEC_FUNCTION_STRUCT_COLOR:
-            typedValue.value.color = value->value.color;
-            break;
-        case UEC_FUNCTION_STRUCT_INT_POINT:
-            typedValue.value.int_point = value->value.int_point;
-            break;
-        case UEC_FUNCTION_STRUCT_INT_VECTOR:
-            typedValue.value.int_vector = value->value.int_vector;
-            break;
-        case UEC_FUNCTION_STRUCT_GUID:
-            typedValue.value.guid = value->value.guid;
-            break;
-        case UEC_FUNCTION_STRUCT_DATETIME:
-            typedValue.value.datetime = value->value.datetime;
-            break;
-        case UEC_FUNCTION_STRUCT_TIMESPAN:
-            typedValue.value.timespan = value->value.timespan;
-            break;
-        default:
-            return UEC_RESULT_INVALID_ARGUMENT;
-        }
-        return SetInvocationStructValue(property, object, typedValue);
+        return ImportTypedStructValue(property, object, value);
     }
 
     uec_result UEC_CALL GetActorPropertyStructValue(
