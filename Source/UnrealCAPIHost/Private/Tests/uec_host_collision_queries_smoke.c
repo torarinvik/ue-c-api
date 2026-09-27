@@ -2,6 +2,10 @@
 
 #include <math.h>
 #include <stddef.h>
+#include <stdio.h>
+
+#define UEC_COLLISION_QUERIES_FAIL() \
+    do { failureLine = __LINE__; goto cleanup; } while (0)
 
 static int QueryNear(double actual, double expected)
 {
@@ -130,6 +134,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     uec_vector3 boundsOrigin = {0};
     uec_vector3 boundsExtent = {0};
     uint32_t overlapCount = 0u;
+    int failureLine = 0;
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
     if (result != UEC_RESULT_OK) return result;
     if (api == NULL || context == NULL || api->release_context == NULL ||
@@ -144,21 +149,21 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         api->sweep_trace_filtered == NULL || api->line_trace_filtered == NULL ||
         api->overlap_shape_filtered == NULL || api->trace_detailed_filtered == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
 
     baseline.struct_size = sizeof(baseline);
     result = api->get_runtime_stats(context, &baseline);
-    if (result != UEC_RESULT_OK) goto cleanup;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_QUERIES_FAIL();
     result = api->get_default_world(context, &world);
     if (result != UEC_RESULT_OK || world == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->spawn_actor(world, classPath, &transform, &actor);
     if (result != UEC_RESULT_OK || actor == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->get_actor_bounds(actor, &boundsOrigin, &boundsExtent);
     if (result != UEC_RESULT_OK || !QueryNear(boundsOrigin.x, center.x) ||
@@ -166,27 +171,27 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         !QueryNear(boundsExtent.x, 50.0) || !QueryNear(boundsExtent.y, 50.0) ||
         !QueryNear(boundsExtent.z, 50.0)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     scaledTransform.scale = (uec_vector3){2.0, 0.5, 1.5};
     result = api->set_actor_transform(actor, &scaledTransform, UEC_FALSE);
-    if (result != UEC_RESULT_OK) goto cleanup;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_QUERIES_FAIL();
     result = api->get_actor_bounds(actor, &boundsOrigin, &boundsExtent);
     if (result != UEC_RESULT_OK || !QueryNear(boundsExtent.x, 100.0) ||
         !QueryNear(boundsExtent.y, 25.0) || !QueryNear(boundsExtent.z, 75.0)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->get_actor_root_component(actor, &root);
     if (result != UEC_RESULT_OK || root == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->set_component_collision_enabled(root, UEC_COLLISION_QUERY_ONLY);
-    if (result != UEC_RESULT_OK) goto cleanup;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_QUERIES_FAIL();
     result = api->set_component_collision_channel_response(
         root, UEC_TRACE_VISIBILITY, UEC_COLLISION_RESPONSE_BLOCK);
-    if (result != UEC_RESULT_OK) goto cleanup;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_QUERIES_FAIL();
 
     const uec_vector3 scaledMissStart = {start.x, center.y + 40.0, center.z};
     const uec_vector3 scaledMissEnd = {end.x, center.y + 40.0, center.z};
@@ -194,7 +199,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
     if (result != UEC_RESULT_OK || !QueryHitIsClear(&hit)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     const uec_vector3 scaledHitStart = {start.x, center.y + 20.0, center.z};
     const uec_vector3 scaledHitEnd = {end.x, center.y + 20.0, center.z};
@@ -206,7 +211,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
             center.y + 20.0, center.z}, 1.0) ||
         !QueryVectorNear(hit.normal, (uec_vector3){-1.0, 0.0, 0.0}, 0.05)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     ReleaseQueryHit(api, &hit);
 
@@ -216,21 +221,21 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         &legacyBox, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
     if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_TRUE || hit.actor == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     ReleaseQueryHit(api, &hit);
     result = api->sweep_trace_filtered(world, scaledOrientedStart, scaledOrientedEnd,
         &rotatedBox, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
     if (result != UEC_RESULT_OK || !QueryHitIsClear(&hit)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->overlap_shape_filtered(world,
         (uec_vector3){center.x + 115.0, center.y, center.z}, &sphere,
         UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
     if (result != UEC_RESULT_OK || overlapCount != 1u || overlaps[0] == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     (void)api->release_actor(overlaps[0]);
     overlaps[0] = NULL;
@@ -240,49 +245,49 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
     if (result != UEC_RESULT_OK || overlapCount != 0u || overlaps[0] != NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->set_actor_transform(actor, &transform, UEC_FALSE);
-    if (result != UEC_RESULT_OK) goto cleanup;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_QUERIES_FAIL();
 
     ignored[0] = actor;
     result = api->line_trace_filtered(world, start, end, UEC_TRACE_VISIBILITY,
         UEC_FALSE, (const uec_actor* const*)ignored, 1u, &hit);
     if (result != UEC_RESULT_OK || !QueryHitIsClear(&hit)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->sweep_trace_filtered(world, start, end, &sphere,
         UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
     if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_TRUE || hit.actor == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     ReleaseQueryHit(api, &hit);
     result = api->sweep_trace_filtered(world, start, end, &sphere,
         UEC_TRACE_VISIBILITY, UEC_FALSE, (const uec_actor* const*)ignored, 1u, &hit);
     if (result != UEC_RESULT_OK || !QueryHitIsClear(&hit)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->sweep_trace_filtered(world, orientedStart, orientedEnd,
         &legacyBox, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
     if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_TRUE || hit.actor == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     ReleaseQueryHit(api, &hit);
     result = api->sweep_trace_filtered(world, orientedStart, orientedEnd,
         &rotatedBox, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
     if (result != UEC_RESULT_OK || !QueryHitIsClear(&hit)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->overlap_shape_filtered(world, orientedCenter, &legacyBox,
         UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
     if (result != UEC_RESULT_OK || overlapCount != 1u || overlaps[0] == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     (void)api->release_actor(overlaps[0]);
     overlaps[0] = NULL;
@@ -291,7 +296,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
     if (result != UEC_RESULT_OK || overlapCount != 0u || overlaps[0] != NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
 
     details.struct_size = sizeof(details);
@@ -311,7 +316,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         !QueryVectorNear(details.trace_start, start, 1.0) ||
         !QueryVectorNear(details.trace_end, end, 1.0)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     ReleaseQueryDetails(api, &details);
     details.struct_size = sizeof(details);
@@ -320,7 +325,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     if (result != UEC_RESULT_OK || !QueryHitIsClear(&details.hit) ||
         details.component != NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     details.struct_size = sizeof(details);
     result = api->trace_detailed_filtered(world, orientedStart, orientedEnd,
@@ -328,33 +333,33 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     if (result != UEC_RESULT_OK || !QueryHitIsClear(&details.hit) ||
         details.component != NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
 
     uec_collision_shape invalidShape = sphere;
     invalidShape.radius = 0.0;
     if (!InvalidShapeSweepClears(api, world, start, end, &invalidShape, actor)) {
         result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     invalidShape = legacyBox;
     invalidShape.struct_size = (uint32_t)offsetof(uec_collision_shape, rotation) - 1u;
     if (!InvalidShapeSweepClears(api, world, start, end, &invalidShape, actor)) {
         result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     invalidShape = sphere;
     invalidShape.kind = (uec_collision_shape_kind)99;
     if (!InvalidShapeSweepClears(api, world, start, end, &invalidShape, actor)) {
         result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     invalidShape = rotatedBox;
     invalidShape.rotation = (uec_quaternion){0.0, 0.0, 0.0, 0.0};
     if (!InvalidShapeSweepClears(api, world, orientedStart, orientedEnd,
                                  &invalidShape, actor)) {
         result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     overlapCount = 17u;
     overlaps[0] = actor;
@@ -365,7 +370,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         overlaps[0] != actor) {
         overlaps[0] = NULL;
         result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     overlaps[0] = NULL;
 
@@ -373,14 +378,14 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         &verticalCapsule, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
     if (result != UEC_RESULT_OK || !QueryHitIsClear(&hit)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->sweep_trace_filtered(world, capsuleStart, capsuleEnd,
         &horizontalCapsule, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
     if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_TRUE || hit.actor == NULL ||
         !QueryActorAt(api, hit.actor, center)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     ReleaseQueryHit(api, &hit);
     result = api->sweep_trace_filtered(world, capsuleStart, capsuleEnd,
@@ -388,20 +393,20 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         (const uec_actor* const*)ignored, 1u, &hit);
     if (result != UEC_RESULT_OK || !QueryHitIsClear(&hit)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->overlap_shape_filtered(world, capsuleCenter, &verticalCapsule,
         UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
     if (result != UEC_RESULT_OK || overlapCount != 0u || overlaps[0] != NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     result = api->overlap_shape_filtered(world, capsuleCenter, &horizontalCapsule,
         UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
     if (result != UEC_RESULT_OK || overlapCount != 1u || overlaps[0] == NULL ||
         !QueryActorAt(api, overlaps[0], center)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     (void)api->release_actor(overlaps[0]);
     overlaps[0] = NULL;
@@ -411,7 +416,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         1u, overlaps, &overlapCount);
     if (result != UEC_RESULT_OK || overlapCount != 0u || overlaps[0] != NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     details.struct_size = sizeof(details);
     result = api->trace_detailed_filtered(world, capsuleStart, capsuleEnd,
@@ -420,7 +425,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         details.hit.actor == NULL || details.component == NULL ||
         !QueryActorAt(api, details.hit.actor, center)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     ReleaseQueryDetails(api, &details);
     uec_collision_shape invalidCapsule = verticalCapsule;
@@ -428,7 +433,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     if (!InvalidShapeSweepClears(api, world, capsuleStart, capsuleEnd,
                                  &invalidCapsule, actor)) {
         result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     uec_collision_shape normalizedCapsule = horizontalCapsule;
     normalizedCapsule.rotation.x *= 2.0;
@@ -437,7 +442,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         &normalizedCapsule, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
     if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_TRUE || hit.actor == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     ReleaseQueryHit(api, &hit);
 
@@ -448,7 +453,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     result = api->spawn_actor(world, classPath, &secondTransform, &secondActor);
     if (result != UEC_RESULT_OK || secondActor == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     const uec_collision_shape pairOverlap = {
         sizeof(uec_collision_shape), UEC_COLLISION_SHAPE_SPHERE, 0u,
@@ -459,7 +464,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     if (result != UEC_RESULT_OK || overlapCount != 2u || overlaps[0] == NULL ||
         overlaps[1] == NULL || overlaps[0] == overlaps[1]) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     int foundFirst = 0;
     int foundSecond = 0;
@@ -469,7 +474,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     }
     if (!foundFirst || !foundSecond) {
         result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     for (uint32_t index = 0u; index < overlapCount; ++index) {
         (void)api->release_actor(overlaps[index]);
@@ -483,7 +488,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     if (result != UEC_RESULT_OK || overlapCount != 1u || overlaps[0] == NULL ||
         !QueryActorAt(api, overlaps[0], secondCenter)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-        goto cleanup;
+        UEC_COLLISION_QUERIES_FAIL();
     }
     (void)api->release_actor(overlaps[0]);
     overlaps[0] = NULL;
@@ -498,12 +503,12 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         uec_collision_response response = (uec_collision_response)99;
         result = api->set_component_collision_channel_response(
             root, UEC_TRACE_VISIBILITY, collisionResponses[index]);
-        if (result != UEC_RESULT_OK) goto cleanup;
+        if (result != UEC_RESULT_OK) UEC_COLLISION_QUERIES_FAIL();
         result = api->get_component_collision_response(
             root, UEC_TRACE_VISIBILITY, &response);
         if (result != UEC_RESULT_OK || response != collisionResponses[index]) {
             if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-            goto cleanup;
+            UEC_COLLISION_QUERIES_FAIL();
         }
     }
     result = UEC_RESULT_OK;
@@ -534,6 +539,16 @@ cleanup:
                 result = statsResult;
             if (result == UEC_RESULT_OK && !QueryStatsMatch(&baseline, &observed))
                 result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result != UEC_RESULT_OK && context != NULL && api->log != NULL) {
+            char message[128];
+            const int length = snprintf(message, sizeof(message),
+                "Collision query smoke stopped at line %d with result %d",
+                failureLine, (int)result);
+            if (length > 0 && (size_t)length < sizeof(message)) {
+                const uec_string_view view = {message, (size_t)length};
+                (void)api->log(context, view);
+            }
         }
         if (context != NULL && api->release_context != NULL) {
             const uec_result releaseResult = api->release_context(context);
