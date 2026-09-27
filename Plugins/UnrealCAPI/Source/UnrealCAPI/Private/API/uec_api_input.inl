@@ -49,6 +49,24 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetControllerViewTarget(uec_actor* rawController,
+                                                uec_actor** outViewTarget)
+    {
+        if (outViewTarget != nullptr) *outViewTarget = nullptr;
+        if (outViewTarget == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        AActor* viewTarget = controller->GetViewTarget();
+        if (viewTarget == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        FUECActor* targetHandle = MakeActorHandle(viewTarget);
+        if (targetHandle == nullptr) return HandleCreationFailureResult();
+        *outViewTarget = reinterpret_cast<uec_actor*>(targetHandle);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetInputKeyDown(uec_actor* rawController,
                                         uec_string_view keyName,
                                         uec_bool* outDown)

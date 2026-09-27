@@ -7,6 +7,8 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 170 adds a controller current view-target readback as an owned
+  weak actor handle with explicit release semantics.
 - ABI minor 169 appends an optional quaternion orientation to collision query
   shapes; legacy size-tagged descriptors continue to use identity orientation.
 - ABI minor 168 adds typed reads and writes for supported struct values in

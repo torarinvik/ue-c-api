@@ -415,7 +415,8 @@ namespace
         &GetActorPropertyMapStructValue, &GetObjectPropertyMapStructValue,
         &SetActorPropertyMapStructValue, &SetObjectPropertyMapStructValue,
         &GetActorPropertySetElementStructValue, &GetObjectPropertySetElementStructValue,
-        &SetActorPropertySetElementStructValue, &SetObjectPropertySetElementStructValue
+        &SetActorPropertySetElementStructValue, &SetObjectPropertySetElementStructValue,
+        &GetControllerViewTarget
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

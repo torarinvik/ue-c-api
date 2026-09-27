@@ -88,6 +88,7 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     uec_actor* originalPawn = NULL;
     uec_actor* pawn = NULL;
     uec_actor* possessedPawn = NULL;
+    uec_actor* viewTarget = NULL;
     uec_actor* playerStart = NULL;
     uec_scene_component* camera = NULL;
     uec_scene_component* meshComponent = NULL;
@@ -103,7 +104,8 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         api->get_default_world == NULL || api->get_world_has_authority == NULL ||
         api->release_world == NULL || api->get_player_controller == NULL ||
         api->get_controller_pawn == NULL || api->possess_pawn == NULL ||
-        api->set_controller_view_target == NULL || api->find_player_start == NULL ||
+        api->set_controller_view_target == NULL || api->get_controller_view_target == NULL ||
+        api->find_player_start == NULL ||
         api->spawn_actor == NULL || api->destroy_actor == NULL ||
         api->release_actor == NULL || api->get_actor_component_count_by_class == NULL ||
         api->get_actor_component_at_by_class == NULL || api->release_scene_component == NULL ||
@@ -339,6 +341,18 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     if (result == UEC_RESULT_OK)
         result = api->set_controller_view_target(controller, pawn);
     if (result == UEC_RESULT_OK) controllerChanged = UEC_TRUE;
+    if (result == UEC_RESULT_OK)
+        result = api->get_controller_view_target(controller, &viewTarget);
+    if (result == UEC_RESULT_OK && viewTarget == NULL)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    uec_property_value viewTargetMarker = {0};
+    viewTargetMarker.struct_size = sizeof(viewTargetMarker);
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_value(viewTarget, markerName, &viewTargetMarker);
+    if (result == UEC_RESULT_OK &&
+        (viewTargetMarker.kind != UEC_PROPERTY_INTEGER ||
+         viewTargetMarker.integer_value != 42))
+        result = UEC_RESULT_INTERNAL_ERROR;
     if (result == UEC_RESULT_OK) result = api->possess_pawn(controller, pawn);
     if (result == UEC_RESULT_OK)
         result = api->get_controller_pawn(controller, &possessedPawn);
@@ -359,6 +373,10 @@ cleanup:
         if (result == UEC_RESULT_OK && viewResult != UEC_RESULT_OK) result = viewResult;
         const uec_result possessResult = api->possess_pawn(controller, originalPawn);
         if (result == UEC_RESULT_OK && possessResult != UEC_RESULT_OK) result = possessResult;
+    }
+    if (viewTarget != NULL && api != NULL) {
+        const uec_result releaseResult = api->release_actor(viewTarget);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) result = releaseResult;
     }
     if (camera != NULL && api != NULL) {
         const uec_result releaseResult = api->release_scene_component(camera);

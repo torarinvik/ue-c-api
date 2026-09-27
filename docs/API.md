@@ -742,12 +742,19 @@ change after a write. A successful write rehashes the set; a value equal to a
 different member is rejected with `UEC_RESULT_INVALID_ARGUMENT` and leaves the
 set unchanged. These calls replace existing elements only and do not insert or
 remove members.
+
 The `kind` selects the matching union member. Inputs must be finite, and
 quaternion values must have nonzero length; mismatched or unsupported struct
 types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`
 respectively. These calls run on the game thread and honor the same property
 write restrictions. Other struct types continue to use reflected text import
 and export where Unreal supports it.
+
+ABI 170 adds `get_controller_view_target`, which returns the controller's
+current view target as a weak actor handle owned by the caller. Release it with
+`release_actor`. The getter clears its output before validation, requires a
+valid player controller and the game thread, and returns
+`UEC_RESULT_NOT_INITIALIZED` when the controller has no current view target.
 
 `invoke_actor_function` supports only reflected actor functions with no
 parameters, no return or out values, and no latent or network flag. The bridge

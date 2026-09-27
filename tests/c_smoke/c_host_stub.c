@@ -405,6 +405,14 @@ static uec_result UEC_CALL StubGetControllerPlayerState(
     return controller == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetControllerViewTarget(
+    uec_actor* controller, uec_actor** outViewTarget)
+{
+    if (outViewTarget != NULL) *outViewTarget = NULL;
+    if (outViewTarget == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return controller == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetComboBoxSelectedOption(
     uec_object* comboBox, char* buffer, size_t bufferSize, size_t* requiredSize)
 {
