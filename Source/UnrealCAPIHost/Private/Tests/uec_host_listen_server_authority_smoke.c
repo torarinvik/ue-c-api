@@ -91,6 +91,8 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_transform transformBefore = {0};
     uec_transform attemptedTransform = {0};
     uec_transform transformAfter = {0};
+    uec_hit_result movementHit = {0};
+    uec_vector3 movementApplied = {0};
     uec_transform childTransformBeforeAttach = {0};
     uec_transform childTransformAfterAttach = {0};
     uec_transform childTransformBeforeRelativeAttach = {0};
@@ -141,6 +143,7 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         api->get_component_active == NULL || api->set_component_active == NULL ||
         api->attach_scene_component == NULL || api->detach_scene_component == NULL ||
         api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
+        api->move_actor_swept == NULL ||
         api->get_actor_property_value == NULL || api->set_actor_property_value == NULL ||
         api->set_actor_property_string == NULL || api->set_actor_tag == NULL ||
         api->actor_has_tag == NULL || api->get_actor_tag_count == NULL ||
@@ -320,6 +323,40 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+
+    const uec_transform movementOriginalTransform = transformAfter;
+    attemptedTransform = transformAfter;
+    attemptedTransform.translation = (uec_vector3){100000.0, 100000.0, 100000.0};
+    result = api->set_actor_transform(actor, &attemptedTransform, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    const uec_vector3 movementStart = attemptedTransform.translation;
+    const uec_vector3 movementDelta = {25.0, -15.0, 10.0};
+    movementHit.blocking_hit = UEC_TRUE;
+    movementHit.distance = 1.0;
+    movementApplied = (uec_vector3){1.0, 2.0, 3.0};
+    result = api->move_actor_swept(actor, movementDelta,
+                                   &movementHit, &movementApplied);
+    if (result != UEC_RESULT_OK || movementHit.blocking_hit != UEC_FALSE ||
+        movementHit.actor != NULL || movementHit.distance != 0.0 ||
+        movementApplied.x != movementDelta.x ||
+        movementApplied.y != movementDelta.y ||
+        movementApplied.z != movementDelta.z) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_transform(actor, &transformAfter);
+    const uec_transform expectedMovedTransform = {
+        {movementStart.x + movementDelta.x,
+         movementStart.y + movementDelta.y,
+         movementStart.z + movementDelta.z},
+        attemptedTransform.rotation, attemptedTransform.scale};
+    if (result != UEC_RESULT_OK ||
+        !IsSameTransform(transformAfter, expectedMovedTransform)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->set_actor_transform(actor, &movementOriginalTransform, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
 
     spawnTransform.translation.x = 1000.0;
     spawnTransform.translation.y = 500.0;
@@ -611,6 +648,10 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     childActor = NULL;
 
 cleanup:
+    if (movementHit.actor != NULL && api != NULL && api->release_actor != NULL) {
+        (void)api->release_actor(movementHit.actor);
+        movementHit.actor = NULL;
+    }
     if (childComponent != NULL && api != NULL && api->detach_scene_component != NULL) {
         (void)api->detach_scene_component(childComponent, UEC_TRUE);
     }
