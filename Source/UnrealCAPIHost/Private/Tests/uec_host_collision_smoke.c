@@ -1,5 +1,6 @@
 #include "uec_api.h"
 
+#include <math.h>
 #include <stdio.h>
 
 #define UEC_COLLISION_SMOKE_FAIL() do { failureLine = __LINE__; goto cleanup; } while (0)
@@ -105,9 +106,7 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     const uec_transform movingTransform = {
         {center.x - 300.0, center.y, center.z}, {0.0, 0.0, 0.0, 1.0},
         {1.0, 1.0, 1.0}};
-    const uec_transform sweptTransform = {
-        {center.x + 300.0, center.y, center.z}, {0.0, 0.0, 0.0, 1.0},
-        {1.0, 1.0, 1.0}};
+    const uec_vector3 sweptMoveDelta = {600.0, 0.0, 0.0};
     const uec_collision_shape sphere = {
         sizeof(uec_collision_shape), UEC_COLLISION_SHAPE_SPHERE, 0u,
         20.0, {0.0, 0.0, 0.0}, 0.0};
@@ -128,6 +127,7 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     uec_hit_smoke_capture hitCapture = {0};
     uec_vector3 boundsOrigin = {0};
     uec_vector3 boundsExtent = {0};
+    uec_vector3 appliedDelta = {0};
     uec_transform socketParentTransform = {0};
     uec_transform childTransformBeforeSocketAttach = {0};
     uec_transform childTransformAfterSocketAttach = {0};
@@ -160,6 +160,7 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         api->get_component_collision_response == NULL || api->line_trace == NULL ||
         api->line_trace_filtered == NULL || api->sweep_trace_filtered == NULL ||
         api->overlap_shape_filtered == NULL || api->trace_detailed_filtered == NULL ||
+        api->move_actor_swept == NULL ||
         api->get_actor_transform == NULL || api->get_actor_bounds == NULL ||
         api->get_actor_component_count_by_class == NULL ||
         api->get_actor_component_at_by_class == NULL ||
@@ -454,8 +455,25 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         UEC_COLLISION_SMOKE_FAIL();
     }
     hitCapture.expected_subscription_id = hitSubscriptionId;
-    result = api->set_actor_transform(movingActor, &sweptTransform, UEC_TRUE);
+    hit.blocking_hit = UEC_TRUE;
+    appliedDelta = (uec_vector3){1.0, 2.0, 3.0};
+    result = api->move_actor_swept(movingActor, (uec_vector3){NAN, 0.0, 0.0},
+                                   &hit, &appliedDelta);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || hit.blocking_hit != UEC_FALSE ||
+        hit.actor != NULL || appliedDelta.x != 0.0 || appliedDelta.y != 0.0 ||
+        appliedDelta.z != 0.0) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->move_actor_swept(movingActor, sweptMoveDelta, &hit, &appliedDelta);
     if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    if (hit.blocking_hit != UEC_TRUE || hit.actor == NULL ||
+        !IsAt(api, hit.actor, center) || appliedDelta.x <= 150.0 ||
+        appliedDelta.x >= sweptMoveDelta.x || !IsNear(appliedDelta.y, 0.0) ||
+        !IsNear(appliedDelta.z, 0.0)) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
     if (hitCapture.callback_count != 1u ||
         hitCapture.subscription_id_matched != UEC_TRUE ||
         hitCapture.other_actor == NULL || !IsAt(api, hitCapture.other_actor, center)) {

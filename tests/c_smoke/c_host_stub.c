@@ -1,6 +1,7 @@
 #include "uec_api.h"
 
 #include <string.h>
+#include <math.h>
 
 #include "c_host_stub_bootstrap.inl"
 
@@ -11,6 +12,17 @@ static uec_result UEC_CALL StubSetComponentCollisionEnabled(
     if (enabled < UEC_COLLISION_DISABLED || enabled > UEC_COLLISION_QUERY_AND_PHYSICS)
         return UEC_RESULT_INVALID_ARGUMENT;
     return UEC_RESULT_INVALID_HANDLE;
+}
+
+static uec_result UEC_CALL StubMoveActorSwept(
+    uec_actor* actor, uec_vector3 delta, uec_hit_result* outHit,
+    uec_vector3* outAppliedDelta)
+{
+    if (outHit != NULL) *outHit = (uec_hit_result){0};
+    if (outAppliedDelta != NULL) *outAppliedDelta = (uec_vector3){0};
+    if (outHit == NULL || outAppliedDelta == NULL || !isfinite(delta.x) ||
+        !isfinite(delta.y) || !isfinite(delta.z)) return UEC_RESULT_INVALID_ARGUMENT;
+    return actor == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
 static uec_result UEC_CALL StubSetComponentSimulatingPhysics(

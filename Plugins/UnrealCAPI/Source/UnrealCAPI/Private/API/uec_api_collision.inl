@@ -173,6 +173,34 @@
         return CopyHitResult(hit, outHit);
     }
 
+    uec_result UEC_CALL MoveActorSwept(uec_actor* rawActor,
+                                       uec_vector3 delta,
+                                       uec_hit_result* outHit,
+                                       uec_vector3* outAppliedDelta)
+    {
+        ResetHitResult(outHit);
+        if (outAppliedDelta != nullptr) *outAppliedDelta = {};
+        if (outHit == nullptr || outAppliedDelta == nullptr || !IsFiniteVector(delta)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* actorHandle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(actorHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = actorHandle->Value.Get();
+        if (actor == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        const uec_result authorityResult = RequireActorAuthority(actor);
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
+        USceneComponent* root = actor->GetRootComponent();
+        if (root == nullptr || !root->IsRegistered()) return UEC_RESULT_UNSUPPORTED;
+
+        const FVector before = actor->GetActorLocation();
+        FHitResult hit;
+        actor->SetActorLocation(before + ToUnrealVector(delta), true, &hit);
+        const FVector after = actor->GetActorLocation();
+        *outAppliedDelta = {after.X - before.X, after.Y - before.Y, after.Z - before.Z};
+        return CopyHitResult(hit, outHit);
+    }
+
     uec_result UEC_CALL OverlapShape(uec_world* rawWorld,
                                      uec_vector3 center,
                                      const uec_collision_shape* descriptor,

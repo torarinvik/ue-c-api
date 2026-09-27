@@ -7,6 +7,8 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 163 adds authority-gated `move_actor_swept`, reporting both the
+  blocking hit and the actor's actual applied world-space delta.
 - ABI minor 162 adds typed whole-property and mixed-call `FIntPoint` and
   `FIntVector` values with exact signed 32-bit components and no conversion.
 - ABI minor 161 adds typed whole-property and mixed-call `FColor` values as raw

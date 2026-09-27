@@ -407,7 +407,8 @@ namespace
         &AddComboBoxOption, &RemoveComboBoxOption, &ClearComboBoxOptions,
         &GetLoadedClassCount, &GetLoadedClassAt, &GetClassPath,
         &GetActorPropertyStructValue, &SetActorPropertyStructValue,
-        &GetObjectPropertyStructValue, &SetObjectPropertyStructValue
+        &GetObjectPropertyStructValue, &SetObjectPropertyStructValue,
+        &MoveActorSwept
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

@@ -45,6 +45,8 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     uec_transform serverSpawnTransform = {0};
     uec_transform attemptedTransform = {0};
     uec_transform transformAfter = {0};
+    uec_hit_result movementHit = {0};
+    uec_vector3 movementApplied = {0};
     uec_collision_enabled collisionBefore = UEC_COLLISION_DISABLED;
     uec_collision_enabled collisionAfter = UEC_COLLISION_DISABLED;
     uec_collision_response responseBefore = UEC_COLLISION_RESPONSE_IGNORE;
@@ -123,6 +125,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->set_actor_property_struct_field_text == NULL ||
         api->get_actor_root_component == NULL || api->release_scene_component == NULL ||
         api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
+        api->move_actor_swept == NULL ||
         api->get_component_transform == NULL || api->set_component_transform == NULL ||
         api->get_component_active == NULL || api->set_component_active == NULL ||
         api->get_component_collision_enabled == NULL ||
@@ -408,6 +411,8 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     if (result != UEC_RESULT_OK) goto cleanup;
     attemptedTransform = actorTransformBefore;
     attemptedTransform.translation.x += 250.0;
+    movementHit.blocking_hit = UEC_TRUE;
+    movementApplied = (uec_vector3){1.0, 2.0, 3.0};
 
     if (api->set_actor_transform(actor, &attemptedTransform, UEC_FALSE) != UEC_RESULT_UNSUPPORTED ||
         api->set_component_transform(component, &attemptedTransform, UEC_FALSE) != UEC_RESULT_UNSUPPORTED ||
@@ -445,7 +450,11 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->apply_actor_torque(actor, (uec_vector3){0.0, 10.0, 0.0}, UEC_FALSE) !=
             UEC_RESULT_UNSUPPORTED ||
         api->apply_actor_angular_impulse(actor, (uec_vector3){0.0, 10.0, 0.0}, UEC_TRUE) !=
-            UEC_RESULT_UNSUPPORTED) {
+            UEC_RESULT_UNSUPPORTED ||
+        api->move_actor_swept(actor, (uec_vector3){250.0, 0.0, 0.0},
+                              &movementHit, &movementApplied) != UEC_RESULT_UNSUPPORTED ||
+        movementHit.blocking_hit != UEC_FALSE || movementHit.actor != NULL ||
+        movementApplied.x != 0.0 || movementApplied.y != 0.0 || movementApplied.z != 0.0) {
         result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }

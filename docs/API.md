@@ -785,6 +785,14 @@ zero. `overlap_shape_filtered` applies the same bounded result contract while
 ignoring a borrowed actor array. Overlap ordering is unspecified and every
 copied handle must be released.
 
+ABI minor 163 adds `move_actor_swept`. It applies a finite world-space delta to
+an actor through its registered root scene component, always sweeping against
+collision. The call is game-thread-only and requires world authority. A blocked
+move still returns `UEC_RESULT_OK`; `out_hit.blocking_hit` reports the block and
+`out_applied_delta` reports how far the actor actually moved. Any actor handle
+in the hit record is owned by the caller and must be released. Both outputs are
+cleared on entry, and a missing or unregistered root component is unsupported.
+
 `play_sound_at_location` is a game-thread, fire-and-forget adapter for a loaded
 `USoundBase` object handle. It accepts volume and pitch multipliers, does not
 retain the sound handle, and does not expose playback completion or replication.
