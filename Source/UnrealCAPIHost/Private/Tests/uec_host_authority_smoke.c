@@ -38,6 +38,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     uec_actor* actor = NULL;
     uec_actor* serverActor = NULL;
     uec_actor* clientController = NULL;
+    uec_object* clientEventBridge = NULL;
     uec_scene_component* component = NULL;
     uec_scene_component* socketComponent = NULL;
     uec_net_mode netMode = UEC_NET_MODE_UNKNOWN;
@@ -129,6 +130,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->destroy_actor == NULL ||
         api->release_world == NULL || api->get_actor_count_by_class == NULL ||
         api->get_actor_at_by_class == NULL || api->release_actor == NULL ||
+        api->get_or_create_actor_event_bridge == NULL || api->release_object == NULL ||
         api->get_actor_property_value == NULL || api->set_actor_property_value == NULL ||
         api->get_actor_property_array_element_value == NULL ||
         api->set_actor_property_array_element_value == NULL ||
@@ -276,6 +278,12 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     result = api->get_actor_at_by_class(clientWorld, classPath, 0u, &actor);
     if (result != UEC_RESULT_OK || actor == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    clientEventBridge = (uec_object*)actor;
+    result = api->get_or_create_actor_event_bridge(actor, &clientEventBridge);
+    if (result != UEC_RESULT_UNSUPPORTED || clientEventBridge != NULL) {
+        result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
     if (api->destroy_actor(actor) != UEC_RESULT_UNSUPPORTED) {
@@ -635,6 +643,9 @@ cleanup:
             if (!actorDestroyed && api->release_actor != NULL) {
                 (void)api->release_actor(serverActor);
             }
+        }
+        if (clientEventBridge != NULL && api->release_object != NULL) {
+            (void)api->release_object(clientEventBridge);
         }
         if (component != NULL && api->release_scene_component != NULL) {
             (void)api->release_scene_component(component);
