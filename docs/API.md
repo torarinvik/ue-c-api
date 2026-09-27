@@ -535,7 +535,8 @@ The UE 5.8.3 multiplayer PIE smoke confirms this behavior for all actor and
 component physics mutators, including simulation toggles, velocity writes,
 impulses, forces, and torque. It also verifies that actor/component transforms,
 tags, activation, and collision settings remain unchanged after client-side
-rejection.
+rejection. Client-side actor spawning is rejected with a null output handle,
+and destroying a replicated actor is rejected while its handle remains usable.
 The listen-server PIE smoke checks the positive authority path: the world
 reports listen-server mode and authority, and C API actor spawning, replicated
 property writes, tag writes, and transform writes succeed there.

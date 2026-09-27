@@ -221,6 +221,11 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    if (api->spawn_actor(clientWorld, classPath, &serverSpawnTransform, &actor) !=
+            UEC_RESULT_UNSUPPORTED || actor != NULL) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
     result = api->get_player_controller(clientWorld, 0u, &clientController);
     if (result != UEC_RESULT_OK || clientController == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
@@ -254,6 +259,10 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     result = api->get_actor_at_by_class(clientWorld, classPath, 0u, &actor);
     if (result != UEC_RESULT_OK || actor == NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    if (api->destroy_actor(actor) != UEC_RESULT_UNSUPPORTED) {
+        result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
     replicatedValueBefore.struct_size = sizeof(replicatedValueBefore);
