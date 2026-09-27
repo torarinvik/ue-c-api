@@ -234,7 +234,7 @@
 
         TArray<FOverlapResult> overlaps;
         FCollisionQueryParams queryParams;
-        const bool hasOverlap = world->OverlapMultiByChannel(
+        world->OverlapMultiByChannel(
             overlaps,
             ToUnrealVector(center),
             shapeRotation,
@@ -242,7 +242,7 @@
             collisionShape,
             queryParams,
             FCollisionResponseParams::DefaultResponseParam);
-        if (!hasOverlap) return UEC_RESULT_OK;
+        if (overlaps.Num() == 0) return UEC_RESULT_OK;
 
         TSet<AActor*> actors;
         for (const FOverlapResult& overlap : overlaps)
@@ -482,7 +482,7 @@
         if (ignoredResult != UEC_RESULT_OK) return ignoredResult;
         if (maxHits == 0) return UEC_RESULT_OK;
         TArray<FOverlapResult> overlaps;
-        const bool hasOverlap = world->OverlapMultiByChannel(
+        world->OverlapMultiByChannel(
             overlaps,
             ToUnrealVector(center),
             shapeRotation,
@@ -490,7 +490,7 @@
             collisionShape,
             queryParams,
             FCollisionResponseParams::DefaultResponseParam);
-        if (!hasOverlap) return UEC_RESULT_OK;
+        if (overlaps.Num() == 0) return UEC_RESULT_OK;
         TSet<AActor*> actors;
         for (const FOverlapResult& overlap : overlaps)
         {

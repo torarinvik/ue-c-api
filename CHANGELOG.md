@@ -136,6 +136,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Fixed
 
+- Shape overlap queries now preserve touch results when Unreal reports no
+  blocking overlap. Ignore responses are omitted; Overlap and Block responses
+  both return the actor in Editor PIE and packaged Development smoke checks.
 - Editor class handles now become invalid when Unreal replaces their `UClass`
   during Blueprint compilation. UE 5.8.3 recompiles the smoke Blueprint in
   place, so the Editor PIE check verifies updated property metadata and a live
