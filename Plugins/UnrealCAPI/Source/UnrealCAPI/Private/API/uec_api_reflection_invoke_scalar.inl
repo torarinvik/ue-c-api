@@ -146,6 +146,14 @@
             IsFiniteInvocationVector3(value.scale);
     }
 
+    static UScriptStruct* GetInvocationTimespanStruct()
+    {
+        // UE 5.8 reflects FTimespan but does not expose a TBaseStructure accessor.
+        static UScriptStruct* const TimespanStruct =
+            FindObject<UScriptStruct>(nullptr, TEXT("/Script/CoreUObject.Timespan"));
+        return TimespanStruct;
+    }
+
     static uec_function_struct_kind GetInvocationStructKind(FProperty* property)
     {
         const FStructProperty* structProperty = CastField<FStructProperty>(property);
@@ -185,6 +193,12 @@
         if (structProperty->Struct == TBaseStructure<FGuid>::Get()) {
             return UEC_FUNCTION_STRUCT_GUID;
         }
+        if (structProperty->Struct == TBaseStructure<FDateTime>::Get()) {
+            return UEC_FUNCTION_STRUCT_DATETIME;
+        }
+        if (structProperty->Struct == GetInvocationTimespanStruct()) {
+            return UEC_FUNCTION_STRUCT_TIMESPAN;
+        }
         return UEC_FUNCTION_STRUCT_NONE;
     }
 
@@ -201,7 +215,9 @@
             kind == UEC_FUNCTION_STRUCT_COLOR ||
             kind == UEC_FUNCTION_STRUCT_INT_POINT ||
             kind == UEC_FUNCTION_STRUCT_INT_VECTOR ||
-            kind == UEC_FUNCTION_STRUCT_GUID;
+            kind == UEC_FUNCTION_STRUCT_GUID ||
+            kind == UEC_FUNCTION_STRUCT_DATETIME ||
+            kind == UEC_FUNCTION_STRUCT_TIMESPAN;
     }
 
     static uec_result SetInvocationStructValue(
@@ -303,6 +319,22 @@
                 FGuid(input.a, input.b, input.c, input.d);
             return UEC_RESULT_OK;
         }
+        case UEC_FUNCTION_STRUCT_DATETIME:
+        {
+            const int64_t ticks = value.value.datetime.ticks;
+            if (ticks < FDateTime::MinValue().GetTicks() ||
+                ticks > FDateTime::MaxValue().GetTicks()) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            *structProperty->ContainerPtrToValuePtr<FDateTime>(container) = FDateTime(ticks);
+            return UEC_RESULT_OK;
+        }
+        case UEC_FUNCTION_STRUCT_TIMESPAN:
+        {
+            *structProperty->ContainerPtrToValuePtr<FTimespan>(container) =
+                FTimespan(value.value.timespan.ticks);
+            return UEC_RESULT_OK;
+        }
         default:
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -402,6 +434,22 @@
             const FGuid& value = *CastFieldChecked<FStructProperty>(property)
                 ->ContainerPtrToValuePtr<FGuid>(container);
             outValue->value.guid = {value.A, value.B, value.C, value.D};
+            return UEC_RESULT_OK;
+        }
+        case UEC_FUNCTION_STRUCT_DATETIME:
+        {
+            const FDateTime& value = *CastFieldChecked<FStructProperty>(property)
+                ->ContainerPtrToValuePtr<FDateTime>(container);
+            outValue->value.datetime.ticks = value.GetTicks();
+            return outValue->value.datetime.ticks >= FDateTime::MinValue().GetTicks() &&
+                outValue->value.datetime.ticks <= FDateTime::MaxValue().GetTicks()
+                ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;
+        }
+        case UEC_FUNCTION_STRUCT_TIMESPAN:
+        {
+            const FTimespan& value = *CastFieldChecked<FStructProperty>(property)
+                ->ContainerPtrToValuePtr<FTimespan>(container);
+            outValue->value.timespan.ticks = value.GetTicks();
             return UEC_RESULT_OK;
         }
         default:

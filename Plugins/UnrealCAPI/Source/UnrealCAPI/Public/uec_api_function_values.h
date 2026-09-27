@@ -14,7 +14,9 @@ typedef enum uec_function_struct_kind {
     UEC_FUNCTION_STRUCT_COLOR = 8,
     UEC_FUNCTION_STRUCT_INT_POINT = 9,
     UEC_FUNCTION_STRUCT_INT_VECTOR = 10,
-    UEC_FUNCTION_STRUCT_GUID = 11
+    UEC_FUNCTION_STRUCT_GUID = 11,
+    UEC_FUNCTION_STRUCT_DATETIME = 12,
+    UEC_FUNCTION_STRUCT_TIMESPAN = 13
 } uec_function_struct_kind;
 
 typedef uec_function_struct_kind uec_property_struct_kind;
@@ -31,6 +33,8 @@ typedef uec_function_struct_kind uec_property_struct_kind;
 #define UEC_PROPERTY_STRUCT_INT_POINT UEC_FUNCTION_STRUCT_INT_POINT
 #define UEC_PROPERTY_STRUCT_INT_VECTOR UEC_FUNCTION_STRUCT_INT_VECTOR
 #define UEC_PROPERTY_STRUCT_GUID UEC_FUNCTION_STRUCT_GUID
+#define UEC_PROPERTY_STRUCT_DATETIME UEC_FUNCTION_STRUCT_DATETIME
+#define UEC_PROPERTY_STRUCT_TIMESPAN UEC_FUNCTION_STRUCT_TIMESPAN
 
 /* Unreal FIntPoint grid coordinates, in X, Y order. */
 typedef struct uec_int_point {
@@ -52,6 +56,16 @@ typedef struct uec_guid {
     uint32_t c;
     uint32_t d;
 } uec_guid;
+
+/* FDateTime ticks since 0001-01-01; one tick is 100 nanoseconds. */
+typedef struct uec_datetime {
+    int64_t ticks;
+} uec_datetime;
+
+/* Signed FTimespan duration ticks; one tick is 100 nanoseconds. */
+typedef struct uec_timespan {
+    int64_t ticks;
+} uec_timespan;
 
 /* Unreal FVector2D components in X, Y order. */
 typedef struct uec_vector2 {
@@ -104,6 +118,8 @@ typedef struct uec_function_struct_value {
         uec_int_point int_point;
         uec_int_vector int_vector;
         uec_guid guid;
+        uec_datetime datetime;
+        uec_timespan timespan;
     } value;
 } uec_function_struct_value;
 
@@ -123,6 +139,8 @@ typedef struct uec_property_struct_value {
         uec_int_point int_point;
         uec_int_vector int_vector;
         uec_guid guid;
+        uec_datetime datetime;
+        uec_timespan timespan;
     } value;
 } uec_property_struct_value;
 

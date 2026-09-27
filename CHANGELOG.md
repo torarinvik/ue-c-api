@@ -7,6 +7,8 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 165 adds typed `FDateTime` and `FTimespan` values to whole-property
+  access and mixed reflected calls, preserving Unreal's 100-nanosecond ticks.
 - ABI minor 164 adds typed `FGuid` values to whole-property access and mixed
   reflected function calls, preserving the exact A/B/C/D 32-bit words.
 - ABI minor 163 adds authority-gated `move_actor_swept`, reporting both the

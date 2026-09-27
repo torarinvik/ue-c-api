@@ -781,5 +781,6 @@ extern "C" uec_result UEC_CALL uec_host_reflection_scalars_smoke(void)
         if (result == UEC_RESULT_OK && cleanup != UEC_RESULT_OK) result = cleanup;
     }
     if (result == UEC_RESULT_OK) result = uec_host_reflection_guid_smoke();
+    if (result == UEC_RESULT_OK) result = uec_host_reflection_temporal_smoke();
     return result;
 }

@@ -603,6 +603,12 @@
         case UEC_FUNCTION_STRUCT_GUID:
             outValue->value.guid = typedValue.value.guid;
             break;
+        case UEC_FUNCTION_STRUCT_DATETIME:
+            outValue->value.datetime = typedValue.value.datetime;
+            break;
+        case UEC_FUNCTION_STRUCT_TIMESPAN:
+            outValue->value.timespan = typedValue.value.timespan;
+            break;
         default:
             ResetPropertyStructValue(outValue);
             return UEC_RESULT_UNSUPPORTED;
@@ -666,6 +672,12 @@
             break;
         case UEC_FUNCTION_STRUCT_GUID:
             typedValue.value.guid = value->value.guid;
+            break;
+        case UEC_FUNCTION_STRUCT_DATETIME:
+            typedValue.value.datetime = value->value.datetime;
+            break;
+        case UEC_FUNCTION_STRUCT_TIMESPAN:
+            typedValue.value.timespan = value->value.timespan;
             break;
         default:
             return UEC_RESULT_INVALID_ARGUMENT;

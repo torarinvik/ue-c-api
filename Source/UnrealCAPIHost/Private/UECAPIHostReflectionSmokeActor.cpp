@@ -7,6 +7,8 @@ AUECAPIHostReflectionSmokeActor::AUECAPIHostReflectionSmokeActor()
       Tint(0.25f, 0.5f, 0.75f, 1.0f), PackedTint(32, 64, 128, 255),
       GridCell(3, -7), VoxelCell(10, -20, 30),
       StableId(0x01234567u, 0x89ABCDEFu, 0xA0B0C0D0u, 0xFFFFFFFFu),
+      RecordedAt(1234567890123456789ll),
+      Elapsed(-1234567890123456789ll),
       Pose(FTransform::Identity),
       Enabled(true), Count(7),
       Mode(EUECAPIHostReflectionSmokeMode::First), Ratio(1.25f),
@@ -58,6 +60,16 @@ FIntVector AUECAPIHostReflectionSmokeActor::EchoIntVector(FIntVector value)
 }
 
 FGuid AUECAPIHostReflectionSmokeActor::EchoGuid(FGuid value)
+{
+    return value;
+}
+
+FDateTime AUECAPIHostReflectionSmokeActor::EchoDateTime(FDateTime value)
+{
+    return value;
+}
+
+FTimespan AUECAPIHostReflectionSmokeActor::EchoTimespan(FTimespan value)
 {
     return value;
 }

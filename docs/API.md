@@ -371,6 +371,11 @@ ABI minor 162 adds `FIntPoint` and `FIntVector` typed values to the same mixed
 call path; their X/Y[/Z] components are exact signed 32-bit integers.
 ABI minor 164 adds `FGuid` as four exact unsigned 32-bit words in A, B, C, D
 order; this is a component representation, not a serialized byte layout.
+ABI minor 165 adds `FDateTime` and `FTimespan` as exact signed tick values.
+`FDateTime` ticks count 100-nanosecond intervals since 0001-01-01 and must be
+inside Unreal's supported calendar range; `FTimespan` ticks are signed elapsed
+100-nanosecond intervals and preserve the full `int64_t` range. The records are
+distinct so absolute dates cannot be confused with durations.
 
 ABI minor 135 appends versioned application-data save/load calls to the function
 table. Their schema version is owned by the consumer, and the bridge preserves
@@ -700,6 +705,9 @@ on actor and UObject handles.
 ABI 164 adds typed `FGuid` property values with the exact A, B, C, and D words.
 The C record is not a raw memory view and makes no endian-dependent byte-order
 promise.
+ABI 165 adds typed `FDateTime` and `FTimespan` property values with exact ticks.
+Date/time values outside `FDateTime::MinValue()` through `FDateTime::MaxValue()`
+are rejected; signed time spans are not range-converted.
 The `kind` selects the matching union member. Inputs must be finite, and
 quaternion values must have nonzero length; mismatched or unsupported struct
 types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`

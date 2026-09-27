@@ -12,6 +12,7 @@ extern "C" {
     uec_result UEC_CALL uec_host_reflection_containers_smoke(void);
     uec_result UEC_CALL uec_host_reflection_scalars_smoke(void);
     uec_result UEC_CALL uec_host_reflection_guid_smoke(void);
+    uec_result UEC_CALL uec_host_reflection_temporal_smoke(void);
     uec_result UEC_CALL uec_host_player_flow_smoke(void);
     uec_result UEC_CALL uec_host_animation_smoke_start(void);
     uec_bool UEC_CALL uec_host_animation_smoke_is_running(void);

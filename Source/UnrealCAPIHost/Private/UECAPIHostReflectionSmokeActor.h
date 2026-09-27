@@ -45,6 +45,12 @@ public:
     FGuid EchoGuid(FGuid value);
 
     UFUNCTION()
+    FDateTime EchoDateTime(FDateTime value);
+
+    UFUNCTION()
+    FTimespan EchoTimespan(FTimespan value);
+
+    UFUNCTION()
     FVector4 EchoVector2DWithColor(FVector2D value, FColor& colorOut);
 
     UPROPERTY()
@@ -85,6 +91,12 @@ public:
 
     UPROPERTY()
     FGuid StableId;
+
+    UPROPERTY()
+    FDateTime RecordedAt;
+
+    UPROPERTY()
+    FTimespan Elapsed;
 
     UPROPERTY()
     FTransform Pose;
