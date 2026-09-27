@@ -85,6 +85,8 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_bool activeAfter = UEC_FALSE;
     uec_bool isComponentType = UEC_FALSE;
     uec_bool isActorType = UEC_FALSE;
+    uec_bool simulating = UEC_FALSE;
+    uec_collision_enabled collisionEnabledBefore = UEC_COLLISION_DISABLED;
     uec_transform spawnTransform = {0};
     uec_transform transformBefore = {0};
     uec_transform attemptedTransform = {0};
@@ -110,6 +112,8 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_property_value valueBefore = {0};
     uec_property_value attemptedValue = {0};
     uec_property_value valueAfter = {0};
+    double massBeforeOverride = 0.0;
+    double massReadback = 0.0;
     uint32_t worldCount = 0u;
     uint32_t filteredComponentCount = 0u;
     uint32_t socketComponentCount = 0u;
@@ -127,6 +131,11 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         api->get_actor_component_count_by_class == NULL ||
         api->get_actor_component_at_by_class == NULL ||
         api->get_component_class_name == NULL || api->component_is_a == NULL ||
+        api->get_component_mass == NULL || api->set_component_mass_override == NULL ||
+        api->get_component_simulating_physics == NULL ||
+        api->set_component_simulating_physics == NULL ||
+        api->get_component_collision_enabled == NULL ||
+        api->set_component_collision_enabled == NULL ||
         api->get_component_transform == NULL || api->set_component_transform == NULL ||
         api->get_component_visible == NULL || api->set_component_visible == NULL ||
         api->get_component_active == NULL || api->set_component_active == NULL ||
@@ -295,6 +304,15 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     if (result != UEC_RESULT_OK) goto cleanup;
     attemptedTransform = transformBefore;
     attemptedTransform.translation.x += 30.0;
+    attemptedTransform.scale.x += 0.5;
+    result = api->set_actor_transform(actor, &attemptedTransform, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_actor_transform(actor, &transformAfter);
+    if (result != UEC_RESULT_OK || !IsSameTransform(transformAfter, attemptedTransform)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    attemptedTransform.scale = transformBefore.scale;
     result = api->set_actor_transform(actor, &attemptedTransform, UEC_FALSE);
     if (result != UEC_RESULT_OK) goto cleanup;
     result = api->get_actor_transform(actor, &transformAfter);
@@ -348,6 +366,48 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    result = api->get_component_collision_enabled(filteredComponent,
+                                                 &collisionEnabledBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->set_component_collision_enabled(
+        filteredComponent, UEC_COLLISION_QUERY_AND_PHYSICS);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->set_component_simulating_physics(filteredComponent, UEC_TRUE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_simulating_physics(filteredComponent, &simulating);
+    if (result != UEC_RESULT_OK || simulating != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_mass(filteredComponent, &massBeforeOverride);
+    if (result != UEC_RESULT_OK || massBeforeOverride <= 0.0) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->set_component_simulating_physics(filteredComponent, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->set_component_mass_override(filteredComponent, 12.5, UEC_TRUE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->set_component_simulating_physics(filteredComponent, UEC_TRUE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_mass(filteredComponent, &massReadback);
+    if (result != UEC_RESULT_OK || !IsNear(massReadback, 12.5)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->set_component_mass_override(
+        filteredComponent, massBeforeOverride, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_mass(filteredComponent, &massReadback);
+    if (result != UEC_RESULT_OK || !IsNear(massReadback, massBeforeOverride)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->set_component_simulating_physics(filteredComponent, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->set_component_collision_enabled(
+        filteredComponent, collisionEnabledBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
     result = api->component_is_a(filteredComponent, primitiveComponentClass,
                                  &isComponentType);
     if (result != UEC_RESULT_OK || isComponentType != UEC_TRUE) {

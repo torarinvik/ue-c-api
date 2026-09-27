@@ -420,6 +420,12 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     result = api->set_component_collision_enabled(component,
                                                   UEC_COLLISION_QUERY_AND_PHYSICS);
     if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    massReadback = -1.0;
+    result = api->get_component_mass(component, &massReadback);
+    if (result != UEC_RESULT_OK || massReadback != 0.0) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
     result = api->set_component_simulating_physics(component, UEC_TRUE);
     if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
     uec_bool simulating = UEC_FALSE;

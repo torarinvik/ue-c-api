@@ -320,6 +320,7 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UPrimitiveComponent* component = Cast<UPrimitiveComponent>(handle->Value.Get());
         if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        if (!component->IsSimulatingPhysics()) return UEC_RESULT_OK;
         const float massKg = component->GetMass();
         if (!FMath::IsFinite(massKg) || massKg < 0.0f)
             return UEC_RESULT_INTERNAL_ERROR;

@@ -771,7 +771,8 @@ the handle with `release_object`.
 
 ABI 173 adds `get_component_mass` and `set_component_mass_override` for
 primitive components. Mass values use kilograms and the getter returns Unreal's
-current mass (zero when no physics mass is available). The override setter
+current mass, or zero when the component is not simulating or has no physics
+mass available. The override setter
 requires a finite, positive mass even when clearing the override, a strict
 boolean, the game thread, and world authority; it can configure a component
 before simulation begins. Invalid inputs return `UEC_RESULT_INVALID_ARGUMENT`.
