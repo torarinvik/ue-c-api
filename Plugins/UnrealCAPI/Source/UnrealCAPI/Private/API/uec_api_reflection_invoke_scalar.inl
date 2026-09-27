@@ -182,6 +182,9 @@
         if (structProperty->Struct == TBaseStructure<FIntVector>::Get()) {
             return UEC_FUNCTION_STRUCT_INT_VECTOR;
         }
+        if (structProperty->Struct == TBaseStructure<FGuid>::Get()) {
+            return UEC_FUNCTION_STRUCT_GUID;
+        }
         return UEC_FUNCTION_STRUCT_NONE;
     }
 
@@ -197,7 +200,8 @@
             kind == UEC_FUNCTION_STRUCT_VECTOR4 ||
             kind == UEC_FUNCTION_STRUCT_COLOR ||
             kind == UEC_FUNCTION_STRUCT_INT_POINT ||
-            kind == UEC_FUNCTION_STRUCT_INT_VECTOR;
+            kind == UEC_FUNCTION_STRUCT_INT_VECTOR ||
+            kind == UEC_FUNCTION_STRUCT_GUID;
     }
 
     static uec_result SetInvocationStructValue(
@@ -292,6 +296,13 @@
                 FIntVector(input.x, input.y, input.z);
             return UEC_RESULT_OK;
         }
+        case UEC_FUNCTION_STRUCT_GUID:
+        {
+            const uec_guid& input = value.value.guid;
+            *structProperty->ContainerPtrToValuePtr<FGuid>(container) =
+                FGuid(input.a, input.b, input.c, input.d);
+            return UEC_RESULT_OK;
+        }
         default:
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -384,6 +395,13 @@
             const FIntVector& value = *CastFieldChecked<FStructProperty>(property)
                 ->ContainerPtrToValuePtr<FIntVector>(container);
             outValue->value.int_vector = {value.X, value.Y, value.Z};
+            return UEC_RESULT_OK;
+        }
+        case UEC_FUNCTION_STRUCT_GUID:
+        {
+            const FGuid& value = *CastFieldChecked<FStructProperty>(property)
+                ->ContainerPtrToValuePtr<FGuid>(container);
+            outValue->value.guid = {value.A, value.B, value.C, value.D};
             return UEC_RESULT_OK;
         }
         default:

@@ -369,6 +369,8 @@ ABI minor 161 adds `FColor` as raw RGBA bytes without an automatic gamma
 conversion.
 ABI minor 162 adds `FIntPoint` and `FIntVector` typed values to the same mixed
 call path; their X/Y[/Z] components are exact signed 32-bit integers.
+ABI minor 164 adds `FGuid` as four exact unsigned 32-bit words in A, B, C, D
+order; this is a component representation, not a serialized byte layout.
 
 ABI minor 135 appends versioned application-data save/load calls to the function
 table. Their schema version is owned by the consumer, and the bridge preserves
@@ -695,6 +697,9 @@ the bridge does not convert between gamma-encoded `FColor` and linear-light
 `FLinearColor` values.
 ABI 162 adds exact signed 32-bit `FIntPoint` and `FIntVector` property values
 on actor and UObject handles.
+ABI 164 adds typed `FGuid` property values with the exact A, B, C, and D words.
+The C record is not a raw memory view and makes no endian-dependent byte-order
+promise.
 The `kind` selects the matching union member. Inputs must be finite, and
 quaternion values must have nonzero length; mismatched or unsupported struct
 types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`

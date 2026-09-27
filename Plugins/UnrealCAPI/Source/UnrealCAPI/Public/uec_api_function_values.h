@@ -13,7 +13,8 @@ typedef enum uec_function_struct_kind {
     UEC_FUNCTION_STRUCT_VECTOR4 = 7,
     UEC_FUNCTION_STRUCT_COLOR = 8,
     UEC_FUNCTION_STRUCT_INT_POINT = 9,
-    UEC_FUNCTION_STRUCT_INT_VECTOR = 10
+    UEC_FUNCTION_STRUCT_INT_VECTOR = 10,
+    UEC_FUNCTION_STRUCT_GUID = 11
 } uec_function_struct_kind;
 
 typedef uec_function_struct_kind uec_property_struct_kind;
@@ -29,6 +30,7 @@ typedef uec_function_struct_kind uec_property_struct_kind;
 #define UEC_PROPERTY_STRUCT_COLOR UEC_FUNCTION_STRUCT_COLOR
 #define UEC_PROPERTY_STRUCT_INT_POINT UEC_FUNCTION_STRUCT_INT_POINT
 #define UEC_PROPERTY_STRUCT_INT_VECTOR UEC_FUNCTION_STRUCT_INT_VECTOR
+#define UEC_PROPERTY_STRUCT_GUID UEC_FUNCTION_STRUCT_GUID
 
 /* Unreal FIntPoint grid coordinates, in X, Y order. */
 typedef struct uec_int_point {
@@ -42,6 +44,14 @@ typedef struct uec_int_vector {
     int32_t y;
     int32_t z;
 } uec_int_vector;
+
+/* Unreal FGuid words in A, B, C, D order; values are not serialized bytes. */
+typedef struct uec_guid {
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
+} uec_guid;
 
 /* Unreal FVector2D components in X, Y order. */
 typedef struct uec_vector2 {
@@ -93,6 +103,7 @@ typedef struct uec_function_struct_value {
         uec_color color;
         uec_int_point int_point;
         uec_int_vector int_vector;
+        uec_guid guid;
     } value;
 } uec_function_struct_value;
 
@@ -111,6 +122,7 @@ typedef struct uec_property_struct_value {
         uec_color color;
         uec_int_point int_point;
         uec_int_vector int_vector;
+        uec_guid guid;
     } value;
 } uec_property_struct_value;
 

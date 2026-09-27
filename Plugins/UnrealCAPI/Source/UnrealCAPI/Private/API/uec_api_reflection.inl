@@ -600,6 +600,9 @@
         case UEC_FUNCTION_STRUCT_INT_VECTOR:
             outValue->value.int_vector = typedValue.value.int_vector;
             break;
+        case UEC_FUNCTION_STRUCT_GUID:
+            outValue->value.guid = typedValue.value.guid;
+            break;
         default:
             ResetPropertyStructValue(outValue);
             return UEC_RESULT_UNSUPPORTED;
@@ -660,6 +663,9 @@
             break;
         case UEC_FUNCTION_STRUCT_INT_VECTOR:
             typedValue.value.int_vector = value->value.int_vector;
+            break;
+        case UEC_FUNCTION_STRUCT_GUID:
+            typedValue.value.guid = value->value.guid;
             break;
         default:
             return UEC_RESULT_INVALID_ARGUMENT;

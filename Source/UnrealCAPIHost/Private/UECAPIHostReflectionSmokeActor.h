@@ -42,6 +42,9 @@ public:
     FIntVector EchoIntVector(FIntVector value);
 
     UFUNCTION()
+    FGuid EchoGuid(FGuid value);
+
+    UFUNCTION()
     FVector4 EchoVector2DWithColor(FVector2D value, FColor& colorOut);
 
     UPROPERTY()
@@ -79,6 +82,9 @@ public:
 
     UPROPERTY()
     FIntVector VoxelCell;
+
+    UPROPERTY()
+    FGuid StableId;
 
     UPROPERTY()
     FTransform Pose;

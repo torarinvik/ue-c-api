@@ -7,6 +7,8 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 164 adds typed `FGuid` values to whole-property access and mixed
+  reflected function calls, preserving the exact A/B/C/D 32-bit words.
 - ABI minor 163 adds authority-gated `move_actor_swept`, reporting both the
   blocking hit and the actor's actual applied world-space delta.
 - ABI minor 162 adds typed whole-property and mixed-call `FIntPoint` and
