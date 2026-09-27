@@ -471,10 +471,29 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     }
     result = api->move_actor_swept(movingActor, sweptMoveDelta, &hit, &appliedDelta);
     if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
-    if (hit.blocking_hit != UEC_TRUE || hit.actor == NULL ||
-        !IsAt(api, hit.actor, center) || appliedDelta.x <= 150.0 ||
-        appliedDelta.x >= sweptMoveDelta.x || !IsNear(appliedDelta.y, 0.0) ||
-        !IsNear(appliedDelta.z, 0.0)) {
+    const int movementHitGeometryMatches = hit.blocking_hit == UEC_TRUE &&
+        hit.actor != NULL &&
+        IsAt(api, hit.actor, center) && appliedDelta.x > 150.0 &&
+        appliedDelta.x < sweptMoveDelta.x && IsNear(appliedDelta.y, 0.0) &&
+        IsNear(appliedDelta.z, 0.0) &&
+        IsNear(hit.location.x, center.x - 100.0) &&
+        IsNear(hit.location.y, center.y) && IsNear(hit.location.z, center.z) &&
+        IsNear(hit.normal.x, -1.0) && IsNear(hit.normal.y, 0.0) &&
+        IsNear(hit.normal.z, 0.0) && IsNear(hit.distance, 200.0);
+    if (!movementHitGeometryMatches) {
+        if (api->log != NULL) {
+            char message[256];
+            const int length = snprintf(message, sizeof(message),
+                "Swept move hit loc=(%.2f, %.2f, %.2f), normal=(%.3f, %.3f, %.3f), "
+                "distance=%.2f, applied=(%.2f, %.2f, %.2f)",
+                hit.location.x, hit.location.y, hit.location.z,
+                hit.normal.x, hit.normal.y, hit.normal.z, hit.distance,
+                appliedDelta.x, appliedDelta.y, appliedDelta.z);
+            if (length > 0 && (size_t)length < sizeof(message)) {
+                const uec_string_view view = {message, (size_t)length};
+                (void)api->log(context, view);
+            }
+        }
         result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
