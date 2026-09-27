@@ -28,6 +28,17 @@ static int QueryActorAt(const uec_api* api, uec_actor* actor, uec_vector3 expect
         QueryNear(transform.translation.z, expected.z);
 }
 
+static int ResponseOverlapResultsMatch(const uec_api* api,
+                                       uec_actor* const* actors,
+                                       uint32_t count,
+                                       uint32_t expectedCount,
+                                       uec_vector3 expectedLocation)
+{
+    if (count != expectedCount) return 0;
+    if (expectedCount == 0u) return actors[0] == NULL;
+    return actors[0] != NULL && QueryActorAt(api, actors[0], expectedLocation);
+}
+
 static int QueryStatsMatch(const uec_runtime_stats* before,
                            const uec_runtime_stats* after)
 {
@@ -147,7 +158,8 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         api->set_component_collision_channel_response == NULL ||
         api->get_component_collision_response == NULL ||
         api->sweep_trace_filtered == NULL || api->line_trace_filtered == NULL ||
-        api->overlap_shape_filtered == NULL || api->trace_detailed_filtered == NULL) {
+        api->overlap_shape == NULL || api->overlap_shape_filtered == NULL ||
+        api->trace_detailed_filtered == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_QUERIES_FAIL();
     }
@@ -510,34 +522,40 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
             if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
             UEC_COLLISION_QUERIES_FAIL();
         }
-        result = api->overlap_shape_filtered(world, center, &sphere,
-            UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
         const uint32_t expectedOverlapCount =
             collisionResponses[index] == UEC_COLLISION_RESPONSE_IGNORE ? 0u : 1u;
-        if (result != UEC_RESULT_OK || overlapCount != expectedOverlapCount ||
-            (expectedOverlapCount == 0u && overlaps[0] != NULL) ||
-            (expectedOverlapCount != 0u &&
-             (overlaps[0] == NULL || !QueryActorAt(api, overlaps[0], center)))) {
-            if (context != NULL && api->log != NULL) {
-                char message[160];
-                const int length = snprintf(message, sizeof(message),
-                    "Collision response overlap mismatch: index=%u response=%d result=%d count=%u expected=%u",
-                    (unsigned int)index, (int)collisionResponses[index],
-                    (int)result, (unsigned int)overlapCount,
-                    (unsigned int)expectedOverlapCount);
-                if (length > 0 && (size_t)length < sizeof(message)) {
-                    const uec_string_view view = {message, (size_t)length};
-                    (void)api->log(context, view);
-                }
+        for (size_t queryIndex = 0u; queryIndex < 2u; ++queryIndex) {
+            const char* queryName = queryIndex == 0u ? "filtered" : "unfiltered";
+            if (queryIndex == 0u) {
+                result = api->overlap_shape_filtered(world, center, &sphere,
+                    UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
+            } else {
+                result = api->overlap_shape(world, center, &sphere,
+                    UEC_TRACE_VISIBILITY, 4u, overlaps, &overlapCount);
             }
-            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
-            UEC_COLLISION_QUERIES_FAIL();
+            if (result != UEC_RESULT_OK || !ResponseOverlapResultsMatch(
+                    api, overlaps, overlapCount, expectedOverlapCount, center)) {
+                if (context != NULL && api->log != NULL) {
+                    char message[176];
+                    const int length = snprintf(message, sizeof(message),
+                        "Collision response %s overlap mismatch: index=%u response=%d result=%d count=%u expected=%u",
+                        queryName, (unsigned int)index, (int)collisionResponses[index],
+                        (int)result, (unsigned int)overlapCount,
+                        (unsigned int)expectedOverlapCount);
+                    if (length > 0 && (size_t)length < sizeof(message)) {
+                        const uec_string_view view = {message, (size_t)length};
+                        (void)api->log(context, view);
+                    }
+                }
+                if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+                UEC_COLLISION_QUERIES_FAIL();
+            }
+            if (overlaps[0] != NULL) {
+                (void)api->release_actor(overlaps[0]);
+                overlaps[0] = NULL;
+            }
+            overlapCount = 0u;
         }
-        if (overlaps[0] != NULL) {
-            (void)api->release_actor(overlaps[0]);
-            overlaps[0] = NULL;
-        }
-        overlapCount = 0u;
     }
     result = UEC_RESULT_OK;
 
