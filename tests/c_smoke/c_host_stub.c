@@ -439,6 +439,24 @@ static uec_result UEC_CALL StubGetControllerLocalPlayer(
     return controller == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetControllerControlRotation(
+    uec_actor* controller, uec_vector3* outRotationDegrees)
+{
+    if (outRotationDegrees != NULL) *outRotationDegrees = (uec_vector3){0.0, 0.0, 0.0};
+    if (outRotationDegrees == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return controller == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetControllerControlRotation(
+    uec_actor* controller, uec_vector3 rotationDegrees)
+{
+    if (!isfinite(rotationDegrees.x) || !isfinite(rotationDegrees.y) ||
+        !isfinite(rotationDegrees.z) || fabs(rotationDegrees.x) > (double)FLT_MAX ||
+        fabs(rotationDegrees.y) > (double)FLT_MAX ||
+        fabs(rotationDegrees.z) > (double)FLT_MAX) return UEC_RESULT_INVALID_ARGUMENT;
+    return controller == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetControllerPlayerCameraManager(
     uec_actor* controller, uec_object** outCameraManager)
 {

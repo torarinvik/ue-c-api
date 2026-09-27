@@ -777,6 +777,14 @@ requires a finite, positive mass even when clearing the override, a strict
 boolean, the game thread, and world authority; it can configure a component
 before simulation begins. Invalid inputs return `UEC_RESULT_INVALID_ARGUMENT`.
 
+ABI 174 adds `get_controller_control_rotation` and
+`set_controller_control_rotation`. `uec_vector3` carries pitch, yaw, and roll
+in degrees, in that order. Both calls require the game thread; the getter clears
+its output on failure. Writes are accepted on authoritative worlds and for a
+locally controlled controller in a client world. A client cannot set the
+rotation of a remote controller. Values must be finite and representable as
+Unreal floats.
+
 `invoke_actor_function` supports only reflected actor functions with no
 parameters, no return or out values, and no latent or network flag. The bridge
 also rejects authority-only reflected functions when their actor belongs to a

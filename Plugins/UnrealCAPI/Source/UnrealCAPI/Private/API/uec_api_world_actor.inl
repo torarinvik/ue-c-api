@@ -329,6 +329,43 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetControllerControlRotation(
+        uec_actor* rawController,
+        uec_vector3* outRotationDegrees)
+    {
+        if (outRotationDegrees != nullptr) *outRotationDegrees = {};
+        if (outRotationDegrees == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AController* controller = Cast<AController>(controllerHandle->Value.Get());
+        if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const FRotator rotation = controller->GetControlRotation();
+        *outRotationDegrees = {rotation.Pitch, rotation.Yaw, rotation.Roll};
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetControllerControlRotation(
+        uec_actor* rawController,
+        uec_vector3 rotationDegrees)
+    {
+        if (!IsFiniteVector(rotationDegrees)) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AController* controller = Cast<AController>(controllerHandle->Value.Get());
+        if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        UWorld* world = controller->GetWorld();
+        if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
+        if (world->GetNetMode() == NM_Client && !controller->IsLocalController())
+            return UEC_RESULT_UNSUPPORTED;
+        controller->SetControlRotation(FRotator(
+            static_cast<float>(rotationDegrees.x),
+            static_cast<float>(rotationDegrees.y),
+            static_cast<float>(rotationDegrees.z)));
+        return UEC_RESULT_OK;
+    }
+
     static void CancelTimersFor(UWorld* world)
     {
         if (world == nullptr) return;

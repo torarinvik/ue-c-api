@@ -31,15 +31,20 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     uec_world* serverWorld = NULL;
     uec_actor* actor = NULL;
     uec_actor* serverActor = NULL;
+    uec_actor* clientController = NULL;
     uec_scene_component* component = NULL;
     uec_net_mode netMode = UEC_NET_MODE_UNKNOWN;
     uec_net_mode serverMode = UEC_NET_MODE_UNKNOWN;
     uec_world_kind worldKind = UEC_WORLD_KIND_UNKNOWN;
     uec_bool hasAuthority = UEC_TRUE;
     uec_bool simulating = UEC_FALSE;
+    uec_bool clientControlRotationChanged = UEC_FALSE;
     uec_vector3 linearBefore = {0};
     uec_vector3 angularBefore = {0};
     uec_vector3 readback = {0};
+    uec_vector3 clientControlRotationBefore = {0};
+    uec_vector3 clientControlRotationAttempt = {0};
+    uec_vector3 clientControlRotationAfter = {0};
     uec_transform actorTransformBefore = {0};
     uec_transform componentTransformBefore = {0};
     uec_transform serverSpawnTransform = {0};
@@ -107,6 +112,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->get_world_count == NULL || api->get_world_at == NULL ||
         api->get_world_kind == NULL || api->get_world_net_mode == NULL ||
         api->get_world_has_authority == NULL || api->spawn_actor == NULL ||
+        api->get_player_controller == NULL ||
         api->destroy_actor == NULL ||
         api->release_world == NULL || api->get_actor_count_by_class == NULL ||
         api->get_actor_at_by_class == NULL || api->release_actor == NULL ||
@@ -125,6 +131,8 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->set_actor_property_struct_field_text == NULL ||
         api->get_actor_root_component == NULL || api->release_scene_component == NULL ||
         api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
+        api->get_controller_control_rotation == NULL ||
+        api->set_controller_control_rotation == NULL ||
         api->move_actor_swept == NULL ||
         api->get_component_transform == NULL || api->set_component_transform == NULL ||
         api->get_component_active == NULL || api->set_component_active == NULL ||
@@ -213,6 +221,31 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    result = api->get_player_controller(clientWorld, 0u, &clientController);
+    if (result != UEC_RESULT_OK || clientController == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_controller_control_rotation(
+        clientController, &clientControlRotationBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    clientControlRotationAttempt = clientControlRotationBefore;
+    clientControlRotationAttempt.y += 8.0;
+    result = api->set_controller_control_rotation(
+        clientController, clientControlRotationAttempt);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    clientControlRotationChanged = UEC_TRUE;
+    result = api->get_controller_control_rotation(
+        clientController, &clientControlRotationAfter);
+    if (result != UEC_RESULT_OK ||
+        !IsSameVector(clientControlRotationAfter, clientControlRotationAttempt)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->set_controller_control_rotation(
+        clientController, clientControlRotationBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    clientControlRotationChanged = UEC_FALSE;
     result = api->get_actor_count_by_class(clientWorld, classPath, &actorCount);
     if (result != UEC_RESULT_OK || actorCount != 1u) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
@@ -513,6 +546,13 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
 
 cleanup:
     if (api != NULL) {
+        if (clientControlRotationChanged == UEC_TRUE && clientController != NULL) {
+            (void)api->set_controller_control_rotation(
+                clientController, clientControlRotationBefore);
+        }
+        if (clientController != NULL && api->release_actor != NULL) {
+            (void)api->release_actor(clientController);
+        }
         if (serverActor != NULL) {
             const int actorDestroyed = api->destroy_actor != NULL &&
                 api->destroy_actor(serverActor) == UEC_RESULT_OK;

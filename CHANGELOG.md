@@ -7,6 +7,8 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 174 adds controller control-rotation read/write in pitch, yaw, and
+  roll degrees, permitting client writes only for local controllers.
 - ABI minor 173 adds primitive-component mass readback and authority-gated
   mass override/clear operations in kilograms.
 - ABI minor 172 exposes a controller-scoped weak handle to its `ULocalPlayer`.

@@ -102,6 +102,10 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     uec_object* wrongMeshObject = NULL;
     uec_runtime_stats baseline = {0};
     uec_bool controllerChanged = UEC_FALSE;
+    uec_bool controlRotationChanged = UEC_FALSE;
+    uec_vector3 controlRotationBefore = {0};
+    uec_vector3 attemptedControlRotation = {0};
+    uec_vector3 controlRotationAfter = {0};
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
     if (result != UEC_RESULT_OK) return result;
     if (api == NULL || context == NULL || api->get_runtime_stats == NULL ||
@@ -109,6 +113,8 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         api->release_world == NULL || api->get_player_controller == NULL ||
         api->get_controller_pawn == NULL || api->possess_pawn == NULL ||
         api->set_controller_view_target == NULL || api->get_controller_view_target == NULL ||
+        api->get_controller_control_rotation == NULL ||
+        api->set_controller_control_rotation == NULL ||
         api->get_controller_player_camera_manager == NULL ||
         api->get_controller_local_player == NULL || api->object_is_a == NULL ||
         api->find_player_start == NULL ||
@@ -175,6 +181,46 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         result = api->object_is_a(localPlayer, PlayerFlowView(localPlayerClassPath),
                                   &isLocalPlayer);
     if (result == UEC_RESULT_OK && isLocalPlayer != UEC_TRUE)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->get_controller_control_rotation(controller, &controlRotationBefore);
+    attemptedControlRotation = (uec_vector3){12.5, 83.25, -4.5};
+    if (result == UEC_RESULT_OK)
+        result = api->set_controller_control_rotation(controller,
+                                                       attemptedControlRotation);
+    if (result == UEC_RESULT_OK) controlRotationChanged = UEC_TRUE;
+    if (result == UEC_RESULT_OK)
+        result = api->get_controller_control_rotation(controller, &controlRotationAfter);
+    if (result == UEC_RESULT_OK &&
+        (!PlayerFlowNear(controlRotationAfter.x, attemptedControlRotation.x) ||
+         !PlayerFlowNear(controlRotationAfter.y, attemptedControlRotation.y) ||
+         !PlayerFlowNear(controlRotationAfter.z, attemptedControlRotation.z)))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK && api->set_controller_control_rotation(
+            controller, (uec_vector3){NAN, 0.0, 0.0}) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->get_controller_control_rotation(controller, &controlRotationAfter);
+    if (result == UEC_RESULT_OK &&
+        (!PlayerFlowNear(controlRotationAfter.x, attemptedControlRotation.x) ||
+         !PlayerFlowNear(controlRotationAfter.y, attemptedControlRotation.y) ||
+         !PlayerFlowNear(controlRotationAfter.z, attemptedControlRotation.z)))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    controlRotationAfter = (uec_vector3){9.0, 9.0, 9.0};
+    if (result == UEC_RESULT_OK &&
+        (api->get_controller_control_rotation(NULL, &controlRotationAfter) !=
+             UEC_RESULT_INVALID_HANDLE || controlRotationAfter.x != 0.0 ||
+         controlRotationAfter.y != 0.0 || controlRotationAfter.z != 0.0))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->set_controller_control_rotation(controller, controlRotationBefore);
+    if (result == UEC_RESULT_OK) controlRotationChanged = UEC_FALSE;
+    if (result == UEC_RESULT_OK)
+        result = api->get_controller_control_rotation(controller, &controlRotationAfter);
+    if (result == UEC_RESULT_OK &&
+        (!PlayerFlowNear(controlRotationAfter.x, controlRotationBefore.x) ||
+         !PlayerFlowNear(controlRotationAfter.y, controlRotationBefore.y) ||
+         !PlayerFlowNear(controlRotationAfter.z, controlRotationBefore.z)))
         result = UEC_RESULT_INTERNAL_ERROR;
     if (result == UEC_RESULT_OK) {
         const uec_result pawnResult = api->get_controller_pawn(controller, &originalPawn);
@@ -407,6 +453,12 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         result = UEC_RESULT_INTERNAL_ERROR;
 
 cleanup:
+    if (controlRotationChanged == UEC_TRUE && controller != NULL && api != NULL) {
+        const uec_result rotationResult = api->set_controller_control_rotation(
+            controller, controlRotationBefore);
+        if (result == UEC_RESULT_OK && rotationResult != UEC_RESULT_OK)
+            result = rotationResult;
+    }
     if (controllerChanged == UEC_TRUE && controller != NULL &&
         originalPawn != NULL && api != NULL) {
         const uec_result viewResult = api->set_controller_view_target(controller, originalPawn);

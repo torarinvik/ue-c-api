@@ -11,6 +11,7 @@
 #include "Engine/LevelStreaming.h"
 #include "Engine/LocalPlayer.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Controller.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/Pawn.h"
@@ -417,7 +418,8 @@ namespace
         &GetActorPropertySetElementStructValue, &GetObjectPropertySetElementStructValue,
         &SetActorPropertySetElementStructValue, &SetObjectPropertySetElementStructValue,
         &GetControllerViewTarget, &GetControllerPlayerCameraManager,
-        &GetControllerLocalPlayer, &GetComponentMass, &SetComponentMassOverride
+        &GetControllerLocalPlayer, &GetComponentMass, &SetComponentMassOverride,
+        &GetControllerControlRotation, &SetControllerControlRotation
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

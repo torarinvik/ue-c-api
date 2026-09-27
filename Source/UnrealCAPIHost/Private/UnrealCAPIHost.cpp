@@ -276,11 +276,14 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
                 if (clientWorld != nullptr &&
                     (!requireListenServer || listenServerWorld != nullptr)) break;
             }
-            if ((clientWorld == nullptr || (requireListenServer && listenServerWorld == nullptr)) &&
+            const bool clientPlayerReady = clientWorld != nullptr &&
+                clientWorld->GetFirstPlayerController() != nullptr;
+            if ((clientWorld == nullptr || !clientPlayerReady ||
+                 (requireListenServer && listenServerWorld == nullptr)) &&
                 now < AuthoritySmokeDeadline) return true;
 
             uec_result result = UEC_RESULT_OK;
-            if (clientWorld == nullptr ||
+            if (clientWorld == nullptr || !clientPlayerReady ||
                 (requireListenServer && listenServerWorld == nullptr)) {
                 result = UEC_RESULT_NOT_INITIALIZED;
             }
