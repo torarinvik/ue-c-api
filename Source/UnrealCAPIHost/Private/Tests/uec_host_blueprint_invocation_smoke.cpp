@@ -124,6 +124,60 @@ namespace
         }
 
         if (result == UEC_RESULT_OK) {
+            uec_function_argument input{};
+            input.struct_size = sizeof(input);
+            input.kind = UEC_PROPERTY_STRUCT;
+            input.struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR2;
+            input.struct_value.value.vector2 = {7.5, -8.5};
+
+            uec_function_output outputs[2]{};
+            outputs[0].struct_size = sizeof(outputs[0]);
+            outputs[0].struct_value.kind = UEC_FUNCTION_STRUCT_VECTOR4;
+            outputs[1].struct_size = sizeof(outputs[1]);
+            outputs[1].struct_value.kind = UEC_FUNCTION_STRUCT_COLOR;
+            uint32_t outputCount = 0u;
+            const uec_result shortResult = api->invoke_actor_function_arguments(
+                actor, View("EchoVector2DWithColor"), &input, 1u,
+                outputs, 1u, &outputCount);
+            if (shortResult != UEC_RESULT_BUFFER_TOO_SMALL || outputCount != 2u) {
+                UE_LOG(LogTemp, Error,
+                    TEXT("Typed return/out short-buffer check returned %d with %u outputs"),
+                    static_cast<int32>(shortResult), outputCount);
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+            if (result == UEC_RESULT_OK) {
+                outputCount = 0u;
+                result = api->invoke_actor_function_arguments(
+                    actor, View("EchoVector2DWithColor"), &input, 1u,
+                    outputs, 2u, &outputCount);
+                if (result != UEC_RESULT_OK) {
+                    UE_LOG(LogTemp, Error,
+                        TEXT("Typed return/out invocation returned %d"),
+                        static_cast<int32>(result));
+                }
+            }
+            if (result == UEC_RESULT_OK &&
+                (outputCount != 2u || outputs[0].kind != UEC_PROPERTY_STRUCT ||
+                 outputs[0].struct_value.kind != UEC_FUNCTION_STRUCT_VECTOR4 ||
+                 !Near(outputs[0].struct_value.value.vector4.x, 7.5) ||
+                 !Near(outputs[0].struct_value.value.vector4.y, -8.5) ||
+                 !Near(outputs[0].struct_value.value.vector4.z, 101.0) ||
+                 !Near(outputs[0].struct_value.value.vector4.w, 104.0) ||
+                 outputs[1].kind != UEC_PROPERTY_STRUCT ||
+                 outputs[1].struct_value.kind != UEC_FUNCTION_STRUCT_COLOR ||
+                 outputs[1].struct_value.value.color.r != 101u ||
+                 outputs[1].struct_value.value.color.g != 102u ||
+                 outputs[1].struct_value.value.color.b != 103u ||
+                 outputs[1].struct_value.value.color.a != 104u)) {
+                UE_LOG(LogTemp, Error,
+                    TEXT("Typed return/out mismatch: count=%u return-kind=%d out-kind=%d"),
+                    outputCount, static_cast<int32>(outputs[0].struct_value.kind),
+                    static_cast<int32>(outputs[1].struct_value.kind));
+                result = UEC_RESULT_INTERNAL_ERROR;
+            }
+        }
+
+        if (result == UEC_RESULT_OK) {
             uec_property_struct_value observed{};
             observed.struct_size = sizeof(observed);
             result = api->get_actor_property_struct_value(

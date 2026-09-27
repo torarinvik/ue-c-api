@@ -35,6 +35,9 @@ public:
     UFUNCTION()
     FColor EchoColor(FColor value);
 
+    UFUNCTION()
+    FVector4 EchoVector2DWithColor(FVector2D value, FColor& colorOut);
+
     UPROPERTY()
     TArray<int32> Numbers;
 

@@ -44,3 +44,11 @@ FColor AUECAPIHostReflectionSmokeActor::EchoColor(FColor value)
 {
     return value;
 }
+
+FVector4 AUECAPIHostReflectionSmokeActor::EchoVector2DWithColor(
+    FVector2D value,
+    FColor& colorOut)
+{
+    colorOut = FColor(101, 102, 103, 104);
+    return FVector4(value.X, value.Y, colorOut.R, colorOut.A);
+}
