@@ -147,6 +147,13 @@ uec_result UEC_CALL uec_host_reflection_temporal_smoke(void)
     const int64_t initialTimespan = -INT64_C(1234567890123456789);
     const int64_t updatedTimespan = INT64_MIN;
     const int64_t functionTimespan = INT64_MAX;
+    const uec_guid initialSetIds[] = {
+        {0x01020304u, 0x11121314u, 0x21222324u, 0x31323334u},
+        {0x41424344u, 0x51525354u, 0x61626364u, 0x71727374u}};
+    const uec_guid updatedActorSetId = {
+        0x81828384u, 0x91929394u, 0xA1A2A3A4u, 0xB1B2B3B4u};
+    const uec_guid updatedObjectSetId = {
+        0xC1C2C3C4u, 0xD1D2D3D4u, 0xE1E2E3E4u, 0xF1F2F3F4u};
 
     const uec_api* api = NULL;
     uec_context* context = NULL;
@@ -163,6 +170,11 @@ uec_result UEC_CALL uec_host_reflection_temporal_smoke(void)
         api->set_actor_property_struct_value == NULL ||
         api->get_object_property_struct_value == NULL ||
         api->set_object_property_struct_value == NULL ||
+        api->get_actor_property_set_count == NULL ||
+        api->get_actor_property_set_element_struct_value == NULL ||
+        api->get_object_property_set_element_struct_value == NULL ||
+        api->set_actor_property_set_element_struct_value == NULL ||
+        api->set_object_property_set_element_struct_value == NULL ||
         api->get_actor_property_object == NULL || api->release_object == NULL ||
         api->invoke_actor_function_arguments == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
@@ -415,6 +427,111 @@ uec_result UEC_CALL uec_host_reflection_temporal_smoke(void)
     if (result == UEC_RESULT_OK &&
         api->get_actor_property_map_struct_value(
             actor, View("Counts"), 0u, &property) != UEC_RESULT_UNSUPPORTED)
+        result = UEC_RESULT_INTERNAL_ERROR;
+
+    uint32_t setCount = 0u;
+    if (result == UEC_RESULT_OK) stage = "typed FGuid set count";
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_set_count(actor, View("TypedIds"), &setCount);
+    if (result == UEC_RESULT_OK && setCount != 2u) result = UEC_RESULT_INTERNAL_ERROR;
+
+    memset(&property, 0, sizeof(property));
+    property.struct_size = sizeof(property);
+    if (result == UEC_RESULT_OK) stage = "typed FGuid set actor read";
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_set_element_struct_value(
+            actor, View("TypedIds"), 0u, &property);
+    if (result == UEC_RESULT_OK && property.kind != UEC_PROPERTY_STRUCT_GUID)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK &&
+        !MatchesGuid(&property.value.guid, &initialSetIds[0]) &&
+        !MatchesGuid(&property.value.guid, &initialSetIds[1]))
+        result = UEC_RESULT_INTERNAL_ERROR;
+
+    uec_property_struct_value setGuidValue = {0};
+    setGuidValue.struct_size = sizeof(setGuidValue);
+    setGuidValue.kind = UEC_PROPERTY_STRUCT_GUID;
+    setGuidValue.value.guid = updatedActorSetId;
+    if (result == UEC_RESULT_OK) stage = "typed FGuid set actor write";
+    if (result == UEC_RESULT_OK)
+        result = api->set_actor_property_set_element_struct_value(
+            actor, View("TypedIds"), 0u, &setGuidValue);
+    bool foundGuid = false;
+    for (uint32_t index = 0u; result == UEC_RESULT_OK && index < setCount; ++index) {
+        memset(&property, 0, sizeof(property));
+        property.struct_size = sizeof(property);
+        result = api->get_object_property_set_element_struct_value(
+            selfObject, View("TypedIds"), index, &property);
+        if (result == UEC_RESULT_OK && property.kind != UEC_PROPERTY_STRUCT_GUID)
+            result = UEC_RESULT_INTERNAL_ERROR;
+        if (result == UEC_RESULT_OK && MatchesGuid(&property.value.guid, &updatedActorSetId))
+            foundGuid = true;
+    }
+    if (result == UEC_RESULT_OK && !foundGuid) result = UEC_RESULT_INTERNAL_ERROR;
+
+    setGuidValue.value.guid = updatedObjectSetId;
+    if (result == UEC_RESULT_OK) stage = "typed FGuid set UObject write";
+    if (result == UEC_RESULT_OK)
+        result = api->set_object_property_set_element_struct_value(
+            selfObject, View("TypedIds"), 0u, &setGuidValue);
+    foundGuid = false;
+    for (uint32_t index = 0u; result == UEC_RESULT_OK && index < setCount; ++index) {
+        memset(&property, 0, sizeof(property));
+        property.struct_size = sizeof(property);
+        result = api->get_actor_property_set_element_struct_value(
+            actor, View("TypedIds"), index, &property);
+        if (result == UEC_RESULT_OK && property.kind != UEC_PROPERTY_STRUCT_GUID)
+            result = UEC_RESULT_INTERNAL_ERROR;
+        if (result == UEC_RESULT_OK && MatchesGuid(&property.value.guid, &updatedObjectSetId))
+            foundGuid = true;
+    }
+    if (result == UEC_RESULT_OK && !foundGuid) result = UEC_RESULT_INTERNAL_ERROR;
+
+    uec_property_struct_value setBefore[2] = {{0}, {0}};
+    for (uint32_t index = 0u; result == UEC_RESULT_OK && index < setCount; ++index) {
+        setBefore[index].struct_size = sizeof(setBefore[index]);
+        result = api->get_actor_property_set_element_struct_value(
+            actor, View("TypedIds"), index, &setBefore[index]);
+    }
+    if (result == UEC_RESULT_OK &&
+        (setBefore[0].kind != UEC_PROPERTY_STRUCT_GUID ||
+         setBefore[1].kind != UEC_PROPERTY_STRUCT_GUID))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    setGuidValue.value.guid = setBefore[1].value.guid;
+    if (result == UEC_RESULT_OK) stage = "typed FGuid set duplicate rejection";
+    if (result == UEC_RESULT_OK &&
+        api->set_actor_property_set_element_struct_value(
+            actor, View("TypedIds"), 0u, &setGuidValue) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    for (uint32_t index = 0u; result == UEC_RESULT_OK && index < setCount; ++index) {
+        memset(&property, 0, sizeof(property));
+        property.struct_size = sizeof(property);
+        result = api->get_actor_property_set_element_struct_value(
+            actor, View("TypedIds"), index, &property);
+        if (result == UEC_RESULT_OK &&
+            (property.kind != UEC_PROPERTY_STRUCT_GUID ||
+             !MatchesGuid(&property.value.guid, &setBefore[index].value.guid)))
+            result = UEC_RESULT_INTERNAL_ERROR;
+    }
+
+    setGuidValue.kind = UEC_PROPERTY_STRUCT_INT_VECTOR;
+    setGuidValue.value.int_vector = (uec_int_vector){1, 2, 3};
+    if (result == UEC_RESULT_OK &&
+        api->set_actor_property_set_element_struct_value(
+            actor, View("TypedIds"), 0u, &setGuidValue) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    property.kind = UEC_PROPERTY_STRUCT_GUID;
+    property.value.guid = updatedObjectSetId;
+    if (result == UEC_RESULT_OK &&
+        api->get_actor_property_set_element_struct_value(
+            actor, View("TypedIds"), setCount, &property) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK &&
+        (property.kind != UEC_PROPERTY_STRUCT_NONE || property.value.guid.a != 0u))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK &&
+        api->get_actor_property_set_element_struct_value(
+            actor, View("Values"), 0u, &property) != UEC_RESULT_UNSUPPORTED)
         result = UEC_RESULT_INTERNAL_ERROR;
 
     if (result != UEC_RESULT_OK && api != NULL && api->log != NULL && context != NULL)

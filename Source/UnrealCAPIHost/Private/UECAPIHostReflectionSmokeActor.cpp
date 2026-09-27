@@ -25,6 +25,8 @@ AUECAPIHostReflectionSmokeActor::AUECAPIHostReflectionSmokeActor()
     TypedVectors.Add(42, FVector(12.5, -3.0, 8.25));
     Values.Add(13);
     Values.Add(17);
+    TypedIds.Add(FGuid(0x01020304u, 0x11121314u, 0x21222324u, 0x31323334u));
+    TypedIds.Add(FGuid(0x41424344u, 0x51525354u, 0x61626364u, 0x71727374u));
 }
 
 FVector2D AUECAPIHostReflectionSmokeActor::EchoVector2D(FVector2D value)

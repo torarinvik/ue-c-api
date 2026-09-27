@@ -121,6 +121,46 @@ static uec_result UEC_CALL StubSetObjectPropertyMapStructValue(
     return StubSetContainerStructValue(value);
 }
 
+static uec_result UEC_CALL StubGetActorPropertySetElementStructValue(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    uec_property_struct_value* outValue)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubGetContainerStructValue(outValue);
+}
+
+static uec_result UEC_CALL StubGetObjectPropertySetElementStructValue(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    uec_property_struct_value* outValue)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    return StubGetContainerStructValue(outValue);
+}
+
+static uec_result UEC_CALL StubSetActorPropertySetElementStructValue(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    const uec_property_struct_value* value)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubSetContainerStructValue(value);
+}
+
+static uec_result UEC_CALL StubSetObjectPropertySetElementStructValue(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    const uec_property_struct_value* value)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    return StubSetContainerStructValue(value);
+}
+
 static uec_result UEC_CALL StubSetComponentSimulatingPhysics(
     uec_scene_component* component, uec_bool simulating)
 {

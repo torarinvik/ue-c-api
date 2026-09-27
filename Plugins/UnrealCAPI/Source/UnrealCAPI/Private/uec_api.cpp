@@ -290,6 +290,7 @@ namespace
     #include "API/uec_api_reflection.inl"
     #include "API/uec_api_reflection_containers.inl"
     #include "API/uec_api_reflection_map_set.inl"
+    #include "API/uec_api_reflection_set.inl"
     #include "API/uec_api_reflection_invoke.inl"
     #include "API/uec_api_reflection_invoke_scalar.inl"
     #include "API/uec_api_reflection_invoke_typed.inl"
@@ -412,7 +413,9 @@ namespace
         &GetActorPropertyArrayStructValue, &GetObjectPropertyArrayStructValue,
         &SetActorPropertyArrayStructValue, &SetObjectPropertyArrayStructValue,
         &GetActorPropertyMapStructValue, &GetObjectPropertyMapStructValue,
-        &SetActorPropertyMapStructValue, &SetObjectPropertyMapStructValue
+        &SetActorPropertyMapStructValue, &SetObjectPropertyMapStructValue,
+        &GetActorPropertySetElementStructValue, &GetObjectPropertySetElementStructValue,
+        &SetActorPropertySetElementStructValue, &SetObjectPropertySetElementStructValue
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

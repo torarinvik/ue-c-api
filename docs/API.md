@@ -727,6 +727,15 @@ by the same iteration index used by the map key/value APIs; Unreal does not
 promise map iteration order, so callers should read the key at the same index
 when they need to associate a value with a key. Struct keys and map resizing
 remain outside this typed API.
+ABI 168 adds `get_actor_property_set_element_struct_value`,
+`get_object_property_set_element_struct_value`,
+`set_actor_property_set_element_struct_value`, and
+`set_object_property_set_element_struct_value`. They address an existing set
+element by its current iteration index, whose order is unspecified and may
+change after a write. A successful write rehashes the set; a value equal to a
+different member is rejected with `UEC_RESULT_INVALID_ARGUMENT` and leaves the
+set unchanged. These calls replace existing elements only and do not insert or
+remove members.
 The `kind` selects the matching union member. Inputs must be finite, and
 quaternion values must have nonzero length; mismatched or unsupported struct
 types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`

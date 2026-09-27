@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 168 adds typed reads and writes for supported struct values in
+  existing reflected actor and UObject set elements, with duplicate rejection
+  and rehashing after successful updates.
 - ABI minor 167 adds typed reads and writes for supported struct values in
   reflected actor and UObject maps.
 - ABI minor 166 adds typed reads and writes for supported struct elements in

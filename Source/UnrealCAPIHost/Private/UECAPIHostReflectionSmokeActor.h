@@ -69,6 +69,9 @@ public:
     TSet<int32> Values;
 
     UPROPERTY()
+    TSet<FGuid> TypedIds;
+
+    UPROPERTY()
     FVector Position;
 
     UPROPERTY()
