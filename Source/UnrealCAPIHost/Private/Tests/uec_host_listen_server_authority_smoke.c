@@ -93,6 +93,8 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     uec_transform transformAfter = {0};
     uec_hit_result movementHit = {0};
     uec_vector3 movementApplied = {0};
+    uec_vector3 velocityReadback = {0};
+    uec_vector3 angularVelocityReadback = {0};
     uec_transform childTransformBeforeAttach = {0};
     uec_transform childTransformAfterAttach = {0};
     uec_transform childTransformBeforeRelativeAttach = {0};
@@ -134,6 +136,10 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         api->get_actor_component_at_by_class == NULL ||
         api->get_component_class_name == NULL || api->component_is_a == NULL ||
         api->get_component_mass == NULL || api->set_component_mass_override == NULL ||
+        api->get_component_velocity == NULL ||
+        api->set_component_physics_velocity == NULL ||
+        api->get_component_physics_angular_velocity == NULL ||
+        api->set_component_physics_angular_velocity == NULL ||
         api->get_component_simulating_physics == NULL ||
         api->set_component_simulating_physics == NULL ||
         api->get_component_collision_enabled == NULL ||
@@ -418,6 +424,31 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
     }
     result = api->get_component_mass(filteredComponent, &massBeforeOverride);
     if (result != UEC_RESULT_OK || massBeforeOverride <= 0.0) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    const uec_vector3 serverLinearVelocity = {120.0, -45.0, 15.0};
+    result = api->set_component_physics_velocity(
+        filteredComponent, serverLinearVelocity, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_velocity(filteredComponent, &velocityReadback);
+    if (result != UEC_RESULT_OK ||
+        !IsNear(velocityReadback.x, serverLinearVelocity.x) ||
+        !IsNear(velocityReadback.y, serverLinearVelocity.y) ||
+        !IsNear(velocityReadback.z, serverLinearVelocity.z)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    const uec_vector3 serverAngularVelocity = {0.0, 20.0, -5.0};
+    result = api->set_component_physics_angular_velocity(
+        filteredComponent, serverAngularVelocity, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    result = api->get_component_physics_angular_velocity(
+        filteredComponent, &angularVelocityReadback);
+    if (result != UEC_RESULT_OK ||
+        !IsNear(angularVelocityReadback.x, serverAngularVelocity.x) ||
+        !IsNear(angularVelocityReadback.y, serverAngularVelocity.y) ||
+        !IsNear(angularVelocityReadback.z, serverAngularVelocity.z)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
