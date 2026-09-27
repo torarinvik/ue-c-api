@@ -411,6 +411,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     if (result != UEC_RESULT_OK) goto cleanup;
     attemptedTransform = actorTransformBefore;
     attemptedTransform.translation.x += 250.0;
+    attemptedTransform.scale.x = actorTransformBefore.scale.x + 1.0;
     movementHit.blocking_hit = UEC_TRUE;
     movementApplied = (uec_vector3){1.0, 2.0, 3.0};
 

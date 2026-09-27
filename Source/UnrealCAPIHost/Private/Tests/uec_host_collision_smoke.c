@@ -147,6 +147,8 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     uec_vector3 appliedDelta = {0};
     double massBeforeOverride = 0.0;
     double massReadback = 0.0;
+    uec_transform scaledTransform = {0};
+    uec_transform scaleReadback = {0};
     uec_transform socketParentTransform = {0};
     uec_transform childTransformBeforeSocketAttach = {0};
     uec_transform childTransformAfterSocketAttach = {0};
@@ -212,8 +214,30 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
+    scaledTransform = transform;
+    scaledTransform.scale = (uec_vector3){2.0, 0.5, 1.5};
+    result = api->set_actor_transform(actor, &scaledTransform, UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_actor_transform(actor, &scaleReadback);
+    if (result != UEC_RESULT_OK || !IsTransformNear(scaleReadback, scaledTransform)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->get_actor_bounds(actor, &boundsOrigin, &boundsExtent);
+    if (result != UEC_RESULT_OK ||
+        !IsNear(boundsOrigin.x, center.x) || !IsNear(boundsOrigin.y, center.y) ||
+        !IsNear(boundsOrigin.z, center.z) || !IsNear(boundsExtent.x, 100.0) ||
+        !IsNear(boundsExtent.y, 25.0) || !IsNear(boundsExtent.z, 75.0)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
     result = api->get_actor_root_component(actor, &component);
     if (result != UEC_RESULT_OK || component == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->get_component_transform(component, &scaleReadback);
+    if (result != UEC_RESULT_OK || !IsTransformNear(scaleReadback, scaledTransform)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
@@ -230,6 +254,34 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
                                                &response) != UEC_RESULT_OK ||
         response != UEC_COLLISION_RESPONSE_BLOCK) {
         result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+
+    const uec_vector3 scaledMissStart = {start.x, center.y + 40.0, center.z};
+    const uec_vector3 scaledMissEnd = {end.x, center.y + 40.0, center.z};
+    result = api->line_trace(world, scaledMissStart, scaledMissEnd,
+                             UEC_TRACE_VISIBILITY, UEC_FALSE, &hit);
+    if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_FALSE || hit.actor != NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    const uec_vector3 scaledHitStart = {start.x, center.y + 20.0, center.z};
+    const uec_vector3 scaledHitEnd = {end.x, center.y + 20.0, center.z};
+    result = api->line_trace(world, scaledHitStart, scaledHitEnd,
+                             UEC_TRACE_VISIBILITY, UEC_FALSE, &hit);
+    if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_TRUE || hit.actor == NULL ||
+        !IsAt(api, hit.actor, center)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->release_actor(hit.actor);
+    hit.actor = NULL;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->set_actor_transform(actor, &transform, UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_transform(component, &scaleReadback);
+    if (result != UEC_RESULT_OK || !IsTransformNear(scaleReadback, transform)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
 
