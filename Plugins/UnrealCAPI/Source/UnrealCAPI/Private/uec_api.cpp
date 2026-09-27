@@ -410,7 +410,9 @@ namespace
         &GetObjectPropertyStructValue, &SetObjectPropertyStructValue,
         &MoveActorSwept,
         &GetActorPropertyArrayStructValue, &GetObjectPropertyArrayStructValue,
-        &SetActorPropertyArrayStructValue, &SetObjectPropertyArrayStructValue
+        &SetActorPropertyArrayStructValue, &SetObjectPropertyArrayStructValue,
+        &GetActorPropertyMapStructValue, &GetObjectPropertyMapStructValue,
+        &SetActorPropertyMapStructValue, &SetObjectPropertyMapStructValue
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

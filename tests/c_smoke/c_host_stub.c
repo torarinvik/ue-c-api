@@ -25,7 +25,7 @@ static uec_result UEC_CALL StubMoveActorSwept(
     return actor == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
-static uec_result StubGetArrayStructValue(uec_property_struct_value* outValue)
+static uec_result StubGetContainerStructValue(uec_property_struct_value* outValue)
 {
     if (outValue == NULL || outValue->struct_size < sizeof(*outValue)) {
         return UEC_RESULT_INVALID_ARGUMENT;
@@ -42,7 +42,7 @@ static uec_result UEC_CALL StubGetActorPropertyArrayStructValue(
     (void)actor;
     (void)propertyName;
     (void)index;
-    return StubGetArrayStructValue(outValue);
+    return StubGetContainerStructValue(outValue);
 }
 
 static uec_result UEC_CALL StubGetObjectPropertyArrayStructValue(
@@ -52,10 +52,10 @@ static uec_result UEC_CALL StubGetObjectPropertyArrayStructValue(
     (void)object;
     (void)propertyName;
     (void)index;
-    return StubGetArrayStructValue(outValue);
+    return StubGetContainerStructValue(outValue);
 }
 
-static uec_result StubSetArrayStructValue(const uec_property_struct_value* value)
+static uec_result StubSetContainerStructValue(const uec_property_struct_value* value)
 {
     return value == NULL || value->struct_size < sizeof(*value)
         ? UEC_RESULT_INVALID_ARGUMENT : UEC_RESULT_UNSUPPORTED;
@@ -68,7 +68,7 @@ static uec_result UEC_CALL StubSetActorPropertyArrayStructValue(
     (void)actor;
     (void)propertyName;
     (void)index;
-    return StubSetArrayStructValue(value);
+    return StubSetContainerStructValue(value);
 }
 
 static uec_result UEC_CALL StubSetObjectPropertyArrayStructValue(
@@ -78,7 +78,47 @@ static uec_result UEC_CALL StubSetObjectPropertyArrayStructValue(
     (void)object;
     (void)propertyName;
     (void)index;
-    return StubSetArrayStructValue(value);
+    return StubSetContainerStructValue(value);
+}
+
+static uec_result UEC_CALL StubGetActorPropertyMapStructValue(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    uec_property_struct_value* outValue)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubGetContainerStructValue(outValue);
+}
+
+static uec_result UEC_CALL StubGetObjectPropertyMapStructValue(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    uec_property_struct_value* outValue)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    return StubGetContainerStructValue(outValue);
+}
+
+static uec_result UEC_CALL StubSetActorPropertyMapStructValue(
+    uec_actor* actor, uec_string_view propertyName, uint32_t index,
+    const uec_property_struct_value* value)
+{
+    (void)actor;
+    (void)propertyName;
+    (void)index;
+    return StubSetContainerStructValue(value);
+}
+
+static uec_result UEC_CALL StubSetObjectPropertyMapStructValue(
+    uec_object* object, uec_string_view propertyName, uint32_t index,
+    const uec_property_struct_value* value)
+{
+    (void)object;
+    (void)propertyName;
+    (void)index;
+    return StubSetContainerStructValue(value);
 }
 
 static uec_result UEC_CALL StubSetComponentSimulatingPhysics(

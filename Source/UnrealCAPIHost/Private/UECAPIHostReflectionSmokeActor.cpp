@@ -22,6 +22,7 @@ AUECAPIHostReflectionSmokeActor::AUECAPIHostReflectionSmokeActor()
     VectorPositions.Add(FVector(-7.0, 8.5, 9.0));
     Counts.Add(7, 70);
     Counts.Add(11, 110);
+    TypedVectors.Add(42, FVector(12.5, -3.0, 8.25));
     Values.Add(13);
     Values.Add(17);
 }

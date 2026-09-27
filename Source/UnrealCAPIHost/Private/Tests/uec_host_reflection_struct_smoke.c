@@ -41,6 +41,10 @@ uec_result UEC_CALL uec_host_reflection_guid_smoke(void)
         api->get_object_property_array_struct_value == NULL ||
         api->set_actor_property_array_struct_value == NULL ||
         api->set_object_property_array_struct_value == NULL ||
+        api->get_actor_property_map_struct_value == NULL ||
+        api->get_object_property_map_struct_value == NULL ||
+        api->set_actor_property_map_struct_value == NULL ||
+        api->set_object_property_map_struct_value == NULL ||
         api->get_actor_property_object == NULL || api->release_object == NULL ||
         api->invoke_actor_function_arguments == NULL) {
         result = UEC_RESULT_INTERNAL_ERROR;
@@ -342,6 +346,75 @@ uec_result UEC_CALL uec_host_reflection_temporal_smoke(void)
     if (result == UEC_RESULT_OK &&
         api->get_actor_property_array_struct_value(
             actor, View("Numbers"), 0u, &property) != UEC_RESULT_UNSUPPORTED)
+        result = UEC_RESULT_INTERNAL_ERROR;
+
+    memset(&property, 0, sizeof(property));
+    property.struct_size = sizeof(property);
+    if (result == UEC_RESULT_OK) stage = "typed FVector map actor read";
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_map_struct_value(
+            actor, View("TypedVectors"), 0u, &property);
+    if (result == UEC_RESULT_OK &&
+        (property.kind != UEC_PROPERTY_STRUCT_VECTOR3 ||
+         property.value.vector3.x != 12.5 || property.value.vector3.y != -3.0 ||
+         property.value.vector3.z != 8.25)) result = UEC_RESULT_INTERNAL_ERROR;
+    memset(&property, 0, sizeof(property));
+    property.struct_size = sizeof(property);
+    if (result == UEC_RESULT_OK) stage = "typed FVector map UObject read";
+    if (result == UEC_RESULT_OK)
+        result = api->get_object_property_map_struct_value(
+            selfObject, View("TypedVectors"), 0u, &property);
+    if (result == UEC_RESULT_OK &&
+        (property.kind != UEC_PROPERTY_STRUCT_VECTOR3 ||
+         property.value.vector3.x != 12.5 || property.value.vector3.y != -3.0 ||
+         property.value.vector3.z != 8.25)) result = UEC_RESULT_INTERNAL_ERROR;
+
+    vectorValue.kind = UEC_PROPERTY_STRUCT_VECTOR3;
+    vectorValue.value.vector3 = (uec_vector3){-2.25, 4.5, 6.75};
+    if (result == UEC_RESULT_OK) stage = "typed FVector map actor write";
+    if (result == UEC_RESULT_OK)
+        result = api->set_actor_property_map_struct_value(
+            actor, View("TypedVectors"), 0u, &vectorValue);
+    memset(&property, 0, sizeof(property));
+    property.struct_size = sizeof(property);
+    if (result == UEC_RESULT_OK)
+        result = api->get_object_property_map_struct_value(
+            selfObject, View("TypedVectors"), 0u, &property);
+    if (result == UEC_RESULT_OK &&
+        (property.kind != UEC_PROPERTY_STRUCT_VECTOR3 ||
+         property.value.vector3.x != -2.25 || property.value.vector3.y != 4.5 ||
+         property.value.vector3.z != 6.75)) result = UEC_RESULT_INTERNAL_ERROR;
+
+    vectorValue.value.vector3 = (uec_vector3){7.5, 8.25, -9.0};
+    if (result == UEC_RESULT_OK) stage = "typed FVector map UObject write";
+    if (result == UEC_RESULT_OK)
+        result = api->set_object_property_map_struct_value(
+            selfObject, View("TypedVectors"), 0u, &vectorValue);
+    memset(&property, 0, sizeof(property));
+    property.struct_size = sizeof(property);
+    if (result == UEC_RESULT_OK)
+        result = api->get_actor_property_map_struct_value(
+            actor, View("TypedVectors"), 0u, &property);
+    if (result == UEC_RESULT_OK &&
+        (property.kind != UEC_PROPERTY_STRUCT_VECTOR3 ||
+         property.value.vector3.x != 7.5 || property.value.vector3.y != 8.25 ||
+         property.value.vector3.z != -9.0)) result = UEC_RESULT_INTERNAL_ERROR;
+
+    vectorValue.kind = UEC_PROPERTY_STRUCT_COLOR;
+    if (result == UEC_RESULT_OK &&
+        api->set_actor_property_map_struct_value(
+            actor, View("TypedVectors"), 0u, &vectorValue) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    property.kind = UEC_PROPERTY_STRUCT_VECTOR3;
+    if (result == UEC_RESULT_OK &&
+        api->get_actor_property_map_struct_value(
+            actor, View("TypedVectors"), 1u, &property) != UEC_RESULT_INVALID_ARGUMENT)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK && property.kind != UEC_PROPERTY_STRUCT_NONE)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK &&
+        api->get_actor_property_map_struct_value(
+            actor, View("Counts"), 0u, &property) != UEC_RESULT_UNSUPPORTED)
         result = UEC_RESULT_INTERNAL_ERROR;
 
     if (result != UEC_RESULT_OK && api != NULL && api->log != NULL && context != NULL)

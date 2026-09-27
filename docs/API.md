@@ -719,6 +719,14 @@ they do not grow or reorder the array. Out-of-range indexes return
 `UEC_RESULT_INVALID_ARGUMENT`, non-struct or unsupported element types return
 `UEC_RESULT_UNSUPPORTED`, and writes retain the whole-property access and
 authority restrictions.
+ABI 167 adds the matching actor and UObject map-value operations:
+`get_actor_property_map_struct_value`,
+`get_object_property_map_struct_value`, `set_actor_property_map_struct_value`,
+and `set_object_property_map_struct_value`. They address an existing map entry
+by the same iteration index used by the map key/value APIs; Unreal does not
+promise map iteration order, so callers should read the key at the same index
+when they need to associate a value with a key. Struct keys and map resizing
+remain outside this typed API.
 The `kind` selects the matching union member. Inputs must be finite, and
 quaternion values must have nonzero length; mismatched or unsupported struct
 types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`

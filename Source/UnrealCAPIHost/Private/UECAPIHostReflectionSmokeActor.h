@@ -63,6 +63,9 @@ public:
     TMap<int32, int32> Counts;
 
     UPROPERTY()
+    TMap<int32, FVector> TypedVectors;
+
+    UPROPERTY()
     TSet<int32> Values;
 
     UPROPERTY()

@@ -462,6 +462,65 @@
         UObject* object = handle->Value.Get();
         return object == nullptr ? UEC_RESULT_INVALID_HANDLE : GetMapValue(object, propertyName, index, outValue);
     }
+
+    static uec_result GetMapStructValue(UObject* owner,
+                                        uec_string_view propertyName,
+                                        uint32_t index,
+                                        uec_property_struct_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(*outValue)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        ResetPropertyStructValue(outValue);
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FMapProperty* mapProperty = CastField<FMapProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (mapProperty == nullptr || mapProperty->ValueProp == nullptr) return UEC_RESULT_UNSUPPORTED;
+        const uec_function_struct_kind kind = GetInvocationStructKind(mapProperty->ValueProp);
+        if (!IsSupportedInvocationStructKind(kind) || kind == UEC_FUNCTION_STRUCT_NONE) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        FScriptMapHelper helper(mapProperty, mapProperty->ContainerPtrToValuePtr<void>(owner));
+        int32 slot = INDEX_NONE;
+        if (!FindMapSlot(helper, index, slot)) return UEC_RESULT_INVALID_ARGUMENT;
+        // ValueProp's reflected offset is relative to the pair, so pass the pair
+        // base to ContainerPtrToValuePtr rather than an already-offset value ptr.
+        return ExportTypedStructValue(mapProperty->ValueProp, helper.GetPairPtr(slot), outValue);
+    }
+
+    uec_result UEC_CALL GetActorPropertyMapStructValue(
+        uec_actor* rawActor, uec_string_view propertyName, uint32_t index,
+        uec_property_struct_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(*outValue)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        ResetPropertyStructValue(outValue);
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        return actor == nullptr ? UEC_RESULT_INVALID_HANDLE :
+            GetMapStructValue(actor, propertyName, index, outValue);
+    }
+
+    uec_result UEC_CALL GetObjectPropertyMapStructValue(
+        uec_object* rawObject, uec_string_view propertyName, uint32_t index,
+        uec_property_struct_value* outValue)
+    {
+        if (outValue == nullptr || outValue->struct_size < sizeof(*outValue)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        ResetPropertyStructValue(outValue);
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        return object == nullptr ? UEC_RESULT_INVALID_HANDLE :
+            GetMapStructValue(object, propertyName, index, outValue);
+    }
     uec_result UEC_CALL GetActorPropertySetElementValue(uec_actor* rawActor,
                                                         uec_string_view propertyName,
                                                         uint32_t index,
@@ -528,6 +587,55 @@
         if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
         UObject* object = handle->Value.Get();
         return object == nullptr ? UEC_RESULT_INVALID_HANDLE : SetMapValue(object, propertyName, index, value);
+    }
+
+    static uec_result SetMapStructValue(UObject* owner,
+                                        uec_string_view propertyName,
+                                        uint32_t index,
+                                        const uec_property_struct_value* value)
+    {
+        if (value == nullptr || value->struct_size < sizeof(*value)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        if (owner == nullptr || !IsValidStringView(propertyName) || propertyName.size == 0) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        FMapProperty* mapProperty = CastField<FMapProperty>(
+            owner->GetClass()->FindPropertyByName(FName(*ToFString(propertyName))));
+        if (mapProperty == nullptr || mapProperty->ValueProp == nullptr) return UEC_RESULT_UNSUPPORTED;
+        const uec_function_struct_kind kind = GetInvocationStructKind(mapProperty->ValueProp);
+        if (!IsSupportedInvocationStructKind(kind) || kind == UEC_FUNCTION_STRUCT_NONE) {
+            return UEC_RESULT_UNSUPPORTED;
+        }
+        if (!IsWritablePropertyForObject(owner, mapProperty)) return UEC_RESULT_UNSUPPORTED;
+        FScriptMapHelper helper(mapProperty, mapProperty->ContainerPtrToValuePtr<void>(owner));
+        int32 slot = INDEX_NONE;
+        if (!FindMapSlot(helper, index, slot)) return UEC_RESULT_INVALID_ARGUMENT;
+        return ImportTypedStructValue(mapProperty->ValueProp, helper.GetPairPtr(slot), value);
+    }
+
+    uec_result UEC_CALL SetActorPropertyMapStructValue(
+        uec_actor* rawActor, uec_string_view propertyName, uint32_t index,
+        const uec_property_struct_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECActor*>(rawActor);
+        if (!IsValidActor(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        AActor* actor = handle->Value.Get();
+        return actor == nullptr ? UEC_RESULT_INVALID_HANDLE :
+            SetMapStructValue(actor, propertyName, index, value);
+    }
+
+    uec_result UEC_CALL SetObjectPropertyMapStructValue(
+        uec_object* rawObject, uec_string_view propertyName, uint32_t index,
+        const uec_property_struct_value* value)
+    {
+        auto* handle = reinterpret_cast<FUECObject*>(rawObject);
+        if (!IsValidObject(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UObject* object = handle->Value.Get();
+        return object == nullptr ? UEC_RESULT_INVALID_HANDLE :
+            SetMapStructValue(object, propertyName, index, value);
     }
 
     static uec_result CommitSetElement(FSetProperty* setProperty,
