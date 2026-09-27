@@ -8,6 +8,13 @@ static int QueryNear(double actual, double expected)
     return fabs(actual - expected) <= 1.0;
 }
 
+static int QueryVectorNear(uec_vector3 actual, uec_vector3 expected, double tolerance)
+{
+    return fabs(actual.x - expected.x) <= tolerance &&
+        fabs(actual.y - expected.y) <= tolerance &&
+        fabs(actual.z - expected.z) <= tolerance;
+}
+
 static int QueryActorAt(const uec_api* api, uec_actor* actor, uec_vector3 expected)
 {
     uec_transform transform = {0};
@@ -193,7 +200,10 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     result = api->line_trace_filtered(world, scaledHitStart, scaledHitEnd,
         UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
     if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_TRUE || hit.actor == NULL ||
-        !QueryActorAt(api, hit.actor, center)) {
+        !QueryActorAt(api, hit.actor, center) || !QueryNear(hit.distance, 150.0) ||
+        !QueryVectorNear(hit.location, (uec_vector3){center.x - 100.0,
+            center.y + 20.0, center.z}, 1.0) ||
+        !QueryVectorNear(hit.normal, (uec_vector3){-1.0, 0.0, 0.0}, 0.05)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
@@ -288,7 +298,17 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &details);
     if (result != UEC_RESULT_OK || details.hit.blocking_hit != UEC_TRUE ||
         details.hit.actor == NULL || details.component == NULL ||
-        !QueryActorAt(api, details.hit.actor, center)) {
+        !QueryActorAt(api, details.hit.actor, center) ||
+        !QueryNear(details.hit.distance, 180.0) ||
+        !QueryVectorNear(details.hit.location,
+            (uec_vector3){center.x - 70.0, center.y, center.z}, 1.0) ||
+        !QueryVectorNear(details.hit.normal, (uec_vector3){-1.0, 0.0, 0.0}, 0.05) ||
+        !QueryVectorNear(details.impact_point,
+            (uec_vector3){center.x - 50.0, center.y, center.z}, 1.0) ||
+        !QueryVectorNear(details.impact_normal,
+            (uec_vector3){-1.0, 0.0, 0.0}, 0.05) ||
+        !QueryVectorNear(details.trace_start, start, 1.0) ||
+        !QueryVectorNear(details.trace_end, end, 1.0)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
