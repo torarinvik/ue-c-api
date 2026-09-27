@@ -282,6 +282,12 @@ ABI minor 127 adds authority-gated angular impulse application in radians for
 the simulated root body.
 ABI minor 128 adds equivalent actor-root angular-velocity readback, angular
 velocity writes, torque, and angular-impulse operations.
+Physics state and force/impulse operations are game-thread-only, including
+velocity reads; worker-thread and physics-substep calls return
+`UEC_RESULT_WRONG_THREAD`. These APIs issue work through Unreal's component
+physics interface and do not expose direct physics-thread access. Submit worker
+requests through `run_on_game_thread` when the operation must be coordinated
+from another thread.
 ABI minor 129 adds `get_actor_property_soft_value` and
 `get_object_property_soft_value`, which return a size-checked typed output
 record containing the reflected soft-object or soft-class kind and its path.

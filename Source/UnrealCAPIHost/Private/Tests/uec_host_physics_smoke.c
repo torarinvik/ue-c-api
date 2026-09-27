@@ -1,5 +1,8 @@
 #include "uec_api.h"
 
+uec_result UEC_CALL uec_host_check_physics_thread_rejection(
+    const uec_api* api, uec_scene_component* component);
+
 typedef struct uec_physics_smoke_state {
     const uec_api* api;
     uec_context* context;
@@ -121,6 +124,8 @@ uec_result UEC_CALL uec_host_physics_smoke_start(void)
     if (result != UEC_RESULT_OK) goto failed;
     result = api->apply_component_angular_impulse(g_physics_smoke.component,
                                                   (uec_vector3){0.0, 0.25, 0.0}, UEC_TRUE);
+    if (result != UEC_RESULT_OK) goto failed;
+    result = uec_host_check_physics_thread_rejection(api, g_physics_smoke.component);
     if (result != UEC_RESULT_OK) goto failed;
     g_physics_smoke.phase = 1u;
     return UEC_RESULT_OK;

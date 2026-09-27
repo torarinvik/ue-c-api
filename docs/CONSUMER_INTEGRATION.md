@@ -403,6 +403,8 @@ Queue admission is serialized with `release_context`: a submission rejected
 after context release returns `UEC_RESULT_INVALID_HANDLE` and a zero request id.
 Requests already accepted are independent of that context handle, so retain a
 live context for cancellation and runtime drain checks until they finish.
+Physics state reads and force/impulse operations follow the same game-thread
+rule; they do not run from Unreal's physics worker or substep callbacks.
 
 Timer, tick, input, audio, widget, and primitive-component hit subscriptions
 return tokens. Unsubscribe with the matching context before releasing consumer

@@ -353,6 +353,36 @@ extern "C" uec_result UEC_CALL uec_host_queue_smoke_start(void)
     return UEC_RESULT_OK;
 }
 
+extern "C" uec_result UEC_CALL uec_host_check_physics_thread_rejection(
+    const uec_api* api, uec_scene_component* component)
+{
+    if (api == nullptr || component == nullptr ||
+        api->get_component_physics_angular_velocity == nullptr ||
+        api->set_component_physics_velocity == nullptr) {
+        return UEC_RESULT_INVALID_ARGUMENT;
+    }
+    struct FPhysicsThreadProbe
+    {
+        uec_result ReadResult = UEC_RESULT_INTERNAL_ERROR;
+        uec_result WriteResult = UEC_RESULT_INTERNAL_ERROR;
+        uec_vector3 Readback{99.0, 99.0, 99.0};
+    } probe;
+    TFuture<void> task = Async(EAsyncExecution::ThreadPool, [api, component, &probe]()
+    {
+        probe.ReadResult = api->get_component_physics_angular_velocity(
+            component, &probe.Readback);
+        probe.WriteResult = api->set_component_physics_velocity(
+            component, {10000.0, 20000.0, 30000.0}, UEC_FALSE);
+    });
+    task.Get();
+    if (probe.ReadResult != UEC_RESULT_WRONG_THREAD ||
+        probe.WriteResult != UEC_RESULT_WRONG_THREAD ||
+        probe.Readback.x != 0.0 || probe.Readback.y != 0.0 || probe.Readback.z != 0.0) {
+        return UEC_RESULT_INTERNAL_ERROR;
+    }
+    return UEC_RESULT_OK;
+}
+
 extern "C" uec_bool UEC_CALL uec_host_queue_smoke_poll(uec_result* outResult)
 {
     if (outResult == nullptr) return UEC_FALSE;
