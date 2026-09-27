@@ -103,13 +103,23 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     const uec_vector3 center = {12000.0, -24000.0, 50000.0};
     const uec_vector3 start = {center.x - 250.0, center.y, center.z};
     const uec_vector3 end = {center.x + 250.0, center.y, center.z};
+    const uec_vector3 orientedStart = {center.x + 120.0, center.y - 200.0, center.z};
+    const uec_vector3 orientedEnd = {center.x + 120.0, center.y + 200.0, center.z};
+    const uec_vector3 orientedCenter = {center.x + 120.0, center.y, center.z};
     const uec_transform movingTransform = {
         {center.x - 300.0, center.y, center.z}, {0.0, 0.0, 0.0, 1.0},
         {1.0, 1.0, 1.0}};
     const uec_vector3 sweptMoveDelta = {600.0, 0.0, 0.0};
     const uec_collision_shape sphere = {
         sizeof(uec_collision_shape), UEC_COLLISION_SHAPE_SPHERE, 0u,
-        20.0, {0.0, 0.0, 0.0}, 0.0};
+        20.0, {0.0, 0.0, 0.0}, 0.0, {0.0, 0.0, 0.0, 1.0}};
+    const uec_collision_shape legacyBox = {
+        (uint32_t)offsetof(uec_collision_shape, rotation), UEC_COLLISION_SHAPE_BOX,
+        0u, 0.0, {100.0, 10.0, 10.0}, 0.0, {0.0, 0.0, 0.0, 0.0}};
+    const uec_collision_shape rotatedBox = {
+        sizeof(uec_collision_shape), UEC_COLLISION_SHAPE_BOX, 0u,
+        0.0, {100.0, 10.0, 10.0}, 0.0,
+        {0.0, 0.0, 0.7071067811865476, 0.7071067811865476}};
     const uec_api* api = NULL;
     uec_context* context = NULL;
     uec_world* world = NULL;
@@ -247,6 +257,53 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         UEC_COLLISION_SMOKE_FAIL();
     }
 
+    result = api->sweep_trace_filtered(world, orientedStart, orientedEnd, &legacyBox,
+        UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
+    if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_TRUE || hit.actor == NULL ||
+        !IsAt(api, hit.actor, center)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->release_actor(hit.actor);
+    hit.actor = NULL;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->sweep_trace_filtered(world, orientedStart, orientedEnd, &rotatedBox,
+        UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
+    if (result != UEC_RESULT_OK || hit.blocking_hit != UEC_FALSE || hit.actor != NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+
+    result = api->overlap_shape_filtered(world, orientedCenter, &legacyBox,
+        UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
+    if (result != UEC_RESULT_OK || overlapCount != 1u || overlaps[0] == NULL ||
+        !IsAt(api, overlaps[0], center)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->release_actor(overlaps[0]);
+    overlaps[0] = NULL;
+    overlapCount = 0u;
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->overlap_shape_filtered(world, orientedCenter, &rotatedBox,
+        UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
+    if (result != UEC_RESULT_OK || overlapCount != 0u || overlaps[0] != NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+
+    uec_collision_shape invalidRotation = rotatedBox;
+    invalidRotation.rotation = (uec_quaternion){0.0, 0.0, 0.0, 0.0};
+    hit.blocking_hit = UEC_TRUE;
+    hit.distance = 1.0;
+    result = api->sweep_trace_filtered(world, orientedStart, orientedEnd,
+        &invalidRotation, UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
+    if (result != UEC_RESULT_INVALID_ARGUMENT || hit.blocking_hit != UEC_FALSE ||
+        hit.distance != 0.0 || hit.actor != NULL) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+
     result = api->overlap_shape_filtered(world, center, &sphere, UEC_TRACE_VISIBILITY,
                                          4u, NULL, 0u, overlaps, &overlapCount);
     if (result != UEC_RESULT_OK || overlapCount != 1u || overlaps[0] == NULL ||
@@ -284,6 +341,14 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     details.struct_size = sizeof(details);
     result = api->trace_detailed_filtered(world, start, end, &sphere,
         UEC_TRACE_VISIBILITY, UEC_FALSE, (const uec_actor* const*)ignored, 1u, &details);
+    if (result != UEC_RESULT_OK || details.hit.blocking_hit != UEC_FALSE ||
+        details.hit.actor != NULL || details.component != NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    details.struct_size = sizeof(details);
+    result = api->trace_detailed_filtered(world, orientedStart, orientedEnd, &rotatedBox,
+        UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &details);
     if (result != UEC_RESULT_OK || details.hit.blocking_hit != UEC_FALSE ||
         details.hit.actor != NULL || details.component != NULL) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;

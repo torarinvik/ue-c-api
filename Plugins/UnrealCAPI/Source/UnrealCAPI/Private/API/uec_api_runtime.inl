@@ -491,11 +491,30 @@
         }
     }
     static uec_result MakeCollisionShape(const uec_collision_shape* descriptor,
-                                         FCollisionShape& outShape)
+                                         FCollisionShape& outShape,
+                                         FQuat& outRotation)
     {
-        if (descriptor == nullptr || descriptor->struct_size < sizeof(uec_collision_shape))
+        const uint32_t legacySize = offsetof(uec_collision_shape, rotation);
+        if (descriptor == nullptr || descriptor->struct_size < legacySize ||
+            (descriptor->struct_size > legacySize &&
+             descriptor->struct_size < sizeof(uec_collision_shape)))
         {
             return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        outRotation = FQuat::Identity;
+        if (descriptor->struct_size > legacySize)
+        {
+            const uec_quaternion& input = descriptor->rotation;
+            if (!FMath::IsFinite(input.x) || !FMath::IsFinite(input.y) ||
+                !FMath::IsFinite(input.z) || !FMath::IsFinite(input.w)) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            const double lengthSquared = input.x * input.x + input.y * input.y +
+                input.z * input.z + input.w * input.w;
+            if (!FMath::IsFinite(lengthSquared) || lengthSquared <= SMALL_NUMBER) {
+                return UEC_RESULT_INVALID_ARGUMENT;
+            }
+            outRotation = FQuat(input.x, input.y, input.z, input.w).GetNormalized();
         }
         switch (descriptor->kind)
         {

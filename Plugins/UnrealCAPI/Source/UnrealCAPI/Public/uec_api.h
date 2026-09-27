@@ -19,7 +19,7 @@
 #  define UEC_CALL
 #endif
 #define UEC_ABI_MAJOR 1u
-#define UEC_ABI_MINOR 168u
+#define UEC_ABI_MINOR 169u
 #define UEC_MAX_COLLISION_QUERY_ACTORS 1024u
 #ifdef __cplusplus
 extern "C" {
@@ -210,12 +210,11 @@ typedef void (UEC_CALL *uec_input_action_callback)(uint64_t binding_id,
                                                    uec_input_action_value value,
                                                    void* user_data);
 typedef struct uec_collision_shape {
-    uint32_t struct_size;
-    uec_collision_shape_kind kind;
-    uint32_t reserved;
+    uint32_t struct_size; uec_collision_shape_kind kind; uint32_t reserved;
     double radius;
     uec_vector3 half_extents;
     double half_height;
+    uec_quaternion rotation;
 } uec_collision_shape;
 typedef struct uec_hit_result {
     uec_bool blocking_hit;

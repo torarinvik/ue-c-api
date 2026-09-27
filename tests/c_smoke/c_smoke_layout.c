@@ -86,7 +86,7 @@ UEC_TEST_ASSERT(UEC_PROPERTY_STRUCT_NONE == 0 &&
                    UEC_PROPERTY_STRUCT_DATETIME == 12 &&
                    UEC_PROPERTY_STRUCT_TIMESPAN == 13,
                "typed property struct tags changed");
-UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 56, "uec_collision_shape ABI changed");
+UEC_TEST_ASSERT(sizeof(uec_collision_shape) == 88, "uec_collision_shape ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_hit_result) == 72, "uec_hit_result ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_hit_result_details) == 200, "uec_hit_result_details ABI changed");
 UEC_TEST_ASSERT(sizeof(uec_input_action_value) == 40, "uec_input_action_value ABI changed");
@@ -100,7 +100,7 @@ UEC_TEST_ASSERT(UEC_RESULT_OK == 0 && UEC_RESULT_INVALID_ARGUMENT == 1 &&
 UEC_TEST_ASSERT(UEC_MAX_COLLISION_QUERY_ACTORS == 1024u,
                "collision query input bound changed");
 UEC_TEST_ASSERT(UEC_FALSE == 0u && UEC_TRUE == 1u, "boolean ABI values changed");
-UEC_TEST_ASSERT(UEC_ABI_MINOR == 168u, "ABI minor must include typed struct set values");
+UEC_TEST_ASSERT(UEC_ABI_MINOR == 169u, "ABI minor must include oriented collision shapes");
 UEC_TEST_ASSERT(UEC_CHECKBOX_UNCHECKED == 0 && UEC_CHECKBOX_CHECKED == 1 &&
                    UEC_CHECKBOX_UNDETERMINED == 2,
                "checkbox state enum values changed");
@@ -695,3 +695,15 @@ UEC_TEST_ASSERT(offsetof(uec_api, set_actor_property_set_element_struct_value) >
 UEC_TEST_ASSERT(offsetof(uec_api, set_object_property_set_element_struct_value) >
                    offsetof(uec_api, set_actor_property_set_element_struct_value),
                "typed object struct set writes must append to uec_api");
+
+typedef struct uec_collision_shape_abi_168 {
+    uint32_t struct_size;
+    uec_collision_shape_kind kind;
+    uint32_t reserved;
+    double radius;
+    uec_vector3 half_extents;
+    double half_height;
+} uec_collision_shape_abi_168;
+UEC_TEST_ASSERT(offsetof(uec_collision_shape, rotation) ==
+                    sizeof(uec_collision_shape_abi_168),
+                "collision orientation must append to the ABI 1.168 descriptor");

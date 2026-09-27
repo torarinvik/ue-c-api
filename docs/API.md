@@ -812,12 +812,12 @@ borrowed and is never retained. Each ignored-actor array is limited to
 `UEC_MAX_COLLISION_QUERY_ACTORS` entries. It also rejects non-finite endpoints
 before submitting the query.
 
-`sweep_trace` applies a world-aligned sphere, box, or capsule shape between two
-points and returns the first blocking hit using the same channel and hit-record
-rules as `line_trace`. `sweep_trace_filtered` has the same behavior while
-ignoring a borrowed array of valid actor handles. `overlap_shape` tests one of
-those shapes at a point, deduplicates actors, and copies at most `max_hits`
-handles into the caller's array. Both `max_hits` and the ignored-actor count
+`sweep_trace` applies a sphere, box, or capsule shape between two points and
+returns the first blocking hit using the same channel and hit-record rules as
+`line_trace`. `sweep_trace_filtered` has the same behavior while ignoring a
+borrowed array of valid actor handles. `overlap_shape` tests one of those shapes
+at a point, deduplicates actors, and copies at most `max_hits` handles into the
+caller's array. Both `max_hits` and the ignored-actor count
 must be no greater than `UEC_MAX_COLLISION_QUERY_ACTORS`; a larger value returns
 `UEC_RESULT_INVALID_ARGUMENT`. An oversized `max_hits` clears `out_count` but
 does not access the output array. Otherwise, `out_count` is the number of handles
@@ -825,6 +825,13 @@ written and is no greater than `max_hits`; passing zero leaves the count at
 zero. `overlap_shape_filtered` applies the same bounded result contract while
 ignoring a borrowed actor array. Overlap ordering is unspecified and every
 copied handle must be released.
+
+ABI minor 169 appends a quaternion `rotation` to `uec_collision_shape`. Box and
+capsule sweeps, overlaps, and detailed sweeps use that orientation; sphere
+orientation has no geometric effect. The quaternion must be finite and
+nonzero, and the bridge normalizes it. A descriptor whose `struct_size` ends at
+the previous ABI 1.168 prefix remains valid and uses identity orientation, so
+existing binaries keep their original world-aligned behavior.
 
 ABI minor 163 adds `move_actor_swept`. It applies a finite world-space delta to
 an actor through its registered root scene component, always sweeping against

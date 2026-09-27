@@ -153,7 +153,9 @@
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         FCollisionShape collisionShape;
-        const uec_result shapeResult = MakeCollisionShape(descriptor, collisionShape);
+        FQuat shapeRotation;
+        const uec_result shapeResult = MakeCollisionShape(
+            descriptor, collisionShape, shapeRotation);
         if (shapeResult != UEC_RESULT_OK) return shapeResult;
         ECollisionChannel collisionChannel;
         if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
@@ -164,7 +166,7 @@
             hit,
             ToUnrealVector(start),
             ToUnrealVector(end),
-            FQuat::Identity,
+            shapeRotation,
             collisionChannel,
             collisionShape,
             queryParams,
@@ -222,7 +224,9 @@
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         FCollisionShape collisionShape;
-        const uec_result shapeResult = MakeCollisionShape(descriptor, collisionShape);
+        FQuat shapeRotation;
+        const uec_result shapeResult = MakeCollisionShape(
+            descriptor, collisionShape, shapeRotation);
         if (shapeResult != UEC_RESULT_OK) return shapeResult;
         ECollisionChannel collisionChannel;
         if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
@@ -233,7 +237,7 @@
         const bool hasOverlap = world->OverlapMultiByChannel(
             overlaps,
             ToUnrealVector(center),
-            FQuat::Identity,
+            shapeRotation,
             collisionChannel,
             collisionShape,
             queryParams,
@@ -421,7 +425,9 @@
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         FCollisionShape collisionShape;
-        const uec_result shapeResult = MakeCollisionShape(descriptor, collisionShape);
+        FQuat shapeRotation;
+        const uec_result shapeResult = MakeCollisionShape(
+            descriptor, collisionShape, shapeRotation);
         if (shapeResult != UEC_RESULT_OK) return shapeResult;
         ECollisionChannel collisionChannel;
         if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
@@ -433,7 +439,7 @@
             hit,
             ToUnrealVector(start),
             ToUnrealVector(end),
-            FQuat::Identity,
+            shapeRotation,
             collisionChannel,
             collisionShape,
             queryParams,
@@ -465,7 +471,9 @@
         UWorld* world = worldHandle->Value.Get();
         if (world == nullptr) return UEC_RESULT_INVALID_HANDLE;
         FCollisionShape collisionShape;
-        const uec_result shapeResult = MakeCollisionShape(descriptor, collisionShape);
+        FQuat shapeRotation;
+        const uec_result shapeResult = MakeCollisionShape(
+            descriptor, collisionShape, shapeRotation);
         if (shapeResult != UEC_RESULT_OK) return shapeResult;
         ECollisionChannel collisionChannel;
         if (!ToCollisionChannel(channel, collisionChannel)) return UEC_RESULT_INVALID_ARGUMENT;
@@ -477,7 +485,7 @@
         const bool hasOverlap = world->OverlapMultiByChannel(
             overlaps,
             ToUnrealVector(center),
-            FQuat::Identity,
+            shapeRotation,
             collisionChannel,
             collisionShape,
             queryParams,
@@ -587,13 +595,15 @@
         else
         {
             FCollisionShape collisionShape;
-            const uec_result shapeResult = MakeCollisionShape(descriptor, collisionShape);
+            FQuat shapeRotation;
+            const uec_result shapeResult = MakeCollisionShape(
+                descriptor, collisionShape, shapeRotation);
             if (shapeResult != UEC_RESULT_OK) return shapeResult;
             didHit = world->SweepSingleByChannel(
                 hit,
                 ToUnrealVector(start),
                 ToUnrealVector(end),
-                FQuat::Identity,
+                shapeRotation,
                 collisionChannel,
                 collisionShape,
                 queryParams,
