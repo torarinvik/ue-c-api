@@ -134,7 +134,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->set_component_collision_channel_response == NULL ||
         api->actor_has_tag == NULL || api->set_actor_tag == NULL ||
         api->get_component_simulating_physics == NULL ||
-        api->get_component_velocity == NULL ||
+        api->set_component_mass_override == NULL || api->get_component_velocity == NULL ||
         api->get_component_physics_angular_velocity == NULL ||
         api->set_component_simulating_physics == NULL ||
         api->set_component_physics_velocity == NULL ||
@@ -428,6 +428,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
                 ? UEC_COLLISION_RESPONSE_IGNORE : UEC_COLLISION_RESPONSE_BLOCK) != UEC_RESULT_UNSUPPORTED ||
         api->set_component_simulating_physics(component, UEC_FALSE) != UEC_RESULT_UNSUPPORTED ||
         api->set_component_simulating_physics(component, UEC_TRUE) != UEC_RESULT_UNSUPPORTED ||
+        api->set_component_mass_override(component, 12.0, UEC_TRUE) != UEC_RESULT_UNSUPPORTED ||
         api->set_component_physics_velocity(component, (uec_vector3){10.0, 0.0, 0.0}, UEC_FALSE) !=
             UEC_RESULT_UNSUPPORTED ||
         api->set_component_physics_angular_velocity(

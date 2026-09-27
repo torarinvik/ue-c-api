@@ -310,6 +310,44 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetComponentMass(uec_scene_component* rawComponent,
+                                         double* outMassKg)
+    {
+        if (outMassKg != nullptr) *outMassKg = 0.0;
+        if (outMassKg == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(handle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const float massKg = component->GetMass();
+        if (!FMath::IsFinite(massKg) || massKg < 0.0f)
+            return UEC_RESULT_INTERNAL_ERROR;
+        *outMassKg = static_cast<double>(massKg);
+        return UEC_RESULT_OK;
+    }
+
+    uec_result UEC_CALL SetComponentMassOverride(uec_scene_component* rawComponent,
+                                                 double massKg,
+                                                 uec_bool overrideMass)
+    {
+        if (!IsRepresentableFloat(massKg) || massKg <= 0.0 ||
+            !IsValidBool(overrideMass)) {
+            return UEC_RESULT_INVALID_ARGUMENT;
+        }
+        auto* handle = reinterpret_cast<FUECSceneComponent*>(rawComponent);
+        if (!IsValidComponent(handle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        UPrimitiveComponent* component = Cast<UPrimitiveComponent>(handle->Value.Get());
+        if (component == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        const uec_result authorityResult = RequireWorldAuthority(component->GetWorld());
+        if (authorityResult != UEC_RESULT_OK) return authorityResult;
+        if (component->GetBodyInstance() == nullptr) return UEC_RESULT_UNSUPPORTED;
+        component->SetMassOverrideInKg(NAME_None, static_cast<float>(massKg),
+                                       overrideMass != UEC_FALSE);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL SetComponentTransform(uec_scene_component* rawComponent,
                                                const uec_transform* transform,
                                                uec_bool sweep)

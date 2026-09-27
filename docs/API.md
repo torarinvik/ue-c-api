@@ -769,6 +769,13 @@ player, such as remote or dedicated-server controllers, return
 player must belong to the same world as the controller, and callers release
 the handle with `release_object`.
 
+ABI 173 adds `get_component_mass` and `set_component_mass_override` for
+primitive components. Mass values use kilograms and the getter returns Unreal's
+current mass (zero when no physics mass is available). The override setter
+requires a finite, positive mass even when clearing the override, a strict
+boolean, the game thread, and world authority; it can configure a component
+before simulation begins. Invalid inputs return `UEC_RESULT_INVALID_ARGUMENT`.
+
 `invoke_actor_function` supports only reflected actor functions with no
 parameters, no return or out values, and no latent or network flag. The bridge
 also rejects authority-only reflected functions when their actor belongs to a

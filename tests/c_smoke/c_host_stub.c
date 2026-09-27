@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <math.h>
+#include <float.h>
 
 #include "c_host_stub_bootstrap.inl"
 
@@ -411,6 +412,23 @@ static uec_result UEC_CALL StubGetControllerViewTarget(
     if (outViewTarget != NULL) *outViewTarget = NULL;
     if (outViewTarget == NULL) return UEC_RESULT_INVALID_ARGUMENT;
     return controller == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubGetComponentMass(
+    uec_scene_component* component, double* outMassKg)
+{
+    if (outMassKg != NULL) *outMassKg = 0.0;
+    if (outMassKg == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
+static uec_result UEC_CALL StubSetComponentMassOverride(
+    uec_scene_component* component, double massKg, uec_bool overrideMass)
+{
+    if (!isfinite(massKg) || massKg > (double)FLT_MAX || massKg <= 0.0 ||
+        (overrideMass != UEC_FALSE && overrideMass != UEC_TRUE))
+        return UEC_RESULT_INVALID_ARGUMENT;
+    return component == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
 static uec_result UEC_CALL StubGetControllerLocalPlayer(

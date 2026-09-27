@@ -1,5 +1,6 @@
 #include "uec_api.h"
 
+#include <float.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -9,6 +10,12 @@ static int IsNear(double actual, double expected)
 {
     const double difference = actual > expected ? actual - expected : expected - actual;
     return difference <= 1.0;
+}
+
+static int IsMassNear(double actual, double expected)
+{
+    const double difference = actual > expected ? actual - expected : expected - actual;
+    return difference <= 0.01;
 }
 
 static int IsPhysicsVectorNear(uec_vector3 actual, uec_vector3 expected)
@@ -138,6 +145,8 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     uec_vector3 boundsOrigin = {0};
     uec_vector3 boundsExtent = {0};
     uec_vector3 appliedDelta = {0};
+    double massBeforeOverride = 0.0;
+    double massReadback = 0.0;
     uec_transform socketParentTransform = {0};
     uec_transform childTransformBeforeSocketAttach = {0};
     uec_transform childTransformAfterSocketAttach = {0};
@@ -159,6 +168,7 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
         api->bind_component_hit == NULL || api->unbind_component_hit == NULL ||
         api->set_component_simulating_physics == NULL ||
         api->get_component_simulating_physics == NULL ||
+        api->get_component_mass == NULL || api->set_component_mass_override == NULL ||
         api->get_component_velocity == NULL || api->get_actor_velocity == NULL ||
         api->set_component_physics_velocity == NULL || api->apply_component_impulse == NULL ||
         api->apply_component_force == NULL ||
@@ -363,6 +373,51 @@ uec_result UEC_CALL uec_host_collision_smoke(void)
     uec_bool simulating = UEC_FALSE;
     result = api->get_component_simulating_physics(component, &simulating);
     if (result != UEC_RESULT_OK || simulating != UEC_TRUE) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->get_component_mass(component, &massBeforeOverride);
+    if (result != UEC_RESULT_OK || massBeforeOverride <= 0.0 ||
+        !isfinite(massBeforeOverride)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->set_component_mass_override(component, 13.75, UEC_TRUE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_mass(component, &massReadback);
+    if (result != UEC_RESULT_OK || !IsMassNear(massReadback, 13.75)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    if (api->set_component_mass_override(component, 0.0, UEC_TRUE) !=
+            UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_component_mass_override(component, NAN, UEC_TRUE) !=
+            UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_component_mass_override(component, INFINITY, UEC_TRUE) !=
+            UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_component_mass_override(component, (double)FLT_MAX * 2.0, UEC_TRUE) !=
+            UEC_RESULT_INVALID_ARGUMENT ||
+        api->set_component_mass_override(component, 13.75, (uec_bool)2) !=
+            UEC_RESULT_INVALID_ARGUMENT) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    massReadback = -1.0;
+    if (api->get_component_mass(NULL, &massReadback) != UEC_RESULT_INVALID_HANDLE ||
+        massReadback != 0.0) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->get_component_mass(component, &massReadback);
+    if (result != UEC_RESULT_OK || !IsMassNear(massReadback, 13.75)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        UEC_COLLISION_SMOKE_FAIL();
+    }
+    result = api->set_component_mass_override(
+        component, massBeforeOverride, UEC_FALSE);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_SMOKE_FAIL();
+    result = api->get_component_mass(component, &massReadback);
+    if (result != UEC_RESULT_OK || !IsMassNear(massReadback, massBeforeOverride)) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         UEC_COLLISION_SMOKE_FAIL();
     }
