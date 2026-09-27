@@ -756,6 +756,12 @@ current view target as a weak actor handle owned by the caller. Release it with
 valid player controller and the game thread, and returns
 `UEC_RESULT_NOT_INITIALIZED` when the controller has no current view target.
 
+ABI 171 adds `get_controller_player_camera_manager`, returning the controller's
+`APlayerCameraManager` as a weak object handle scoped to that controller's
+world. Release it with `release_object`; world cleanup invalidates it. The
+getter clears its output, requires a valid player controller and the game
+thread, and reports `UEC_RESULT_NOT_INITIALIZED` before the manager is created.
+
 `invoke_actor_function` supports only reflected actor functions with no
 parameters, no return or out values, and no latent or network flag. The bridge
 also rejects authority-only reflected functions when their actor belongs to a

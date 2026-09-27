@@ -7,6 +7,8 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 171 exposes a controller's `APlayerCameraManager` through an
+  owned weak UObject handle.
 - ABI minor 170 adds a controller current view-target readback as an owned
   weak actor handle with explicit release semantics.
 - ABI minor 169 appends an optional quaternion orientation to collision query

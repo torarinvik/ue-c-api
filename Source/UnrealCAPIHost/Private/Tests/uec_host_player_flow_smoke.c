@@ -52,6 +52,7 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     static const char pawnClassPath[] =
         "/Script/UnrealCAPIHost.UECAPIHostPlayerFlowPawn";
     static const char cameraClassPath[] = "/Script/Engine.CameraComponent";
+    static const char cameraManagerClassPath[] = "/Script/Engine.PlayerCameraManager";
     static const char meshComponentClassPath[] = "/Script/Engine.StaticMeshComponent";
     static const char skeletalMeshComponentClassPath[] = "/Script/Engine.SkeletalMeshComponent";
     static const char meshAssetPath[] = "/Engine/BasicShapes/Cube.Cube";
@@ -89,6 +90,7 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     uec_actor* pawn = NULL;
     uec_actor* possessedPawn = NULL;
     uec_actor* viewTarget = NULL;
+    uec_object* cameraManager = NULL;
     uec_actor* playerStart = NULL;
     uec_scene_component* camera = NULL;
     uec_scene_component* meshComponent = NULL;
@@ -105,6 +107,7 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
         api->release_world == NULL || api->get_player_controller == NULL ||
         api->get_controller_pawn == NULL || api->possess_pawn == NULL ||
         api->set_controller_view_target == NULL || api->get_controller_view_target == NULL ||
+        api->get_controller_player_camera_manager == NULL || api->object_is_a == NULL ||
         api->find_player_start == NULL ||
         api->spawn_actor == NULL || api->destroy_actor == NULL ||
         api->release_actor == NULL || api->get_actor_component_count_by_class == NULL ||
@@ -135,6 +138,23 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
     if (result == UEC_RESULT_OK)
         result = api->get_player_controller(world, 0u, &controller);
     if (result == UEC_RESULT_OK && controller == NULL)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK) {
+        uec_object* rejectedManager = (uec_object*)controller;
+        const uec_result rejectedResult =
+            api->get_controller_player_camera_manager(NULL, &rejectedManager);
+        if (rejectedResult != UEC_RESULT_INVALID_HANDLE || rejectedManager != NULL)
+            result = UEC_RESULT_INTERNAL_ERROR;
+    }
+    if (result == UEC_RESULT_OK)
+        result = api->get_controller_player_camera_manager(controller, &cameraManager);
+    if (result == UEC_RESULT_OK && cameraManager == NULL)
+        result = UEC_RESULT_INTERNAL_ERROR;
+    uec_bool isPlayerCameraManager = UEC_FALSE;
+    if (result == UEC_RESULT_OK)
+        result = api->object_is_a(cameraManager, PlayerFlowView(cameraManagerClassPath),
+                                  &isPlayerCameraManager);
+    if (result == UEC_RESULT_OK && isPlayerCameraManager != UEC_TRUE)
         result = UEC_RESULT_INTERNAL_ERROR;
     if (result == UEC_RESULT_OK) {
         const uec_result pawnResult = api->get_controller_pawn(controller, &originalPawn);
@@ -392,6 +412,10 @@ cleanup:
     }
     if (skeletalMeshAsset != NULL && api != NULL) {
         const uec_result releaseResult = api->release_object(skeletalMeshAsset);
+        if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) result = releaseResult;
+    }
+    if (cameraManager != NULL && api != NULL) {
+        const uec_result releaseResult = api->release_object(cameraManager);
         if (result == UEC_RESULT_OK && releaseResult != UEC_RESULT_OK) result = releaseResult;
     }
     if (wrongMeshObject != NULL && api != NULL) {

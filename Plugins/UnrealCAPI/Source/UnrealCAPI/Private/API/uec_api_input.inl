@@ -179,6 +179,27 @@
         return UEC_RESULT_OK;
     }
 
+    uec_result UEC_CALL GetControllerPlayerCameraManager(
+        uec_actor* rawController,
+        uec_object** outCameraManager)
+    {
+        if (outCameraManager != nullptr) *outCameraManager = nullptr;
+        if (outCameraManager == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        APlayerCameraManager* cameraManager = controller->PlayerCameraManager.Get();
+        if (cameraManager == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        if (cameraManager->GetWorld() != controller->GetWorld())
+            return UEC_RESULT_INVALID_ARGUMENT;
+        FUECObject* handle = MakeObjectHandle(cameraManager);
+        if (handle == nullptr) return HandleCreationFailureResult();
+        *outCameraManager = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
     uec_result UEC_CALL GetActorVelocity(uec_actor* rawActor, uec_vector3* outVelocity)
     {
         if (outVelocity != nullptr) *outVelocity = {};
