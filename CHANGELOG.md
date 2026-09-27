@@ -7,6 +7,9 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- Listen-server PIE authority coverage now accepts primitive linear and angular
+  impulse requests alongside velocity writes. Authority smoke failures also name
+  the correct client or listen-server check.
 - The `examples/c_gameplay` consumer now demonstrates world-space Pawn movement
   input and Character jump press/release helpers. UE 5.8.3 PIE and packaged
   Development smoke verifies input accumulation and consumption plus jump

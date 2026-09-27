@@ -306,20 +306,16 @@ class FUnrealCAPIHostModule final : public FDefaultGameModuleImpl
             if (result == UEC_RESULT_OK && requireListenServer) {
                 result = uec_host_listen_server_authority_smoke();
             }
+            const TCHAR* authorityKind = requireListenServer
+                ? TEXT("listen-server") : TEXT("client");
             if (result == UEC_RESULT_OK) {
-                if (requireListenServer) {
-                    UE_LOG(LogUnrealCAPIHost, Log,
-                        TEXT("C listen-server authority smoke completed"));
-                }
-                else {
-                    UE_LOG(LogUnrealCAPIHost, Log,
-                        TEXT("C client authority smoke completed"));
-                }
+                UE_LOG(LogUnrealCAPIHost, Log,
+                    TEXT("C %s authority smoke completed"), authorityKind);
             }
             else {
                 UE_LOG(LogUnrealCAPIHost, Error,
-                    TEXT("C client authority smoke failed with result %d"),
-                    static_cast<int32>(result));
+                    TEXT("C %s authority smoke failed with result %d"),
+                    authorityKind, static_cast<int32>(result));
             }
             EventBridgeSmokeHandle.Reset();
             if (FParse::Param(FCommandLine::Get(), TEXT("uec-tests-exit"))) {

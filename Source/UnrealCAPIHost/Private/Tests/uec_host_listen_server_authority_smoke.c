@@ -138,8 +138,10 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         api->get_component_mass == NULL || api->set_component_mass_override == NULL ||
         api->get_component_velocity == NULL ||
         api->set_component_physics_velocity == NULL ||
+        api->apply_component_impulse == NULL ||
         api->get_component_physics_angular_velocity == NULL ||
         api->set_component_physics_angular_velocity == NULL ||
+        api->apply_component_angular_impulse == NULL ||
         api->get_component_simulating_physics == NULL ||
         api->set_component_simulating_physics == NULL ||
         api->get_component_collision_enabled == NULL ||
@@ -452,6 +454,15 @@ uec_result UEC_CALL uec_host_listen_server_authority_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    /* Impulses take effect on a physics step; this smoke checks server acceptance. */
+    const uec_vector3 serverLinearImpulse = {10.0, -5.0, 2.0};
+    result = api->apply_component_impulse(
+        filteredComponent, serverLinearImpulse, UEC_TRUE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    const uec_vector3 serverAngularImpulse = {1.0, 2.0, -3.0};
+    result = api->apply_component_angular_impulse(
+        filteredComponent, serverAngularImpulse, UEC_TRUE);
+    if (result != UEC_RESULT_OK) goto cleanup;
     result = api->set_component_simulating_physics(filteredComponent, UEC_FALSE);
     if (result != UEC_RESULT_OK) goto cleanup;
     result = api->set_component_mass_override(filteredComponent, 12.5, UEC_TRUE);
