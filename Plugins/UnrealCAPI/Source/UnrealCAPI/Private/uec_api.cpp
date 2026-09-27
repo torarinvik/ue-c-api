@@ -416,7 +416,8 @@ namespace
         &SetActorPropertyMapStructValue, &SetObjectPropertyMapStructValue,
         &GetActorPropertySetElementStructValue, &GetObjectPropertySetElementStructValue,
         &SetActorPropertySetElementStructValue, &SetObjectPropertySetElementStructValue,
-        &GetControllerViewTarget, &GetControllerPlayerCameraManager
+        &GetControllerViewTarget, &GetControllerPlayerCameraManager,
+        &GetControllerLocalPlayer
     };
 }
 class FUnrealCAPIModule final : public IModuleInterface

@@ -413,6 +413,14 @@ static uec_result UEC_CALL StubGetControllerViewTarget(
     return controller == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
 }
 
+static uec_result UEC_CALL StubGetControllerLocalPlayer(
+    uec_actor* controller, uec_object** outLocalPlayer)
+{
+    if (outLocalPlayer != NULL) *outLocalPlayer = NULL;
+    if (outLocalPlayer == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    return controller == NULL ? UEC_RESULT_INVALID_HANDLE : UEC_RESULT_UNSUPPORTED;
+}
+
 static uec_result UEC_CALL StubGetControllerPlayerCameraManager(
     uec_actor* controller, uec_object** outCameraManager)
 {

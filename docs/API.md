@@ -762,6 +762,13 @@ world. Release it with `release_object`; world cleanup invalidates it. The
 getter clears its output, requires a valid player controller and the game
 thread, and reports `UEC_RESULT_NOT_INITIALIZED` before the manager is created.
 
+ABI 172 adds `get_controller_local_player`, returning a controller's local
+`ULocalPlayer` as an owned weak object handle. Controllers without a local
+player, such as remote or dedicated-server controllers, return
+`UEC_RESULT_NOT_INITIALIZED`. The output is cleared before validation, the
+player must belong to the same world as the controller, and callers release
+the handle with `release_object`.
+
 `invoke_actor_function` supports only reflected actor functions with no
 parameters, no return or out values, and no latent or network flag. The bridge
 also rejects authority-only reflected functions when their actor belongs to a

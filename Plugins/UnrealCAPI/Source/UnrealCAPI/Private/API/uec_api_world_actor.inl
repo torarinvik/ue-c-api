@@ -306,6 +306,29 @@
     }
 
 
+    uec_result UEC_CALL GetControllerLocalPlayer(
+        uec_actor* rawController,
+        uec_object** outLocalPlayer)
+    {
+        if (outLocalPlayer != nullptr) *outLocalPlayer = nullptr;
+        if (outLocalPlayer == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        auto* controllerHandle = reinterpret_cast<FUECActor*>(rawController);
+        if (!IsValidActor(controllerHandle)) return UEC_RESULT_INVALID_HANDLE;
+        if (!IsInGameThread()) return UEC_RESULT_WRONG_THREAD;
+        APlayerController* controller = Cast<APlayerController>(controllerHandle->Value.Get());
+        if (controller == nullptr) return UEC_RESULT_INVALID_ARGUMENT;
+        ULocalPlayer* localPlayer = controller->GetLocalPlayer();
+        if (localPlayer == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        UWorld* controllerWorld = controller->GetWorld();
+        if (controllerWorld == nullptr) return UEC_RESULT_NOT_INITIALIZED;
+        if (localPlayer->GetWorld() != controllerWorld)
+            return UEC_RESULT_INVALID_ARGUMENT;
+        FUECObject* handle = MakeObjectHandle(localPlayer);
+        if (handle == nullptr) return HandleCreationFailureResult();
+        *outLocalPlayer = reinterpret_cast<uec_object*>(handle);
+        return UEC_RESULT_OK;
+    }
+
     static void CancelTimersFor(UWorld* world)
     {
         if (world == nullptr) return;
