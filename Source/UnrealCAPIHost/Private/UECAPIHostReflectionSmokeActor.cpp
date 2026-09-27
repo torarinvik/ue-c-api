@@ -5,6 +5,7 @@ AUECAPIHostReflectionSmokeActor::AUECAPIHostReflectionSmokeActor()
       Coordinates2D(11.5, -22.25), HomogeneousPoint(1.0, 2.0, 3.0, 4.0),
       Orientation(FQuat::Identity), Rotation(10.0, 20.0, 30.0),
       Tint(0.25f, 0.5f, 0.75f, 1.0f), PackedTint(32, 64, 128, 255),
+      GridCell(3, -7), VoxelCell(10, -20, 30),
       Pose(FTransform::Identity),
       Enabled(true), Count(7),
       Mode(EUECAPIHostReflectionSmokeMode::First), Ratio(1.25f),
@@ -41,6 +42,16 @@ FLinearColor AUECAPIHostReflectionSmokeActor::EchoLinearColor(FLinearColor value
 }
 
 FColor AUECAPIHostReflectionSmokeActor::EchoColor(FColor value)
+{
+    return value;
+}
+
+FIntPoint AUECAPIHostReflectionSmokeActor::EchoIntPoint(FIntPoint value)
+{
+    return value;
+}
+
+FIntVector AUECAPIHostReflectionSmokeActor::EchoIntVector(FIntVector value)
 {
     return value;
 }

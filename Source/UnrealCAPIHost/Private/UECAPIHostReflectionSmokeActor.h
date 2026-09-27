@@ -36,6 +36,12 @@ public:
     FColor EchoColor(FColor value);
 
     UFUNCTION()
+    FIntPoint EchoIntPoint(FIntPoint value);
+
+    UFUNCTION()
+    FIntVector EchoIntVector(FIntVector value);
+
+    UFUNCTION()
     FVector4 EchoVector2DWithColor(FVector2D value, FColor& colorOut);
 
     UPROPERTY()
@@ -67,6 +73,12 @@ public:
 
     UPROPERTY()
     FColor PackedTint;
+
+    UPROPERTY()
+    FIntPoint GridCell;
+
+    UPROPERTY()
+    FIntVector VoxelCell;
 
     UPROPERTY()
     FTransform Pose;

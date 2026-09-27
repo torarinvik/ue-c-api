@@ -594,6 +594,12 @@
         case UEC_FUNCTION_STRUCT_COLOR:
             outValue->value.color = typedValue.value.color;
             break;
+        case UEC_FUNCTION_STRUCT_INT_POINT:
+            outValue->value.int_point = typedValue.value.int_point;
+            break;
+        case UEC_FUNCTION_STRUCT_INT_VECTOR:
+            outValue->value.int_vector = typedValue.value.int_vector;
+            break;
         default:
             ResetPropertyStructValue(outValue);
             return UEC_RESULT_UNSUPPORTED;
@@ -648,6 +654,12 @@
             break;
         case UEC_FUNCTION_STRUCT_COLOR:
             typedValue.value.color = value->value.color;
+            break;
+        case UEC_FUNCTION_STRUCT_INT_POINT:
+            typedValue.value.int_point = value->value.int_point;
+            break;
+        case UEC_FUNCTION_STRUCT_INT_VECTOR:
+            typedValue.value.int_vector = value->value.int_vector;
             break;
         default:
             return UEC_RESULT_INVALID_ARGUMENT;

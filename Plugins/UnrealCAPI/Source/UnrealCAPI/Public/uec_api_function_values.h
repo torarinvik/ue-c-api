@@ -11,7 +11,9 @@ typedef enum uec_function_struct_kind {
     UEC_FUNCTION_STRUCT_LINEAR_COLOR = 5,
     UEC_FUNCTION_STRUCT_VECTOR2 = 6,
     UEC_FUNCTION_STRUCT_VECTOR4 = 7,
-    UEC_FUNCTION_STRUCT_COLOR = 8
+    UEC_FUNCTION_STRUCT_COLOR = 8,
+    UEC_FUNCTION_STRUCT_INT_POINT = 9,
+    UEC_FUNCTION_STRUCT_INT_VECTOR = 10
 } uec_function_struct_kind;
 
 typedef uec_function_struct_kind uec_property_struct_kind;
@@ -25,6 +27,21 @@ typedef uec_function_struct_kind uec_property_struct_kind;
 #define UEC_PROPERTY_STRUCT_VECTOR2 UEC_FUNCTION_STRUCT_VECTOR2
 #define UEC_PROPERTY_STRUCT_VECTOR4 UEC_FUNCTION_STRUCT_VECTOR4
 #define UEC_PROPERTY_STRUCT_COLOR UEC_FUNCTION_STRUCT_COLOR
+#define UEC_PROPERTY_STRUCT_INT_POINT UEC_FUNCTION_STRUCT_INT_POINT
+#define UEC_PROPERTY_STRUCT_INT_VECTOR UEC_FUNCTION_STRUCT_INT_VECTOR
+
+/* Unreal FIntPoint grid coordinates, in X, Y order. */
+typedef struct uec_int_point {
+    int32_t x;
+    int32_t y;
+} uec_int_point;
+
+/* Unreal FIntVector integer coordinates, in X, Y, Z order. */
+typedef struct uec_int_vector {
+    int32_t x;
+    int32_t y;
+    int32_t z;
+} uec_int_vector;
 
 /* Unreal FVector2D components in X, Y order. */
 typedef struct uec_vector2 {
@@ -74,6 +91,8 @@ typedef struct uec_function_struct_value {
         uec_vector2 vector2;
         uec_vector4 vector4;
         uec_color color;
+        uec_int_point int_point;
+        uec_int_vector int_vector;
     } value;
 } uec_function_struct_value;
 
@@ -90,6 +109,8 @@ typedef struct uec_property_struct_value {
         uec_vector2 vector2;
         uec_vector4 vector4;
         uec_color color;
+        uec_int_point int_point;
+        uec_int_vector int_vector;
     } value;
 } uec_property_struct_value;
 

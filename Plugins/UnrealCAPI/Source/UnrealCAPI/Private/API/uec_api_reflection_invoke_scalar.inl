@@ -176,6 +176,12 @@
         if (structProperty->Struct == TBaseStructure<FColor>::Get()) {
             return UEC_FUNCTION_STRUCT_COLOR;
         }
+        if (structProperty->Struct == TBaseStructure<FIntPoint>::Get()) {
+            return UEC_FUNCTION_STRUCT_INT_POINT;
+        }
+        if (structProperty->Struct == TBaseStructure<FIntVector>::Get()) {
+            return UEC_FUNCTION_STRUCT_INT_VECTOR;
+        }
         return UEC_FUNCTION_STRUCT_NONE;
     }
 
@@ -189,7 +195,9 @@
             kind == UEC_FUNCTION_STRUCT_LINEAR_COLOR ||
             kind == UEC_FUNCTION_STRUCT_VECTOR2 ||
             kind == UEC_FUNCTION_STRUCT_VECTOR4 ||
-            kind == UEC_FUNCTION_STRUCT_COLOR;
+            kind == UEC_FUNCTION_STRUCT_COLOR ||
+            kind == UEC_FUNCTION_STRUCT_INT_POINT ||
+            kind == UEC_FUNCTION_STRUCT_INT_VECTOR;
     }
 
     static uec_result SetInvocationStructValue(
@@ -270,6 +278,20 @@
                 FColor(input.r, input.g, input.b, input.a);
             return UEC_RESULT_OK;
         }
+        case UEC_FUNCTION_STRUCT_INT_POINT:
+        {
+            const uec_int_point& input = value.value.int_point;
+            *structProperty->ContainerPtrToValuePtr<FIntPoint>(container) =
+                FIntPoint(input.x, input.y);
+            return UEC_RESULT_OK;
+        }
+        case UEC_FUNCTION_STRUCT_INT_VECTOR:
+        {
+            const uec_int_vector& input = value.value.int_vector;
+            *structProperty->ContainerPtrToValuePtr<FIntVector>(container) =
+                FIntVector(input.x, input.y, input.z);
+            return UEC_RESULT_OK;
+        }
         default:
             return UEC_RESULT_INVALID_ARGUMENT;
         }
@@ -348,6 +370,20 @@
             const FColor& value = *CastFieldChecked<FStructProperty>(property)
                 ->ContainerPtrToValuePtr<FColor>(container);
             outValue->value.color = {value.R, value.G, value.B, value.A};
+            return UEC_RESULT_OK;
+        }
+        case UEC_FUNCTION_STRUCT_INT_POINT:
+        {
+            const FIntPoint& value = *CastFieldChecked<FStructProperty>(property)
+                ->ContainerPtrToValuePtr<FIntPoint>(container);
+            outValue->value.int_point = {value.X, value.Y};
+            return UEC_RESULT_OK;
+        }
+        case UEC_FUNCTION_STRUCT_INT_VECTOR:
+        {
+            const FIntVector& value = *CastFieldChecked<FStructProperty>(property)
+                ->ContainerPtrToValuePtr<FIntVector>(container);
+            outValue->value.int_vector = {value.X, value.Y, value.Z};
             return UEC_RESULT_OK;
         }
         default:

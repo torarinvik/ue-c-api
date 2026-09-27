@@ -42,6 +42,59 @@ namespace
             ? UEC_RESULT_OK : UEC_RESULT_INTERNAL_ERROR;
     }
 
+    uec_property_struct_value IntegerStructValue(
+        uec_function_struct_kind kind, int32_t x, int32_t y, int32_t z = 0)
+    {
+        uec_property_struct_value value{};
+        value.struct_size = sizeof(value);
+        value.kind = kind;
+        if (kind == UEC_FUNCTION_STRUCT_INT_POINT) value.value.int_point = {x, y};
+        else value.value.int_vector = {x, y, z};
+        return value;
+    }
+
+    bool MatchesIntegerStructValue(const uec_property_struct_value& value,
+                                   uec_function_struct_kind kind,
+                                   int32_t x, int32_t y, int32_t z)
+    {
+        if (value.kind != kind) return false;
+        if (kind == UEC_FUNCTION_STRUCT_INT_POINT)
+            return value.value.int_point.x == x && value.value.int_point.y == y;
+        return value.value.int_vector.x == x && value.value.int_vector.y == y &&
+            value.value.int_vector.z == z;
+    }
+
+    uec_result VerifyIntegerStructProperty(
+        const uec_api* api, uec_actor* actor, uec_object* object,
+        const char* name, const uec_property_struct_value& first,
+        const uec_property_struct_value& second)
+    {
+        uec_result result = api->set_actor_property_struct_value(actor, View(name), &first);
+        uec_property_struct_value observed{};
+        observed.struct_size = sizeof(observed);
+        if (result == UEC_RESULT_OK)
+            result = api->get_object_property_struct_value(object, View(name), &observed);
+        const bool firstMatches = first.kind == UEC_FUNCTION_STRUCT_INT_POINT
+            ? MatchesIntegerStructValue(observed, first.kind, first.value.int_point.x,
+                                        first.value.int_point.y, 0)
+            : MatchesIntegerStructValue(observed, first.kind, first.value.int_vector.x,
+                                        first.value.int_vector.y, first.value.int_vector.z);
+        if (result == UEC_RESULT_OK && !firstMatches) result = UEC_RESULT_INTERNAL_ERROR;
+        if (result == UEC_RESULT_OK)
+            result = api->set_object_property_struct_value(object, View(name), &second);
+        observed = {};
+        observed.struct_size = sizeof(observed);
+        if (result == UEC_RESULT_OK)
+            result = api->get_actor_property_struct_value(actor, View(name), &observed);
+        const bool secondMatches = second.kind == UEC_FUNCTION_STRUCT_INT_POINT
+            ? MatchesIntegerStructValue(observed, second.kind, second.value.int_point.x,
+                                        second.value.int_point.y, 0)
+            : MatchesIntegerStructValue(observed, second.kind, second.value.int_vector.x,
+                                        second.value.int_vector.y, second.value.int_vector.z);
+        return result == UEC_RESULT_OK && !secondMatches
+            ? UEC_RESULT_INTERNAL_ERROR : result;
+    }
+
     uec_result VerifyTypedMathStructInvocation(const uec_api* api, uec_world* world)
     {
         static constexpr char classPathData[] =
@@ -121,6 +174,27 @@ namespace
              output.struct_value.value.color.b != 129u ||
              output.struct_value.value.color.a != 255u)) {
             result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result == UEC_RESULT_OK) {
+            argument.struct_value.kind = UEC_FUNCTION_STRUCT_INT_POINT;
+            argument.struct_value.value.int_point = {INT32_MIN, 2026};
+            result = InvokeTypedStructEcho(api, actor, "EchoIntPoint", argument,
+                UEC_FUNCTION_STRUCT_INT_POINT, output);
+            if (result == UEC_RESULT_OK &&
+                (output.struct_value.value.int_point.x != INT32_MIN ||
+                 output.struct_value.value.int_point.y != 2026))
+                result = UEC_RESULT_INTERNAL_ERROR;
+        }
+        if (result == UEC_RESULT_OK) {
+            argument.struct_value.kind = UEC_FUNCTION_STRUCT_INT_VECTOR;
+            argument.struct_value.value.int_vector = {INT32_MAX, -2000000000, 42};
+            result = InvokeTypedStructEcho(api, actor, "EchoIntVector", argument,
+                UEC_FUNCTION_STRUCT_INT_VECTOR, output);
+            if (result == UEC_RESULT_OK &&
+                (output.struct_value.value.int_vector.x != INT32_MAX ||
+                 output.struct_value.value.int_vector.y != -2000000000 ||
+                 output.struct_value.value.int_vector.z != 42))
+                result = UEC_RESULT_INTERNAL_ERROR;
         }
 
         if (result == UEC_RESULT_OK) {
@@ -203,6 +277,18 @@ namespace
             }
             if (result == UEC_RESULT_OK && selfObject == nullptr) {
                 result = UEC_RESULT_INTERNAL_ERROR;
+            }
+            if (result == UEC_RESULT_OK) {
+                result = VerifyIntegerStructProperty(api, actor, selfObject, "GridCell",
+                    IntegerStructValue(UEC_FUNCTION_STRUCT_INT_POINT, INT32_MIN, 2026),
+                    IntegerStructValue(UEC_FUNCTION_STRUCT_INT_POINT, INT32_MAX, -11));
+            }
+            if (result == UEC_RESULT_OK) {
+                result = VerifyIntegerStructProperty(api, actor, selfObject, "VoxelCell",
+                    IntegerStructValue(UEC_FUNCTION_STRUCT_INT_VECTOR,
+                                       INT32_MAX, -2000000000, 42),
+                    IntegerStructValue(UEC_FUNCTION_STRUCT_INT_VECTOR,
+                                       INT32_MIN, 700, -800));
             }
             if (result == UEC_RESULT_OK) {
                 observed = {};

@@ -367,6 +367,8 @@ colors use unclamped linear-light RGBA and must fit Unreal's float range. The
 two vector types use finite double-precision components.
 ABI minor 161 adds `FColor` as raw RGBA bytes without an automatic gamma
 conversion.
+ABI minor 162 adds `FIntPoint` and `FIntVector` typed values to the same mixed
+call path; their X/Y[/Z] components are exact signed 32-bit integers.
 
 ABI minor 135 appends versioned application-data save/load calls to the function
 table. Their schema version is owned by the consumer, and the bridge preserves
@@ -691,6 +693,8 @@ to `[0, 1]`; every component must be finite and representable as an Unreal
 finite double-precision components. ABI 161 adds `FColor` as raw RGBA bytes;
 the bridge does not convert between gamma-encoded `FColor` and linear-light
 `FLinearColor` values.
+ABI 162 adds exact signed 32-bit `FIntPoint` and `FIntVector` property values
+on actor and UObject handles.
 The `kind` selects the matching union member. Inputs must be finite, and
 quaternion values must have nonzero length; mismatched or unsupported struct
 types return `UEC_RESULT_INVALID_ARGUMENT` or `UEC_RESULT_UNSUPPORTED`

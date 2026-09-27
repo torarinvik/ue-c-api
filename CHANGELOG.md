@@ -7,6 +7,8 @@ development; they do not imply a published or runtime-verified release.
 
 ### Added
 
+- ABI minor 162 adds typed whole-property and mixed-call `FIntPoint` and
+  `FIntVector` values with exact signed 32-bit components and no conversion.
 - ABI minor 161 adds typed whole-property and mixed-call `FColor` values as raw
   RGBA bytes, without gamma conversion. The existing size-tagged records keep
   their layout.
