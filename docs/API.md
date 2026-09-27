@@ -874,6 +874,9 @@ orientation has no geometric effect. The quaternion must be finite and
 nonzero, and the bridge normalizes it. A descriptor whose `struct_size` ends at
 the previous ABI 1.168 prefix remains valid and uses identity orientation, so
 existing binaries keep their original world-aligned behavior.
+Unsupported descriptor sizes and kinds, invalid dimensions, and malformed
+rotations return `UEC_RESULT_INVALID_ARGUMENT`; trace outputs are cleared and
+overlap counts remain zero on failure.
 
 ABI minor 163 adds `move_actor_swept`. It applies a finite world-space delta to
 an actor through its registered root scene component, always sweeping against
