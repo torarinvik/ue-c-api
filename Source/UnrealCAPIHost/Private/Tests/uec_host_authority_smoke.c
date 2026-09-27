@@ -25,6 +25,12 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     static const char actorClassPath[] =
         "/Script/UnrealCAPIHost.UECAPIHostCollisionSmokeActor";
     const uec_string_view classPath = {actorClassPath, sizeof(actorClassPath) - 1u};
+    static const char staticMeshComponentClassPath[] = "/Script/Engine.StaticMeshComponent";
+    const uec_string_view staticMeshComponentClass = {
+        staticMeshComponentClassPath, sizeof(staticMeshComponentClassPath) - 1u
+    };
+    static const char emptySocketText[] = "";
+    const uec_string_view emptySocket = {emptySocketText, 0u};
     const uec_api* api = NULL;
     uec_context* context = NULL;
     uec_world* clientWorld = NULL;
@@ -33,6 +39,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     uec_actor* serverActor = NULL;
     uec_actor* clientController = NULL;
     uec_scene_component* component = NULL;
+    uec_scene_component* socketComponent = NULL;
     uec_net_mode netMode = UEC_NET_MODE_UNKNOWN;
     uec_net_mode serverMode = UEC_NET_MODE_UNKNOWN;
     uec_world_kind worldKind = UEC_WORLD_KIND_UNKNOWN;
@@ -47,6 +54,8 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     uec_vector3 clientControlRotationAfter = {0};
     uec_transform actorTransformBefore = {0};
     uec_transform componentTransformBefore = {0};
+    uec_transform socketTransformBefore = {0};
+    uec_transform socketTransformAfter = {0};
     uec_transform serverSpawnTransform = {0};
     uec_transform attemptedTransform = {0};
     uec_transform transformAfter = {0};
@@ -58,6 +67,9 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     uec_collision_response responseAfter = UEC_COLLISION_RESPONSE_IGNORE;
     uec_bool activeBefore = UEC_FALSE;
     uec_bool activeAfter = UEC_FALSE;
+    uec_bool socketVisibilityBefore = UEC_FALSE;
+    uec_bool socketVisibilityChanged = UEC_FALSE;
+    uec_bool socketVisibilityAfter = UEC_FALSE;
     uec_bool hasTag = UEC_FALSE;
     uec_property_value replicatedValueBefore = {0};
     uec_property_value attemptedReplicatedValue = {0};
@@ -106,6 +118,7 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
     };
     uint32_t worldCount = 0u;
     uint32_t actorCount = 0u;
+    uint32_t socketComponentCount = 0u;
     uec_result result = uec_get_api(UEC_ABI_MAJOR, UEC_ABI_MINOR, &api, &context);
     if (result != UEC_RESULT_OK) return result;
     if (api == NULL || context == NULL || api->release_context == NULL ||
@@ -135,6 +148,10 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         api->set_controller_control_rotation == NULL ||
         api->move_actor_swept == NULL ||
         api->get_component_transform == NULL || api->set_component_transform == NULL ||
+        api->get_component_visible == NULL || api->set_component_visible == NULL ||
+        api->get_actor_component_count_by_class == NULL ||
+        api->get_actor_component_at_by_class == NULL ||
+        api->attach_scene_component == NULL || api->detach_scene_component == NULL ||
         api->get_component_active == NULL || api->set_component_active == NULL ||
         api->get_component_collision_enabled == NULL ||
         api->set_component_collision_enabled == NULL ||
@@ -430,6 +447,52 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
         goto cleanup;
     }
+    result = api->get_actor_component_count_by_class(
+        actor, staticMeshComponentClass, &socketComponentCount);
+    if (result != UEC_RESULT_OK || socketComponentCount != 1u) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_actor_component_at_by_class(
+        actor, staticMeshComponentClass, 0u, &socketComponent);
+    if (result != UEC_RESULT_OK || socketComponent == NULL) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_transform(socketComponent, &socketTransformBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    if (api->attach_scene_component(socketComponent, component, UEC_TRUE, emptySocket) !=
+            UEC_RESULT_UNSUPPORTED ||
+        api->detach_scene_component(socketComponent, UEC_TRUE) != UEC_RESULT_UNSUPPORTED) {
+        result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_transform(socketComponent, &socketTransformAfter);
+    if (result != UEC_RESULT_OK ||
+        !IsSameTransform(socketTransformAfter, socketTransformBefore)) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->get_component_visible(socketComponent, &socketVisibilityBefore);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    const uec_bool toggledVisibility = socketVisibilityBefore == UEC_FALSE
+        ? UEC_TRUE : UEC_FALSE;
+    result = api->set_component_visible(socketComponent, toggledVisibility, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    socketVisibilityChanged = UEC_TRUE;
+    result = api->get_component_visible(socketComponent, &socketVisibilityAfter);
+    if (result != UEC_RESULT_OK || socketVisibilityAfter != toggledVisibility) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
+    result = api->set_component_visible(socketComponent, socketVisibilityBefore, UEC_FALSE);
+    if (result != UEC_RESULT_OK) goto cleanup;
+    socketVisibilityChanged = UEC_FALSE;
+    result = api->get_component_visible(socketComponent, &socketVisibilityAfter);
+    if (result != UEC_RESULT_OK || socketVisibilityAfter != socketVisibilityBefore) {
+        if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+        goto cleanup;
+    }
     result = api->get_component_simulating_physics(component, &simulating);
     if (result != UEC_RESULT_OK || simulating != UEC_TRUE) {
         if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
@@ -555,6 +618,10 @@ uec_result UEC_CALL uec_host_authority_smoke(void)
 
 cleanup:
     if (api != NULL) {
+        if (socketVisibilityChanged == UEC_TRUE && socketComponent != NULL) {
+            (void)api->set_component_visible(
+                socketComponent, socketVisibilityBefore, UEC_FALSE);
+        }
         if (clientControlRotationChanged == UEC_TRUE && clientController != NULL) {
             (void)api->set_controller_control_rotation(
                 clientController, clientControlRotationBefore);
@@ -571,6 +638,9 @@ cleanup:
         }
         if (component != NULL && api->release_scene_component != NULL) {
             (void)api->release_scene_component(component);
+        }
+        if (socketComponent != NULL && api->release_scene_component != NULL) {
+            (void)api->release_scene_component(socketComponent);
         }
         if (actor != NULL && api->release_actor != NULL) (void)api->release_actor(actor);
         if (clientWorld != NULL && api->release_world != NULL) {
