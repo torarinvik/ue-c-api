@@ -87,6 +87,13 @@ uec_result UEC_CALL uec_gameplay_get_player_state(
     uec_actor* controller,
     uec_object** out_player_state);
 
+/* Apply game-thread look deltas in degrees and preserve the current roll. */
+uec_result UEC_CALL uec_gameplay_add_look_delta(
+    const uec_api* api,
+    uec_actor* controller,
+    double yaw_delta_degrees,
+    double pitch_delta_degrees);
+
 #ifdef __cplusplus
 }
 #endif

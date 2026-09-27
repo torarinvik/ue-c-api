@@ -257,6 +257,29 @@ uec_result UEC_CALL uec_gameplay_get_player_state(
     return api->get_controller_player_state(controller, out_player_state);
 }
 
+uec_result UEC_CALL uec_gameplay_add_look_delta(
+    const uec_api* api,
+    uec_actor* controller,
+    double yaw_delta_degrees,
+    double pitch_delta_degrees)
+{
+    if (api == NULL || controller == NULL) return UEC_RESULT_INVALID_ARGUMENT;
+    const size_t required_size = offsetof(uec_api, set_controller_control_rotation) +
+                                 sizeof(api->set_controller_control_rotation);
+    if (api->struct_size < required_size ||
+        api->get_controller_control_rotation == NULL ||
+        api->set_controller_control_rotation == NULL) {
+        return UEC_RESULT_UNSUPPORTED;
+    }
+
+    uec_vector3 rotation = {0};
+    uec_result result = api->get_controller_control_rotation(controller, &rotation);
+    if (result != UEC_RESULT_OK) return result;
+    rotation.y += yaw_delta_degrees;
+    rotation.x += pitch_delta_degrees;
+    return api->set_controller_control_rotation(controller, rotation);
+}
+
 static void RememberInputMovementResult(uec_gameplay_input_movement_state* state,
                                         uec_result result)
 {

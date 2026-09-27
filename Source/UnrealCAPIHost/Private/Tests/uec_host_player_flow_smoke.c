@@ -1,4 +1,5 @@
 #include "uec_api.h"
+#include "c_gameplay.h"
 
 #include <math.h>
 #include <string.h>
@@ -222,6 +223,19 @@ uec_result UEC_CALL uec_host_player_flow_smoke(void)
          !PlayerFlowNear(controlRotationAfter.y, controlRotationBefore.y) ||
          !PlayerFlowNear(controlRotationAfter.z, controlRotationBefore.z)))
         result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = uec_gameplay_add_look_delta(api, controller, 6.0, -2.5);
+    if (result == UEC_RESULT_OK) controlRotationChanged = UEC_TRUE;
+    if (result == UEC_RESULT_OK)
+        result = api->get_controller_control_rotation(controller, &controlRotationAfter);
+    if (result == UEC_RESULT_OK &&
+        (!PlayerFlowNear(controlRotationAfter.x, controlRotationBefore.x - 2.5) ||
+         !PlayerFlowNear(controlRotationAfter.y, controlRotationBefore.y + 6.0) ||
+         !PlayerFlowNear(controlRotationAfter.z, controlRotationBefore.z)))
+        result = UEC_RESULT_INTERNAL_ERROR;
+    if (result == UEC_RESULT_OK)
+        result = api->set_controller_control_rotation(controller, controlRotationBefore);
+    if (result == UEC_RESULT_OK) controlRotationChanged = UEC_FALSE;
     if (result == UEC_RESULT_OK) {
         const uec_result pawnResult = api->get_controller_pawn(controller, &originalPawn);
         if (pawnResult != UEC_RESULT_OK && pawnResult != UEC_RESULT_NOT_INITIALIZED)
