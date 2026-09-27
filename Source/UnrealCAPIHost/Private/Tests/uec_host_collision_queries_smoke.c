@@ -155,6 +155,7 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
         api->get_actor_transform == NULL || api->set_actor_transform == NULL ||
         api->get_actor_bounds == NULL || api->get_actor_root_component == NULL ||
         api->release_scene_component == NULL || api->set_component_collision_enabled == NULL ||
+        api->get_component_collision_enabled == NULL ||
         api->set_component_collision_channel_response == NULL ||
         api->get_component_collision_response == NULL ||
         api->sweep_trace_filtered == NULL || api->line_trace_filtered == NULL ||
@@ -203,6 +204,57 @@ uec_result UEC_CALL uec_host_collision_queries_smoke(void)
     if (result != UEC_RESULT_OK) UEC_COLLISION_QUERIES_FAIL();
     result = api->set_component_collision_channel_response(
         root, UEC_TRACE_VISIBILITY, UEC_COLLISION_RESPONSE_BLOCK);
+    if (result != UEC_RESULT_OK) UEC_COLLISION_QUERIES_FAIL();
+
+    const uec_collision_enabled collisionModes[] = {
+        UEC_COLLISION_DISABLED,
+        UEC_COLLISION_QUERY_ONLY,
+        UEC_COLLISION_PHYSICS_ONLY,
+        UEC_COLLISION_QUERY_AND_PHYSICS};
+    const uec_vector3 modeTraceStart = {start.x, center.y + 20.0, center.z};
+    const uec_vector3 modeTraceEnd = {end.x, center.y + 20.0, center.z};
+    for (size_t index = 0u;
+         index < sizeof(collisionModes) / sizeof(collisionModes[0]); ++index) {
+        const uec_collision_enabled mode = collisionModes[index];
+        const int queryEnabled = mode == UEC_COLLISION_QUERY_ONLY ||
+            mode == UEC_COLLISION_QUERY_AND_PHYSICS;
+        result = api->set_component_collision_enabled(root, mode);
+        if (result != UEC_RESULT_OK) UEC_COLLISION_QUERIES_FAIL();
+        uec_collision_enabled observedMode = UEC_COLLISION_DISABLED;
+        result = api->get_component_collision_enabled(root, &observedMode);
+        if (result != UEC_RESULT_OK || observedMode != mode) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            UEC_COLLISION_QUERIES_FAIL();
+        }
+
+        result = api->overlap_shape_filtered(world, center, &sphere,
+            UEC_TRACE_VISIBILITY, 4u, NULL, 0u, overlaps, &overlapCount);
+        const uint32_t expectedOverlapCount = queryEnabled ? 1u : 0u;
+        if (result != UEC_RESULT_OK || overlapCount != expectedOverlapCount ||
+            (queryEnabled && (overlaps[0] == NULL ||
+                              !QueryActorAt(api, overlaps[0], center))) ||
+            (!queryEnabled && overlaps[0] != NULL)) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            UEC_COLLISION_QUERIES_FAIL();
+        }
+        if (overlaps[0] != NULL) {
+            (void)api->release_actor(overlaps[0]);
+            overlaps[0] = NULL;
+        }
+        overlapCount = 0u;
+
+        result = api->line_trace_filtered(world, modeTraceStart, modeTraceEnd,
+            UEC_TRACE_VISIBILITY, UEC_FALSE, NULL, 0u, &hit);
+        if (result != UEC_RESULT_OK ||
+            (queryEnabled && (hit.blocking_hit != UEC_TRUE || hit.actor == NULL ||
+                              !QueryActorAt(api, hit.actor, center))) ||
+            (!queryEnabled && !QueryHitIsClear(&hit))) {
+            if (result == UEC_RESULT_OK) result = UEC_RESULT_INTERNAL_ERROR;
+            UEC_COLLISION_QUERIES_FAIL();
+        }
+        ReleaseQueryHit(api, &hit);
+    }
+    result = api->set_component_collision_enabled(root, UEC_COLLISION_QUERY_ONLY);
     if (result != UEC_RESULT_OK) UEC_COLLISION_QUERIES_FAIL();
 
     const uec_vector3 scaledMissStart = {start.x, center.y + 40.0, center.z};

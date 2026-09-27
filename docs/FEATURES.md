@@ -51,7 +51,7 @@ checks explicitly recorded for each feature in the Unreal build matrix.
 | Actor type introspection | UE 5.8.3 listen-server Editor PIE smoke verified | Full class-path output, exact-type and `Actor` inheritance checks; indexed class-filtered world queries are covered separately |
 | Enhanced Input contexts | Packaged Development and Editor PIE smoke verified | Add/remove loaded mapping contexts, expose the local-player subsystem as a weak object handle, read/inject typed action values, and bind/unbind game-thread callbacks; smoke verifies typed defaults and injected Boolean, Axis1D, Axis2D, and Axis3D Started, Ongoing, Triggered, Canceled, and Completed callback payloads, mapping add/remove, and suppression after unbinding; the composed C playable sample applies swept movement from Axis2D input |
 | Reflected function metadata | Runtime implemented / Unreal integration pending | Enumerate names, parameter counts, return presence, and latent flags |
-| Collision settings | Runtime implemented / Unreal integration pending | Primitive collision mode read/write, legacy per-channel block/ignore writes, and ABI 137 typed per-channel Ignore/Overlap/Block writes plus response readback |
+| Collision settings | UE 5.8.3 Editor PIE and packaged Development smoke verified | Primitive collision mode read/write for Disabled, QueryOnly, PhysicsOnly, and QueryAndPhysics; query smoke confirms only query-enabled modes participate in overlap and trace results; legacy per-channel block/ignore writes, plus ABI 137 typed per-channel Ignore/Overlap/Block writes and response readback |
 | Asset path queries | UE 5.8.3 Editor PIE and packaged Development smoke verified | Check loaded soft object and class paths without loading; smoke verifies both present native Actor paths and GUID-named missing paths |
 | Attached audio playback | UE 5.8.3 Editor PIE and packaged Development smoke verified | Spawn non-auto-destroying playback on a scene component, read active/stopped state, stop playback, and explicitly destroy components |
 | Audio completion subscriptions | UE 5.8.3 Editor PIE and packaged Development smoke verified | One-shot native callbacks fire exactly once on stop and natural completion; callbacks safely query in-flight counts, tokens retire automatically, and actor/component/world cleanup suppresses delivery |
@@ -68,9 +68,10 @@ checks explicitly recorded for each feature in the Unreal build matrix.
 | Multiplayer and replication | Partial | Network-mode and authority queries plus authority-gated actor/component transforms, tags, activation, attachment, collision settings, possession, physics mutators, event-bridge component creation, and direct reflected writes to replicated properties; multiplayer PIE verifies client actor spawn and event-bridge creation rejection with cleared outputs, replicated actor destruction rejection without invalidating its handle, attachment/detachment rejection, and locally writable visibility; replication/RPC adapters remain planned |
 | Editor tooling and generated bindings | Planned | Separate editor module not yet created |
 
-The shared host smoke now runs collision line traces, sweeps, overlaps,
-detailed hit queries, and focused physics state/motion checks in a UE 5.8.3
-Editor PIE world and a packaged Development build. A separate multiplayer PIE
+The shared host smoke now runs collision mode readback and query participation,
+line traces, sweeps, overlaps, detailed hit queries, and focused physics
+state/motion checks in a UE 5.8.3 Editor PIE world and a packaged Development
+build. A separate multiplayer PIE
 run verifies client-world rejection of physics, transform, tag, activation,
 and collision mutators while checking the affected state remains unchanged. The test runners
 request an engine exit after receiving every success marker. These runs verify
